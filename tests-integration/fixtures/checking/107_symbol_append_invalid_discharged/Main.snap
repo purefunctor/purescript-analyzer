@@ -14,3 +14,7 @@ Data
 Proxy
   Quantified = :0
   Kind = :1
+
+
+Roles
+Proxy = [Phantom]

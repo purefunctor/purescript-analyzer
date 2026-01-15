@@ -25,6 +25,10 @@ WrapBothNoConstraint
   Kind = :0
 
 
+Roles
+WrapBoth = [Representational, Representational, Nominal, Nominal]
+WrapBothNoConstraint = [Representational, Representational, Nominal, Nominal]
+
 Derived
 derive (Functor &0, Functor &1) => Bifunctor (WrapBoth @Type @Type &0 &1 :: Type -> Type -> Type)
 derive Bifunctor (WrapBothNoConstraint @Type @Type &0 &1 :: Type -> Type -> Type)

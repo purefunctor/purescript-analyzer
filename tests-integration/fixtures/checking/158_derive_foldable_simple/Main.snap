@@ -27,6 +27,11 @@ Const
   Kind = :0
 
 
+Roles
+Identity = [Representational]
+Maybe = [Representational]
+Const = [Representational, Phantom]
+
 Derived
 derive Foldable (Identity :: Type -> Type)
 derive Foldable (Maybe :: Type -> Type)

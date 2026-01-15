@@ -18,6 +18,9 @@ Proxy
   Kind = :0
 
 
+Roles
+Proxy = [Phantom]
+
 Classes
 class TypeEq (&3 :: &0) (&4 :: &1) (&5 :: &2)
 

@@ -20,6 +20,10 @@ Unit
   Kind = :0
 
 
+Roles
+Pair = [Representational, Representational]
+Unit = []
+
 Derived
 derive Functor (Pair Int String :: Type)
 derive Functor (Unit :: Type)

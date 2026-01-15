@@ -20,6 +20,10 @@ WrongSecond
   Kind = :0
 
 
+Roles
+WrongFirst = [Representational, Representational]
+WrongSecond = [Representational, Representational]
+
 Derived
 derive Profunctor (WrongFirst :: Type -> Type -> Type)
 derive Profunctor (WrongSecond :: Type -> Type -> Type)

@@ -49,3 +49,7 @@ RawWithQuote = Proxy @Symbol """"hello""""
   Quantified = :0
   Kind = :0
   Type = :0
+
+
+Roles
+Proxy = [Nominal]

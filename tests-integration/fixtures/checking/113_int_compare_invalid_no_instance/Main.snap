@@ -16,5 +16,8 @@ Proxy
   Kind = :1
 
 
+Roles
+Proxy = [Phantom]
+
 Errors
 NoInstanceFound { Compare 5 1 LT } at [TermDeclaration(Idx::<TermItem>(2))]

@@ -2,17 +2,18 @@ use std::sync::Arc;
 
 use building_types::QueryResult;
 use indexing::{TermItemId, TypeItemId};
-use itertools::Itertools;
+use itertools::{Itertools, izip};
 use lowering::{
     ClassIr, DataIr, NewtypeIr, SynonymIr, TermItemIr, TypeItemIr, TypeVariableBinding,
 };
 use smol_str::SmolStr;
 
 use crate::ExternalQueries;
+use crate::algorithm::safety::safe_loop;
 use crate::algorithm::state::{CheckContext, CheckState, CheckedConstructor};
 use crate::algorithm::{inspect, kind, quantify, transfer, unification};
 use crate::core::{
-    Class, DataLike, ForallBinder, Operator, Synonym, Type, TypeId, Variable, debruijn,
+    Class, DataLike, ForallBinder, Operator, Role, Synonym, Type, TypeId, Variable, debruijn,
 };
 use crate::error::{ErrorKind, ErrorStep};
 
@@ -32,6 +33,7 @@ pub struct CheckedData {
     pub kind_variables: Vec<ForallBinder>,
     pub type_variables: Vec<ForallBinder>,
     pub constructors: Vec<CheckedConstructor>,
+    pub declared_roles: Arc<[lowering::Role]>,
 }
 
 #[derive(Clone)]
@@ -76,18 +78,18 @@ where
         };
 
         match item {
-            TypeItemIr::DataGroup { signature, data, .. } => {
+            TypeItemIr::DataGroup { signature, data, roles } => {
                 let Some(DataIr { variables }) = data else {
                     return Ok(None);
                 };
-                check_data_definition(state, context, item_id, *signature, variables)
+                check_data_definition(state, context, item_id, *signature, variables, roles)
             }
 
-            TypeItemIr::NewtypeGroup { signature, newtype, .. } => {
+            TypeItemIr::NewtypeGroup { signature, newtype, roles } => {
                 let Some(NewtypeIr { variables }) = newtype else {
                     return Ok(None);
                 };
-                check_data_definition(state, context, item_id, *signature, variables)
+                check_data_definition(state, context, item_id, *signature, variables, roles)
             }
 
             TypeItemIr::SynonymGroup { signature, synonym } => {
@@ -104,7 +106,9 @@ where
                 check_class_definition(state, context, item_id, *signature, class)
             }
 
-            TypeItemIr::Foreign { .. } => Ok(None),
+            TypeItemIr::Foreign { roles, .. } => {
+                check_foreign_definition(state, context, item_id, roles)
+            }
 
             TypeItemIr::Operator { associativity, precedence, resolution } => {
                 let Some(associativity) = *associativity else { return Ok(None) };
@@ -130,6 +134,7 @@ fn check_data_definition<Q>(
     item_id: TypeItemId,
     signature: Option<lowering::TypeId>,
     variables: &[TypeVariableBinding],
+    declared_roles: &Arc<[lowering::Role]>,
 ) -> QueryResult<Option<CheckedTypeItem>>
 where
     Q: ExternalQueries,
@@ -168,6 +173,7 @@ where
         kind_variables,
         type_variables,
         constructors,
+        declared_roles: declared_roles.clone(),
     })))
 }
 
@@ -415,8 +421,13 @@ fn commit_data<Q>(
 where
     Q: ExternalQueries,
 {
-    let CheckedData { inferred_kind, kind_variables, type_variables, constructors } = checked;
+    let CheckedData { inferred_kind, kind_variables, type_variables, constructors, declared_roles } =
+        checked;
+
     let kind_variable_count = kind_variables.len() as u32;
+
+    let inferred_roles = infer_roles(state, &type_variables, &constructors);
+    check_roles(state, item_id, &inferred_roles, &declared_roles, false);
 
     if let Some(inferred_kind) = inferred_kind {
         let Some((quantified_type, quantified_variables)) =
@@ -845,4 +856,197 @@ where
     }
 
     Ok(constructors)
+}
+
+/// Infers roles for type parameters based on their usage in constructors.
+fn infer_roles(
+    state: &mut CheckState,
+    type_variables: &[ForallBinder],
+    constructors: &[CheckedConstructor],
+) -> Vec<Role> {
+    fn aux(
+        state: &mut CheckState,
+        roles: &mut [Role],
+        variables: &[ForallBinder],
+        type_id: TypeId,
+        under_constraint: bool,
+        is_variable_argument: bool,
+    ) {
+        let type_id = state.normalize_type(type_id);
+        match state.storage[type_id].clone() {
+            Type::Variable(Variable::Bound(level)) => {
+                if let Some(index) = variables.iter().position(|v| v.level == level) {
+                    // The following cases infer to nominal roles:
+                    //
+                    // ```
+                    // -- `a` appears under a constraint
+                    // data Shown a = Shown ((Show a => a -> String) -> String)
+                    //
+                    // -- `a` appears under another variable
+                    // data Parametric f a = Parametric (f a)
+                    // ```
+                    let role = if under_constraint || is_variable_argument {
+                        Role::Nominal
+                    } else {
+                        Role::Representational
+                    };
+                    roles[index] = roles[index].max(role);
+                }
+            }
+
+            Type::Application(function, argument) => {
+                let function_id = state.normalize_type(function);
+                let is_type_variable =
+                    matches!(state.storage[function_id], Type::Variable(Variable::Bound(_)));
+
+                aux(state, roles, variables, function, under_constraint, false);
+                aux(state, roles, variables, argument, under_constraint, is_type_variable);
+            }
+
+            Type::Constrained(constraint, inner) => {
+                aux(state, roles, variables, constraint, true, false);
+                aux(state, roles, variables, inner, true, false);
+            }
+
+            Type::Forall(binder, inner) => {
+                aux(state, roles, variables, binder.kind, under_constraint, false);
+                aux(state, roles, variables, inner, under_constraint, false);
+            }
+
+            Type::Function(arg, result) => {
+                aux(state, roles, variables, arg, under_constraint, false);
+                aux(state, roles, variables, result, under_constraint, false);
+            }
+
+            Type::KindApplication(function, argument) => {
+                aux(state, roles, variables, function, under_constraint, false);
+                aux(state, roles, variables, argument, under_constraint, false);
+            }
+
+            Type::Kinded(inner, kind) => {
+                aux(state, roles, variables, inner, under_constraint, false);
+                aux(state, roles, variables, kind, under_constraint, false);
+            }
+
+            Type::OperatorApplication(_, _, left, right) => {
+                aux(state, roles, variables, left, under_constraint, false);
+                aux(state, roles, variables, right, under_constraint, false);
+            }
+
+            Type::Row(row) => {
+                for field in row.fields.iter() {
+                    aux(state, roles, variables, field.id, under_constraint, false);
+                }
+                if let Some(tail) = row.tail {
+                    aux(state, roles, variables, tail, under_constraint, false);
+                }
+            }
+
+            Type::SynonymApplication(_, _, _, arguments) => {
+                for &arg in arguments.iter() {
+                    aux(state, roles, variables, arg, under_constraint, false);
+                }
+            }
+
+            Type::Constructor(_, _)
+            | Type::Integer(_)
+            | Type::Operator(_, _)
+            | Type::String(_, _)
+            | Type::Unification(_)
+            | Type::Variable(_)
+            | Type::Unknown => (),
+        }
+    }
+
+    let mut roles = vec![Role::Phantom; type_variables.len()];
+
+    for constructor in constructors {
+        for &field_type in &constructor.arguments {
+            aux(state, &mut roles, type_variables, field_type, false, false);
+        }
+    }
+
+    roles
+}
+
+/// Check declared roles against inferred roles, inserting the final roles.
+///
+/// `data` and `newtype` can only strengthen roles, Phantom -> Nominal; `foreign`
+/// can loosen roles, Nominal -> Phantom, since there's no usage to infer from.
+fn check_roles(
+    state: &mut CheckState,
+    type_id: TypeItemId,
+    inferred: &[Role],
+    declared: &[lowering::Role],
+    is_foreign: bool,
+) {
+    let mut validated = inferred.to_vec();
+
+    for (index, (validated, &inferred, declared)) in
+        izip!(validated.iter_mut(), inferred, declared).enumerate()
+    {
+        let declared = match declared {
+            lowering::Role::Phantom => Role::Phantom,
+            lowering::Role::Representational => Role::Representational,
+            lowering::Role::Nominal => Role::Nominal,
+            lowering::Role::Unknown => continue,
+        };
+
+        if is_foreign {
+            *validated = declared;
+        } else if declared >= inferred {
+            *validated = declared;
+        } else {
+            state.insert_error(ErrorKind::InvalidRoleDeclaration {
+                type_id,
+                parameter_index: index,
+                declared,
+                inferred,
+            });
+        }
+    }
+
+    let validated = Arc::from(validated);
+    state.checked.roles.insert(type_id, validated);
+}
+
+/// Counts the number of type parameters in a kind by counting function arrows.
+fn count_kind_arguments(state: &mut CheckState, type_id: TypeId) -> usize {
+    let mut count = 0;
+    let mut current_id = type_id;
+
+    safe_loop! {
+        current_id = state.normalize_type(current_id);
+        match &state.storage[current_id] {
+            Type::Function(_, result) => {
+                count += 1;
+                current_id = *result;
+            }
+            Type::Forall(_, inner) => {
+                current_id = *inner;
+            }
+            _ => break,
+        }
+    }
+
+    count
+}
+
+/// Checks a foreign type declaration.
+fn check_foreign_definition<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    item_id: TypeItemId,
+    declared_roles: &Arc<[lowering::Role]>,
+) -> QueryResult<Option<CheckedTypeItem>>
+where
+    Q: ExternalQueries,
+{
+    let stored_kind = kind::lookup_file_type(state, context, context.id, item_id)?;
+    let parameter_count = count_kind_arguments(state, stored_kind);
+
+    let inferred_roles = vec![Role::Nominal; parameter_count];
+    check_roles(state, item_id, &inferred_roles, declared_roles, true);
+
+    Ok(None)
 }

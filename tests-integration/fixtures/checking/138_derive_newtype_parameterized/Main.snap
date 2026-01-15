@@ -14,5 +14,8 @@ Identity
   Kind = :0
 
 
+Roles
+Identity = [Representational]
+
 Derived
 derive Show (Identity Int :: Type)

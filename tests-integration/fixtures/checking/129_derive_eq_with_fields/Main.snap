@@ -20,6 +20,10 @@ Pair
   Kind = :0
 
 
+Roles
+Box = []
+Pair = []
+
 Derived
 derive Eq (Box :: Type)
 derive Eq (Pair :: Type)

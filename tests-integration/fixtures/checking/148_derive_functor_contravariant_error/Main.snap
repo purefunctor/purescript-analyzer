@@ -26,6 +26,11 @@ Cont
   Kind = :0
 
 
+Roles
+Predicate = [Representational]
+Reader = [Representational, Representational]
+Cont = [Representational, Representational]
+
 Derived
 derive Functor (Predicate :: Type -> Type)
 derive Functor (Reader &0 :: Type -> Type)

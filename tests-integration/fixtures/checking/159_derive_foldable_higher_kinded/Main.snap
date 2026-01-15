@@ -20,6 +20,10 @@ WrapNoFoldable
   Kind = :0
 
 
+Roles
+Wrap = [Representational, Nominal]
+WrapNoFoldable = [Representational, Nominal]
+
 Derived
 derive Foldable &0 => Foldable (Wrap @Type &0 :: Type -> Type)
 derive Foldable (WrapNoFoldable @Type &0 :: Type -> Type)

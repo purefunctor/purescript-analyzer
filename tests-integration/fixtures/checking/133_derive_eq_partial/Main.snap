@@ -15,6 +15,9 @@ Either
   Kind = :0
 
 
+Roles
+Either = [Representational, Representational]
+
 Derived
 derive Eq &0 => Eq (Either Int &0 :: Type)
 derive Eq (Either Int &0 :: Type)

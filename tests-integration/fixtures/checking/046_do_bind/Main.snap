@@ -18,3 +18,8 @@ Data
 Tuple
   Quantified = :0
   Kind = :0
+
+
+Roles
+Effect = [Nominal]
+Tuple = [Representational, Representational]

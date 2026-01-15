@@ -16,6 +16,9 @@ Compose
   Kind = :0
 
 
+Roles
+Compose = [Representational, Representational, Nominal]
+
 Derived
 derive (Traversable &0, Traversable &1) => Traversable (Compose @Type @Type &0 &1 :: Type -> Type)
 

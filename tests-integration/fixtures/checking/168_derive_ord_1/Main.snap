@@ -34,6 +34,12 @@ NoOrd
   Kind = :0
 
 
+Roles
+Id = [Representational]
+Wrap = [Representational, Nominal]
+Compose = [Representational, Representational, Nominal]
+NoOrd = [Representational]
+
 Derived
 derive forall (&0 :: Type). (Eq1 &1, Eq (&2 &3)) => Eq (Compose @Type @&0 &1 &2 &3 :: Type)
 derive forall (&0 :: Type). (Ord1 &1, Ord (&2 &3)) => Ord (Compose @Type @&0 &1 &2 &3 :: Type)

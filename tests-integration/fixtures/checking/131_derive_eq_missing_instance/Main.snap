@@ -20,6 +20,10 @@ Box
   Kind = :0
 
 
+Roles
+NoEq = []
+Box = []
+
 Derived
 derive Eq (Box :: Type)
 

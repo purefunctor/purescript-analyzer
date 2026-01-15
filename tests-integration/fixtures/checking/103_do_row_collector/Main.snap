@@ -39,3 +39,6 @@ test4 ::
 
 Types
 Collector :: Int -> Row Type -> Type -> Type
+
+Roles
+Collector = [Nominal, Nominal, Nominal]

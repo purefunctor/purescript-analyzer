@@ -1,6 +1,5 @@
 ---
 source: tests-integration/tests/checking/generated.rs
-assertion_line: 12
 expression: report
 ---
 Terms
@@ -80,3 +79,7 @@ Data
 Function
   Quantified = :0
   Kind = :0
+
+
+Roles
+Function = [Phantom, Phantom]

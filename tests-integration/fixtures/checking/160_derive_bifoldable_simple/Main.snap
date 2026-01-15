@@ -28,6 +28,11 @@ Const2
   Kind = :0
 
 
+Roles
+Either = [Representational, Representational]
+Pair = [Representational, Representational]
+Const2 = [Representational, Phantom, Phantom]
+
 Derived
 derive Bifoldable (Either :: Type -> Type -> Type)
 derive Bifoldable (Pair :: Type -> Type -> Type)

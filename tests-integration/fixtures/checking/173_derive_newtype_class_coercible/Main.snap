@@ -24,6 +24,10 @@ Wrapper
   Kind = :0
 
 
+Roles
+UserId = []
+Wrapper = [Representational]
+
 Derived
 derive Newtype (UserId :: Type) (Int :: Type)
 derive Newtype (Wrapper &0 :: Type) (&0 :: Type)

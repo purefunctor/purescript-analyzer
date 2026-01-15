@@ -20,6 +20,10 @@ WrapNoOrd1
   Kind = :0
 
 
+Roles
+Wrap = [Representational, Nominal]
+WrapNoOrd1 = [Representational, Nominal]
+
 Derived
 derive (Eq1 &0, Eq &1) => Eq (Wrap @Type &0 &1 :: Type)
 derive (Ord1 &0, Ord &1) => Ord (Wrap @Type &0 &1 :: Type)

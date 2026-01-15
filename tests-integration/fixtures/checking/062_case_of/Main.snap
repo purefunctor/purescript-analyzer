@@ -34,3 +34,9 @@ Either
 Tuple
   Quantified = :0
   Kind = :0
+
+
+Roles
+Maybe = [Representational]
+Either = [Representational, Representational]
+Tuple = [Representational, Representational]

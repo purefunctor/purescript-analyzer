@@ -32,6 +32,12 @@ ContainsNoOrd
   Kind = :0
 
 
+Roles
+Box = []
+Pair = []
+NoOrd = []
+ContainsNoOrd = []
+
 Derived
 derive Eq (Box :: Type)
 derive Ord (Box :: Type)

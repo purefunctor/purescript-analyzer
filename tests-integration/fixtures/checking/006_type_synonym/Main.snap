@@ -43,3 +43,7 @@ CheckApplyElab = forall (x :: Type) (y :: Type) (f :: x -> y) (a :: x). f a
   Quantified = :0
   Kind = :2
   Type = :2
+
+
+Roles
+Tuple = [Nominal, Nominal]

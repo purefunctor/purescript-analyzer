@@ -22,6 +22,9 @@ Ordering
   Kind = :0
 
 
+Roles
+Ordering = []
+
 Classes
 class Eq (&0 :: Type)
 class Eq &0 <= Ord (&0 :: Type)

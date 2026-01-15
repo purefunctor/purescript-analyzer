@@ -15,5 +15,8 @@ Maybe
   Kind = :0
 
 
+Roles
+Maybe = [Representational]
+
 Derived
 derive Eq &0 => Eq (Maybe &0 :: Type)

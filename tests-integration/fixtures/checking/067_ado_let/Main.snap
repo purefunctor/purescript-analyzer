@@ -10,3 +10,6 @@ test :: Effect { x :: Int, y :: { x :: Int }, z :: String }
 
 Types
 Effect :: Type -> Type
+
+Roles
+Effect = [Nominal]

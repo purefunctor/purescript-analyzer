@@ -14,5 +14,8 @@ Foo
   Kind = :0
 
 
+Roles
+Foo = []
+
 Errors
 ExpectedNewtype { type_id: Id<checking::core::Type>(9) } at [TermDeclaration(Idx::<TermItem>(1))]

@@ -357,3 +357,21 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_172_derive_generic_simple_main() { run_test("172_derive_generic_simple", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_173_derive_newtype_class_coercible_main() { run_test("173_derive_newtype_class_coercible", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_174_role_inference_phantom_main() { run_test("174_role_inference_phantom", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_175_role_inference_representational_main() { run_test("175_role_inference_representational", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_176_role_inference_nominal_constraint_main() { run_test("176_role_inference_nominal_constraint", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_177_role_inference_nominal_parametric_main() { run_test("177_role_inference_nominal_parametric", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_178_role_inference_nested_main() { run_test("178_role_inference_nested", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_179_role_inference_recursive_main() { run_test("179_role_inference_recursive", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_180_role_declaration_strengthen_main() { run_test("180_role_declaration_strengthen", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_181_role_declaration_loosen_error_main() { run_test("181_role_declaration_loosen_error", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_182_role_declaration_foreign_main() { run_test("182_role_declaration_foreign", "Main"); }

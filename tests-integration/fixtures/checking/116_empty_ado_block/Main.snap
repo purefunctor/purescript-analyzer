@@ -12,6 +12,9 @@ test2 :: Effect Int
 Types
 Effect :: Type -> Type
 
+Roles
+Effect = [Nominal]
+
 Errors
 EmptyAdoBlock at [TermDeclaration(Idx::<TermItem>(3)), InferringExpression(AstId<syntax::cst::Expression>(54))]
 CannotUnify { Type, ??? } at [TermDeclaration(Idx::<TermItem>(3))]

@@ -13,3 +13,7 @@ InferTuplePoly = forall (t7 :: Type) (t8 :: Type) (x :: t7) (y :: t8). TuplePoly
   Quantified = :2
   Kind = :0
   Type = :2
+
+
+Roles
+TuplePoly = [Nominal, Nominal]

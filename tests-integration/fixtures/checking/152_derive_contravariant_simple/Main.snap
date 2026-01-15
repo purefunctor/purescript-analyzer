@@ -26,6 +26,11 @@ Op
   Kind = :0
 
 
+Roles
+Predicate = [Representational]
+Comparison = [Representational]
+Op = [Representational, Representational]
+
 Derived
 derive Contravariant (Predicate :: Type -> Type)
 derive Contravariant (Comparison :: Type -> Type)

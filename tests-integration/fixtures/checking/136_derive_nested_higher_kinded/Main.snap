@@ -33,6 +33,12 @@ V
   Kind = :0
 
 
+Roles
+T = [Representational, Representational]
+Maybe = [Representational]
+U = [Representational]
+V = [Representational, Representational]
+
 Derived
 derive Eq1 &0 => Eq (V @Type &0 &1 :: Type)
 derive Ord1 &0 => Ord (V @Type &0 &1 :: Type)

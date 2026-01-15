@@ -1,0 +1,26 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+Nothing :: forall (a :: Type). Maybe a
+Just :: forall (a :: Type). a -> Maybe a
+First :: forall (a :: Type). Maybe a -> First a
+
+Types
+Maybe :: Type -> Type
+First :: Type -> Type
+
+Data
+Maybe
+  Quantified = :0
+  Kind = :0
+
+First
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+Maybe = [Representational]
+First = [Representational]

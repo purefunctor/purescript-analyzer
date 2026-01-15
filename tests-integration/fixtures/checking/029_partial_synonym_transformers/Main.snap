@@ -1,6 +1,5 @@
 ---
 source: tests-integration/tests/checking/generated.rs
-assertion_line: 12
 expression: report
 ---
 Terms
@@ -69,3 +68,10 @@ StateT
 Tuple
   Quantified = :0
   Kind = :0
+
+
+Roles
+Identity = [Representational]
+ReaderT = [Representational, Representational, Nominal]
+StateT = [Representational, Representational, Representational]
+Tuple = [Representational, Representational]

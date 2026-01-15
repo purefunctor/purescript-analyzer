@@ -31,6 +31,9 @@ Tuple
   Kind = :0
 
 
+Roles
+Tuple = [Representational, Representational]
+
 Classes
 class Functor (&0 :: Type -> Type)
 class Functor &0 <= Apply (&0 :: Type -> Type)

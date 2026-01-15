@@ -14,6 +14,9 @@ Triple
   Kind = :0
 
 
+Roles
+Triple = [Representational, Representational, Representational]
+
 Derived
 derive Bifunctor (Triple Int String :: Type -> Type)
 

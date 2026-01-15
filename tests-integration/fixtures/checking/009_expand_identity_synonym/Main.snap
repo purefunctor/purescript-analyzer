@@ -25,3 +25,7 @@ Test2 = Identity Digit
   Quantified = :0
   Kind = :0
   Type = :0
+
+
+Roles
+Digit = []

@@ -14,5 +14,8 @@ Mu
   Kind = :0
 
 
+Roles
+Mu = [Representational]
+
 Derived
 derive Show (&0 (Mu &0)) => Show (Mu &0 :: Type)

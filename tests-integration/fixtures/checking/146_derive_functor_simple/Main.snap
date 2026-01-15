@@ -27,6 +27,11 @@ Maybe
   Kind = :0
 
 
+Roles
+Identity = [Representational]
+Const = [Representational, Phantom]
+Maybe = [Representational]
+
 Derived
 derive Functor (Identity :: Type -> Type)
 derive Functor (Const @Type &0 :: Type -> Type)

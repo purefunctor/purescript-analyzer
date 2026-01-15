@@ -25,6 +25,10 @@ WrapBothNoConstraint
   Kind = :0
 
 
+Roles
+WrapBoth = [Representational, Representational, Nominal, Nominal]
+WrapBothNoConstraint = [Representational, Representational, Nominal, Nominal]
+
 Derived
 derive (Foldable &0, Foldable &1) => Bifoldable (WrapBoth @Type @Type &0 &1 :: Type -> Type -> Type)
 derive Bifoldable (WrapBothNoConstraint @Type @Type &0 &1 :: Type -> Type -> Type)

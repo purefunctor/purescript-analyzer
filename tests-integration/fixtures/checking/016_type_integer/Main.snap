@@ -37,3 +37,7 @@ Hex = Proxy @Int 16777215
   Quantified = :0
   Kind = :0
   Type = :0
+
+
+Roles
+Proxy = [Nominal]

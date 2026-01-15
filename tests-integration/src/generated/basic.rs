@@ -291,13 +291,30 @@ pub fn report_checked(engine: &QueryEngine, id: FileId) -> String {
         writeln!(snapshot, "\nData").unwrap();
     }
     for (id, TypeItem { name, kind, .. }) in indexed.items.iter_types() {
-        let (TypeItemKind::Data { .. } | TypeItemKind::Newtype { .. }) = kind else { continue };
+        let (TypeItemKind::Data { .. } | TypeItemKind::Newtype { .. }) = kind else {
+            continue;
+        };
         let Some(name) = name else { continue };
         let Some(data) = checked.lookup_data(id) else { continue };
         writeln!(snapshot, "{name}").unwrap();
         writeln!(snapshot, "  Quantified = {}", data.quantified_variables).unwrap();
         writeln!(snapshot, "  Kind = {}", data.kind_variables).unwrap();
         writeln!(snapshot).unwrap();
+    }
+
+    if !checked.roles.is_empty() {
+        writeln!(snapshot, "\nRoles").unwrap();
+    }
+    for (id, TypeItem { name, kind, .. }) in indexed.items.iter_types() {
+        let (TypeItemKind::Data { .. } | TypeItemKind::Newtype { .. } | TypeItemKind::Foreign { .. }) =
+            kind
+        else {
+            continue;
+        };
+        let Some(name) = name else { continue };
+        let Some(roles) = checked.lookup_roles(id) else { continue };
+        let roles_str: Vec<_> = roles.iter().map(|r| format!("{r:?}")).collect();
+        writeln!(snapshot, "{name} = [{}]", roles_str.join(", ")).unwrap();
     }
 
     if !checked.classes.is_empty() {

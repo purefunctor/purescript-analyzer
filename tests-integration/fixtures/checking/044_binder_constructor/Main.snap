@@ -34,3 +34,9 @@ Maybe
 List
   Quantified = :0
   Kind = :0
+
+
+Roles
+Pair = [Representational, Representational]
+Maybe = [Representational]
+List = [Representational]

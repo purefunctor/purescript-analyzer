@@ -16,6 +16,9 @@ WrapBoth
   Kind = :0
 
 
+Roles
+WrapBoth = [Representational, Representational, Nominal, Nominal]
+
 Derived
 derive Bifunctor (WrapBoth @Type @Type &0 &1 :: Type -> Type -> Type)
 

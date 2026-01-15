@@ -27,6 +27,11 @@ Choice
   Kind = :0
 
 
+Roles
+Fn = [Representational, Representational]
+ConstR = [Representational, Representational, Phantom]
+Choice = [Representational, Representational]
+
 Derived
 derive Profunctor (Fn :: Type -> Type -> Type)
 derive Profunctor (ConstR @Type &0 :: Type -> Type -> Type)

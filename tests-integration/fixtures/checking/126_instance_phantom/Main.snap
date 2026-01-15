@@ -17,6 +17,9 @@ Proxy
   Kind = :0
 
 
+Roles
+Proxy = [Phantom]
+
 Classes
 class Phantom (&0 :: Type)
 

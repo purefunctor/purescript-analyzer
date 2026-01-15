@@ -14,5 +14,8 @@ Wrapper
   Kind = :0
 
 
+Roles
+Wrapper = [Representational]
+
 Derived
 derive Newtype (Wrapper &0 :: Type) (&0 :: Type)

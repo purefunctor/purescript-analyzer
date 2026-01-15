@@ -18,6 +18,9 @@ Box
   Kind = :0
 
 
+Roles
+Box = [Representational]
+
 Classes
 class Show (&0 :: Type)
 class Functor (&0 :: Type -> Type)

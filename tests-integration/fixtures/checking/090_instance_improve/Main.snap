@@ -21,6 +21,10 @@ False
   Kind = :0
 
 
+Roles
+True = []
+False = []
+
 Classes
 class TypeEq (&1 :: Type) (&2 :: Type) (&3 :: &0)
 

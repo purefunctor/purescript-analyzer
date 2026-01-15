@@ -20,6 +20,10 @@ Producer
   Kind = :0
 
 
+Roles
+Identity = [Representational]
+Producer = [Representational]
+
 Derived
 derive Contravariant (Identity :: Type -> Type)
 derive Contravariant (Producer :: Type -> Type)

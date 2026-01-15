@@ -19,3 +19,8 @@ Tree
 Forest
   Quantified = :0
   Kind = :0
+
+
+Roles
+Tree = [Representational]
+Forest = [Representational]

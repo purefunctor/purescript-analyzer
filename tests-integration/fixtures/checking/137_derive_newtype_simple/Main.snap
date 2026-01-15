@@ -14,5 +14,8 @@ Wrapper
   Kind = :0
 
 
+Roles
+Wrapper = []
+
 Derived
 derive Show (Wrapper :: Type)

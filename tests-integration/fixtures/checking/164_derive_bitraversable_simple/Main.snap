@@ -21,6 +21,10 @@ Pair
   Kind = :0
 
 
+Roles
+Either = [Representational, Representational]
+Pair = [Representational, Representational]
+
 Derived
 derive Bifunctor (Either :: Type -> Type -> Type)
 derive Bifoldable (Either :: Type -> Type -> Type)

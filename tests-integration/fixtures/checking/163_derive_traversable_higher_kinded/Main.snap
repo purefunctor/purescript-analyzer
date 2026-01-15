@@ -16,6 +16,9 @@ Compose
   Kind = :0
 
 
+Roles
+Compose = [Representational, Representational, Nominal]
+
 Derived
 derive (Functor &0, Functor &1) => Functor (Compose @Type @Type &0 &1 :: Type -> Type)
 derive (Foldable &0, Foldable &1) => Foldable (Compose @Type @Type &0 &1 :: Type -> Type)

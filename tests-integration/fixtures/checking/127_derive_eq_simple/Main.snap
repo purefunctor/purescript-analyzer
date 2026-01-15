@@ -26,6 +26,11 @@ ContainsNoEq
   Kind = :0
 
 
+Roles
+Proxy = [Phantom]
+NoEq = []
+ContainsNoEq = []
+
 Derived
 derive forall (&0 :: Type). Eq (Proxy @&0 &1 :: Type)
 derive Eq (ContainsNoEq :: Type)

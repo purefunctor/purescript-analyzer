@@ -19,3 +19,8 @@ Data
 Unit
   Quantified = :0
   Kind = :0
+
+
+Roles
+Effect = [Nominal]
+Unit = []

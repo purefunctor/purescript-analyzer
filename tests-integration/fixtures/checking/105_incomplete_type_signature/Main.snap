@@ -12,3 +12,7 @@ Data
 Foo
   Quantified = :0
   Kind = :0
+
+
+Roles
+Foo = []

@@ -67,6 +67,15 @@ Proxy
   Kind = :0
 
 
+Roles
+Void = []
+MyUnit = []
+Identity = [Representational]
+Either = [Representational, Representational]
+Tuple = [Representational, Representational]
+Wrapper = [Representational]
+Proxy = [Phantom]
+
 Derived
 derive Generic (Void :: Type) (NoConstructors :: Type)
 derive Generic (MyUnit :: Type) (Constructor "MyUnit" NoArguments :: Type)

@@ -14,5 +14,8 @@ Pair
   Kind = :0
 
 
+Roles
+Pair = [Representational, Phantom]
+
 Derived
 derive Show (Pair @Type Int String :: Type)

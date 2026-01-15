@@ -59,6 +59,16 @@ NoEq
   Kind = :0
 
 
+Roles
+Id = [Representational]
+Pair = [Representational]
+Mixed = [Representational]
+Rec = [Representational]
+Wrap = [Representational, Nominal]
+Compose = [Representational, Representational, Nominal]
+Either' = [Representational]
+NoEq = [Representational]
+
 Derived
 derive Eq1 &0 => Eq1 (Wrap @Type &0 :: Type -> Type)
 derive forall (&0 :: Type). (Eq1 &1, Eq (&2 &3)) => Eq (Compose @Type @&0 &1 &2 &3 :: Type)

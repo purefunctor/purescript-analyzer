@@ -14,5 +14,8 @@ UserId
   Kind = :0
 
 
+Roles
+UserId = []
+
 Derived
 derive Newtype (UserId :: Type) (Int :: Type)

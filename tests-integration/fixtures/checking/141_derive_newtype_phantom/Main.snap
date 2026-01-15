@@ -14,5 +14,8 @@ Vector
   Kind = :0
 
 
+Roles
+Vector = [Phantom, Representational]
+
 Derived
 derive Show &1 => Show (Vector &0 &1 :: Type)
