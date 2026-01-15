@@ -12,12 +12,9 @@ use rustc_hash::FxHashSet;
 use smol_str::SmolStr;
 
 use super::MatchInstance;
-use crate::algorithm::constraint;
-use crate::algorithm::derive;
-use crate::algorithm::kind;
 use crate::algorithm::safety::safe_loop;
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::substitute;
+use crate::algorithm::{constraint, derive, kind, substitute};
 use crate::core::{Role, RowField, RowType};
 use crate::{ExternalQueries, Type, TypeId};
 
