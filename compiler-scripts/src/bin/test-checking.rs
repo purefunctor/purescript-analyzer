@@ -122,6 +122,11 @@ fn main() {
             Err(_) => continue,
         };
 
+        // Skip snapshots that don't match any filter
+        if !filters.is_empty() && !filters.iter().any(|f| snap_path.contains(f)) {
+            continue;
+        }
+
         let short_path = snap_path
             .strip_prefix(cwd.to_str().unwrap_or(""))
             .unwrap_or(&snap_path)
