@@ -58,6 +58,7 @@ pub mod type_item;
 pub mod unification;
 
 use std::slice;
+use std::sync::Arc;
 
 use building_types::QueryResult;
 use files::FileId;
@@ -65,7 +66,7 @@ use indexing::TermItemKind;
 use itertools::Itertools;
 use lowering::{Scc, TermItemIr};
 
-use crate::core::{Type, TypeId};
+use crate::core::{Role, Type, TypeId};
 use crate::{CheckedModule, ExternalQueries};
 
 pub fn check_source(queries: &impl ExternalQueries, file_id: FileId) -> QueryResult<CheckedModule> {
@@ -431,6 +432,24 @@ pub fn check_prim(queries: &impl ExternalQueries, file_id: FileId) -> QueryResul
     insert_type("Constraint", type_core);
     insert_type("Symbol", type_core);
     insert_type("Row", type_to_type_core);
+
+    let mut insert_roles = |name: &str, roles: &[Role]| {
+        let (_, item_id) = lookup_type(name);
+        checked_module.roles.insert(item_id, Arc::from(roles));
+    };
+
+    insert_roles("Type", &[]);
+    insert_roles("Function", &[Role::Representational, Role::Representational]);
+    insert_roles("Array", &[Role::Representational]);
+    insert_roles("Record", &[Role::Representational]);
+    insert_roles("Number", &[]);
+    insert_roles("Int", &[]);
+    insert_roles("String", &[]);
+    insert_roles("Char", &[]);
+    insert_roles("Boolean", &[]);
+    insert_roles("Constraint", &[]);
+    insert_roles("Symbol", &[]);
+    insert_roles("Row", &[Role::Representational]);
 
     Ok(checked_module)
 }
