@@ -90,7 +90,8 @@ where
 
                 state.type_scope.kinds.insert(new_level, binder.kind);
 
-                let variable = state.storage.intern(Type::Variable(Variable::Bound(new_level, binder.kind)));
+                let variable =
+                    state.storage.intern(Type::Variable(Variable::Bound(new_level, binder.kind)));
                 let inner = substitute::SubstituteBound::on(state, old_level, variable, inner);
 
                 variables.push(binder);
@@ -142,7 +143,8 @@ where
                 let level = state.type_scope.bound.bind(debruijn::Variable::Core);
                 state.type_scope.kinds.insert(level, binder_kind);
 
-                let variable = state.storage.intern(Type::Variable(Variable::Bound(level, binder_kind)));
+                let variable =
+                    state.storage.intern(Type::Variable(Variable::Bound(level, binder_kind)));
                 current_id = substitute::SubstituteBound::on(state, binder_level, variable, inner);
             }
 
