@@ -10,9 +10,7 @@ use rustc_hash::FxHashSet;
 use smol_str::SmolStrBuilder;
 
 use crate::ExternalQueries;
-use crate::algorithm::constraint::{
-    ConstraintApplication, constraint_application, elaborate_superclasses,
-};
+use crate::algorithm::constraint::{self, ConstraintApplication};
 use crate::algorithm::fold::Zonk;
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::substitute::{ShiftBound, SubstituteUnification, UniToLevel};
@@ -165,7 +163,7 @@ where
 
     // Remove constraints found in the superclasses, keeping the most specific.
     let minimized = constraints.into_iter().filter(|&constraint| {
-        constraint_application(state, constraint)
+        constraint::constraint_application(state, constraint)
             .is_none_or(|constraint| !superclasses.contains(&constraint))
     });
 
@@ -181,10 +179,10 @@ where
     Q: ExternalQueries,
 {
     let mut superclasses = vec![];
-    elaborate_superclasses(state, context, constraint, &mut superclasses)?;
+    constraint::elaborate_superclasses(state, context, constraint, &mut superclasses)?;
     Ok(superclasses
         .into_iter()
-        .filter_map(|constraint| constraint_application(state, constraint))
+        .filter_map(|constraint| constraint::constraint_application(state, constraint))
         .collect())
 }
 

@@ -20,7 +20,7 @@ use rustc_hash::{FxHashMap, FxHashSet};
 use crate::algorithm::fold::{FoldAction, TypeFold, fold_type};
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::visit::CollectFileReferences;
-use crate::algorithm::{transfer, unification};
+use crate::algorithm::{toolkit, transfer, unification};
 use crate::core::{Class, Instance, InstanceKind, Variable, debruijn};
 use crate::{CheckedModule, ExternalQueries, Type, TypeId};
 
@@ -120,25 +120,11 @@ pub(crate) fn constraint_application(
     state: &mut CheckState,
     id: TypeId,
 ) -> Option<ConstraintApplication> {
-    let mut arguments = vec![];
-    let mut current_id = id;
-    loop {
-        match state.storage[current_id] {
-            Type::Application(function, argument) => {
-                arguments.push(argument);
-                current_id = state.normalize_type(function);
-            }
-            Type::KindApplication(function, _) => {
-                current_id = state.normalize_type(function);
-            }
-            Type::Constructor(file_id, item_id) => {
-                arguments.reverse();
-                return Some(ConstraintApplication { file_id, item_id, arguments });
-            }
-            _ => {
-                return None;
-            }
-        }
+    let (constructor, arguments) = toolkit::extract_type_application(state, id);
+    if let Type::Constructor(file_id, item_id) = state.storage[constructor] {
+        Some(ConstraintApplication { file_id, item_id, arguments })
+    } else {
+        None
     }
 }
 
