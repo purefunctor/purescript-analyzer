@@ -7,3 +7,12 @@ identity :: forall (k :: Type) (a :: Type) (b :: Type) (r :: k). TypeEq a b r =>
 
 Types
 TypeEq :: forall (k :: Type). Type -> Type -> k -> Constraint
+
+Classes
+class TypeEq (&1 :: Type) (&2 :: Type) (&3 :: &0)
+
+Instances
+instance TypeEq (Int :: Type) (Int :: Type) (Int :: Type)
+  chain: 0
+instance TypeEq (Boolean :: Type) (Boolean :: Type) (Boolean :: Type)
+  chain: 0

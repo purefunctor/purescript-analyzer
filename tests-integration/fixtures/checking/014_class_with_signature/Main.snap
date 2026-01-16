@@ -7,3 +7,6 @@ map :: forall (f :: Type -> Type) (a :: Type) (b :: Type). Functor f => (a -> b)
 
 Types
 Functor :: (Type -> Type) -> Constraint
+
+Classes
+class Functor (&0 :: Type -> Type)

@@ -1,0 +1,11 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+
+Types
+Effect :: Type -> Type
+
+Roles
+Effect = [Representational]

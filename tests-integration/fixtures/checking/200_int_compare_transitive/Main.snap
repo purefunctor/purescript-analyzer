@@ -1,0 +1,70 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+Proxy :: forall (k :: Type) (a :: k). Proxy @k a
+assertLesser ::
+  forall (l :: Int) (r :: Int). Compare l r LT => Proxy @(Row Int) ( left :: l, right :: r )
+assertGreater ::
+  forall (l :: Int) (r :: Int). Compare l r GT => Proxy @(Row Int) ( left :: l, right :: r )
+assertEqual ::
+  forall (l :: Int) (r :: Int). Compare l r EQ => Proxy @(Row Int) ( left :: l, right :: r )
+symmLt :: forall (m :: Int) (n :: Int). Compare m n GT => Proxy @(Row Int) ( left :: n, right :: m )
+symmGt :: forall (m :: Int) (n :: Int). Compare m n LT => Proxy @(Row Int) ( left :: n, right :: m )
+symmEq :: forall (m :: Int) (n :: Int). Compare m n EQ => Proxy @(Row Int) ( left :: n, right :: m )
+reflEq :: forall (n :: Int). Proxy @(Row Int) ( left :: n, right :: n )
+transLt ::
+  forall (m :: Int) (n :: Int) (p :: Int).
+    Compare m n LT => Compare n p LT => Proxy @Int n -> Proxy @(Row Int) ( left :: m, right :: p )
+transLtEq ::
+  forall (m :: Int) (n :: Int) (p :: Int).
+    Compare m n LT => Compare n p EQ => Proxy @Int n -> Proxy @(Row Int) ( left :: m, right :: p )
+transEqLt ::
+  forall (m :: Int) (n :: Int) (p :: Int).
+    Compare m n EQ => Compare n p LT => Proxy @Int n -> Proxy @(Row Int) ( left :: m, right :: p )
+transGt ::
+  forall (m :: Int) (n :: Int) (p :: Int).
+    Compare m n GT => Compare n p GT => Proxy @Int n -> Proxy @(Row Int) ( left :: m, right :: p )
+transGtEq ::
+  forall (m :: Int) (n :: Int) (p :: Int).
+    Compare m n GT => Compare n p EQ => Proxy @Int n -> Proxy @(Row Int) ( left :: m, right :: p )
+transEqGt ::
+  forall (m :: Int) (n :: Int) (p :: Int).
+    Compare m n EQ => Compare n p GT => Proxy @Int n -> Proxy @(Row Int) ( left :: m, right :: p )
+transEq ::
+  forall (m :: Int) (n :: Int) (p :: Int).
+    Compare m n EQ => Compare n p EQ => Proxy @Int n -> Proxy @(Row Int) ( left :: m, right :: p )
+transSymmLt ::
+  forall (m :: Int) (n :: Int) (p :: Int).
+    Compare n m GT => Compare n p LT => Proxy @Int n -> Proxy @(Row Int) ( left :: m, right :: p )
+transSymmLtEq ::
+  forall (m :: Int) (n :: Int) (p :: Int).
+    Compare n m GT => Compare n p EQ => Proxy @Int n -> Proxy @(Row Int) ( left :: m, right :: p )
+transSymmEqLt ::
+  forall (m :: Int) (n :: Int) (p :: Int).
+    Compare n m EQ => Compare n p LT => Proxy @Int n -> Proxy @(Row Int) ( left :: m, right :: p )
+transSymmGt ::
+  forall (m :: Int) (n :: Int) (p :: Int).
+    Compare n m LT => Compare n p GT => Proxy @Int n -> Proxy @(Row Int) ( left :: m, right :: p )
+transSymmGtEq ::
+  forall (m :: Int) (n :: Int) (p :: Int).
+    Compare n m LT => Compare n p EQ => Proxy @Int n -> Proxy @(Row Int) ( left :: m, right :: p )
+transSymmEqGt ::
+  forall (m :: Int) (n :: Int) (p :: Int).
+    Compare n m EQ => Compare n p GT => Proxy @Int n -> Proxy @(Row Int) ( left :: m, right :: p )
+transSymmEq ::
+  forall (m :: Int) (n :: Int) (p :: Int).
+    Compare n m EQ => Compare n p EQ => Proxy @Int n -> Proxy @(Row Int) ( left :: m, right :: p )
+
+Types
+Proxy :: forall (k :: Type). k -> Type
+
+Data
+Proxy
+  Quantified = :0
+  Kind = :1
+
+
+Roles
+Proxy = [Phantom]

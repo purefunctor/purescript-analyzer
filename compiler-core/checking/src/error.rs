@@ -25,10 +25,30 @@ pub enum ErrorKind {
     AmbiguousConstraint {
         constraint: TypeId,
     },
+    CannotDeriveClass {
+        class_file: files::FileId,
+        class_id: indexing::TypeItemId,
+    },
+    CannotDeriveForType {
+        type_id: TypeId,
+    },
+    ContravariantOccurrence {
+        type_id: TypeId,
+    },
+    CovariantOccurrence {
+        type_id: TypeId,
+    },
     CannotUnify {
         t1: TypeId,
         t2: TypeId,
     },
+    DeriveInvalidArity {
+        class_file: files::FileId,
+        class_id: indexing::TypeItemId,
+        expected: usize,
+        actual: usize,
+    },
+    DeriveMissingFunctor,
     EmptyAdoBlock,
     EmptyDoBlock,
     InstanceHeadMismatch {
@@ -43,6 +63,9 @@ pub enum ErrorKind {
     },
     InvalidTypeOperator {
         id: TypeId,
+    },
+    ExpectedNewtype {
+        type_id: TypeId,
     },
     NoInstanceFound {
         constraint: TypeId,
@@ -63,6 +86,22 @@ pub enum ErrorKind {
         id: lowering::TypeId,
         expected: u32,
         actual: u32,
+    },
+    InvalidRoleDeclaration {
+        type_id: indexing::TypeItemId,
+        parameter_index: usize,
+        declared: crate::core::Role,
+        inferred: crate::core::Role,
+    },
+    CoercibleConstructorNotInScope {
+        file_id: files::FileId,
+        item_id: indexing::TypeItemId,
+    },
+    CustomWarning {
+        message_id: u32,
+    },
+    CustomFailure {
+        message_id: u32,
     },
 }
 

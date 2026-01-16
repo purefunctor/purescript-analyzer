@@ -10,5 +10,14 @@ forceSolve :: { invalid :: Proxy @Symbol "999" }
 Types
 Proxy :: forall (k :: Type). k -> Type
 
+Data
+Proxy
+  Quantified = :0
+  Kind = :1
+
+
+Roles
+Proxy = [Phantom]
+
 Errors
 NoInstanceFound { ToString 42 "999" } at [TermDeclaration(Idx::<TermItem>(2))]

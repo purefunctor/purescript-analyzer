@@ -1,0 +1,21 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+Wrapper :: forall (a :: Type). a -> Wrapper a
+
+Types
+Wrapper :: Type -> Type
+
+Data
+Wrapper
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+Wrapper = [Representational]
+
+Derived
+derive Newtype (Wrapper &0 :: Type) (&0 :: Type)

@@ -1,0 +1,29 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+Age :: Int -> Age
+Years :: Age -> Years
+coerceTransitive :: Int -> Years
+unwrapTransitive :: Years -> Int
+step1 :: Int -> Age
+step2 :: Age -> Years
+
+Types
+Age :: Type
+Years :: Type
+
+Data
+Age
+  Quantified = :0
+  Kind = :0
+
+Years
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+Age = []
+Years = []

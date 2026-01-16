@@ -1,0 +1,32 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+Wrap :: forall (t4 :: Type) (f :: t4 -> Type) (a :: t4). f a -> Wrap @t4 f a
+WrapNoFunctor :: forall (t10 :: Type) (f :: t10 -> Type) (a :: t10). f a -> WrapNoFunctor @t10 f a
+
+Types
+Wrap :: forall (t4 :: Type). (t4 -> Type) -> t4 -> Type
+WrapNoFunctor :: forall (t10 :: Type). (t10 -> Type) -> t10 -> Type
+
+Data
+Wrap
+  Quantified = :1
+  Kind = :0
+
+WrapNoFunctor
+  Quantified = :1
+  Kind = :0
+
+
+Roles
+Wrap = [Representational, Nominal]
+WrapNoFunctor = [Representational, Nominal]
+
+Derived
+derive Functor &0 => Functor (Wrap @Type &0 :: Type -> Type)
+derive Functor (WrapNoFunctor @Type &0 :: Type -> Type)
+
+Errors
+NoInstanceFound { Functor &0 } at [TermDeclaration(Idx::<TermItem>(3))]

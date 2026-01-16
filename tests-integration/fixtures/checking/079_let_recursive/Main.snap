@@ -13,3 +13,6 @@ mixedRecursion :: Int -> Int
 
 Types
 Void :: Type
+
+Roles
+Void = []

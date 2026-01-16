@@ -1,4 +1,5 @@
 pub mod unification;
+use itertools::Itertools;
 pub use unification::*;
 
 use std::collections::VecDeque;
@@ -9,15 +10,15 @@ use building_types::QueryResult;
 use files::FileId;
 use indexing::{IndexedModule, TermItemId, TypeItemId};
 use lowering::{
-    BinderId, GraphNodeId, ImplicitBindingId, LetBindingNameGroupId, LoweredModule, RecordPunId,
-    TypeVariableBindingId,
+    BinderId, GraphNodeId, GroupedModule, ImplicitBindingId, LetBindingNameGroupId, LoweredModule,
+    RecordPunId, TypeItemIr, TypeVariableBindingId,
 };
 use resolving::ResolvedModule;
 use rustc_hash::FxHashMap;
 use sugar::{Bracketed, Sectioned};
 
-use crate::algorithm::{constraint, quantify, transfer};
-use crate::core::{Class, ForallBinder, Synonym, Type, TypeId, TypeInterner, debruijn};
+use crate::algorithm::{constraint, transfer};
+use crate::core::{Type, TypeId, TypeInterner, Variable, debruijn};
 use crate::error::{CheckError, ErrorKind, ErrorStep};
 use crate::{CheckedModule, ExternalQueries};
 
@@ -31,6 +32,13 @@ pub struct TypeScope {
 impl TypeScope {
     pub fn bind_forall(&mut self, id: TypeVariableBindingId, kind: TypeId) -> debruijn::Level {
         let variable = debruijn::Variable::Forall(id);
+        let level = self.bound.bind(variable);
+        self.kinds.insert(level, kind);
+        level
+    }
+
+    pub fn bind_core(&mut self, kind: TypeId) -> debruijn::Level {
+        let variable = debruijn::Variable::Core;
         let level = self.bound.bind(variable);
         self.kinds.insert(level, kind);
         level
@@ -289,22 +297,13 @@ pub struct CheckedConstructor {
     pub arguments: Vec<TypeId>,
 }
 
-#[derive(Clone)]
-pub struct CheckedDataLike {
-    pub kind_variables: Vec<ForallBinder>,
-    pub type_variables: Vec<ForallBinder>,
-    pub result_kind: TypeId,
-    pub constructors: Vec<CheckedConstructor>,
-}
+#[derive(Clone, Copy)]
+pub struct BindingGroupType(pub TypeId);
 
 #[derive(Default)]
 pub struct BindingGroupContext {
     pub terms: FxHashMap<TermItemId, TypeId>,
-    pub types: FxHashMap<TypeItemId, TypeId>,
-    pub synonyms: FxHashMap<TypeItemId, Synonym>,
-    pub classes: FxHashMap<TypeItemId, Class>,
-    pub residual: FxHashMap<TermItemId, Vec<TypeId>>,
-    pub data: FxHashMap<TypeItemId, CheckedDataLike>,
+    pub types: FxHashMap<TypeItemId, BindingGroupType>,
 }
 
 impl BindingGroupContext {
@@ -313,15 +312,7 @@ impl BindingGroupContext {
     }
 
     pub fn lookup_type(&self, id: TypeItemId) -> Option<TypeId> {
-        self.types.get(&id).copied()
-    }
-
-    pub fn lookup_synonym(&self, id: TypeItemId) -> Option<Synonym> {
-        self.synonyms.get(&id).copied()
-    }
-
-    pub fn lookup_class(&self, id: TypeItemId) -> Option<Class> {
-        self.classes.get(&id).cloned()
+        self.types.get(&id).map(|binding| binding.0)
     }
 }
 
@@ -340,18 +331,27 @@ where
     pub queries: &'a Q,
     pub prim: PrimCore,
     pub prim_int: PrimIntCore,
+    pub prim_boolean: PrimBooleanCore,
     pub prim_ordering: PrimOrderingCore,
     pub prim_symbol: PrimSymbolCore,
     pub prim_row: PrimRowCore,
     pub prim_row_list: PrimRowListCore,
+    pub prim_coerce: PrimCoerceCore,
+    pub prim_type_error: PrimTypeErrorCore,
+    pub known_types: KnownTypesCore,
+    pub known_reflectable: KnownReflectableCore,
+    pub known_generic: Option<KnownGeneric>,
 
     pub id: FileId,
     pub indexed: Arc<IndexedModule>,
     pub lowered: Arc<LoweredModule>,
+    pub grouped: Arc<GroupedModule>,
     pub bracketed: Arc<Bracketed>,
     pub sectioned: Arc<Sectioned>,
+    pub resolved: Arc<ResolvedModule>,
 
     pub prim_indexed: Arc<IndexedModule>,
+    pub prim_resolved: Arc<ResolvedModule>,
 }
 
 impl<'a, Q> CheckContext<'a, Q>
@@ -365,30 +365,48 @@ where
     ) -> QueryResult<CheckContext<'a, Q>> {
         let indexed = queries.indexed(id)?;
         let lowered = queries.lowered(id)?;
+        let grouped = queries.grouped(id)?;
         let bracketed = queries.bracketed(id)?;
         let sectioned = queries.sectioned(id)?;
         let prim = PrimCore::collect(queries, state)?;
         let prim_int = PrimIntCore::collect(queries, state)?;
+        let prim_boolean = PrimBooleanCore::collect(queries, state)?;
         let prim_ordering = PrimOrderingCore::collect(queries, state)?;
         let prim_symbol = PrimSymbolCore::collect(queries, state)?;
         let prim_row = PrimRowCore::collect(queries, state)?;
         let prim_row_list = PrimRowListCore::collect(queries, state)?;
+        let prim_coerce = PrimCoerceCore::collect(queries)?;
+        let prim_type_error = PrimTypeErrorCore::collect(queries, state)?;
+        let known_types = KnownTypesCore::collect(queries)?;
+        let known_reflectable = KnownReflectableCore::collect(queries, &mut state.storage)?;
+        let known_generic = KnownGeneric::collect(queries, &mut state.storage)?;
+        let resolved = queries.resolved(id)?;
         let prim_id = queries.prim_id();
         let prim_indexed = queries.indexed(prim_id)?;
+        let prim_resolved = queries.resolved(prim_id)?;
         Ok(CheckContext {
             queries,
             prim,
             prim_int,
+            prim_boolean,
             prim_ordering,
             prim_symbol,
             prim_row,
             prim_row_list,
+            prim_coerce,
+            prim_type_error,
+            known_types,
+            known_reflectable,
+            known_generic,
             id,
             indexed,
             lowered,
+            grouped,
             bracketed,
             sectioned,
+            resolved,
             prim_indexed,
+            prim_resolved,
         })
     }
 }
@@ -431,6 +449,7 @@ impl<'r, 's> PrimLookup<'r, 's> {
 
 pub struct PrimCore {
     pub t: TypeId,
+    pub type_to_type: TypeId,
     pub function: TypeId,
     pub array: TypeId,
     pub record: TypeId,
@@ -451,8 +470,12 @@ impl PrimCore {
         let resolved = queries.resolved(queries.prim_id())?;
         let mut lookup = PrimLookup::new(&resolved, &mut state.storage, "Prim");
 
+        let t = lookup.type_constructor("Type");
+        let type_to_type = lookup.intern(Type::Function(t, t));
+
         Ok(PrimCore {
-            t: lookup.type_constructor("Type"),
+            t,
+            type_to_type,
             function: lookup.type_constructor("Function"),
             array: lookup.type_constructor("Array"),
             record: lookup.type_constructor("Record"),
@@ -493,6 +516,30 @@ impl PrimIntCore {
             mul: lookup.type_item("Mul"),
             compare: lookup.type_item("Compare"),
             to_string: lookup.type_item("ToString"),
+        })
+    }
+}
+
+pub struct PrimBooleanCore {
+    pub true_: TypeId,
+    pub false_: TypeId,
+}
+
+impl PrimBooleanCore {
+    fn collect(
+        queries: &impl ExternalQueries,
+        state: &mut CheckState,
+    ) -> QueryResult<PrimBooleanCore> {
+        let file_id = queries
+            .module_file("Prim.Boolean")
+            .unwrap_or_else(|| unreachable!("invariant violated: Prim.Boolean not found"));
+
+        let resolved = queries.resolved(file_id)?;
+        let mut lookup = PrimLookup::new(&resolved, &mut state.storage, "Prim.Boolean");
+
+        Ok(PrimBooleanCore {
+            true_: lookup.type_constructor("True"),
+            false_: lookup.type_constructor("False"),
         })
     }
 }
@@ -606,31 +653,300 @@ impl PrimRowListCore {
     }
 }
 
+pub struct PrimCoerceCore {
+    pub file_id: FileId,
+    pub coercible: TypeItemId,
+}
+
+impl PrimCoerceCore {
+    fn collect(queries: &impl ExternalQueries) -> QueryResult<PrimCoerceCore> {
+        let file_id = queries
+            .module_file("Prim.Coerce")
+            .unwrap_or_else(|| unreachable!("invariant violated: Prim.Coerce not found"));
+
+        let resolved = queries.resolved(file_id)?;
+        let (_, coercible) = resolved
+            .exports
+            .lookup_type("Coercible")
+            .unwrap_or_else(|| unreachable!("invariant violated: Coercible not in Prim.Coerce"));
+
+        Ok(PrimCoerceCore { file_id, coercible })
+    }
+}
+
+pub struct PrimTypeErrorCore {
+    pub file_id: FileId,
+    pub warn: TypeItemId,
+    pub fail: TypeItemId,
+    pub text: TypeId,
+    pub quote: TypeId,
+    pub quote_label: TypeId,
+    pub beside: TypeId,
+    pub above: TypeId,
+}
+
+impl PrimTypeErrorCore {
+    fn collect(queries: &impl ExternalQueries, state: &mut CheckState) -> QueryResult<Self> {
+        let file_id = queries
+            .module_file("Prim.TypeError")
+            .unwrap_or_else(|| unreachable!("invariant violated: Prim.TypeError not found"));
+
+        let resolved = queries.resolved(file_id)?;
+        let mut lookup = PrimLookup::new(&resolved, &mut state.storage, "Prim.TypeError");
+
+        Ok(PrimTypeErrorCore {
+            file_id,
+            warn: lookup.type_item("Warn"),
+            fail: lookup.type_item("Fail"),
+            text: lookup.type_constructor("Text"),
+            quote: lookup.type_constructor("Quote"),
+            quote_label: lookup.type_constructor("QuoteLabel"),
+            beside: lookup.type_constructor("Beside"),
+            above: lookup.type_constructor("Above"),
+        })
+    }
+}
+
+fn fetch_known_type(
+    queries: &impl ExternalQueries,
+    m: &str,
+    n: &str,
+) -> QueryResult<Option<(FileId, TypeItemId)>> {
+    let Some(file_id) = queries.module_file(m) else {
+        return Ok(None);
+    };
+    let resolved = queries.resolved(file_id)?;
+    let Some((file_id, type_id)) = resolved.exports.lookup_type(n) else {
+        return Ok(None);
+    };
+    Ok(Some((file_id, type_id)))
+}
+
+fn fetch_known_constructor(
+    queries: &impl ExternalQueries,
+    storage: &mut TypeInterner,
+    m: &str,
+    n: &str,
+) -> QueryResult<Option<TypeId>> {
+    let Some(file_id) = queries.module_file(m) else {
+        return Ok(None);
+    };
+    let resolved = queries.resolved(file_id)?;
+    let Some((file_id, type_id)) = resolved.exports.lookup_type(n) else {
+        return Ok(None);
+    };
+    Ok(Some(storage.intern(Type::Constructor(file_id, type_id))))
+}
+
+pub struct KnownTypesCore {
+    pub eq: Option<(FileId, TypeItemId)>,
+    pub eq1: Option<(FileId, TypeItemId)>,
+    pub ord: Option<(FileId, TypeItemId)>,
+    pub ord1: Option<(FileId, TypeItemId)>,
+    pub functor: Option<(FileId, TypeItemId)>,
+    pub bifunctor: Option<(FileId, TypeItemId)>,
+    pub contravariant: Option<(FileId, TypeItemId)>,
+    pub profunctor: Option<(FileId, TypeItemId)>,
+    pub foldable: Option<(FileId, TypeItemId)>,
+    pub bifoldable: Option<(FileId, TypeItemId)>,
+    pub traversable: Option<(FileId, TypeItemId)>,
+    pub bitraversable: Option<(FileId, TypeItemId)>,
+    pub newtype: Option<(FileId, TypeItemId)>,
+    pub generic: Option<(FileId, TypeItemId)>,
+}
+
+impl KnownTypesCore {
+    fn collect(queries: &impl ExternalQueries) -> QueryResult<KnownTypesCore> {
+        let eq = fetch_known_type(queries, "Data.Eq", "Eq")?;
+        let eq1 = fetch_known_type(queries, "Data.Eq", "Eq1")?;
+        let ord = fetch_known_type(queries, "Data.Ord", "Ord")?;
+        let ord1 = fetch_known_type(queries, "Data.Ord", "Ord1")?;
+        let functor = fetch_known_type(queries, "Data.Functor", "Functor")?;
+        let bifunctor = fetch_known_type(queries, "Data.Bifunctor", "Bifunctor")?;
+        let contravariant =
+            fetch_known_type(queries, "Data.Functor.Contravariant", "Contravariant")?;
+        let profunctor = fetch_known_type(queries, "Data.Profunctor", "Profunctor")?;
+        let foldable = fetch_known_type(queries, "Data.Foldable", "Foldable")?;
+        let bifoldable = fetch_known_type(queries, "Data.Bifoldable", "Bifoldable")?;
+        let traversable = fetch_known_type(queries, "Data.Traversable", "Traversable")?;
+        let bitraversable = fetch_known_type(queries, "Data.Bitraversable", "Bitraversable")?;
+        let newtype = fetch_known_type(queries, "Data.Newtype", "Newtype")?;
+        let generic = fetch_known_type(queries, "Data.Generic.Rep", "Generic")?;
+        Ok(KnownTypesCore {
+            eq,
+            eq1,
+            ord,
+            ord1,
+            functor,
+            bifunctor,
+            contravariant,
+            profunctor,
+            foldable,
+            bifoldable,
+            traversable,
+            bitraversable,
+            newtype,
+            generic,
+        })
+    }
+}
+
+pub struct KnownReflectableCore {
+    pub is_symbol: Option<(FileId, TypeItemId)>,
+    pub reflectable: Option<(FileId, TypeItemId)>,
+    pub ordering: Option<TypeId>,
+}
+
+impl KnownReflectableCore {
+    fn collect(
+        queries: &impl ExternalQueries,
+        storage: &mut TypeInterner,
+    ) -> QueryResult<KnownReflectableCore> {
+        let is_symbol = fetch_known_type(queries, "Data.Symbol", "IsSymbol")?;
+        let reflectable = fetch_known_type(queries, "Data.Reflectable", "Reflectable")?;
+        let ordering = fetch_known_constructor(queries, storage, "Data.Ordering", "Ordering")?;
+        Ok(KnownReflectableCore { is_symbol, reflectable, ordering })
+    }
+}
+
+pub struct KnownGeneric {
+    pub no_constructors: TypeId,
+    pub constructor: TypeId,
+    pub sum: TypeId,
+    pub product: TypeId,
+    pub no_arguments: TypeId,
+    pub argument: TypeId,
+}
+
+impl KnownGeneric {
+    fn collect(
+        queries: &impl ExternalQueries,
+        storage: &mut TypeInterner,
+    ) -> QueryResult<Option<KnownGeneric>> {
+        let Some(no_constructors) =
+            fetch_known_constructor(queries, storage, "Data.Generic.Rep", "NoConstructors")?
+        else {
+            return Ok(None);
+        };
+        let Some(constructor) =
+            fetch_known_constructor(queries, storage, "Data.Generic.Rep", "Constructor")?
+        else {
+            return Ok(None);
+        };
+        let Some(sum) = fetch_known_constructor(queries, storage, "Data.Generic.Rep", "Sum")?
+        else {
+            return Ok(None);
+        };
+        let Some(product) =
+            fetch_known_constructor(queries, storage, "Data.Generic.Rep", "Product")?
+        else {
+            return Ok(None);
+        };
+        let Some(no_arguments) =
+            fetch_known_constructor(queries, storage, "Data.Generic.Rep", "NoArguments")?
+        else {
+            return Ok(None);
+        };
+        let Some(argument) =
+            fetch_known_constructor(queries, storage, "Data.Generic.Rep", "Argument")?
+        else {
+            return Ok(None);
+        };
+        Ok(Some(KnownGeneric {
+            no_constructors,
+            constructor,
+            sum,
+            product,
+            no_arguments,
+            argument,
+        }))
+    }
+}
+
 impl CheckState {
-    pub fn term_binding_group<Q>(
+    /// Executes the given closure with a term binding group in scope.
+    ///
+    /// This inserts unification variables for the given term items such that
+    /// recursive or mutually recursive declarations can be checked together.
+    pub fn with_term_group<Q, F, T>(
         &mut self,
         context: &CheckContext<Q>,
         group: impl IntoIterator<Item = TermItemId>,
-    ) where
+        f: F,
+    ) -> T
+    where
         Q: ExternalQueries,
+        F: FnOnce(&mut Self) -> T,
     {
         for item in group {
-            let t = self.fresh_unification_type(context);
-            self.binding_group.terms.insert(item, t);
+            if !self.checked.terms.contains_key(&item) {
+                let t = self.fresh_unification_type(context);
+                self.binding_group.terms.insert(item, t);
+            }
         }
+
+        let result = f(self);
+        self.binding_group.terms.clear();
+        result
     }
 
-    pub fn type_binding_group<Q>(
+    /// Executes the given closure with a type binding group in scope.
+    ///
+    /// This inserts unification variables for the given type items such that
+    /// recursive or mutually recursive declarations can be checked together.
+    pub fn with_type_group<Q, F, T>(
         &mut self,
         context: &CheckContext<Q>,
-        group: impl IntoIterator<Item = TypeItemId>,
-    ) where
+        group: impl AsRef<[TypeItemId]>,
+        f: F,
+    ) -> T
+    where
         Q: ExternalQueries,
+        F: FnOnce(&mut Self) -> T,
     {
-        for item in group {
-            let t = self.fresh_unification_type(context);
-            self.binding_group.types.insert(item, t);
+        let needs_pending = group.as_ref().iter().filter(|&&item_id| {
+            if let Some(TypeItemIr::Operator { .. }) = context.lowered.info.get_type_item(item_id) {
+                return false;
+            }
+            if self.checked.types.contains_key(&item_id) {
+                return false;
+            }
+            true
+        });
+
+        for item in needs_pending.copied().collect_vec() {
+            let kind = self.fresh_unification_type(context);
+            self.binding_group.types.insert(item, BindingGroupType(kind));
         }
+
+        let operators = group.as_ref().iter().filter_map(|&item_id| {
+            let TypeItemIr::Operator { resolution, .. } =
+                context.lowered.info.get_type_item(item_id)?
+            else {
+                return None;
+            };
+            let resolution = resolution.as_ref()?;
+            Some((item_id, *resolution))
+        });
+
+        for (operator_id, (file_id, item_id)) in operators {
+            debug_assert!(
+                file_id == context.id && group.as_ref().contains(&item_id),
+                "invariant violated: expected local target for operator"
+            );
+
+            let kind = self.binding_group.lookup_type(item_id).or_else(|| {
+                let kind = self.checked.types.get(&item_id)?;
+                Some(transfer::localize(self, context, *kind))
+            });
+
+            let kind = kind.expect("invariant violated: expected kind for operator target");
+            self.binding_group.types.insert(operator_id, BindingGroupType(kind));
+        }
+
+        let result = f(self);
+        self.binding_group.types.clear();
+        result
     }
 
     pub fn solve_constraints<Q>(&mut self, context: &CheckContext<Q>) -> QueryResult<Vec<TypeId>>
@@ -639,57 +955,6 @@ impl CheckState {
     {
         let (wanted, given) = self.constraints.take();
         constraint::solve_constraints(self, context, wanted, given)
-    }
-
-    pub fn commit_binding_group<Q>(&mut self, context: &CheckContext<Q>) -> QueryResult<()>
-    where
-        Q: ExternalQueries,
-    {
-        let mut residuals = mem::take(&mut self.binding_group.residual);
-        for (item_id, type_id) in mem::take(&mut self.binding_group.terms) {
-            let constraints = residuals.remove(&item_id).unwrap_or_default();
-            if let Some(result) =
-                quantify::quantify_with_constraints(self, context, type_id, constraints)?
-            {
-                self.with_error_step(ErrorStep::TermDeclaration(item_id), |this| {
-                    for constraint in result.ambiguous {
-                        let constraint = transfer::globalize(this, context, constraint);
-                        this.insert_error(ErrorKind::AmbiguousConstraint { constraint });
-                    }
-                    for constraint in result.unsatisfied {
-                        let constraint = transfer::globalize(this, context, constraint);
-                        this.insert_error(ErrorKind::NoInstanceFound { constraint });
-                    }
-                });
-
-                let type_id = transfer::globalize(self, context, result.quantified);
-                self.checked.terms.insert(item_id, type_id);
-            }
-        }
-
-        let mut classes = mem::take(&mut self.binding_group.classes);
-        for (item_id, type_id) in mem::take(&mut self.binding_group.types) {
-            if let Some((quantified_type, quantified_count)) = quantify::quantify(self, type_id) {
-                if let Some(mut class) = classes.remove(&item_id) {
-                    class.quantified_variables = quantified_count;
-                    self.checked.classes.insert(item_id, class);
-                }
-                let type_id = transfer::globalize(self, context, quantified_type);
-                self.checked.types.insert(item_id, type_id);
-            }
-        }
-
-        for (item_id, mut synonym) in mem::take(&mut self.binding_group.synonyms) {
-            if let Some((synonym_type, quantified_variables)) =
-                quantify::quantify(self, synonym.synonym_type)
-            {
-                synonym.quantified_variables = quantified_variables;
-                synonym.synonym_type = transfer::globalize(self, context, synonym_type);
-                self.checked.synonyms.insert(item_id, synonym);
-            }
-        }
-
-        Ok(())
     }
 
     /// Executes an action with an [`ErrorStep`] in scope.
@@ -740,6 +1005,14 @@ impl CheckState {
         Q: ExternalQueries,
     {
         self.fresh_unification_kinded(context.prim.t)
+    }
+
+    /// Creates a fresh skolem variable with the provided kind.
+    pub fn fresh_skolem_kinded(&mut self, kind: TypeId) -> TypeId {
+        let domain = self.type_scope.size();
+        let level = debruijn::Level(domain.0);
+        let skolem = Variable::Skolem(level, kind);
+        self.storage.intern(Type::Variable(skolem))
     }
 }
 

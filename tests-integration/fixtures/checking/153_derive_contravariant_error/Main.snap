@@ -1,0 +1,33 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+Identity :: forall (a :: Type). a -> Identity a
+Producer :: forall (a :: Type). (Int -> a) -> Producer a
+
+Types
+Identity :: Type -> Type
+Producer :: Type -> Type
+
+Data
+Identity
+  Quantified = :0
+  Kind = :0
+
+Producer
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+Identity = [Representational]
+Producer = [Representational]
+
+Derived
+derive Contravariant (Identity :: Type -> Type)
+derive Contravariant (Producer :: Type -> Type)
+
+Errors
+CovariantOccurrence { type_id: Id<checking::core::Type>(33) } at [TermDeclaration(Idx::<TermItem>(1))]
+CovariantOccurrence { type_id: Id<checking::core::Type>(33) } at [TermDeclaration(Idx::<TermItem>(3))]

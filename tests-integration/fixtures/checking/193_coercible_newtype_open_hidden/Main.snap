@@ -1,0 +1,12 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+coerceOpen :: Int -> HiddenAge
+
+Types
+
+Errors
+CoercibleConstructorNotInScope { file_id: Idx::<File>(30), item_id: Idx::<TypeItem>(0) } at [TermDeclaration(Idx::<TermItem>(0))]
+NoInstanceFound { Coercible @Type Int HiddenAge } at [TermDeclaration(Idx::<TermItem>(0))]

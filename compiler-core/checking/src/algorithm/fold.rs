@@ -5,9 +5,7 @@ use crate::core::{ForallBinder, RowType, Type, TypeId};
 
 /// Controls behavior during type folding.
 pub enum FoldAction {
-    /// Replace this node entirely (skip recursion)
     Replace(TypeId),
-    /// Continue with default recursion
     Continue,
 }
 

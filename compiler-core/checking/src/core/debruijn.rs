@@ -151,6 +151,11 @@ impl Bound {
         self.inner.get(index as usize).copied()
     }
 
+    /// Returns `true` if the variable at `level` was implicitly bound.
+    pub fn is_implicit(&self, level: Level) -> bool {
+        matches!(self.get_level(level), Some(Variable::Implicit { .. }))
+    }
+
     pub fn iter(&self) -> impl DoubleEndedIterator<Item = (Level, Variable)> {
         self.inner.iter().enumerate().map(|(index, variable)| (Level(index as u32), *variable))
     }

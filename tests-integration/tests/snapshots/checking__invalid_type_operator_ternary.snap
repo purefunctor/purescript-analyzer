@@ -7,10 +7,6 @@ expression: checked.errors
         kind: InvalidTypeOperator {
             id: Id<checking::core::Type>(47),
         },
-        step: [
-            TypeDeclaration(
-                Idx::<TypeItem>(1),
-            ),
-        ],
+        step: [],
     },
 ]

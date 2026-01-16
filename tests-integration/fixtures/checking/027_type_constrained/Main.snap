@@ -14,3 +14,7 @@ Showable = Show Int => Int
   Quantified = :0
   Kind = :0
   Type = :0
+
+
+Classes
+class Show (&0 :: Type)

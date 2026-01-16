@@ -1,0 +1,9 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+coerceQualified :: Int -> Age
+unwrapQualified :: Age -> Int
+
+Types

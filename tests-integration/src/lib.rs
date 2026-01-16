@@ -37,6 +37,14 @@ pub fn load_compiler(folder: &Path) -> (QueryEngine, Files) {
     let mut engine = QueryEngine::default();
     let mut files = Files::default();
     prim::configure(&mut engine, &mut files);
+
+    if folder.starts_with("fixtures/checking/") {
+        let prelude = Path::new("fixtures/checking/prelude");
+        load_folder(prelude).for_each(|path| {
+            load_file(&mut engine, &mut files, &path);
+        });
+    }
+
     load_folder(folder).for_each(|path| {
         load_file(&mut engine, &mut files, &path);
     });

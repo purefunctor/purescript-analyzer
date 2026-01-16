@@ -8,8 +8,8 @@ use std::sync::Arc;
 
 use building_types::{QueryProxy, QueryResult};
 use files::FileId;
-use indexing::{IndexedModule, InstanceId, TermItemId, TypeItemId};
-use lowering::LoweredModule;
+use indexing::{DeriveId, IndexedModule, InstanceId, TermItemId, TypeItemId};
+use lowering::{GroupedModule, LoweredModule};
 use resolving::ResolvedModule;
 use rustc_hash::FxHashMap;
 
@@ -19,6 +19,7 @@ pub trait ExternalQueries:
     QueryProxy<
         Indexed = Arc<IndexedModule>,
         Lowered = Arc<LoweredModule>,
+        Grouped = Arc<GroupedModule>,
         Resolved = Arc<ResolvedModule>,
         Bracketed = Arc<sugar::Bracketed>,
         Sectioned = Arc<sugar::Sectioned>,
@@ -38,9 +39,13 @@ pub struct CheckedModule {
     pub operators: FxHashMap<TypeItemId, core::Operator>,
     pub synonyms: FxHashMap<TypeItemId, core::Synonym>,
     pub instances: FxHashMap<InstanceId, core::Instance>,
+    pub derived: FxHashMap<DeriveId, core::Instance>,
     pub classes: FxHashMap<TypeItemId, core::Class>,
+    pub data: FxHashMap<TypeItemId, core::DataLike>,
+    pub roles: FxHashMap<TypeItemId, Arc<[core::Role]>>,
 
     pub errors: Vec<CheckError>,
+    pub custom_messages: Vec<String>,
 }
 
 impl CheckedModule {
@@ -58,6 +63,14 @@ impl CheckedModule {
 
     pub fn lookup_class(&self, id: TypeItemId) -> Option<core::Class> {
         self.classes.get(&id).cloned()
+    }
+
+    pub fn lookup_data(&self, id: TypeItemId) -> Option<core::DataLike> {
+        self.data.get(&id).copied()
+    }
+
+    pub fn lookup_roles(&self, id: TypeItemId) -> Option<Arc<[core::Role]>> {
+        self.roles.get(&id).cloned()
     }
 }
 

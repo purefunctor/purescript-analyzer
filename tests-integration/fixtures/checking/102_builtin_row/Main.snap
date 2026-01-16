@@ -82,3 +82,12 @@ solveRowToList ::
 
 Types
 Proxy :: forall (k :: Type). k -> Type
+
+Data
+Proxy
+  Quantified = :0
+  Kind = :1
+
+
+Roles
+Proxy = [Phantom]

@@ -6,7 +6,7 @@ use indexing::TypeItemId;
 
 use crate::ExternalQueries;
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::{kind, operator};
+use crate::algorithm::{kind, operator, toolkit};
 use crate::core::{Type, TypeId};
 
 pub fn infer_operator_chain_kind<Q>(
@@ -30,7 +30,7 @@ where
     Q: ExternalQueries,
 {
     let operator_kind = kind::lookup_file_type(state, context, file_id, type_id)?;
-    let operator_kind = operator::instantiate_forall(state, operator_kind);
+    let operator_kind = toolkit::instantiate_forall(state, operator_kind);
 
     let operator_kind = state.normalize_type(operator_kind);
     let Type::Function(_, operator_kind) = state.storage[operator_kind] else {

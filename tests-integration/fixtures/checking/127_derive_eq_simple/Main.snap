@@ -1,0 +1,39 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+Proxy :: forall (t0 :: Type) (a :: t0). Proxy @t0 a
+MkNoEq :: NoEq
+MkContainsNoEq :: NoEq -> ContainsNoEq
+
+Types
+Proxy :: forall (t0 :: Type). t0 -> Type
+NoEq :: Type
+ContainsNoEq :: Type
+
+Data
+Proxy
+  Quantified = :1
+  Kind = :0
+
+NoEq
+  Quantified = :0
+  Kind = :0
+
+ContainsNoEq
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+Proxy = [Phantom]
+NoEq = []
+ContainsNoEq = []
+
+Derived
+derive forall (&0 :: Type). Eq (Proxy @&0 &1 :: Type)
+derive Eq (ContainsNoEq :: Type)
+
+Errors
+NoInstanceFound { Eq NoEq } at [TermDeclaration(Idx::<TermItem>(4))]

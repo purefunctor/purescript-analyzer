@@ -10,21 +10,30 @@ negate :: Int -> Int
 test1 :: Int -> Int
 test2 :: Int -> Int
 test3 :: Int -> Int -> Int
-test4 :: forall (t17 :: Type) (t18 :: Row Type). { foo :: t17 | t18 } -> t17
-test5 :: forall (t22 :: Type) (t23 :: Row Type). { foo :: t22 | t23 } -> { foo :: Int | t23 }
-test6 :: forall (t29 :: Type). Boolean -> t29 -> t29 -> t29
+test4 :: forall (t15 :: Type) (t16 :: Row Type). { foo :: t15 | t16 } -> t15
+test5 :: forall (t20 :: Type) (t21 :: Row Type). { foo :: t20 | t21 } -> { foo :: Int | t21 }
+test6 :: forall (t27 :: Type). Boolean -> t27 -> t27 -> t27
 test7 :: Int -> Int
 test8 :: Int -> Int
 test9 :: Int -> Int -> Int
-test10 :: forall (t43 :: Type). ((Int -> Int) -> t43) -> t43
-test11 :: forall (t50 :: Type). t50 -> Array t50
-test12 :: forall (t53 :: Type). t53 -> { foo :: t53 }
-test13 :: forall (t56 :: Type). t56 -> t56
-test14 :: forall (t61 :: Type). t61 -> t61 -> Array t61
-test15 :: forall (t64 :: Type) (t65 :: Type). t64 -> t65 -> { a :: t64, b :: t65 }
-test16 :: forall (t69 :: Type). t69 -> Tuple t69 Int
+test10 :: forall (t41 :: Type). ((Int -> Int) -> t41) -> t41
+test11 :: forall (t48 :: Type). t48 -> Array t48
+test12 :: forall (t51 :: Type). t51 -> { foo :: t51 }
+test13 :: forall (t54 :: Type). t54 -> t54
+test14 :: forall (t59 :: Type). t59 -> t59 -> Array t59
+test15 :: forall (t62 :: Type) (t63 :: Type). t62 -> t63 -> { a :: t62, b :: t63 }
+test16 :: forall (t67 :: Type). t67 -> Tuple t67 Int
 test17 :: Tuple String Int
 test18 :: Int -> Int
 
 Types
 Tuple :: Type -> Type -> Type
+
+Data
+Tuple
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+Tuple = [Representational, Representational]

@@ -7,3 +7,12 @@ Bar :: Foo
 
 Types
 Foo :: Type
+
+Data
+Foo
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+Foo = []

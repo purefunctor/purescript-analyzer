@@ -8,3 +8,12 @@ test :: Boolean
 
 Types
 TypeEq :: Type -> Type -> Type -> Constraint
+
+Classes
+class TypeEq (&0 :: Type) (&1 :: Type) (&2 :: Type)
+
+Instances
+instance TypeEq (Int :: Type) (Int :: Type) (Boolean :: Type)
+  chain: 0
+instance TypeEq (String :: Type) (String :: Type) (Boolean :: Type)
+  chain: 0

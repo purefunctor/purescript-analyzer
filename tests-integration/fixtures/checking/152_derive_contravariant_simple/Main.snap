@@ -1,0 +1,37 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+Predicate :: forall (a :: Type). (a -> Boolean) -> Predicate a
+Comparison :: forall (a :: Type). (a -> a -> Boolean) -> Comparison a
+Op :: forall (a :: Type) (b :: Type). (b -> a) -> Op a b
+
+Types
+Predicate :: Type -> Type
+Comparison :: Type -> Type
+Op :: Type -> Type -> Type
+
+Data
+Predicate
+  Quantified = :0
+  Kind = :0
+
+Comparison
+  Quantified = :0
+  Kind = :0
+
+Op
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+Predicate = [Representational]
+Comparison = [Representational]
+Op = [Representational, Representational]
+
+Derived
+derive Contravariant (Predicate :: Type -> Type)
+derive Contravariant (Comparison :: Type -> Type)
+derive Contravariant (Op &0 :: Type -> Type)

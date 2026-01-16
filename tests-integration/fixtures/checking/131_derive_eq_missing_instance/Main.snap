@@ -1,0 +1,31 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+MkNoEq :: NoEq
+MkBox :: NoEq -> Box
+
+Types
+NoEq :: Type
+Box :: Type
+
+Data
+NoEq
+  Quantified = :0
+  Kind = :0
+
+Box
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+NoEq = []
+Box = []
+
+Derived
+derive Eq (Box :: Type)
+
+Errors
+NoInstanceFound { Eq NoEq } at [TermDeclaration(Idx::<TermItem>(2))]

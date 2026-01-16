@@ -224,7 +224,11 @@ where
             }
         },
 
-        lowering::TypeKind::Wildcard => Ok(unknown),
+        lowering::TypeKind::Wildcard => {
+            let k = state.fresh_unification_type(context);
+            let t = state.fresh_unification_kinded(k);
+            Ok((t, k))
+        }
 
         lowering::TypeKind::Record { items, tail } => {
             let expected_kind =
@@ -274,7 +278,7 @@ fn infer_implicit_variable<Q: ExternalQueries>(
         let kind = state.fresh_unification(context);
 
         let level = state.type_scope.bind_implicit(implicit.node, implicit.id, kind);
-        let variable = Variable::Implicit(level);
+        let variable = Variable::Bound(level);
 
         state.storage.intern(Type::Variable(variable))
     } else {
@@ -504,7 +508,7 @@ where
         Type::Unification(unification_id) => state.unification.get(unification_id).kind,
 
         Type::Variable(ref variable) => match variable {
-            Variable::Implicit(level) | Variable::Bound(level) => {
+            Variable::Bound(level) => {
                 state.type_scope.kinds.get(*level).copied().unwrap_or(unknown)
             }
             Variable::Skolem(_, kind) => *kind,
@@ -565,7 +569,7 @@ where
     Q: ExternalQueries,
 {
     let type_id = if file_id == context.id {
-        if let Some(&k) = state.binding_group.types.get(&type_id) {
+        if let Some(k) = state.binding_group.lookup_type(type_id) {
             k
         } else if let Some(&k) = state.checked.types.get(&type_id) {
             transfer::localize(state, context, k)

@@ -12,7 +12,7 @@ use itertools::Itertools;
 use petgraph::prelude::DiGraphMap;
 use resolving::ResolvedModule;
 use rowan::ast::AstNode;
-use rustc_hash::{FxBuildHasher, FxHashMap};
+use rustc_hash::{FxBuildHasher, FxHashMap, FxHashSet};
 use smol_str::SmolStr;
 use stabilizing::{ExpectId, StabilizedModule};
 use syntax::cst;
@@ -37,11 +37,10 @@ pub(crate) struct State {
     pub(crate) current_let_binding: Option<LetBindingNameGroupId>,
     pub(crate) current_let_scope: Option<GraphNodeId>,
 
-    pub(crate) term_graph: ItemGraph<TermItemId>,
-    pub(crate) type_graph: ItemGraph<TypeItemId>,
-
-    pub(crate) kind_graph: ItemGraph<TypeItemId>,
-    pub(crate) synonym_graph: ItemGraph<TypeItemId>,
+    pub(crate) term_edges: FxHashSet<(TermItemId, TermItemId)>,
+    pub(crate) type_edges: FxHashSet<(TypeItemId, TypeItemId)>,
+    pub(crate) kind_edges: FxHashSet<(TypeItemId, TypeItemId)>,
+    pub(crate) synonym_edges: FxHashSet<(TypeItemId, TypeItemId)>,
     pub(crate) let_binding_graph: ItemGraph<LetBindingNameGroupId>,
 
     pub(crate) errors: Vec<LoweringError>,
@@ -69,19 +68,16 @@ impl State {
     fn begin_term(&mut self, id: TermItemId) {
         self.current_term = Some(id);
         self.current_type = None;
-        self.term_graph.add_node(id);
     }
 
     fn begin_type(&mut self, id: TypeItemId) {
         self.current_term = None;
         self.current_type = Some(id);
         self.current_synonym = None;
-        self.type_graph.add_node(id);
     }
 
     fn begin_synonym(&mut self, id: TypeItemId) {
         self.current_synonym = Some(id);
-        self.synonym_graph.add_node(id);
     }
 
     fn end_synonym(&mut self) {
@@ -90,7 +86,6 @@ impl State {
 
     fn begin_kind(&mut self, id: TypeItemId) {
         self.current_kind = Some(id);
-        self.kind_graph.add_node(id);
     }
 
     fn end_kind(&mut self) {
@@ -206,7 +201,7 @@ impl State {
         if context.file_id == file_id
             && let Some(current_id) = self.current_term
         {
-            self.term_graph.add_edge(current_id, term_id, ());
+            self.term_edges.insert((current_id, term_id));
         }
 
         Some((file_id, term_id))
@@ -251,16 +246,16 @@ impl State {
         if context.file_id == file_id
             && let Some(current_id) = self.current_type
         {
-            self.type_graph.add_edge(current_id, type_id, ());
+            self.type_edges.insert((current_id, type_id));
 
             if let Some(synonym_id) = self.current_synonym
                 && let TypeItemKind::Synonym { .. } = context.indexed.items[type_id].kind
             {
-                self.synonym_graph.add_edge(synonym_id, type_id, ());
+                self.synonym_edges.insert((synonym_id, type_id));
             }
 
             if let Some(kind_id) = self.current_kind {
-                self.kind_graph.add_edge(kind_id, type_id, ());
+                self.kind_edges.insert((kind_id, type_id));
             }
         }
 
@@ -270,7 +265,13 @@ impl State {
     fn resolve_type_variable(&mut self, id: TypeId, name: &str) -> Option<TypeVariableResolution> {
         let node = self.graph_scope?;
         if let GraphNode::Implicit { collecting, bindings, .. } = &mut self.graph.inner[node] {
-            if *collecting {
+            if let Some(id) = bindings.get(name) {
+                Some(TypeVariableResolution::Implicit(ImplicitTypeVariable {
+                    binding: false,
+                    node,
+                    id,
+                }))
+            } else if *collecting {
                 let id = bindings.bind(name, id);
                 Some(TypeVariableResolution::Implicit(ImplicitTypeVariable {
                     binding: true,
@@ -278,12 +279,7 @@ impl State {
                     id,
                 }))
             } else {
-                let id = bindings.get(name)?;
-                Some(TypeVariableResolution::Implicit(ImplicitTypeVariable {
-                    binding: false,
-                    node,
-                    id,
-                }))
+                None
             }
         } else {
             self.graph.traverse(node).find_map(|(node, graph)| match graph {
@@ -365,6 +361,16 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
         TermItemKind::Derive { id } => {
             let cst = context.stabilized.ast_ptr(*id).and_then(|cst| cst.try_to_node(context.root));
 
+            let newtype = cst.as_ref().map(|cst| cst.newtype_token().is_some()).unwrap_or(false);
+
+            let resolution = cst.as_ref().and_then(|cst| {
+                let head = cst.instance_head()?;
+                let qualified = head.qualified()?;
+                let (qualifier, name) =
+                    recursive::lower_qualified_name(&qualified, cst::QualifiedName::upper)?;
+                state.resolve_type_reference(context, qualifier.as_deref(), &name)
+            });
+
             let arguments = recover! {
                 let head = cst.as_ref()?.instance_head()?;
                 state.push_implicit_scope();
@@ -384,7 +390,7 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
                     .collect()
             };
 
-            let kind = TermItemIr::Derive { constraints, arguments };
+            let kind = TermItemIr::Derive { newtype, constraints, resolution, arguments };
             state.info.term_item.insert(item_id, kind);
         }
 
@@ -403,7 +409,7 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
         TermItemKind::Instance { id } => {
             let cst = context.stabilized.ast_ptr(*id).and_then(|cst| cst.try_to_node(context.root));
 
-            let class_resolution = cst.as_ref().and_then(|cst| {
+            let resolution = cst.as_ref().and_then(|cst| {
                 let head = cst.instance_head()?;
                 let qualified = head.qualified()?;
                 let (qualifier, name) =
@@ -432,15 +438,10 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
 
             let members = recover! {
                 let statements = cst.as_ref()?.instance_statements()?;
-                lower_instance_statements(state, context, &statements, class_resolution)
+                lower_instance_statements(state, context, &statements, resolution)
             };
 
-            let kind = TermItemIr::Instance {
-                constraints,
-                resolution: class_resolution,
-                arguments,
-                members,
-            };
+            let kind = TermItemIr::Instance { constraints, resolution, arguments, members };
             state.info.term_item.insert(item_id, kind);
         }
 
@@ -472,8 +473,6 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
         }
 
         TermItemKind::Value { signature, equations } => {
-            state.term_graph.add_node(item_id);
-
             let signature = signature.and_then(|id| {
                 let cst =
                     context.stabilized.ast_ptr(id).and_then(|cst| cst.try_to_node(context.root))?;

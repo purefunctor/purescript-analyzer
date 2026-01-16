@@ -21,3 +21,7 @@ test3 :: Collector (Tuple Int (Tuple String { y :: Int, z :: String })) { y :: I
 Types
 Collector :: Type -> Type -> Type
 Tuple :: Type -> Type -> Type
+
+Roles
+Collector = [Nominal, Nominal]
+Tuple = [Nominal, Nominal]

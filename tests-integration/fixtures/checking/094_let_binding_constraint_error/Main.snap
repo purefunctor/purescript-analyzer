@@ -11,5 +11,17 @@ Types
 Foo :: Type
 Eq :: Type -> Constraint
 
+Data
+Foo
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+Foo = []
+
+Classes
+class Eq (&0 :: Type)
+
 Errors
 NoInstanceFound { Eq Foo } at [TermDeclaration(Idx::<TermItem>(2))]

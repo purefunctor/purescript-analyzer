@@ -145,6 +145,10 @@ fn run_test(folder: &str, file: &str) {{
     for folder in read_dir(Path::new("./fixtures/checking")) {
         let Some(stem) = folder.file_stem() else { continue };
         let folder_name = converter.convert(stem.to_os_string().into_string().unwrap());
+        // Skip the prelude folder - it's shared setup, not a test
+        if folder_name == "prelude" {
+            continue;
+        }
         writeln!(
             buffer,
             r#"

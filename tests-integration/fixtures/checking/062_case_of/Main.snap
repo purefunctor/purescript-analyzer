@@ -13,7 +13,7 @@ test1' :: Maybe Int -> Int
 test2 :: Maybe Int -> Maybe Int -> Int
 test2' :: Maybe Int -> Maybe Int -> Int
 test3 :: Either Int String -> Int
-test3' :: forall (t51 :: Type). Either Int t51 -> Int
+test3' :: forall (t46 :: Type). Either Int t46 -> Int
 test4 :: Tuple (Maybe Int) (Maybe Int) -> Int
 test4' :: Tuple (Maybe Int) (Maybe Int) -> Int
 
@@ -21,3 +21,22 @@ Types
 Maybe :: Type -> Type
 Either :: Type -> Type -> Type
 Tuple :: Type -> Type -> Type
+
+Data
+Maybe
+  Quantified = :0
+  Kind = :0
+
+Either
+  Quantified = :0
+  Kind = :0
+
+Tuple
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+Maybe = [Representational]
+Either = [Representational, Representational]
+Tuple = [Representational, Representational]

@@ -10,5 +10,14 @@ forceSolve :: { invalid :: Proxy @Ordering LT }
 Types
 Proxy :: forall (k :: Type). k -> Type
 
+Data
+Proxy
+  Quantified = :0
+  Kind = :1
+
+
+Roles
+Proxy = [Phantom]
+
 Errors
 NoInstanceFound { Compare 5 1 LT } at [TermDeclaration(Idx::<TermItem>(2))]

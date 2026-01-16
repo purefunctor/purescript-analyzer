@@ -1,6 +1,8 @@
 #[path = "lowering/generated.rs"]
 mod generated;
 
+use std::iter;
+
 use analyzer::{QueryEngine, prim};
 use files::Files;
 
@@ -41,10 +43,10 @@ type Triple3 a = Triple1 a
 
     engine.set_content(id, content);
 
-    let lowered = engine.lowered(id).unwrap();
+    let groups = engine.grouped(id).unwrap();
 
-    let terms = &lowered.term_scc;
-    let types = &lowered.type_scc;
+    let terms = &groups.term_scc;
+    let types = &groups.type_scc;
 
     insta::assert_debug_snapshot!((terms, types));
 }
@@ -73,10 +75,10 @@ infix 5 type Add as +
 
     engine.set_content(id, content);
 
-    let lowered = engine.lowered(id).unwrap();
+    let groups = engine.grouped(id).unwrap();
 
-    let terms = &lowered.term_scc;
-    let types = &lowered.type_scc;
+    let terms = &groups.term_scc;
+    let types = &groups.type_scc;
 
     insta::assert_debug_snapshot!((terms, types));
 }
@@ -101,10 +103,10 @@ c _ = 0
 
     engine.set_content(id, content);
 
-    let lowered = engine.lowered(id).unwrap();
+    let groups = engine.grouped(id).unwrap();
 
-    let terms = &lowered.term_scc;
-    let types = &lowered.type_scc;
+    let terms = &groups.term_scc;
+    let types = &groups.type_scc;
 
     insta::assert_debug_snapshot!((terms, types));
 }
@@ -130,9 +132,9 @@ type H = H
 
     engine.set_content(id, content);
 
-    let lowered = engine.lowered(id).unwrap();
+    let groups = engine.grouped(id).unwrap();
 
-    insta::assert_debug_snapshot!(lowered.errors);
+    insta::assert_debug_snapshot!(groups.cycle_errors);
 }
 
 #[test]
@@ -231,9 +233,9 @@ foreign import data Proxy :: forall k. k -> Type
 
     engine.set_content(id, content);
 
-    let lowered = engine.lowered(id).unwrap();
+    let groups = engine.grouped(id).unwrap();
 
-    insta::assert_debug_snapshot!(lowered.errors);
+    insta::assert_debug_snapshot!(groups.cycle_errors);
 }
 
 #[test]
@@ -252,6 +254,8 @@ data B = B A
 
 data C (a :: Proxy D)
 data D (a :: Proxy C)
+
+foreign import data Proxy :: forall k. k -> Type
 "#,
     );
     let content = files.content(id);
@@ -259,6 +263,8 @@ data D (a :: Proxy C)
     engine.set_content(id, content);
 
     let lowered = engine.lowered(id).unwrap();
+    let groups = engine.grouped(id).unwrap();
 
-    insta::assert_debug_snapshot!(lowered.errors);
+    let errors: Vec<_> = iter::chain(&lowered.errors, &groups.cycle_errors).collect();
+    insta::assert_debug_snapshot!(errors);
 }

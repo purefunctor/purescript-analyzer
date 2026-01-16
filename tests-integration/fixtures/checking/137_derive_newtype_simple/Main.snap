@@ -1,0 +1,21 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+Wrapper :: Int -> Wrapper
+
+Types
+Wrapper :: Type
+
+Data
+Wrapper
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+Wrapper = []
+
+Derived
+derive Show (Wrapper :: Type)

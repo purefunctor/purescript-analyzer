@@ -10,11 +10,11 @@ pure :: forall (f :: Type -> Type) (a :: Type). Applicative f => a -> f a
 discard :: forall (m :: Type -> Type) (a :: Type) (b :: Type). Discard m => m a -> (a -> m b) -> m b
 bind :: forall (m :: Type -> Type) (a :: Type) (b :: Type). Bind m => m a -> (a -> m b) -> m b
 testDo :: forall (m :: Type -> Type). Monad m => m (Tuple Int String)
-testDo' :: forall (t63 :: Type -> Type). Bind t63 => t63 (Tuple Int String)
+testDo' :: forall (t55 :: Type -> Type). Bind t55 => t55 (Tuple Int String)
 testAdo :: forall (f :: Type -> Type). Applicative f => f (Tuple Int String)
-testAdo' :: forall (t93 :: Type -> Type). Applicative t93 => t93 (Tuple Int String)
+testAdo' :: forall (t85 :: Type -> Type). Applicative t85 => t85 (Tuple Int String)
 testDoDiscard :: forall (m :: Type -> Type). Monad m => m Int
-testDoDiscard' :: forall (t109 :: Type -> Type). Discard t109 => t109 Int
+testDoDiscard' :: forall (t101 :: Type -> Type). Discard t101 => t101 Int
 
 Types
 Tuple :: Type -> Type -> Type
@@ -24,6 +24,23 @@ Applicative :: (Type -> Type) -> Constraint
 Discard :: (Type -> Type) -> Constraint
 Bind :: (Type -> Type) -> Constraint
 Monad :: (Type -> Type) -> Constraint
+
+Data
+Tuple
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+Tuple = [Representational, Representational]
+
+Classes
+class Functor (&0 :: Type -> Type)
+class Functor &0 <= Apply (&0 :: Type -> Type)
+class Apply &0 <= Applicative (&0 :: Type -> Type)
+class Applicative &0 <= Discard (&0 :: Type -> Type)
+class Applicative &0 <= Bind (&0 :: Type -> Type)
+class Bind &0 <= Monad (&0 :: Type -> Type)
 
 Errors
 NoInstanceFound { Discard &0 } at [TermDeclaration(Idx::<TermItem>(10))]

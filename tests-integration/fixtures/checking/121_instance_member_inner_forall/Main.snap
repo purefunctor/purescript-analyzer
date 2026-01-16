@@ -9,3 +9,19 @@ Box :: forall (a :: Type). a -> Box a
 Types
 Functor :: (Type -> Type) -> Constraint
 Box :: Type -> Type
+
+Data
+Box
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+Box = [Representational]
+
+Classes
+class Functor (&0 :: Type -> Type)
+
+Instances
+instance Functor (Box :: Type -> Type)
+  chain: 0

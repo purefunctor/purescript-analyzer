@@ -20,3 +20,7 @@ test3 :: forall (t51 :: Type). Collector (Tuple (Tuple Int t51) String) { x :: I
 Types
 Collector :: Type -> Type -> Type
 Tuple :: Type -> Type -> Type
+
+Roles
+Collector = [Nominal, Nominal]
+Tuple = [Nominal, Nominal]

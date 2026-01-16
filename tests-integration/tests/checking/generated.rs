@@ -261,3 +261,165 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_124_instance_member_missing_constraint_main() { run_test("124_instance_member_missing_constraint", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_125_instance_member_overly_general_main() { run_test("125_instance_member_overly_general", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_126_instance_phantom_main() { run_test("126_instance_phantom", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_127_derive_eq_simple_main() { run_test("127_derive_eq_simple", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_128_type_operator_mutual_main() { run_test("128_type_operator_mutual", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_129_derive_eq_with_fields_main() { run_test("129_derive_eq_with_fields", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_130_derive_eq_parameterized_main() { run_test("130_derive_eq_parameterized", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_131_derive_eq_missing_instance_main() { run_test("131_derive_eq_missing_instance", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_132_derive_eq_1_higher_kinded_main() { run_test("132_derive_eq_1_higher_kinded", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_133_derive_eq_partial_main() { run_test("133_derive_eq_partial", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_134_derive_ord_simple_main() { run_test("134_derive_ord_simple", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_135_derive_ord_1_higher_kinded_main() { run_test("135_derive_ord_1_higher_kinded", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_136_derive_nested_higher_kinded_main() { run_test("136_derive_nested_higher_kinded", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_137_derive_newtype_simple_main() { run_test("137_derive_newtype_simple", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_138_derive_newtype_parameterized_main() { run_test("138_derive_newtype_parameterized", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_139_derive_newtype_with_given_main() { run_test("139_derive_newtype_with_given", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_140_derive_newtype_recursive_main() { run_test("140_derive_newtype_recursive", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_141_derive_newtype_phantom_main() { run_test("141_derive_newtype_phantom", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_142_derive_newtype_not_newtype_main() { run_test("142_derive_newtype_not_newtype", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_143_derive_newtype_missing_instance_main() { run_test("143_derive_newtype_missing_instance", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_144_derive_newtype_missing_given_main() { run_test("144_derive_newtype_missing_given", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_145_derive_newtype_multi_param_main() { run_test("145_derive_newtype_multi_param", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_146_derive_functor_simple_main() { run_test("146_derive_functor_simple", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_147_derive_functor_higher_kinded_main() { run_test("147_derive_functor_higher_kinded", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_148_derive_functor_contravariant_error_main() { run_test("148_derive_functor_contravariant_error", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_149_derive_bifunctor_simple_main() { run_test("149_derive_bifunctor_simple", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_150_derive_bifunctor_higher_kinded_main() { run_test("150_derive_bifunctor_higher_kinded", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_151_derive_bifunctor_missing_functor_main() { run_test("151_derive_bifunctor_missing_functor", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_152_derive_contravariant_simple_main() { run_test("152_derive_contravariant_simple", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_153_derive_contravariant_error_main() { run_test("153_derive_contravariant_error", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_154_derive_profunctor_simple_main() { run_test("154_derive_profunctor_simple", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_155_derive_profunctor_error_main() { run_test("155_derive_profunctor_error", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_156_derive_bifunctor_insufficient_params_main() { run_test("156_derive_bifunctor_insufficient_params", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_157_derive_functor_insufficient_params_main() { run_test("157_derive_functor_insufficient_params", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_158_derive_foldable_simple_main() { run_test("158_derive_foldable_simple", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_159_derive_foldable_higher_kinded_main() { run_test("159_derive_foldable_higher_kinded", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_160_derive_bifoldable_simple_main() { run_test("160_derive_bifoldable_simple", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_161_derive_bifoldable_higher_kinded_main() { run_test("161_derive_bifoldable_higher_kinded", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_162_derive_traversable_simple_main() { run_test("162_derive_traversable_simple", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_163_derive_traversable_higher_kinded_main() { run_test("163_derive_traversable_higher_kinded", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_164_derive_bitraversable_simple_main() { run_test("164_derive_bitraversable_simple", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_165_derive_bitraversable_higher_kinded_main() { run_test("165_derive_bitraversable_higher_kinded", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_166_derive_traversable_missing_superclass_main() { run_test("166_derive_traversable_missing_superclass", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_167_derive_eq_1_main() { run_test("167_derive_eq_1", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_168_derive_ord_1_main() { run_test("168_derive_ord_1", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_169_derive_newtype_class_simple_main() { run_test("169_derive_newtype_class_simple", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_170_derive_newtype_class_parameterized_main() { run_test("170_derive_newtype_class_parameterized", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_171_derive_newtype_class_not_newtype_main() { run_test("171_derive_newtype_class_not_newtype", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_172_derive_generic_simple_main() { run_test("172_derive_generic_simple", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_173_derive_newtype_class_coercible_main() { run_test("173_derive_newtype_class_coercible", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_174_role_inference_phantom_main() { run_test("174_role_inference_phantom", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_175_role_inference_representational_main() { run_test("175_role_inference_representational", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_176_role_inference_nominal_constraint_main() { run_test("176_role_inference_nominal_constraint", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_177_role_inference_nominal_parametric_main() { run_test("177_role_inference_nominal_parametric", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_178_role_inference_nested_main() { run_test("178_role_inference_nested", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_179_role_inference_recursive_main() { run_test("179_role_inference_recursive", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_180_role_declaration_strengthen_main() { run_test("180_role_declaration_strengthen", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_181_role_declaration_loosen_error_main() { run_test("181_role_declaration_loosen_error", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_182_role_declaration_foreign_main() { run_test("182_role_declaration_foreign", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_183_coercible_reflexivity_main() { run_test("183_coercible_reflexivity", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_184_coercible_newtype_wrap_main() { run_test("184_coercible_newtype_wrap", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_185_coercible_phantom_main() { run_test("185_coercible_phantom", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_186_coercible_representational_main() { run_test("186_coercible_representational", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_187_coercible_array_main() { run_test("187_coercible_array", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_188_coercible_record_main() { run_test("188_coercible_record", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_189_coercible_different_heads_error_main() { run_test("189_coercible_different_heads_error", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_190_coercible_nominal_main() { run_test("190_coercible_nominal", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_191_coercible_newtype_hidden_main() { run_test("191_coercible_newtype_hidden", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_192_coercible_newtype_qualified_main() { run_test("192_coercible_newtype_qualified", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_193_coercible_newtype_open_hidden_main() { run_test("193_coercible_newtype_open_hidden", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_194_coercible_transitivity_main() { run_test("194_coercible_transitivity", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_195_coercible_nested_records_main() { run_test("195_coercible_nested_records", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_196_coercible_higher_kinded_main() { run_test("196_coercible_higher_kinded", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_197_coercible_higher_kinded_error_main() { run_test("197_coercible_higher_kinded_error", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_198_coercible_higher_kinded_multi_main() { run_test("198_coercible_higher_kinded_multi", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_199_coercible_higher_kinded_polykinded_main() { run_test("199_coercible_higher_kinded_polykinded", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_200_int_compare_transitive_main() { run_test("200_int_compare_transitive", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_201_int_compare_concrete_main() { run_test("201_int_compare_concrete", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_202_int_compare_invalid_main() { run_test("202_int_compare_invalid", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_203_is_symbol_main() { run_test("203_is_symbol", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_204_reflectable_main() { run_test("204_reflectable", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_205_builtin_warn_main() { run_test("205_builtin_warn", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_206_builtin_fail_main() { run_test("206_builtin_fail", "Main"); }

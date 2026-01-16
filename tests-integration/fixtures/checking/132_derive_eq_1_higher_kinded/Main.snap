@@ -1,0 +1,32 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+MkWrap :: forall (t4 :: Type) (f :: t4 -> Type) (a :: t4). f a -> Wrap @t4 f a
+MkWrapNoEq1 :: forall (t10 :: Type) (f :: t10 -> Type) (a :: t10). f a -> WrapNoEq1 @t10 f a
+
+Types
+Wrap :: forall (t4 :: Type). (t4 -> Type) -> t4 -> Type
+WrapNoEq1 :: forall (t10 :: Type). (t10 -> Type) -> t10 -> Type
+
+Data
+Wrap
+  Quantified = :1
+  Kind = :0
+
+WrapNoEq1
+  Quantified = :1
+  Kind = :0
+
+
+Roles
+Wrap = [Representational, Nominal]
+WrapNoEq1 = [Representational, Nominal]
+
+Derived
+derive (Eq1 &0, Eq &1) => Eq (Wrap @Type &0 &1 :: Type)
+derive Eq &1 => Eq (WrapNoEq1 @Type &0 &1 :: Type)
+
+Errors
+NoInstanceFound { Eq1 &0 } at [TermDeclaration(Idx::<TermItem>(3))]

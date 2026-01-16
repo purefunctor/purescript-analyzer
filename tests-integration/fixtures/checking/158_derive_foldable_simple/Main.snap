@@ -1,0 +1,38 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+Identity :: forall (a :: Type). a -> Identity a
+Nothing :: forall (a :: Type). Maybe a
+Just :: forall (a :: Type). a -> Maybe a
+Const :: forall (t3 :: Type) (e :: Type) (a :: t3). e -> Const @t3 e a
+
+Types
+Identity :: Type -> Type
+Maybe :: Type -> Type
+Const :: forall (t3 :: Type). Type -> t3 -> Type
+
+Data
+Identity
+  Quantified = :0
+  Kind = :0
+
+Maybe
+  Quantified = :0
+  Kind = :0
+
+Const
+  Quantified = :1
+  Kind = :0
+
+
+Roles
+Identity = [Representational]
+Maybe = [Representational]
+Const = [Representational, Phantom]
+
+Derived
+derive Foldable (Identity :: Type -> Type)
+derive Foldable (Maybe :: Type -> Type)
+derive Foldable (Const @Type &0 :: Type -> Type)

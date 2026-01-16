@@ -1,0 +1,32 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+Wrap :: forall (t4 :: Type) (f :: t4 -> Type) (a :: t4). f a -> Wrap @t4 f a
+WrapNoFoldable :: forall (t10 :: Type) (f :: t10 -> Type) (a :: t10). f a -> WrapNoFoldable @t10 f a
+
+Types
+Wrap :: forall (t4 :: Type). (t4 -> Type) -> t4 -> Type
+WrapNoFoldable :: forall (t10 :: Type). (t10 -> Type) -> t10 -> Type
+
+Data
+Wrap
+  Quantified = :1
+  Kind = :0
+
+WrapNoFoldable
+  Quantified = :1
+  Kind = :0
+
+
+Roles
+Wrap = [Representational, Nominal]
+WrapNoFoldable = [Representational, Nominal]
+
+Derived
+derive Foldable &0 => Foldable (Wrap @Type &0 :: Type -> Type)
+derive Foldable (WrapNoFoldable @Type &0 :: Type -> Type)
+
+Errors
+NoInstanceFound { Foldable &0 } at [TermDeclaration(Idx::<TermItem>(3))]

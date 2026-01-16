@@ -421,6 +421,11 @@ has_child!(
     | instance_statements() -> InstanceStatements
 );
 
+has_token!(
+    DeriveDeclaration
+    | newtype_token() -> NEWTYPE
+);
+
 has_children!(
     InstanceConstraints
     | children() -> Type

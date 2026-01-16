@@ -15,12 +15,13 @@ use building_types::QueryResult;
 use files::FileId;
 use indexing::TypeItemId;
 use itertools::Itertools;
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::algorithm::fold::{FoldAction, TypeFold, fold_type};
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::{transfer, unification};
-use crate::core::{Class, Instance, Variable, debruijn};
+use crate::algorithm::visit::CollectFileReferences;
+use crate::algorithm::{toolkit, transfer, unification};
+use crate::core::{Class, Instance, InstanceKind, Variable, debruijn};
 use crate::{CheckedModule, ExternalQueries, Type, TypeId};
 
 pub fn solve_constraints<Q>(
@@ -58,27 +59,24 @@ where
                 Some(MatchInstance::Apart | MatchInstance::Stuck) | None => (),
             }
 
-            if let Some(result) = match_compiler_instances(state, context, &application) {
-                match result {
-                    MatchInstance::Match { constraints, equalities } => {
-                        for (t1, t2) in equalities {
-                            if unification::unify(state, context, t1, t2)? {
-                                made_progress = true;
-                            }
+            match match_compiler_instances(state, context, &application, &given)? {
+                Some(MatchInstance::Match { constraints, equalities }) => {
+                    for (t1, t2) in equalities {
+                        if unification::unify(state, context, t1, t2)? {
+                            made_progress = true;
                         }
-                        work_queue.extend(constraints);
-                        continue 'work;
                     }
-                    MatchInstance::Apart => (),
-                    MatchInstance::Stuck => {
-                        residual.push(wanted);
-                        continue 'work;
-                    }
+                    work_queue.extend(constraints);
+                    continue 'work;
                 }
+                Some(MatchInstance::Stuck) => {
+                    residual.push(wanted);
+                    continue 'work;
+                }
+                Some(MatchInstance::Apart) | None => (),
             }
 
-            let instance_chains =
-                collect_instance_chains(state, context, application.file_id, application.item_id)?;
+            let instance_chains = collect_instance_chains(state, context, &application)?;
 
             for chain in instance_chains {
                 'chain: for instance in chain {
@@ -122,25 +120,11 @@ pub(crate) fn constraint_application(
     state: &mut CheckState,
     id: TypeId,
 ) -> Option<ConstraintApplication> {
-    let mut arguments = vec![];
-    let mut current_id = id;
-    loop {
-        match state.storage[current_id] {
-            Type::Application(function, argument) => {
-                arguments.push(argument);
-                current_id = state.normalize_type(function);
-            }
-            Type::KindApplication(function, _) => {
-                current_id = state.normalize_type(function);
-            }
-            Type::Constructor(file_id, item_id) => {
-                arguments.reverse();
-                return Some(ConstraintApplication { file_id, item_id, arguments });
-            }
-            _ => {
-                return None;
-            }
-        }
+    let (constructor, arguments) = toolkit::extract_type_application(state, id);
+    if let Type::Constructor(file_id, item_id) = state.storage[constructor] {
+        Some(ConstraintApplication { file_id, item_id, arguments })
+    } else {
+        None
     }
 }
 
@@ -221,44 +205,67 @@ where
     aux(state, context, constraint, constraints, &mut seen)
 }
 
+/// Collects instance chains for a constraint from all eligible files.
 fn collect_instance_chains<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    file_id: FileId,
-    item_id: TypeItemId,
+    application: &ConstraintApplication,
 ) -> QueryResult<Vec<Vec<Instance>>>
 where
     Q: ExternalQueries,
 {
-    let instances = if file_id == context.id {
-        state
-            .checked
-            .instances
-            .values()
-            .filter(|instance| instance.resolution.1 == item_id)
-            .cloned()
-            .collect_vec()
-    } else {
-        let checked = context.queries.checked(file_id)?;
-        checked
-            .instances
-            .values()
-            .filter(|instance| instance.resolution.1 == item_id)
-            .cloned()
-            .collect_vec()
+    let class_file = application.file_id;
+    let class_id = application.item_id;
+
+    let mut files_to_search = FxHashSet::default();
+    files_to_search.insert(class_file);
+
+    for &argument in &application.arguments {
+        CollectFileReferences::on(state, argument, &mut files_to_search);
+    }
+
+    let mut all_instances = vec![];
+
+    let mut copy_from = |checked: &CheckedModule| {
+        let instances = checked.instances.values();
+        let derived = checked.derived.values();
+
+        let matching = iter::chain(instances, derived)
+            .filter(|instance| instance.resolution == (class_file, class_id))
+            .cloned();
+
+        all_instances.extend(matching);
     };
 
-    let mut grouped: FxHashMap<_, Vec<_>> = FxHashMap::default();
-    for instance in instances {
-        grouped.entry(instance.chain_id).or_default().push(instance);
+    for &file_id in &files_to_search {
+        if file_id == context.id {
+            copy_from(&state.checked);
+        } else {
+            let checked = context.queries.checked(file_id)?;
+            copy_from(&checked);
+        }
     }
 
-    let mut result: Vec<Vec<_>> = grouped.into_values().collect();
-    for chain in &mut result {
-        chain.sort_by_key(|instance| instance.chain_position);
+    let mut chain_map: FxHashMap<_, Vec<_>> = FxHashMap::default();
+    let mut all_chains: Vec<Vec<_>> = vec![];
+
+    for instance in all_instances {
+        if let InstanceKind::Chain { id, .. } = instance.kind {
+            chain_map.entry(id).or_default().push(instance)
+        } else {
+            all_chains.push(vec![instance])
+        }
     }
 
-    Ok(result)
+    for (_, mut chain) in chain_map {
+        chain.sort_by_key(|instance| match instance.kind {
+            InstanceKind::Chain { position, .. } => position,
+            InstanceKind::Derive => 0,
+        });
+        all_chains.push(chain);
+    }
+
+    Ok(all_chains)
 }
 
 fn localize_class<Q>(state: &mut CheckState, context: &CheckContext<Q>, class: &Class) -> Class
@@ -270,8 +277,17 @@ where
         let k = transfer::localize(state, context, k);
         (t, k)
     });
+
+    let superclasses = superclasses.collect();
+
+    let type_variable_kinds =
+        class.type_variable_kinds.iter().map(|&kind| transfer::localize(state, context, kind));
+
+    let type_variable_kinds = type_variable_kinds.collect();
+
     Class {
-        superclasses: superclasses.collect(),
+        superclasses,
+        type_variable_kinds,
         quantified_variables: class.quantified_variables,
         kind_variables: class.kind_variables,
     }
@@ -285,12 +301,8 @@ fn lookup_local_class<Q>(
 where
     Q: ExternalQueries,
 {
-    if let Some(class) = state.binding_group.lookup_class(item_id) {
-        Some(class)
-    } else {
-        let class = state.checked.lookup_class(item_id)?;
-        Some(localize_class(state, context, &class))
-    }
+    let class = state.checked.lookup_class(item_id)?;
+    Some(localize_class(state, context, &class))
 }
 
 fn lookup_global_class<Q>(
@@ -457,23 +469,19 @@ fn match_type(
     let given_core = &state.storage[given];
 
     match (wanted_core, given_core) {
-        (_, Type::Variable(variable)) => {
-            if let Variable::Implicit(level) | Variable::Bound(level) = variable {
-                if let Some(&bound) = bindings.get(level) {
-                    match can_unify(state, wanted, bound) {
-                        CanUnify::Equal => MatchType::Match,
-                        CanUnify::Apart => MatchType::Apart,
-                        CanUnify::Unify => {
-                            equalities.push((wanted, bound));
-                            MatchType::Match
-                        }
+        (_, Type::Variable(Variable::Bound(level))) => {
+            if let Some(&bound) = bindings.get(level) {
+                match can_unify(state, wanted, bound) {
+                    CanUnify::Equal => MatchType::Match,
+                    CanUnify::Apart => MatchType::Apart,
+                    CanUnify::Unify => {
+                        equalities.push((wanted, bound));
+                        MatchType::Match
                     }
-                } else {
-                    bindings.insert(*level, wanted);
-                    MatchType::Match
                 }
             } else {
-                MatchType::Apart
+                bindings.insert(*level, wanted);
+                MatchType::Match
             }
         }
 
@@ -584,15 +592,6 @@ fn match_given_type(state: &mut CheckState, wanted: TypeId, given: TypeId) -> Ma
             }
         }
 
-        // Implicit and Bound variables at the same level represent the same
-        // logical variable. Implicit produces them, Bound consumes them.
-        (Type::Variable(Variable::Implicit(w_level)), Type::Variable(Variable::Bound(g_level)))
-        | (Type::Variable(Variable::Bound(w_level)), Type::Variable(Variable::Implicit(g_level)))
-            if w_level == g_level =>
-        {
-            MatchType::Match
-        }
-
         _ => MatchType::Apart,
     }
 }
@@ -600,9 +599,9 @@ fn match_given_type(state: &mut CheckState, wanted: TypeId, given: TypeId) -> Ma
 /// Determines if two types [`CanUnify`].
 ///
 /// This is used in [`match_type`], where if two different types bind to the
-/// same [`Variable::Implicit`] or [`Variable::Bound`] variable, we determine
-/// if the types can actually unify before generating an equality. This is
-/// effectively a pure version of the [`unify`] function.
+/// same [`Variable::Bound`] variable, we determine if the types can actually
+/// unify before generating an equality. This is effectively a pure version
+/// of the [`unify`] function.
 ///
 /// [`unify`]: crate::algorithm::unification::unify
 fn can_unify(state: &mut CheckState, t1: TypeId, t2: TypeId) -> CanUnify {
@@ -803,55 +802,65 @@ fn match_compiler_instances<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     wanted: &ConstraintApplication,
-) -> Option<MatchInstance>
+    given: &[ConstraintApplication],
+) -> QueryResult<Option<MatchInstance>>
 where
     Q: ExternalQueries,
 {
     let ConstraintApplication { file_id, item_id, ref arguments } = *wanted;
 
-    if file_id == context.prim_int.file_id {
-        if item_id == context.prim_int.add {
-            prim_int_add(state, arguments)
-        } else if item_id == context.prim_int.mul {
-            prim_int_mul(state, arguments)
-        } else if item_id == context.prim_int.compare {
-            prim_int_compare(state, context, arguments)
-        } else if item_id == context.prim_int.to_string {
-            prim_int_to_string(state, arguments)
-        } else {
-            None
-        }
-    } else if file_id == context.prim_symbol.file_id {
-        if item_id == context.prim_symbol.append {
-            prim_symbol_append(state, arguments)
-        } else if item_id == context.prim_symbol.compare {
-            prim_symbol_compare(state, context, arguments)
-        } else if item_id == context.prim_symbol.cons {
-            prim_symbol_cons(state, arguments)
-        } else {
-            None
-        }
-    } else if file_id == context.prim_row.file_id {
-        if item_id == context.prim_row.union {
-            prim_row_union(state, arguments)
-        } else if item_id == context.prim_row.cons {
-            prim_row_cons(state, arguments)
-        } else if item_id == context.prim_row.lacks {
-            prim_row_lacks(state, arguments)
-        } else if item_id == context.prim_row.nub {
-            prim_row_nub(state, arguments)
-        } else {
-            None
-        }
-    } else if file_id == context.prim_row_list.file_id {
-        if item_id == context.prim_row_list.row_to_list {
-            prim_rowlist_row_to_list(state, context, arguments)
-        } else {
-            None
-        }
-    } else {
-        None
+    macro_rules! dispatch {
+        (
+            $($prim_ctx:expr => {
+                $($item:ident => $handler:expr),* $(,)?
+            }),*
+            $(, ? $optional:expr => $opt_handler:expr)* $(,)?
+        ) => {
+            $(
+                if file_id == $prim_ctx.file_id {
+                    $(if item_id == $prim_ctx.$item { $handler } else)*
+                    { None }
+                } else
+            )*
+            $(if $optional == Some((file_id, item_id)) { $opt_handler } else)*
+            { None }
+        };
     }
+
+    let match_instance = dispatch! {
+        context.prim_int => {
+            add => prim_int_add(state, arguments),
+            mul => prim_int_mul(state, arguments),
+            compare => prim_int_compare(state, context, arguments, given),
+            to_string => prim_int_to_string(state, arguments),
+        },
+        context.prim_symbol => {
+            append => prim_symbol_append(state, arguments),
+            compare => prim_symbol_compare(state, context, arguments),
+            cons => prim_symbol_cons(state, arguments),
+        },
+        context.prim_row => {
+            union => prim_row_union(state, arguments),
+            cons => prim_row_cons(state, arguments),
+            lacks => prim_row_lacks(state, arguments),
+            nub => prim_row_nub(state, arguments),
+        },
+        context.prim_row_list => {
+            row_to_list => prim_rowlist_row_to_list(state, context, arguments),
+        },
+        context.prim_coerce => {
+            coercible => prim_coercible(state, context, arguments)?,
+        },
+        context.prim_type_error => {
+            warn => prim_warn(state, context, arguments),
+            fail => prim_fail(state, context, arguments),
+        },
+        // These classes are defined in `prelude` and may be optional.
+        ? context.known_reflectable.is_symbol => prim_is_symbol(state, arguments),
+        ? context.known_reflectable.reflectable => prim_reflectable(state, context, arguments),
+    };
+
+    Ok(match_instance)
 }
 
 struct ApplyBindings<'a> {
@@ -871,7 +880,7 @@ impl<'a> ApplyBindings<'a> {
 impl TypeFold for ApplyBindings<'_> {
     fn transform(&mut self, _state: &mut CheckState, id: TypeId, t: &Type) -> FoldAction {
         match t {
-            Type::Variable(Variable::Implicit(level) | Variable::Bound(level)) => {
+            Type::Variable(Variable::Bound(level)) => {
                 let id = self.bindings.get(level).copied().unwrap_or(id);
                 FoldAction::Replace(id)
             }

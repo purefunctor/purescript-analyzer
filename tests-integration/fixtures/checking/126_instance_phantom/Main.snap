@@ -1,0 +1,28 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+identity :: forall (a :: Type). Phantom a => a -> a
+Proxy :: forall (t1 :: Type) (a :: t1). Proxy @t1 a
+forceSolve :: forall (t8 :: Type) (t9 :: t8). { solution :: Proxy @t8 t9 }
+
+Types
+Phantom :: Type -> Constraint
+Proxy :: forall (t1 :: Type). t1 -> Type
+
+Data
+Proxy
+  Quantified = :1
+  Kind = :0
+
+
+Roles
+Proxy = [Phantom]
+
+Classes
+class Phantom (&0 :: Type)
+
+Instances
+instance forall (&0 :: Type). Phantom (Proxy @&0 &1 :: Type)
+  chain: 0

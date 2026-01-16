@@ -1,0 +1,35 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+Pair :: forall (a :: Type) (b :: Type). a -> b -> Pair a b
+Unit :: Unit
+
+Types
+Pair :: Type -> Type -> Type
+Unit :: Type
+
+Data
+Pair
+  Quantified = :0
+  Kind = :0
+
+Unit
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+Pair = [Representational, Representational]
+Unit = []
+
+Derived
+derive Functor (Pair Int String :: Type)
+derive Functor (Unit :: Type)
+
+Errors
+CannotUnify { Type, Type -> Type } at [TermDeclaration(Idx::<TermItem>(1)), CheckingKind(AstId<syntax::cst::Type>(19))]
+CannotDeriveForType { type_id: Id<checking::core::Type>(34) } at [TermDeclaration(Idx::<TermItem>(1))]
+CannotUnify { Type, Type -> Type } at [TermDeclaration(Idx::<TermItem>(3)), CheckingKind(AstId<syntax::cst::Type>(28))]
+CannotDeriveForType { type_id: Id<checking::core::Type>(17) } at [TermDeclaration(Idx::<TermItem>(3))]

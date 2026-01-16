@@ -11,3 +11,12 @@ test' :: Tuple Int String
 
 Types
 Tuple :: Type -> Type -> Type
+
+Data
+Tuple
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+Tuple = [Representational, Representational]

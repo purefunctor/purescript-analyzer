@@ -12,8 +12,14 @@ use crate::algorithm::state::{CheckContext, CheckState, InstanceHeadBinding};
 use crate::algorithm::{
     constraint, inspect, kind, quantify, substitute, term, transfer, unification,
 };
-use crate::core::{Instance, Type, TypeId, Variable, debruijn};
+use crate::core::{Instance, InstanceKind, Type, TypeId, Variable, debruijn};
 use crate::error::{ErrorKind, ErrorStep};
+
+#[derive(Clone)]
+pub struct InferredValueGroup {
+    pub inferred_type: TypeId,
+    pub residual_constraints: Vec<TypeId>,
+}
 
 /// Checks signature declarations for terms.
 ///
@@ -134,10 +140,6 @@ where
         for (argument, expected_kind) in arguments.iter().zip(expected_kinds) {
             let (inferred_type, inferred_kind) =
                 kind::check_surface_kind(state, context, *argument, expected_kind)?;
-
-            let inferred_type = transfer::globalize(state, context, inferred_type);
-            let inferred_kind = transfer::globalize(state, context, inferred_kind);
-
             core_arguments.push((inferred_type, inferred_kind));
         }
 
@@ -145,23 +147,36 @@ where
         for constraint in constraints.iter() {
             let (inferred_type, inferred_kind) =
                 kind::infer_surface_kind(state, context, *constraint)?;
-
-            let inferred_type = transfer::globalize(state, context, inferred_type);
-            let inferred_kind = transfer::globalize(state, context, inferred_kind);
-
             core_constraints.push((inferred_type, inferred_kind));
         }
 
-        state.checked.instances.insert(
-            instance_id,
-            Instance {
-                arguments: core_arguments,
-                constraints: core_constraints,
-                resolution: (class_file, class_item),
-                chain_id,
-                chain_position,
-            },
-        );
+        let mut instance = Instance {
+            arguments: core_arguments,
+            constraints: core_constraints,
+            resolution: (class_file, class_item),
+            kind: InstanceKind::Chain { id: chain_id, position: chain_position },
+            kind_variables: vec![],
+        };
+
+        quantify::quantify_instance(state, &mut instance);
+
+        let arguments = instance.arguments.iter().map(|&(t, k)| {
+            let t = transfer::globalize(state, context, t);
+            let k = transfer::globalize(state, context, k);
+            (t, k)
+        });
+
+        instance.arguments = arguments.collect();
+
+        let constraints = instance.constraints.iter().map(|&(t, k)| {
+            let t = transfer::globalize(state, context, t);
+            let k = transfer::globalize(state, context, k);
+            (t, k)
+        });
+
+        instance.constraints = constraints.collect();
+
+        state.checked.instances.insert(instance_id, instance);
 
         // Capture implicit variables from the instance head before unbinding.
         let implicits = state.type_scope.unbind_implicits(debruijn::Level(size.0));
@@ -179,7 +194,7 @@ where
 ///
 /// This function instantiates kind variables as unification variables and
 /// extracts the argument kinds to check them against instance arguments.
-fn instantiate_class_kind<Q>(
+pub fn instantiate_class_kind<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     class_kind: TypeId,
@@ -225,13 +240,13 @@ pub struct CheckValueGroup<'a> {
 
 /// Checks a value declaration group.
 ///
-/// This rule is implemented through the [`inspect::inspect_signature_core`],
-/// [`term::check_equations`], and [`term::infer_equations`] functions.
+/// This function optionally returns [`InferredValueGroup`]
+/// for value declarations that do not have a signature.
 pub fn check_value_group<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     input: CheckValueGroup<'_>,
-) -> QueryResult<()>
+) -> QueryResult<Option<InferredValueGroup>>
 where
     Q: ExternalQueries,
 {
@@ -246,11 +261,49 @@ where
             let signature =
                 inspect::inspect_signature_core(state, context, group_type, surface_bindings)?;
 
-            term::check_equations(state, context, *signature_id, signature, equations)
+            term::check_equations(state, context, *signature_id, signature, equations)?;
+            Ok(None)
         } else {
-            term::infer_equations(state, context, item_id, equations)
+            let (inferred_type, residual_constraints) =
+                term::infer_equations(state, context, item_id, equations)?;
+            Ok(Some(InferredValueGroup { inferred_type, residual_constraints }))
         }
     })
+}
+
+/// Generalises an [`InferredValueGroup`].
+pub fn commit_value_group<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    item_id: TermItemId,
+    inferred: InferredValueGroup,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    let InferredValueGroup { inferred_type, residual_constraints } = inferred;
+
+    let Some(result) =
+        quantify::quantify_with_constraints(state, context, inferred_type, residual_constraints)?
+    else {
+        return Ok(());
+    };
+
+    state.with_error_step(ErrorStep::TermDeclaration(item_id), |state| {
+        for constraint in result.ambiguous {
+            let constraint = transfer::globalize(state, context, constraint);
+            state.insert_error(ErrorKind::AmbiguousConstraint { constraint });
+        }
+        for constraint in result.unsatisfied {
+            let constraint = transfer::globalize(state, context, constraint);
+            state.insert_error(ErrorKind::NoInstanceFound { constraint });
+        }
+    });
+
+    let type_id = transfer::globalize(state, context, result.quantified);
+    state.checked.terms.insert(item_id, type_id);
+
+    Ok(())
 }
 
 /// Input fields for [`check_instance_members`].
@@ -261,6 +314,7 @@ pub struct CheckInstanceMembers<'a> {
     pub class_id: TypeItemId,
     pub instance_arguments: &'a [(TypeId, TypeId)],
     pub instance_constraints: &'a [(TypeId, TypeId)],
+    pub kind_variables: &'a [TypeId],
 }
 
 /// Checks instance member declarations.
@@ -287,6 +341,7 @@ where
         class_id,
         instance_arguments,
         instance_constraints,
+        kind_variables,
     } = input;
 
     // Fetch implicit variables captured by check_instance.
@@ -305,6 +360,7 @@ where
                 class_id,
                 instance_arguments,
                 instance_constraints,
+                kind_variables,
             },
         )?;
     }
@@ -343,6 +399,7 @@ pub struct CheckInstanceMemberGroup<'a> {
     class_id: TypeItemId,
     instance_arguments: &'a [(TypeId, TypeId)],
     instance_constraints: &'a [(TypeId, TypeId)],
+    kind_variables: &'a [TypeId],
 }
 
 /// Checks an instance member group against its specialized class member type.
@@ -374,11 +431,18 @@ where
         class_id,
         instance_arguments,
         instance_constraints,
+        kind_variables,
     } = input;
 
     state.with_error_step(ErrorStep::TermDeclaration(instance_id), |state| {
         // Save the current size of the environment for unbinding.
         let size = state.type_scope.size();
+
+        // Bind kind variables generalised after instance head checking.
+        for &kind_variable in kind_variables {
+            let kind = transfer::localize(state, context, kind_variable);
+            state.type_scope.bind_core(kind);
+        }
 
         for binding in instance_bindings {
             state.type_scope.bind_implicit(binding.node, binding.id, binding.kind);
@@ -424,10 +488,9 @@ where
             if let Some(specialized_type) = specialized_type {
                 let unified = unification::unify(state, context, member_type, specialized_type)?;
                 if !unified {
-                    state.insert_error(ErrorKind::InstanceMemberTypeMismatch {
-                        expected: specialized_type,
-                        actual: member_type,
-                    });
+                    let expected = transfer::globalize(state, context, specialized_type);
+                    let actual = transfer::globalize(state, context, member_type);
+                    state.insert_error(ErrorKind::InstanceMemberTypeMismatch { expected, actual });
                 }
             }
 
@@ -441,10 +504,9 @@ where
 
             let matches = unification::subtype(state, context, inferred_type, specialized_type)?;
             if !matches {
-                state.insert_error(ErrorKind::InstanceMemberTypeMismatch {
-                    expected: specialized_type,
-                    actual: inferred_type,
-                });
+                let expected = transfer::globalize(state, context, specialized_type);
+                let actual = transfer::globalize(state, context, inferred_type);
+                state.insert_error(ErrorKind::InstanceMemberTypeMismatch { expected, actual });
             }
 
             let residual = state.solve_constraints(context)?;
@@ -502,10 +564,11 @@ where
         (t, k)
     });
 
+    let arguments = arguments.collect_vec();
     let kind_variables = class_info.quantified_variables.0 + class_info.kind_variables.0;
 
     let mut kind_variables = 0..kind_variables;
-    let mut arguments = arguments.collect_vec().into_iter();
+    let mut arguments = arguments.into_iter();
 
     while let normalized = state.normalize_type(specialized)
         && let Type::Forall(binder, inner) = &state.storage[normalized]

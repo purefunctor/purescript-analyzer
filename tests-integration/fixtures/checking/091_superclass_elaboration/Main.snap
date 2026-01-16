@@ -1,6 +1,5 @@
 ---
 source: tests-integration/tests/checking/generated.rs
-assertion_line: 12
 expression: report
 ---
 Terms
@@ -16,3 +15,16 @@ Types
 Eq :: Type -> Constraint
 Ord :: Type -> Constraint
 Ordering :: Type
+
+Data
+Ordering
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+Ordering = []
+
+Classes
+class Eq (&0 :: Type)
+class Eq &0 <= Ord (&0 :: Type)

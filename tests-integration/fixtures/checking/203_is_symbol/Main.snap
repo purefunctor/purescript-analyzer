@@ -1,0 +1,11 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+test :: String
+test' :: String
+testEmpty :: String
+testEmpty' :: String
+
+Types

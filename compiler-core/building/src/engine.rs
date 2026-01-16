@@ -38,7 +38,7 @@ use files::FileId;
 use graph::SnapshotGraph;
 use indexing::IndexedModule;
 use lock_api::{RawRwLock, RawRwLockRecursive};
-use lowering::LoweredModule;
+use lowering::{GroupedModule, LoweredModule};
 use parking_lot::{Mutex, RwLock, RwLockUpgradableReadGuard};
 use parsing::FullParsedModule;
 use promise::{Future, Promise};
@@ -94,6 +94,7 @@ struct DerivedStorage {
     stabilized: FxHashMap<FileId, DerivedState<Arc<StabilizedModule>>>,
     indexed: FxHashMap<FileId, DerivedState<Arc<IndexedModule>>>,
     lowered: FxHashMap<FileId, DerivedState<Arc<LoweredModule>>>,
+    grouped: FxHashMap<FileId, DerivedState<Arc<GroupedModule>>>,
     resolved: FxHashMap<FileId, DerivedState<Arc<ResolvedModule>>>,
     bracketed: FxHashMap<FileId, DerivedState<Arc<sugar::Bracketed>>>,
     sectioned: FxHashMap<FileId, DerivedState<Arc<sugar::Sectioned>>>,
@@ -422,6 +423,7 @@ impl QueryEngine {
                 QueryKey::Stabilized(k) => derived_changed!(stabilized, k),
                 QueryKey::Indexed(k) => derived_changed!(indexed, k),
                 QueryKey::Lowered(k) => derived_changed!(lowered, k),
+                QueryKey::Grouped(k) => derived_changed!(grouped, k),
                 QueryKey::Resolved(k) => derived_changed!(resolved, k),
                 QueryKey::Bracketed(k) => derived_changed!(bracketed, k),
                 QueryKey::Sectioned(k) => derived_changed!(sectioned, k),
@@ -692,6 +694,20 @@ impl QueryEngine {
         )
     }
 
+    pub fn grouped(&self, id: FileId) -> QueryResult<Arc<GroupedModule>> {
+        self.query(
+            QueryKey::Grouped(id),
+            |storage| storage.derived.grouped.get(&id),
+            |storage| storage.derived.grouped.entry(id),
+            |this| {
+                let lowered = this.lowered(id)?;
+                let indexed = this.indexed(id)?;
+                let groups = lowering::group_module(&indexed, &lowered);
+                Ok(Arc::new(groups))
+            },
+        )
+    }
+
     pub fn resolved(&self, id: FileId) -> QueryResult<Arc<ResolvedModule>> {
         self.query(
             QueryKey::Resolved(id),
@@ -758,6 +774,8 @@ impl QueryProxy for QueryEngine {
 
     type Lowered = Arc<LoweredModule>;
 
+    type Grouped = Arc<GroupedModule>;
+
     type Resolved = Arc<ResolvedModule>;
 
     type Bracketed = Arc<sugar::Bracketed>;
@@ -780,6 +798,10 @@ impl QueryProxy for QueryEngine {
 
     fn lowered(&self, id: FileId) -> QueryResult<Self::Lowered> {
         QueryEngine::lowered(self, id)
+    }
+
+    fn grouped(&self, id: FileId) -> QueryResult<Self::Grouped> {
+        QueryEngine::grouped(self, id)
     }
 
     fn resolved(&self, id: FileId) -> QueryResult<Self::Resolved> {
@@ -1265,5 +1287,53 @@ mod tests {
                 .into()
             })
         );
+    }
+
+    #[test]
+    fn test_grouped_identity() {
+        let mut engine = QueryEngine::default();
+        let mut files = Files::default();
+        prim::configure(&mut engine, &mut files);
+
+        let id = files.insert("./src/Main.purs", "module Main where\n\nx = y\ny = 1");
+        let content = files.content(id);
+        engine.set_content(id, content);
+
+        let groups_a = engine.grouped(id).unwrap();
+        let groups_b = engine.grouped(id).unwrap();
+        assert!(Arc::ptr_eq(&groups_a, &groups_b));
+    }
+
+    #[test]
+    fn test_lowered_identity() {
+        let mut engine = QueryEngine::default();
+        let mut files = Files::default();
+        prim::configure(&mut engine, &mut files);
+
+        let id = files.insert("./src/Main.purs", "module Main where\n\nx = 1");
+        let content = files.content(id);
+        engine.set_content(id, content);
+
+        let lowered_a = engine.lowered(id).unwrap();
+        let lowered_b = engine.lowered(id).unwrap();
+        assert!(Arc::ptr_eq(&lowered_a, &lowered_b));
+    }
+
+    #[test]
+    fn test_grouped_stable() {
+        let mut engine = QueryEngine::default();
+        let mut files = Files::default();
+        prim::configure(&mut engine, &mut files);
+
+        let id = files.insert("./src/Main.purs", "module Main where\n\nx = 1");
+        engine.set_content(id, files.content(id));
+        let groups_a = engine.grouped(id).unwrap();
+
+        let id = files.insert("./src/Main.purs", "module Main where\n\n\n\nx = 1");
+        engine.set_content(id, files.content(id));
+        let groups_b = engine.grouped(id).unwrap();
+
+        assert_eq!(groups_a.term_scc, groups_b.term_scc);
+        assert_eq!(groups_a.type_scc, groups_b.type_scc);
     }
 }

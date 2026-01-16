@@ -8,7 +8,14 @@ show :: forall (a :: Type). Show a => a -> String
 Types
 Show :: Type -> Constraint
 
+Classes
+class Show (&0 :: Type)
+
+Instances
+instance Show (Int :: Type)
+  chain: 0
+
 Errors
 CannotUnify { Int, String } at [TermDeclaration(Idx::<TermItem>(1))]
 CannotUnify { Int -> Int, Int -> String } at [TermDeclaration(Idx::<TermItem>(1))]
-InstanceMemberTypeMismatch { expected: Id<checking::core::Type>(32), actual: Id<checking::core::Type>(34) } at [TermDeclaration(Idx::<TermItem>(1))]
+InstanceMemberTypeMismatch { expected: Int -> String, actual: Int -> Int } at [TermDeclaration(Idx::<TermItem>(1))]

@@ -317,7 +317,9 @@ pub enum TermItemIr {
         arguments: Arc<[TypeId]>,
     },
     Derive {
+        newtype: bool,
         constraints: Arc<[TypeId]>,
+        resolution: Option<(FileId, TypeItemId)>,
         arguments: Arc<[TypeId]>,
     },
     Foreign {

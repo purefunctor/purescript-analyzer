@@ -1,0 +1,20 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+Proxy :: forall (t0 :: Type) (a :: t0). Proxy @t0 a
+coerceProxy :: forall (t4 :: Type) (t6 :: Type) (a :: t4) (b :: t6). Proxy @t4 a -> Proxy @t6 b
+coerceProxyIntString :: Proxy @Type Int -> Proxy @Type String
+
+Types
+Proxy :: forall (t0 :: Type). t0 -> Type
+
+Data
+Proxy
+  Quantified = :1
+  Kind = :0
+
+
+Roles
+Proxy = [Phantom]

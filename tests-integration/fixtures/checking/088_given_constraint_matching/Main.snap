@@ -8,3 +8,6 @@ test :: forall (a :: Type). Eq a => a -> Boolean
 
 Types
 Eq :: Type -> Constraint
+
+Classes
+class Eq (&0 :: Type)

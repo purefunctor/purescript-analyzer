@@ -83,6 +83,11 @@ where
             subtype(state, context, inner, t2)
         }
 
+        (Type::Constrained(constraint, inner), _) => {
+            state.constraints.push_wanted(constraint);
+            subtype(state, context, inner, t2)
+        }
+
         (_, _) => unify(state, context, t1, t2),
     }
 }
@@ -293,15 +298,14 @@ pub fn promote_type(
         }
 
         Type::Variable(ref variable) => {
-            let unification = state.unification.get(unification_id);
             // A bound variable escapes if its level >= the unification variable's domain.
             // This means the variable was bound at or after the unification was created.
-            if let Variable::Bound(level) = variable
-                && level.0 >= unification.domain.0
-            {
-                return false;
+            if let Variable::Bound(level) = variable {
+                let unification = state.unification.get(unification_id);
+                if level.0 >= unification.domain.0 {
+                    return false;
+                }
             }
-
             true
         }
 

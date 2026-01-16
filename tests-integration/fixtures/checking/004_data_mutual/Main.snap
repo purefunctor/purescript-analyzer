@@ -10,3 +10,17 @@ Cons :: forall (a :: Type). Tree a -> Forest a -> Forest a
 Types
 Tree :: Type -> Type
 Forest :: Type -> Type
+
+Data
+Tree
+  Quantified = :0
+  Kind = :0
+
+Forest
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+Tree = [Representational]
+Forest = [Representational]

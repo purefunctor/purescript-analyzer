@@ -1,0 +1,34 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+WrongFirst :: forall (a :: Type) (b :: Type). a -> b -> WrongFirst a b
+WrongSecond :: forall (a :: Type) (b :: Type). (b -> a) -> WrongSecond a b
+
+Types
+WrongFirst :: Type -> Type -> Type
+WrongSecond :: Type -> Type -> Type
+
+Data
+WrongFirst
+  Quantified = :0
+  Kind = :0
+
+WrongSecond
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+WrongFirst = [Representational, Representational]
+WrongSecond = [Representational, Representational]
+
+Derived
+derive Profunctor (WrongFirst :: Type -> Type -> Type)
+derive Profunctor (WrongSecond :: Type -> Type -> Type)
+
+Errors
+CovariantOccurrence { type_id: Id<checking::core::Type>(45) } at [TermDeclaration(Idx::<TermItem>(1))]
+ContravariantOccurrence { type_id: Id<checking::core::Type>(46) } at [TermDeclaration(Idx::<TermItem>(3))]
+CovariantOccurrence { type_id: Id<checking::core::Type>(45) } at [TermDeclaration(Idx::<TermItem>(3))]

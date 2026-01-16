@@ -37,12 +37,12 @@ Valid = Int
 
 
 Errors
-RecursiveSynonymExpansion { file_id: Idx::<File>(9), item_id: Idx::<TypeItem>(0) } at [TermDeclaration(Idx::<TermItem>(0))]
-RecursiveSynonymExpansion { file_id: Idx::<File>(9), item_id: Idx::<TypeItem>(0) } at [TermDeclaration(Idx::<TermItem>(0))]
-RecursiveSynonymExpansion { file_id: Idx::<File>(9), item_id: Idx::<TypeItem>(0) } at [TermDeclaration(Idx::<TermItem>(0))]
-RecursiveSynonymExpansion { file_id: Idx::<File>(9), item_id: Idx::<TypeItem>(1) } at [TermDeclaration(Idx::<TermItem>(1))]
-RecursiveSynonymExpansion { file_id: Idx::<File>(9), item_id: Idx::<TypeItem>(1) } at [TermDeclaration(Idx::<TermItem>(1))]
-RecursiveSynonymExpansion { file_id: Idx::<File>(9), item_id: Idx::<TypeItem>(1) } at [TermDeclaration(Idx::<TermItem>(1))]
-RecursiveSynonymExpansion { file_id: Idx::<File>(9), item_id: Idx::<TypeItem>(2) } at [TermDeclaration(Idx::<TermItem>(2))]
-RecursiveSynonymExpansion { file_id: Idx::<File>(9), item_id: Idx::<TypeItem>(2) } at [TermDeclaration(Idx::<TermItem>(2))]
-RecursiveSynonymExpansion { file_id: Idx::<File>(9), item_id: Idx::<TypeItem>(2) } at [TermDeclaration(Idx::<TermItem>(2))]
+RecursiveSynonymExpansion { file_id: Idx::<File>(30), item_id: Idx::<TypeItem>(0) } at [TermDeclaration(Idx::<TermItem>(0))]
+RecursiveSynonymExpansion { file_id: Idx::<File>(30), item_id: Idx::<TypeItem>(0) } at [TermDeclaration(Idx::<TermItem>(0))]
+RecursiveSynonymExpansion { file_id: Idx::<File>(30), item_id: Idx::<TypeItem>(0) } at [TermDeclaration(Idx::<TermItem>(0))]
+RecursiveSynonymExpansion { file_id: Idx::<File>(30), item_id: Idx::<TypeItem>(1) } at [TermDeclaration(Idx::<TermItem>(1))]
+RecursiveSynonymExpansion { file_id: Idx::<File>(30), item_id: Idx::<TypeItem>(1) } at [TermDeclaration(Idx::<TermItem>(1))]
+RecursiveSynonymExpansion { file_id: Idx::<File>(30), item_id: Idx::<TypeItem>(1) } at [TermDeclaration(Idx::<TermItem>(1))]
+RecursiveSynonymExpansion { file_id: Idx::<File>(30), item_id: Idx::<TypeItem>(2) } at [TermDeclaration(Idx::<TermItem>(2))]
+RecursiveSynonymExpansion { file_id: Idx::<File>(30), item_id: Idx::<TypeItem>(2) } at [TermDeclaration(Idx::<TermItem>(2))]
+RecursiveSynonymExpansion { file_id: Idx::<File>(30), item_id: Idx::<TypeItem>(2) } at [TermDeclaration(Idx::<TermItem>(2))]

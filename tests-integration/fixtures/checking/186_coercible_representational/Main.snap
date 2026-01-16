@@ -1,0 +1,36 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+Nothing :: forall (a :: Type). Maybe a
+Just :: forall (a :: Type). a -> Maybe a
+Age :: Int -> Age
+coerceMaybe :: Maybe Age -> Maybe Int
+coerceMaybeReverse :: Maybe Int -> Maybe Age
+UserId :: Int -> UserId
+coerceNested :: Maybe UserId -> Maybe Int
+
+Types
+Maybe :: Type -> Type
+Age :: Type
+UserId :: Type
+
+Data
+Maybe
+  Quantified = :0
+  Kind = :0
+
+Age
+  Quantified = :0
+  Kind = :0
+
+UserId
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+Maybe = [Representational]
+Age = []
+UserId = []

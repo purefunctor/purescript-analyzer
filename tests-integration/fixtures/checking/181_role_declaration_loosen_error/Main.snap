@@ -1,0 +1,21 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+F :: forall (t4 :: Type) (f :: t4 -> Type) (a :: t4). f a -> F @t4 f a
+
+Types
+F :: forall (t4 :: Type). (t4 -> Type) -> t4 -> Type
+
+Data
+F
+  Quantified = :1
+  Kind = :0
+
+
+Roles
+F = [Representational, Nominal]
+
+Errors
+InvalidRoleDeclaration { type_id: Idx::<TypeItem>(0), parameter_index: 1, declared: Phantom, inferred: Nominal } at []

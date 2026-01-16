@@ -1,0 +1,19 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+MkAdd :: forall (t1 :: Type) (t3 :: Type) (a :: t1) (b :: t3). a + b -> Add @t1 @t3 a b
+
+Types
+Add :: forall (t1 :: Type) (t3 :: Type). t1 -> t3 -> Type
++ :: forall (t1 :: Type) (t3 :: Type). t1 -> t3 -> Type
+
+Data
+Add
+  Quantified = :2
+  Kind = :0
+
+
+Roles
+Add = [Representational, Representational]

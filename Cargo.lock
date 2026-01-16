@@ -366,6 +366,8 @@ dependencies = [
  "clap",
  "console",
  "md-5",
+ "serde",
+ "serde_json",
  "similar",
  "walkdir",
 ]

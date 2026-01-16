@@ -1,0 +1,25 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+Triple :: forall (a :: Type) (b :: Type) (c :: Type). a -> b -> c -> Triple a b c
+
+Types
+Triple :: Type -> Type -> Type -> Type
+
+Data
+Triple
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+Triple = [Representational, Representational, Representational]
+
+Derived
+derive Bifunctor (Triple Int String :: Type -> Type)
+
+Errors
+CannotUnify { Type, Type -> Type } at [TermDeclaration(Idx::<TermItem>(1)), CheckingKind(AstId<syntax::cst::Type>(21))]
+CannotDeriveForType { type_id: Id<checking::core::Type>(45) } at [TermDeclaration(Idx::<TermItem>(1))]

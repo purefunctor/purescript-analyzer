@@ -15,3 +15,27 @@ Show :: Type -> Constraint
 Functor :: (Type -> Type) -> Constraint
 Box :: Type -> Type
 Maybe :: Type -> Type
+
+Data
+Box
+  Quantified = :0
+  Kind = :0
+
+Maybe
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+Box = [Representational]
+Maybe = [Representational]
+
+Classes
+class Show (&0 :: Type)
+class Functor (&0 :: Type -> Type)
+
+Instances
+instance Functor (Box :: Type -> Type)
+  chain: 0
+instance Functor (Maybe :: Type -> Type)
+  chain: 0

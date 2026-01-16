@@ -35,11 +35,11 @@ impl TypeFold for SubstituteBound {
     }
 }
 
-pub struct ShiftLevels {
+pub struct ShiftBound {
     offset: u32,
 }
 
-impl ShiftLevels {
+impl ShiftBound {
     /// Shifts all bound variable levels in a type by a given offset.
     ///
     /// This is needed when adding new forall binders at the front of a type,
@@ -49,19 +49,18 @@ impl ShiftLevels {
         if offset == 0 {
             return id;
         }
-        fold_type(state, id, &mut ShiftLevels { offset })
+        fold_type(state, id, &mut ShiftBound { offset })
     }
 }
 
-impl TypeFold for ShiftLevels {
+impl TypeFold for ShiftBound {
     fn transform(&mut self, state: &mut CheckState, _id: TypeId, t: &Type) -> FoldAction {
         if let Type::Variable(Variable::Bound(level)) = t {
-            let shifted = debruijn::Level(level.0 + self.offset);
-            return FoldAction::Replace(
-                state.storage.intern(Type::Variable(Variable::Bound(shifted))),
-            );
+            let level = debruijn::Level(level.0 + self.offset);
+            FoldAction::Replace(state.storage.intern(Type::Variable(Variable::Bound(level))))
+        } else {
+            FoldAction::Continue
         }
-        FoldAction::Continue
     }
 
     fn transform_binder(&mut self, binder: &mut ForallBinder) {
@@ -96,5 +95,35 @@ impl TypeFold for SubstituteUnification<'_> {
             return FoldAction::Replace(id);
         }
         FoldAction::Continue
+    }
+}
+
+pub type LevelToType = FxHashMap<debruijn::Level, TypeId>;
+
+pub struct SubstituteBindings<'a> {
+    bindings: &'a LevelToType,
+}
+
+impl SubstituteBindings<'_> {
+    /// Substitutes bound and implicit variables using a level-based mapping.
+    ///
+    /// This is used to specialize class superclasses with instance arguments.
+    /// For example, when deriving `Traversable (Compose f g)`, the superclass
+    /// `Functor t` becomes `Functor (Compose f g)` by binding `t`'s level to
+    /// `Compose f g`.
+    pub fn on(state: &mut CheckState, bindings: &LevelToType, id: TypeId) -> TypeId {
+        fold_type(state, id, &mut SubstituteBindings { bindings })
+    }
+}
+
+impl TypeFold for SubstituteBindings<'_> {
+    fn transform(&mut self, _state: &mut CheckState, id: TypeId, t: &Type) -> FoldAction {
+        match t {
+            Type::Variable(Variable::Bound(level)) => {
+                let id = self.bindings.get(level).copied().unwrap_or(id);
+                FoldAction::Replace(id)
+            }
+            _ => FoldAction::Continue,
+        }
     }
 }

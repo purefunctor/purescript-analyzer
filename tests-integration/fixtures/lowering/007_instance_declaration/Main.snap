@@ -19,7 +19,8 @@ a@Some(Position { line: 6, character: 11 })
   resolves to a constraint variable "a"
     Some(Position { line: 6, character: 26 })
 b@Some(Position { line: 10, character: 21 })
-  introduces a constraint variable "b"
+  resolves to a constraint variable "b"
+    Some(Position { line: 10, character: 19 })
 a@Some(Position { line: 7, character: 24 })
   resolves to a constraint variable "a"
     Some(Position { line: 6, character: 26 })
@@ -33,11 +34,9 @@ a@Some(Position { line: 7, character: 13 })
 b@Some(Position { line: 11, character: 22 })
   resolves to a constraint variable "b"
     Some(Position { line: 10, character: 19 })
-    Some(Position { line: 10, character: 21 })
 b@Some(Position { line: 11, character: 29 })
   resolves to a constraint variable "b"
     Some(Position { line: 10, character: 19 })
-    Some(Position { line: 10, character: 21 })
 p@Some(Position { line: 11, character: 20 })
   resolves to forall Some(Position { line: 11, character: 17 })
 p@Some(Position { line: 11, character: 27 })

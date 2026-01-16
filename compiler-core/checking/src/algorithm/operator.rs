@@ -7,7 +7,7 @@ use sugar::bracketing::BracketingResult;
 
 use crate::ExternalQueries;
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::{binder, kind, substitute, term, unification};
+use crate::algorithm::{binder, kind, term, toolkit, unification};
 use crate::core::{Type, TypeId};
 
 #[derive(Copy, Clone, Debug)]
@@ -105,7 +105,7 @@ where
         OperatorKindMode::Check { expected_type } => (unknown_elaborated, expected_type),
     };
 
-    let operator_type = instantiate_forall(state, operator_type);
+    let operator_type = toolkit::instantiate_forall(state, operator_type);
     let operator_type = state.normalize_type(operator_type);
 
     let Type::Function(left_type, operator_type) = state.storage[operator_type] else {
@@ -138,21 +138,6 @@ where
     )?;
 
     Ok(E::build(state, context, operator, (left, right), result_type))
-}
-
-pub fn instantiate_forall(state: &mut CheckState, mut kind_id: TypeId) -> TypeId {
-    loop {
-        kind_id = state.normalize_type(kind_id);
-        if let Type::Forall(ref binder, inner) = state.storage[kind_id] {
-            let binder_level = binder.level;
-            let binder_kind = binder.kind;
-
-            let unification = state.fresh_unification_kinded(binder_kind);
-            kind_id = substitute::SubstituteBound::on(state, binder_level, unification, inner);
-        } else {
-            break kind_id;
-        }
-    }
 }
 
 pub trait IsOperator<Q: ExternalQueries>: IsElement {

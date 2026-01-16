@@ -1,0 +1,24 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+Identity :: forall (a :: Type). a -> Identity a
+
+Types
+Identity :: Type -> Type
+
+Data
+Identity
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+Identity = [Representational]
+
+Derived
+derive Show (Identity &0 :: Type)
+
+Errors
+NoInstanceFound { Show &0 } at [TermDeclaration(Idx::<TermItem>(1))]

@@ -1,0 +1,51 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+MkBox :: Int -> Box
+MkPair :: Int -> Boolean -> Pair
+MkNoOrd :: NoOrd
+MkContainsNoOrd :: NoOrd -> ContainsNoOrd
+
+Types
+Box :: Type
+Pair :: Type
+NoOrd :: Type
+ContainsNoOrd :: Type
+
+Data
+Box
+  Quantified = :0
+  Kind = :0
+
+Pair
+  Quantified = :0
+  Kind = :0
+
+NoOrd
+  Quantified = :0
+  Kind = :0
+
+ContainsNoOrd
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+Box = []
+Pair = []
+NoOrd = []
+ContainsNoOrd = []
+
+Derived
+derive Eq (Box :: Type)
+derive Ord (Box :: Type)
+derive Eq (Pair :: Type)
+derive Ord (Pair :: Type)
+derive Eq (NoOrd :: Type)
+derive Eq (ContainsNoOrd :: Type)
+derive Ord (ContainsNoOrd :: Type)
+
+Errors
+NoInstanceFound { Ord NoOrd } at [TermDeclaration(Idx::<TermItem>(10))]

@@ -19,7 +19,6 @@ pub struct ForallBinder {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Variable {
-    Implicit(debruijn::Level),
     Skolem(debruijn::Level, TypeId),
     Bound(debruijn::Level),
     Free(SmolStr),
@@ -114,17 +113,48 @@ impl Synonym {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub enum InstanceKind {
+    Chain { id: InstanceChainId, position: u32 },
+    Derive,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Instance {
     pub arguments: Vec<(TypeId, TypeId)>,
     pub constraints: Vec<(TypeId, TypeId)>,
     pub resolution: (FileId, TypeItemId),
-    pub chain_id: InstanceChainId,
-    pub chain_position: u32,
+    pub kind: InstanceKind,
+    pub kind_variables: Vec<TypeId>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Class {
     pub superclasses: Arc<[(TypeId, TypeId)]>,
+    pub type_variable_kinds: Vec<TypeId>,
+    pub quantified_variables: debruijn::Size,
+    pub kind_variables: debruijn::Size,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Role {
+    Phantom,
+    Representational,
+    Nominal,
+}
+
+impl From<lowering::Role> for Role {
+    fn from(role: lowering::Role) -> Self {
+        match role {
+            lowering::Role::Phantom => Role::Phantom,
+            lowering::Role::Representational => Role::Representational,
+            lowering::Role::Nominal => Role::Nominal,
+            lowering::Role::Unknown => Role::Phantom,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct DataLike {
     pub quantified_variables: debruijn::Size,
     pub kind_variables: debruijn::Size,
 }

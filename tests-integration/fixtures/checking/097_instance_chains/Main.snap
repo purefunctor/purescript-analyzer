@@ -3,11 +3,29 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-Proxy :: forall (t1 :: Type) (a :: t1). Proxy @t1 a
-testSame :: forall (t14 :: Type) (r :: t14). TypeEq @Type @Type @t14 Int Int r => Proxy @t14 r
-testDiff :: forall (t21 :: Type) (r :: t21). TypeEq @Type @Type @t21 Int String r => Proxy @t21 r
+Proxy :: forall (t0 :: Type) (a :: t0). Proxy @t0 a
+testSame :: forall (t10 :: Type) (r :: t10). TypeEq @Type @Type @t10 Int Int r => Proxy @t10 r
+testDiff :: forall (t17 :: Type) (r :: t17). TypeEq @Type @Type @t17 Int String r => Proxy @t17 r
 test :: { testDiff :: Proxy @Boolean False, testSame :: Proxy @Boolean True }
 
 Types
-Proxy :: forall (t1 :: Type). t1 -> Type
-TypeEq :: forall (t3 :: Type) (t6 :: Type) (t7 :: Type). t3 -> t6 -> t7 -> Constraint
+Proxy :: forall (t0 :: Type). t0 -> Type
+TypeEq :: forall (t1 :: Type) (t2 :: Type) (t3 :: Type). t1 -> t2 -> t3 -> Constraint
+
+Data
+Proxy
+  Quantified = :1
+  Kind = :0
+
+
+Roles
+Proxy = [Phantom]
+
+Classes
+class TypeEq (&3 :: &0) (&4 :: &1) (&5 :: &2)
+
+Instances
+instance forall (&0 :: Type). TypeEq (&1 :: &0) (&1 :: &0) (True :: Boolean)
+  chain: 0
+instance forall (&0 :: Type) (&1 :: Type). TypeEq (&2 :: &0) (&3 :: &1) (False :: Boolean)
+  chain: 1

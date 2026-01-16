@@ -1,0 +1,23 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+show :: forall (a :: Type). Show a => a -> String
+Shown :: forall (a :: Type). ((Show a => a -> String) -> String) -> Shown a
+
+Types
+Show :: Type -> Constraint
+Shown :: Type -> Type
+
+Data
+Shown
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+Shown = [Nominal]
+
+Classes
+class Show (&0 :: Type)
