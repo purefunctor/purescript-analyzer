@@ -94,33 +94,35 @@ where
 
     if has_type_kind(state, context, left)?
         && let Some((file_id, type_id)) = derive::extract_type_constructor(state, left)
-            && is_newtype(context, file_id, type_id)? {
-                if is_constructor_in_scope(context, file_id, type_id)? {
-                    let inner = derive::get_newtype_inner(state, context, file_id, type_id, left)?;
-                    let constraint = make_coercible_constraint(state, context, inner, right);
-                    return Ok(NewtypeCoercionResult::Success(MatchInstance::Match {
-                        constraints: vec![constraint],
-                        equalities: vec![],
-                    }));
-                } else {
-                    hidden_newtype = Some((file_id, type_id));
-                }
-            }
+        && is_newtype(context, file_id, type_id)?
+    {
+        if is_constructor_in_scope(context, file_id, type_id)? {
+            let inner = derive::get_newtype_inner(state, context, file_id, type_id, left)?;
+            let constraint = make_coercible_constraint(state, context, inner, right);
+            return Ok(NewtypeCoercionResult::Success(MatchInstance::Match {
+                constraints: vec![constraint],
+                equalities: vec![],
+            }));
+        } else {
+            hidden_newtype = Some((file_id, type_id));
+        }
+    }
 
     if has_type_kind(state, context, right)?
         && let Some((file_id, type_id)) = derive::extract_type_constructor(state, right)
-            && is_newtype(context, file_id, type_id)? {
-                if is_constructor_in_scope(context, file_id, type_id)? {
-                    let inner = derive::get_newtype_inner(state, context, file_id, type_id, right)?;
-                    let constraint = make_coercible_constraint(state, context, left, inner);
-                    return Ok(NewtypeCoercionResult::Success(MatchInstance::Match {
-                        constraints: vec![constraint],
-                        equalities: vec![],
-                    }));
-                } else if hidden_newtype.is_none() {
-                    hidden_newtype = Some((file_id, type_id));
-                }
-            }
+        && is_newtype(context, file_id, type_id)?
+    {
+        if is_constructor_in_scope(context, file_id, type_id)? {
+            let inner = derive::get_newtype_inner(state, context, file_id, type_id, right)?;
+            let constraint = make_coercible_constraint(state, context, left, inner);
+            return Ok(NewtypeCoercionResult::Success(MatchInstance::Match {
+                constraints: vec![constraint],
+                equalities: vec![],
+            }));
+        } else if hidden_newtype.is_none() {
+            hidden_newtype = Some((file_id, type_id));
+        }
+    }
 
     if let Some((file_id, item_id)) = hidden_newtype {
         return Ok(NewtypeCoercionResult::ConstructorNotInScope { file_id, item_id });
