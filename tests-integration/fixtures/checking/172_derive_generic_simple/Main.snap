@@ -4,28 +4,40 @@ expression: report
 ---
 Terms
 MyUnit :: MyUnit
-Identity :: forall (a :: Type). a -> Identity a
-Left :: forall (a :: Type) (b :: Type). a -> Either a b
-Right :: forall (a :: Type) (b :: Type). b -> Either a b
-Tuple :: forall (a :: Type) (b :: Type). a -> b -> Tuple a b
-Wrapper :: forall (a :: Type). a -> Wrapper a
-Proxy :: forall (t6 :: Type) (a :: t6). Proxy @t6 a
-getVoid :: forall (rep :: Type). Generic Void rep => Proxy @Type rep
-getMyUnit :: forall (rep :: Type). Generic MyUnit rep => Proxy @Type rep
-getIdentity :: forall (a :: Type) (rep :: Type). Generic (Identity a) rep => Proxy @Type rep
+Identity :: forall (a :: Type). (a :: Type) -> Identity (a :: Type)
+Left :: forall (a :: Type) (b :: Type). (a :: Type) -> Either (a :: Type) (b :: Type)
+Right :: forall (a :: Type) (b :: Type). (b :: Type) -> Either (a :: Type) (b :: Type)
+Tuple :: forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type) -> Tuple (a :: Type) (b :: Type)
+Wrapper :: forall (a :: Type). (a :: Type) -> Wrapper (a :: Type)
+Proxy :: forall (t6 :: Type) (a :: (t6 :: Type)). Proxy @(t6 :: Type) (a :: ???)
+getVoid :: forall (rep :: Type). Generic Void (rep :: Type) => Proxy @Type (rep :: Type)
+getMyUnit :: forall (rep :: Type). Generic MyUnit (rep :: Type) => Proxy @Type (rep :: Type)
+getIdentity ::
+  forall (a :: Type) (rep :: Type).
+    Generic (Identity (a :: Type)) (rep :: Type) => Proxy @Type (rep :: Type)
 getEither ::
-  forall (a :: Type) (b :: Type) (rep :: Type). Generic (Either a b) rep => Proxy @Type rep
-getTuple :: forall (a :: Type) (b :: Type) (rep :: Type). Generic (Tuple a b) rep => Proxy @Type rep
-getWrapper :: forall (a :: Type) (rep :: Type). Generic (Wrapper a) rep => Proxy @Type rep
+  forall (a :: Type) (b :: Type) (rep :: Type).
+    Generic (Either (a :: Type) (b :: Type)) (rep :: Type) => Proxy @Type (rep :: Type)
+getTuple ::
+  forall (a :: Type) (b :: Type) (rep :: Type).
+    Generic (Tuple (a :: Type) (b :: Type)) (rep :: Type) => Proxy @Type (rep :: Type)
+getWrapper ::
+  forall (a :: Type) (rep :: Type).
+    Generic (Wrapper (a :: Type)) (rep :: Type) => Proxy @Type (rep :: Type)
 forceSolve ::
   forall (t65 :: Type) (t67 :: Type) (t68 :: Type) (t70 :: Type) (t71 :: Type) (t73 :: Type).
     { getEither ::
-        Proxy @Type (Sum (Constructor "Left" (Argument t67)) (Constructor "Right" (Argument t68)))
-    , getIdentity :: Proxy @Type (Constructor "Identity" (Argument t65))
+        Proxy @Type
+          (Sum
+            (Constructor "Left" (Argument (t67 :: Type)))
+            (Constructor "Right" (Argument (t68 :: Type))))
+    , getIdentity :: Proxy @Type (Constructor "Identity" (Argument (t65 :: Type)))
     , getMyUnit :: Proxy @Type (Constructor "MyUnit" NoArguments)
-    , getTuple :: Proxy @Type (Constructor "Tuple" (Product (Argument t70) (Argument t71)))
+    , getTuple ::
+        Proxy @Type
+          (Constructor "Tuple" (Product (Argument (t70 :: Type)) (Argument (t71 :: Type))))
     , getVoid :: Proxy @Type NoConstructors
-    , getWrapper :: Proxy @Type (Constructor "Wrapper" (Argument t73))
+    , getWrapper :: Proxy @Type (Constructor "Wrapper" (Argument (t73 :: Type)))
     }
 
 Types
@@ -35,7 +47,7 @@ Identity :: Type -> Type
 Either :: Type -> Type -> Type
 Tuple :: Type -> Type -> Type
 Wrapper :: Type -> Type
-Proxy :: forall (t6 :: Type). t6 -> Type
+Proxy :: forall (t6 :: Type). (t6 :: Type) -> Type
 
 Data
 Void
@@ -79,7 +91,7 @@ Proxy = [Phantom]
 Derived
 derive Generic (Void :: Type) (NoConstructors :: Type)
 derive Generic (MyUnit :: Type) (Constructor "MyUnit" NoArguments :: Type)
-derive Generic (Identity &0 :: Type) (Constructor "Identity" (Argument &0) :: Type)
-derive Generic (Either &0 &1 :: Type) (Sum (Constructor "Left" (Argument &0)) (Constructor "Right" (Argument &1)) :: Type)
-derive Generic (Tuple &0 &1 :: Type) (Constructor "Tuple" (Product (Argument &0) (Argument &1)) :: Type)
-derive Generic (Wrapper &0 :: Type) (Constructor "Wrapper" (Argument &0) :: Type)
+derive Generic (Identity (&0 :: Type) :: Type) (Constructor "Identity" (Argument (&0 :: Type)) :: Type)
+derive Generic (Either (&0 :: Type) (&1 :: Type) :: Type) (Sum (Constructor "Left" (Argument (&0 :: Type))) (Constructor "Right" (Argument (&1 :: Type))) :: Type)
+derive Generic (Tuple (&0 :: Type) (&1 :: Type) :: Type) (Constructor "Tuple" (Product (Argument (&0 :: Type)) (Argument (&1 :: Type))) :: Type)
+derive Generic (Wrapper (&0 :: Type) :: Type) (Constructor "Wrapper" (Argument (&0 :: Type)) :: Type)

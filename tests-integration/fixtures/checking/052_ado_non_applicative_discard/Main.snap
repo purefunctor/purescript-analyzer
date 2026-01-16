@@ -3,9 +3,9 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-pure :: forall (a :: Type) (b :: Type). a -> b
-map :: forall (a :: Type) (b :: Type). (a -> b) -> a -> b
-apply :: forall (a :: Type) (b :: Type). (a -> b) -> a -> b
+pure :: forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type)
+map :: forall (a :: Type) (b :: Type). ((a :: Type) -> (b :: Type)) -> (a :: Type) -> (b :: Type)
+apply :: forall (a :: Type) (b :: Type). ((a :: Type) -> (b :: Type)) -> (a :: Type) -> (b :: Type)
 test :: Int
 test' :: Int
 

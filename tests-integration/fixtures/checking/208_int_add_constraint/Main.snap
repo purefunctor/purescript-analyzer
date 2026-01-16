@@ -4,16 +4,17 @@ expression: report
 ---
 Terms
 add ::
-  forall (t9 :: Type) (t11 :: Type) (n :: t9) (m :: t11).
-    Program @t9 @t11 n m => Proxy @t9 n -> Proxy @t11 m
+  forall (t9 :: Type) (t11 :: Type) (n :: (t9 :: Type)) (m :: (t11 :: Type)).
+    Program @(t9 :: Type) @(t11 :: Type) (n :: ???) (m :: ???) =>
+    Proxy @(t9 :: Type) (n :: ???) -> Proxy @(t11 :: Type) (m :: ???)
 test :: Proxy @Int 3
 
 Types
-Program :: forall (t0 :: Type) (t1 :: Type). t0 -> t1 -> Constraint
+Program :: forall (t0 :: Type) (t1 :: Type). (t0 :: Type) -> (t1 :: Type) -> Constraint
 
 Classes
-class Program (&2 :: &0) (&3 :: &1)
+class Program (&2 :: (&0 :: Type)) (&3 :: (&1 :: Type))
 
 Instances
-instance (Add &0 1 &2, Add &2 1 &1) => Program (&0 :: Int) (&1 :: Int)
+instance (Add (&0 :: Int) 1 (&2 :: Int), Add (&2 :: Int) 1 (&1 :: Int)) => Program ((&0 :: Int) :: Int) ((&1 :: Int) :: Int)
   chain: 0

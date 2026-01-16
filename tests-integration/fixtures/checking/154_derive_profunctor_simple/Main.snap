@@ -3,14 +3,16 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-Fn :: forall (a :: Type) (b :: Type). (a -> b) -> Fn a b
-ConstR :: forall (t4 :: Type) (r :: Type) (a :: Type) (b :: t4). (a -> r) -> ConstR @t4 r a b
-GoLeft :: forall (a :: Type) (b :: Type). (a -> Int) -> Choice a b
-GoRight :: forall (a :: Type) (b :: Type). b -> Choice a b
+Fn :: forall (a :: Type) (b :: Type). ((a :: Type) -> (b :: Type)) -> Fn (a :: Type) (b :: Type)
+ConstR ::
+  forall (t4 :: Type) (r :: Type) (a :: Type) (b :: (t4 :: Type)).
+    ((a :: Type) -> (r :: Type)) -> ConstR @(t4 :: Type) (r :: Type) (a :: Type) (b :: ???)
+GoLeft :: forall (a :: Type) (b :: Type). ((a :: Type) -> Int) -> Choice (a :: Type) (b :: Type)
+GoRight :: forall (a :: Type) (b :: Type). (b :: Type) -> Choice (a :: Type) (b :: Type)
 
 Types
 Fn :: Type -> Type -> Type
-ConstR :: forall (t4 :: Type). Type -> Type -> t4 -> Type
+ConstR :: forall (t4 :: Type). Type -> Type -> (t4 :: Type) -> Type
 Choice :: Type -> Type -> Type
 
 Data
@@ -34,5 +36,5 @@ Choice = [Representational, Representational]
 
 Derived
 derive Profunctor (Fn :: Type -> Type -> Type)
-derive Profunctor (ConstR @Type &0 :: Type -> Type -> Type)
+derive Profunctor (ConstR @Type (&0 :: Type) :: Type -> Type -> Type)
 derive Profunctor (Choice :: Type -> Type -> Type)

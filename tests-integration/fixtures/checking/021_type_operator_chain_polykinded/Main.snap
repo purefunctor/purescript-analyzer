@@ -5,23 +5,25 @@ expression: report
 Terms
 
 Types
-Add :: forall (k :: Type). k -> k -> k
-+ :: forall (k :: Type). k -> k -> k
-Chain :: forall (k :: Type). k -> k -> k -> k
-ChainParen :: forall (k :: Type). k -> k -> k -> k
+Add :: forall (k :: Type). (k :: Type) -> (k :: Type) -> (k :: Type)
++ :: forall (k :: Type). (k :: Type) -> (k :: Type) -> (k :: Type)
+Chain :: forall (k :: Type). (k :: Type) -> (k :: Type) -> (k :: Type) -> (k :: Type)
+ChainParen :: forall (k :: Type). (k :: Type) -> (k :: Type) -> (k :: Type) -> (k :: Type)
 
 Synonyms
-Add = forall (k :: Type) (a :: k) (b :: k). a
+Add = forall (k :: Type) (a :: (k :: Type)) (b :: (k :: Type)). (a :: (k :: Type))
   Quantified = :0
   Kind = :1
   Type = :2
 
-Chain = forall (k :: Type) (a :: k) (b :: k) (c :: k). a + b + c
+Chain = forall (k :: Type) (a :: (k :: Type)) (b :: (k :: Type)) (c :: (k :: Type)).
+  (a :: (k :: Type)) + (b :: (k :: Type)) + (c :: (k :: Type))
   Quantified = :0
   Kind = :1
   Type = :3
 
-ChainParen = forall (k :: Type) (a :: k) (b :: k) (c :: k). a + b + c
+ChainParen = forall (k :: Type) (a :: (k :: Type)) (b :: (k :: Type)) (c :: (k :: Type)).
+  (a :: (k :: Type)) + (b :: (k :: Type)) + (c :: (k :: Type))
   Quantified = :0
   Kind = :1
   Type = :3

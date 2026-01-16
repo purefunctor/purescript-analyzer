@@ -1,21 +1,20 @@
 ---
 source: tests-integration/tests/checking/generated.rs
-assertion_line: 11
 expression: report
 ---
 Terms
-foo0 :: forall (a :: Type). a -> a -> Int
-foo1 :: forall (a :: Type). a -> a -> Int
-foo2 :: forall (a :: Type). a -> a -> Int
-bar0 :: forall (a :: Type). ReturnsInt a -> ReturnsInt a
-bar1 :: forall (a :: Type). ReturnsInt a -> ReturnsInt a
-bar2 :: forall (a :: Type). ReturnsInt a -> ReturnsInt a
+foo0 :: forall (a :: Type). (a :: Type) -> (a :: Type) -> Int
+foo1 :: forall (a :: Type). (a :: Type) -> (a :: Type) -> Int
+foo2 :: forall (a :: Type). (a :: Type) -> (a :: Type) -> Int
+bar0 :: forall (a :: Type). ReturnsInt (a :: Type) -> ReturnsInt (a :: Type)
+bar1 :: forall (a :: Type). ReturnsInt (a :: Type) -> ReturnsInt (a :: Type)
+bar2 :: forall (a :: Type). ReturnsInt (a :: Type) -> ReturnsInt (a :: Type)
 
 Types
 ReturnsInt :: Type -> Type
 
 Synonyms
-ReturnsInt = forall (a :: Type). a -> Int
+ReturnsInt = forall (a :: Type). (a :: Type) -> Int
   Quantified = :0
   Kind = :0
   Type = :1

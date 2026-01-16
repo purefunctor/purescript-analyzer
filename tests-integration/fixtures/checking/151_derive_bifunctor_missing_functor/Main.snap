@@ -4,11 +4,20 @@ expression: report
 ---
 Terms
 WrapBoth ::
-  forall (t6 :: Type) (t10 :: Type) (f :: t6 -> Type) (g :: t10 -> Type) (a :: t6) (b :: t10).
-    f a -> g b -> WrapBoth @t6 @t10 f g a b
+  forall (t6 :: Type) (t10 :: Type) (f :: (t6 :: Type) -> Type) (g :: (t10 :: Type) -> Type)
+    (a :: (t6 :: Type)) (b :: (t10 :: Type)).
+    (f :: ??? -> Type) (a :: ???) ->
+    (g :: ??? -> Type) (b :: ???) ->
+    WrapBoth @(t6 :: Type) @(t10 :: Type)
+      (f :: ??? -> Type)
+      (g :: ??? -> Type)
+      (a :: ???)
+      (b :: ???)
 
 Types
-WrapBoth :: forall (t6 :: Type) (t10 :: Type). (t6 -> Type) -> (t10 -> Type) -> t6 -> t10 -> Type
+WrapBoth ::
+  forall (t6 :: Type) (t10 :: Type).
+    ((t6 :: Type) -> Type) -> ((t10 :: Type) -> Type) -> (t6 :: Type) -> (t10 :: Type) -> Type
 
 Data
 WrapBoth
@@ -20,7 +29,7 @@ Roles
 WrapBoth = [Representational, Representational, Nominal, Nominal]
 
 Derived
-derive Bifunctor (WrapBoth @Type @Type &0 &1 :: Type -> Type -> Type)
+derive Bifunctor (WrapBoth @Type @Type (&0 :: Type -> Type) (&1 :: Type -> Type) :: Type -> Type -> Type)
 
 Errors
 DeriveMissingFunctor at [TermDeclaration(Idx::<TermItem>(1))]

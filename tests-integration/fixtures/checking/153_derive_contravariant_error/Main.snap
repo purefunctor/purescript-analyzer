@@ -3,8 +3,8 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-Identity :: forall (a :: Type). a -> Identity a
-Producer :: forall (a :: Type). (Int -> a) -> Producer a
+Identity :: forall (a :: Type). (a :: Type) -> Identity (a :: Type)
+Producer :: forall (a :: Type). (Int -> (a :: Type)) -> Producer (a :: Type)
 
 Types
 Identity :: Type -> Type

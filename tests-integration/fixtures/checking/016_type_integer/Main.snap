@@ -5,7 +5,7 @@ expression: report
 Terms
 
 Types
-Proxy :: forall (k :: Type). k -> Type
+Proxy :: forall (k :: Type). (k :: Type) -> Type
 Positive :: Type
 Negative :: Type
 Underscore :: Type

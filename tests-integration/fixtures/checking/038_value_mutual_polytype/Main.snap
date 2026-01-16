@@ -3,7 +3,7 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-idRec :: forall (a :: Type). a -> a
-choose :: forall (a :: Type). a -> a -> a
+idRec :: forall (a :: Type). (a :: Type) -> (a :: Type)
+choose :: forall (a :: Type). (a :: Type) -> (a :: Type) -> (a :: Type)
 
 Types

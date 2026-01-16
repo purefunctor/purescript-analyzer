@@ -3,7 +3,8 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-In :: forall (f :: Type -> Type). f (Mu f) -> Mu f
+In ::
+  forall (f :: Type -> Type). (f :: Type -> Type) (Mu (f :: Type -> Type)) -> Mu (f :: Type -> Type)
 
 Types
 Mu :: (Type -> Type) -> Type

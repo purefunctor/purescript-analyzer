@@ -466,22 +466,41 @@ where
             format_row(arena, source, context, &fields, tail)
         }
 
-        Type::Variable(ref variable) => render_variable(arena, variable, context),
+        Type::Variable(ref variable) => render_variable(arena, source, context, variable),
 
         Type::Unknown => arena.text("???"),
     }
 }
 
-fn render_variable<'a>(
+fn render_variable<'a, Q>(
     arena: &'a Arena<'a>,
+    source: &mut TraversalSource<'_, Q>,
+    context: &mut TraversalContext,
     variable: &Variable,
-    context: &TraversalContext,
-) -> Doc<'a> {
+) -> Doc<'a>
+where
+    Q: ExternalQueries,
+{
     match variable {
-        Variable::Skolem(level, _) => arena.text(format!("~{}", level)),
-        Variable::Bound(level, _) => {
+        Variable::Skolem(level, kind) => {
+            let kind_doc = traverse_precedence(arena, source, context, Precedence::Top, *kind);
+            arena
+                .text("(")
+                .append(arena.text(format!("~{}", level)))
+                .append(arena.text(" :: "))
+                .append(kind_doc)
+                .append(arena.text(")"))
+        }
+        Variable::Bound(level, kind) => {
             let name = context.names.get(&level.0).cloned();
-            arena.text(name.unwrap_or_else(|| format!("{}", level)))
+            let name_doc = arena.text(name.unwrap_or_else(|| format!("{}", level)));
+            let kind_doc = traverse_precedence(arena, source, context, Precedence::Top, *kind);
+            arena
+                .text("(")
+                .append(name_doc)
+                .append(arena.text(" :: "))
+                .append(kind_doc)
+                .append(arena.text(")"))
         }
         Variable::Free(name) => arena.text(format!("{}", name)),
     }

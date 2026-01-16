@@ -3,16 +3,17 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-Left :: forall (a :: Type) (b :: Type). a -> Either a b
-Right :: forall (a :: Type) (b :: Type). b -> Either a b
-Pair :: forall (a :: Type) (b :: Type). a -> b -> Pair a b
+Left :: forall (a :: Type) (b :: Type). (a :: Type) -> Either (a :: Type) (b :: Type)
+Right :: forall (a :: Type) (b :: Type). (b :: Type) -> Either (a :: Type) (b :: Type)
+Pair :: forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type) -> Pair (a :: Type) (b :: Type)
 Const2 ::
-  forall (t5 :: Type) (t6 :: Type) (e :: Type) (a :: t5) (b :: t6). e -> Const2 @t5 @t6 e a b
+  forall (t5 :: Type) (t6 :: Type) (e :: Type) (a :: (t5 :: Type)) (b :: (t6 :: Type)).
+    (e :: Type) -> Const2 @(t5 :: Type) @(t6 :: Type) (e :: Type) (a :: ???) (b :: ???)
 
 Types
 Either :: Type -> Type -> Type
 Pair :: Type -> Type -> Type
-Const2 :: forall (t5 :: Type) (t6 :: Type). Type -> t5 -> t6 -> Type
+Const2 :: forall (t5 :: Type) (t6 :: Type). Type -> (t5 :: Type) -> (t6 :: Type) -> Type
 
 Data
 Either
@@ -36,4 +37,4 @@ Const2 = [Representational, Phantom, Phantom]
 Derived
 derive Bifoldable (Either :: Type -> Type -> Type)
 derive Bifoldable (Pair :: Type -> Type -> Type)
-derive Bifoldable (Const2 @Type @Type &0 :: Type -> Type -> Type)
+derive Bifoldable (Const2 @Type @Type (&0 :: Type) :: Type -> Type -> Type)

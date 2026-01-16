@@ -5,17 +5,19 @@ expression: report
 Terms
 
 Types
-RowApply :: forall (k :: Type). (Row k -> Row k) -> Row k -> Row k
+RowApply ::
+  forall (k :: Type). (Row (k :: Type) -> Row (k :: Type)) -> Row (k :: Type) -> Row (k :: Type)
 ExampleRow :: Row Type -> Row Type
 F :: Row Type
 
 Synonyms
-RowApply = forall (k :: Type) (f :: Row k -> Row k) (a :: Row k). f a
+RowApply = forall (k :: Type) (f :: Row (k :: Type) -> Row (k :: Type)) (a :: Row (k :: Type)).
+  (f :: Row (k :: Type) -> Row (k :: Type)) (a :: Row (k :: Type))
   Quantified = :0
   Kind = :1
   Type = :2
 
-ExampleRow = forall (r :: Row Type). ( a :: Int | r )
+ExampleRow = forall (r :: Row Type). ( a :: Int | (r :: Row Type) )
   Quantified = :0
   Kind = :0
   Type = :1

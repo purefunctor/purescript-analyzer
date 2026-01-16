@@ -3,7 +3,7 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-Identity :: forall (a :: Type). a -> Identity a
+Identity :: forall (a :: Type). (a :: Type) -> Identity (a :: Type)
 
 Types
 Identity :: Type -> Type
@@ -18,7 +18,7 @@ Roles
 Identity = [Representational]
 
 Derived
-derive Show (Identity &0 :: Type)
+derive Show (Identity (&0 :: Type) :: Type)
 
 Errors
-NoInstanceFound { Show &0 } at [TermDeclaration(Idx::<TermItem>(1))]
+NoInstanceFound { Show (&0 :: Type) } at [TermDeclaration(Idx::<TermItem>(1))]

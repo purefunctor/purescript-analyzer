@@ -3,8 +3,8 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-Nothing :: forall (a :: Type). Maybe a
-Just :: forall (a :: Type). a -> Maybe a
+Nothing :: forall (a :: Type). Maybe (a :: Type)
+Just :: forall (a :: Type). (a :: Type) -> Maybe (a :: Type)
 
 Types
 Maybe :: Type -> Type
@@ -19,4 +19,4 @@ Roles
 Maybe = [Representational]
 
 Derived
-derive Eq &0 => Eq (Maybe &0 :: Type)
+derive Eq (&0 :: Type) => Eq (Maybe (&0 :: Type) :: Type)

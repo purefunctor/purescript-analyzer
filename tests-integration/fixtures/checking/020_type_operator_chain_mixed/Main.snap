@@ -16,32 +16,32 @@ AddR :: Type -> Type -> Type
 AssocRight :: Type -> Type -> Type -> Type
 
 Synonyms
-Add = forall (a :: Type) (b :: Type). a
+Add = forall (a :: Type) (b :: Type). (a :: Type)
   Quantified = :0
   Kind = :0
   Type = :2
 
-Mul = forall (a :: Type) (b :: Type). b
+Mul = forall (a :: Type) (b :: Type). (b :: Type)
   Quantified = :0
   Kind = :0
   Type = :2
 
-Mixed = forall (a :: Type) (b :: Type) (c :: Type). a + b * c
+Mixed = forall (a :: Type) (b :: Type) (c :: Type). (a :: Type) + (b :: Type) * (c :: Type)
   Quantified = :0
   Kind = :0
   Type = :3
 
-AssocLeft = forall (a :: Type) (b :: Type) (c :: Type). a + b + c
+AssocLeft = forall (a :: Type) (b :: Type) (c :: Type). (a :: Type) + (b :: Type) + (c :: Type)
   Quantified = :0
   Kind = :0
   Type = :3
 
-AddR = forall (a :: Type) (b :: Type). a
+AddR = forall (a :: Type) (b :: Type). (a :: Type)
   Quantified = :0
   Kind = :0
   Type = :2
 
-AssocRight = forall (a :: Type) (b :: Type) (c :: Type). a -+- b -+- c
+AssocRight = forall (a :: Type) (b :: Type) (c :: Type). (a :: Type) -+- (b :: Type) -+- (c :: Type)
   Quantified = :0
   Kind = :0
   Type = :3

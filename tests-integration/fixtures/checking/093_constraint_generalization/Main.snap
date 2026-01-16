@@ -3,10 +3,10 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-eq :: forall (a :: Type). Eq a => a -> a -> Boolean
-test :: forall (t6 :: Type). Eq t6 => t6 -> t6 -> Boolean
-compare :: forall (a :: Type). Ord a => a -> a -> Int
-test2 :: forall (t11 :: Type). Ord t11 => t11 -> t11 -> Int
+eq :: forall (a :: Type). Eq (a :: Type) => (a :: Type) -> (a :: Type) -> Boolean
+test :: forall (t6 :: Type). Eq (t6 :: Type) => (t6 :: Type) -> (t6 :: Type) -> Boolean
+compare :: forall (a :: Type). Ord (a :: Type) => (a :: Type) -> (a :: Type) -> Int
+test2 :: forall (t11 :: Type). Ord (t11 :: Type) => (t11 :: Type) -> (t11 :: Type) -> Int
 
 Types
 Eq :: Type -> Constraint

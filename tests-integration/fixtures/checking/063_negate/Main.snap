@@ -3,13 +3,13 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-negate :: forall (a :: Type). a -> a
+negate :: forall (a :: Type). (a :: Type) -> (a :: Type)
 testInt :: Int
 testInt' :: Int
 testNumber :: Number
 testNumber' :: Number
 testVariable :: Int -> Int
-testVariable' :: forall (t12 :: Type). t12 -> t12
+testVariable' :: forall (t12 :: Type). (t12 :: Type) -> (t12 :: Type)
 testNested :: Int
 testNested' :: Int
 

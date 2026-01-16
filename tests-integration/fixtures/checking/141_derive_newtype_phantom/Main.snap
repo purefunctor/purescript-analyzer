@@ -3,7 +3,7 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-Vector :: forall (n :: Int) (a :: Type). Array a -> Vector n a
+Vector :: forall (n :: Int) (a :: Type). Array (a :: Type) -> Vector (n :: Int) (a :: Type)
 
 Types
 Vector :: Int -> Type -> Type
@@ -18,4 +18,4 @@ Roles
 Vector = [Phantom, Representational]
 
 Derived
-derive Show &1 => Show (Vector &0 &1 :: Type)
+derive Show (&1 :: Type) => Show (Vector (&0 :: Int) (&1 :: Type) :: Type)

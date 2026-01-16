@@ -3,54 +3,80 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-Proxy :: forall (k :: Type) (a :: k). Proxy @k a
+Proxy :: forall (k :: Type) (a :: (k :: Type)). Proxy @(k :: Type) (a :: (k :: Type))
 deriveUnion ::
-  forall (u :: Row Type). Union @Type ( a :: Int ) ( b :: String ) u => Proxy @(Row Type) u
+  forall (u :: Row Type).
+    Union @Type ( a :: Int ) ( b :: String ) (u :: Row Type) => Proxy @(Row Type) (u :: Row Type)
 deriveUnionLeft ::
   forall (l :: Row Type).
-    Union @Type l ( b :: String ) ( a :: Int, b :: String ) => Proxy @(Row Type) l
+    Union @Type (l :: Row Type) ( b :: String ) ( a :: Int, b :: String ) =>
+    Proxy @(Row Type) (l :: Row Type)
 deriveUnionRight ::
   forall (r :: Row Type).
-    Union @Type ( a :: Int ) r ( a :: Int, b :: String ) => Proxy @(Row Type) r
-unionEmptyLeft :: forall (u :: Row Type). Union @Type () ( a :: Int ) u => Proxy @(Row Type) u
-unionEmptyRight :: forall (u :: Row Type). Union @Type ( a :: Int ) () u => Proxy @(Row Type) u
-unionBothEmpty :: forall (t31 :: Type) (u :: Row t31). Union @t31 () () u => Proxy @(Row t31) u
+    Union @Type ( a :: Int ) (r :: Row Type) ( a :: Int, b :: String ) =>
+    Proxy @(Row Type) (r :: Row Type)
+unionEmptyLeft ::
+  forall (u :: Row Type).
+    Union @Type () ( a :: Int ) (u :: Row Type) => Proxy @(Row Type) (u :: Row Type)
+unionEmptyRight ::
+  forall (u :: Row Type).
+    Union @Type ( a :: Int ) () (u :: Row Type) => Proxy @(Row Type) (u :: Row Type)
+unionBothEmpty ::
+  forall (t31 :: Type) (u :: Row (t31 :: Type)).
+    Union @(t31 :: Type) () () (u :: Row ???) => Proxy @(Row (t31 :: Type)) (u :: Row ???)
 unionMultiple ::
   forall (u :: Row Type).
-    Union @Type ( a :: Int, b :: String ) ( c :: Boolean ) u => Proxy @(Row Type) u
-deriveCons :: forall (row :: Row Type). Cons @Type "name" String () row => Proxy @(Row Type) row
+    Union @Type ( a :: Int, b :: String ) ( c :: Boolean ) (u :: Row Type) =>
+    Proxy @(Row Type) (u :: Row Type)
+deriveCons ::
+  forall (row :: Row Type).
+    Cons @Type "name" String () (row :: Row Type) => Proxy @(Row Type) (row :: Row Type)
 deriveTail ::
   forall (tail :: Row Type).
-    Cons @Type "name" String tail ( age :: Int, name :: String ) => Proxy @(Row Type) tail
-deriveType :: forall (t :: Type). Cons @Type "name" t () ( name :: String ) => Proxy @Type t
+    Cons @Type "name" String (tail :: Row Type) ( age :: Int, name :: String ) =>
+    Proxy @(Row Type) (tail :: Row Type)
+deriveType ::
+  forall (t :: Type). Cons @Type "name" (t :: Type) () ( name :: String ) => Proxy @Type (t :: Type)
 nestedCons ::
-  forall (row :: Row Type). Cons @Type "a" Int ( b :: String ) row => Proxy @(Row Type) row
+  forall (row :: Row Type).
+    Cons @Type "a" Int ( b :: String ) (row :: Row Type) => Proxy @(Row Type) (row :: Row Type)
 lacksSimple ::
-  forall (t62 :: Type) (r :: t62).
-    Lacks @Type "missing" ( a :: Int, b :: String ) => Proxy @t62 r -> Proxy @t62 r
+  forall (t62 :: Type) (r :: (t62 :: Type)).
+    Lacks @Type "missing" ( a :: Int, b :: String ) =>
+    Proxy @(t62 :: Type) (r :: ???) -> Proxy @(t62 :: Type) (r :: ???)
 lacksEmpty ::
-  forall (t69 :: Type) (t64 :: Type) (r :: t69).
-    Lacks @t64 "anything" () => Proxy @t69 r -> Proxy @t69 r
+  forall (t69 :: Type) (t64 :: Type) (r :: (t69 :: Type)).
+    Lacks @(t64 :: Type) "anything" () =>
+    Proxy @(t69 :: Type) (r :: ???) -> Proxy @(t69 :: Type) (r :: ???)
 nubNoDuplicates ::
   forall (nubbed :: Row Type).
-    Nub @Type ( a :: Int, b :: String ) nubbed => Proxy @(Row Type) nubbed
-nubEmpty :: forall (t77 :: Type) (nubbed :: Row t77). Nub @t77 () nubbed => Proxy @(Row t77) nubbed
+    Nub @Type ( a :: Int, b :: String ) (nubbed :: Row Type) =>
+    Proxy @(Row Type) (nubbed :: Row Type)
+nubEmpty ::
+  forall (t77 :: Type) (nubbed :: Row (t77 :: Type)).
+    Nub @(t77 :: Type) () (nubbed :: Row ???) => Proxy @(Row (t77 :: Type)) (nubbed :: Row ???)
 rowToListSimple ::
-  forall (list :: RowList Type). RowToList @Type ( a :: Int ) list => Proxy @(RowList Type) list
+  forall (list :: RowList Type).
+    RowToList @Type ( a :: Int ) (list :: RowList Type) =>
+    Proxy @(RowList Type) (list :: RowList Type)
 rowToListMultiple ::
   forall (list :: RowList Type).
-    RowToList @Type ( a :: Int, b :: String ) list => Proxy @(RowList Type) list
+    RowToList @Type ( a :: Int, b :: String ) (list :: RowList Type) =>
+    Proxy @(RowList Type) (list :: RowList Type)
 rowToListEmpty ::
-  forall (t90 :: Type) (list :: RowList t90). RowToList @t90 () list => Proxy @(RowList t90) list
+  forall (t90 :: Type) (list :: RowList (t90 :: Type)).
+    RowToList @(t90 :: Type) () (list :: RowList ???) =>
+    Proxy @(RowList (t90 :: Type)) (list :: RowList ???)
 rowToListThree ::
   forall (list :: RowList Type).
-    RowToList @Type ( a :: Int, b :: String, c :: Boolean ) list => Proxy @(RowList Type) list
+    RowToList @Type ( a :: Int, b :: String, c :: Boolean ) (list :: RowList Type) =>
+    Proxy @(RowList Type) (list :: RowList Type)
 solveUnion ::
   forall (t147 :: Type).
     { deriveUnion :: Proxy @(Row Type) ( a :: Int, b :: String )
     , deriveUnionLeft :: Proxy @(Row Type) ( a :: Int )
     , deriveUnionRight :: Proxy @(Row Type) ( b :: String )
-    , unionBothEmpty :: Proxy @(Row t147) ()
+    , unionBothEmpty :: Proxy @(Row (t147 :: Type)) ()
     , unionEmptyLeft :: Proxy @(Row Type) ( a :: Int )
     , unionEmptyRight :: Proxy @(Row Type) ( a :: Int )
     , unionMultiple :: Proxy @(Row Type) ( a :: Int, b :: String, c :: Boolean )
@@ -62,16 +88,18 @@ solveCons ::
   , nestedCons :: Proxy @(Row Type) ( a :: Int, b :: String )
   }
 solveLacks ::
-  forall (t160 :: Type) (t161 :: t160) (t164 :: Type) (t166 :: t164).
-    { lacksEmpty :: Proxy @t164 t166, lacksSimple :: Proxy @t160 t161 }
+  forall (t160 :: Type) (t161 :: (t160 :: Type)) (t164 :: Type) (t166 :: (t164 :: Type)).
+    { lacksEmpty :: Proxy @(t164 :: Type) (t166 :: ???)
+    , lacksSimple :: Proxy @(t160 :: Type) (t161 :: ???)
+    }
 solveNub ::
   forall (t175 :: Type).
-    { nubEmpty :: Proxy @(Row t175) ()
+    { nubEmpty :: Proxy @(Row (t175 :: Type)) ()
     , nubNoDuplicates :: Proxy @(Row Type) ( a :: Int, b :: String )
     }
 solveRowToList ::
   forall (t183 :: Type).
-    { rowToListEmpty :: Proxy @(RowList t183) (Nil @t183)
+    { rowToListEmpty :: Proxy @(RowList (t183 :: Type)) (Nil @(t183 :: Type))
     , rowToListMultiple ::
         Proxy @(RowList Type) (Cons @Type "a" Int (Cons @Type "b" String (Nil @Type)))
     , rowToListSimple :: Proxy @(RowList Type) (Cons @Type "a" Int (Nil @Type))
@@ -81,7 +109,7 @@ solveRowToList ::
     }
 
 Types
-Proxy :: forall (k :: Type). k -> Type
+Proxy :: forall (k :: Type). (k :: Type) -> Type
 
 Data
 Proxy

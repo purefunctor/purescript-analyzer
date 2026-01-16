@@ -3,9 +3,9 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-Nothing :: forall (a :: Type). Maybe a
-Just :: forall (a :: Type). a -> Maybe a
-First :: forall (a :: Type). Maybe a -> First a
+Nothing :: forall (a :: Type). Maybe (a :: Type)
+Just :: forall (a :: Type). (a :: Type) -> Maybe (a :: Type)
+First :: forall (a :: Type). Maybe (a :: Type) -> First (a :: Type)
 
 Types
 Maybe :: Type -> Type

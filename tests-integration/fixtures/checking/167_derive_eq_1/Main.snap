@@ -3,25 +3,31 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-Id :: forall (a :: Type). a -> Id a
-Pair :: forall (a :: Type). a -> a -> Pair a
-Mixed :: forall (a :: Type). Int -> a -> Boolean -> Mixed a
-Rec :: forall (a :: Type). { count :: Int, value :: a } -> Rec a
-Wrap :: forall (t9 :: Type) (f :: t9 -> Type) (a :: t9). f a -> Wrap @t9 f a
+Id :: forall (a :: Type). (a :: Type) -> Id (a :: Type)
+Pair :: forall (a :: Type). (a :: Type) -> (a :: Type) -> Pair (a :: Type)
+Mixed :: forall (a :: Type). Int -> (a :: Type) -> Boolean -> Mixed (a :: Type)
+Rec :: forall (a :: Type). { count :: Int, value :: (a :: Type) } -> Rec (a :: Type)
+Wrap ::
+  forall (t9 :: Type) (f :: (t9 :: Type) -> Type) (a :: (t9 :: Type)).
+    (f :: ??? -> Type) (a :: ???) -> Wrap @(t9 :: Type) (f :: ??? -> Type) (a :: ???)
 Compose ::
-  forall (t16 :: Type) (t20 :: Type) (f :: t16 -> Type) (g :: t20 -> t16) (a :: t20).
-    f (g a) -> Compose @t20 f g a
-Left' :: forall (a :: Type). a -> Either' a
-Right' :: forall (a :: Type). a -> Either' a
-NoEq :: forall (a :: Type). a -> NoEq a
+  forall (t16 :: Type) (t20 :: Type) (f :: (t16 :: Type) -> Type)
+    (g :: (t20 :: Type) -> (t16 :: Type)) (a :: (t20 :: Type)).
+    (f :: ??? -> Type) ((g :: ??? -> ???) (a :: ???)) ->
+    Compose @(t20 :: Type) (f :: ??? -> Type) (g :: ??? -> ???) (a :: ???)
+Left' :: forall (a :: Type). (a :: Type) -> Either' (a :: Type)
+Right' :: forall (a :: Type). (a :: Type) -> Either' (a :: Type)
+NoEq :: forall (a :: Type). (a :: Type) -> NoEq (a :: Type)
 
 Types
 Id :: Type -> Type
 Pair :: Type -> Type
 Mixed :: Type -> Type
 Rec :: Type -> Type
-Wrap :: forall (t9 :: Type). (t9 -> Type) -> t9 -> Type
-Compose :: forall (t16 :: Type) (t20 :: Type). (t16 -> Type) -> (t20 -> t16) -> t20 -> Type
+Wrap :: forall (t9 :: Type). ((t9 :: Type) -> Type) -> (t9 :: Type) -> Type
+Compose ::
+  forall (t16 :: Type) (t20 :: Type).
+    ((t16 :: Type) -> Type) -> ((t20 :: Type) -> (t16 :: Type)) -> (t20 :: Type) -> Type
 Either' :: Type -> Type
 NoEq :: Type -> Type
 
@@ -70,22 +76,22 @@ Either' = [Representational]
 NoEq = [Representational]
 
 Derived
-derive Eq1 &0 => Eq1 (Wrap @Type &0 :: Type -> Type)
-derive forall (&0 :: Type). (Eq1 &1, Eq (&2 &3)) => Eq (Compose @Type @&0 &1 &2 &3 :: Type)
-derive Eq1 &0 => Eq1 (Compose @Type @Type &0 &1 :: Type -> Type)
-derive Eq &0 => Eq (Id &0 :: Type)
-derive Eq &0 => Eq (Either' &0 :: Type)
+derive Eq1 (&0 :: Type -> Type) => Eq1 (Wrap @Type (&0 :: Type -> Type) :: Type -> Type)
+derive forall (&0 :: Type). (Eq1 (&1 :: Type -> Type), Eq ((&2 :: ??? -> Type) (&3 :: ???))) => Eq (Compose @Type @(&0 :: Type) (&1 :: Type -> Type) (&2 :: ??? -> Type) (&3 :: ???) :: Type)
+derive Eq1 (&0 :: Type -> Type) => Eq1 (Compose @Type @Type (&0 :: Type -> Type) (&1 :: Type -> Type) :: Type -> Type)
+derive Eq (&0 :: Type) => Eq (Id (&0 :: Type) :: Type)
+derive Eq (&0 :: Type) => Eq (Either' (&0 :: Type) :: Type)
 derive Eq1 (Either' :: Type -> Type)
 derive Eq1 (NoEq :: Type -> Type)
 derive Eq1 (Id :: Type -> Type)
-derive Eq &0 => Eq (Pair &0 :: Type)
+derive Eq (&0 :: Type) => Eq (Pair (&0 :: Type) :: Type)
 derive Eq1 (Pair :: Type -> Type)
-derive Eq &0 => Eq (Mixed &0 :: Type)
+derive Eq (&0 :: Type) => Eq (Mixed (&0 :: Type) :: Type)
 derive Eq1 (Mixed :: Type -> Type)
-derive Eq &0 => Eq (Rec &0 :: Type)
+derive Eq (&0 :: Type) => Eq (Rec (&0 :: Type) :: Type)
 derive Eq1 (Rec :: Type -> Type)
-derive (Eq1 &0, Eq &1) => Eq (Wrap @Type &0 &1 :: Type)
+derive (Eq1 (&0 :: Type -> Type), Eq (&1 :: Type)) => Eq (Wrap @Type (&0 :: Type -> Type) (&1 :: Type) :: Type)
 
 Errors
-NoInstanceFound { Eq (&1 ~&2) } at [TermDeclaration(Idx::<TermItem>(17))]
-NoInstanceFound { Eq (NoEq ~&0) } at [TermDeclaration(Idx::<TermItem>(23))]
+NoInstanceFound { Eq ((&1 :: Type -> Type) (~&2 :: Type)) } at [TermDeclaration(Idx::<TermItem>(17))]
+NoInstanceFound { Eq (NoEq (~&0 :: Type)) } at [TermDeclaration(Idx::<TermItem>(23))]

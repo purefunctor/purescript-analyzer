@@ -3,9 +3,16 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-return :: forall (m :: Type -> Type) (a :: Type). Monad m => a -> m a
-get :: forall (s :: Type) (m :: Type -> Type). MonadState s m => m s
-modify :: forall (s :: Type) (m :: Type -> Type). MonadState s m => (s -> s) -> m s
+return ::
+  forall (m :: Type -> Type) (a :: Type).
+    Monad (m :: Type -> Type) => (a :: Type) -> (m :: Type -> Type) (a :: Type)
+get ::
+  forall (s :: Type) (m :: Type -> Type).
+    MonadState (s :: Type) (m :: Type -> Type) => (m :: Type -> Type) (s :: Type)
+modify ::
+  forall (s :: Type) (m :: Type -> Type).
+    MonadState (s :: Type) (m :: Type -> Type) =>
+    ((s :: Type) -> (s :: Type)) -> (m :: Type -> Type) (s :: Type)
 
 Types
 Monad :: (Type -> Type) -> Constraint
@@ -13,4 +20,4 @@ MonadState :: Type -> (Type -> Type) -> Constraint
 
 Classes
 class Monad (&0 :: Type -> Type)
-class Monad &1 <= MonadState (&0 :: Type) (&1 :: Type -> Type)
+class Monad (&1 :: Type -> Type) <= MonadState (&0 :: Type) (&1 :: Type -> Type)

@@ -3,16 +3,18 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-Proxy :: forall (k :: Type) (a :: k). Proxy @k a
-failBasic :: forall (a :: Type). Fail (Text "This operation is not allowed") => a -> a
+Proxy :: forall (k :: Type) (a :: (k :: Type)). Proxy @(k :: Type) (a :: (k :: Type))
+failBasic ::
+  forall (a :: Type). Fail (Text "This operation is not allowed") => (a :: Type) -> (a :: Type)
 useFailBasic :: Int
 failComplex ::
-  forall (t8 :: Type) (a :: t8).
-    Fail (Above (Text "Error:") (Beside (Text "Type ") (Quote @t8 a))) => Proxy @t8 a -> Proxy @t8 a
+  forall (t8 :: Type) (a :: (t8 :: Type)).
+    Fail (Above (Text "Error:") (Beside (Text "Type ") (Quote @(t8 :: Type) (a :: ???)))) =>
+    Proxy @(t8 :: Type) (a :: ???) -> Proxy @(t8 :: Type) (a :: ???)
 useFailComplex :: Proxy @Type String
 
 Types
-Proxy :: forall (k :: Type). k -> Type
+Proxy :: forall (k :: Type). (k :: Type) -> Type
 
 Data
 Proxy

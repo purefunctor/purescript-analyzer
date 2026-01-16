@@ -3,7 +3,8 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-Mu :: forall (f :: Type -> Type). f (Mu f) -> Mu f
+Mu ::
+  forall (f :: Type -> Type). (f :: Type -> Type) (Mu (f :: Type -> Type)) -> Mu (f :: Type -> Type)
 
 Types
 Mu :: (Type -> Type) -> Type
@@ -18,4 +19,4 @@ Roles
 Mu = [Representational]
 
 Derived
-derive Show (&0 (Mu &0)) => Show (Mu &0 :: Type)
+derive Show ((&0 :: Type -> Type) (Mu (&0 :: Type -> Type))) => Show (Mu (&0 :: Type -> Type) :: Type)

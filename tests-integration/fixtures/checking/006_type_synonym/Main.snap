@@ -8,10 +8,13 @@ Types
 Tuple :: Type -> Type -> Type
 AliasType :: Type
 AliasTypeType :: Type -> Type
-InferApply :: forall (t4 :: Type) (t9 :: Type). (t9 -> t4) -> t9 -> t4
+InferApply ::
+  forall (t4 :: Type) (t9 :: Type). ((t9 :: Type) -> (t4 :: Type)) -> (t9 :: Type) -> (t4 :: Type)
 InferTuple :: Type -> Type -> Type
-CheckApply :: forall (x :: Type) (y :: Type). (x -> y) -> x -> y
-CheckApplyElab :: forall (x :: Type) (y :: Type). (x -> y) -> x -> y
+CheckApply ::
+  forall (x :: Type) (y :: Type). ((x :: Type) -> (y :: Type)) -> (x :: Type) -> (y :: Type)
+CheckApplyElab ::
+  forall (x :: Type) (y :: Type). ((x :: Type) -> (y :: Type)) -> (x :: Type) -> (y :: Type)
 
 Synonyms
 AliasType = Int
@@ -24,22 +27,25 @@ AliasTypeType = Array
   Kind = :0
   Type = :0
 
-InferApply = forall (t4 :: Type) (t9 :: Type) (f :: t9 -> t4) (a :: t9). f a
+InferApply = forall (t4 :: Type) (t9 :: Type) (f :: (t9 :: Type) -> (t4 :: Type)) (a :: (t9 :: Type)).
+  (f :: ??? -> ???) (a :: ???)
   Quantified = :2
   Kind = :0
   Type = :2
 
-InferTuple = forall (x :: Type) (y :: Type). Tuple x y
+InferTuple = forall (x :: Type) (y :: Type). Tuple (x :: Type) (y :: Type)
   Quantified = :0
   Kind = :0
   Type = :2
 
-CheckApply = forall (x :: Type) (y :: Type) (f :: x -> y) (a :: x). f a
+CheckApply = forall (x :: Type) (y :: Type) (f :: (x :: Type) -> (y :: Type)) (a :: (x :: Type)).
+  (f :: (x :: Type) -> (y :: Type)) (a :: (x :: Type))
   Quantified = :0
   Kind = :2
   Type = :2
 
-CheckApplyElab = forall (x :: Type) (y :: Type) (f :: x -> y) (a :: x). f a
+CheckApplyElab = forall (x :: Type) (y :: Type) (f :: (x :: Type) -> (y :: Type)) (a :: (x :: Type)).
+  (f :: (x :: Type) -> (y :: Type)) (a :: (x :: Type))
   Quantified = :0
   Kind = :2
   Type = :2

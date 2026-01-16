@@ -3,8 +3,11 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-WrongFirst :: forall (a :: Type) (b :: Type). a -> b -> WrongFirst a b
-WrongSecond :: forall (a :: Type) (b :: Type). (b -> a) -> WrongSecond a b
+WrongFirst ::
+  forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type) -> WrongFirst (a :: Type) (b :: Type)
+WrongSecond ::
+  forall (a :: Type) (b :: Type).
+    ((b :: Type) -> (a :: Type)) -> WrongSecond (a :: Type) (b :: Type)
 
 Types
 WrongFirst :: Type -> Type -> Type
@@ -29,6 +32,6 @@ derive Profunctor (WrongFirst :: Type -> Type -> Type)
 derive Profunctor (WrongSecond :: Type -> Type -> Type)
 
 Errors
-CovariantOccurrence { type_id: Id<checking::core::Type>(48) } at [TermDeclaration(Idx::<TermItem>(1))]
-ContravariantOccurrence { type_id: Id<checking::core::Type>(49) } at [TermDeclaration(Idx::<TermItem>(3))]
-CovariantOccurrence { type_id: Id<checking::core::Type>(48) } at [TermDeclaration(Idx::<TermItem>(3))]
+CovariantOccurrence { type_id: Id<checking::core::Type>(46) } at [TermDeclaration(Idx::<TermItem>(1))]
+ContravariantOccurrence { type_id: Id<checking::core::Type>(47) } at [TermDeclaration(Idx::<TermItem>(3))]
+CovariantOccurrence { type_id: Id<checking::core::Type>(46) } at [TermDeclaration(Idx::<TermItem>(3))]

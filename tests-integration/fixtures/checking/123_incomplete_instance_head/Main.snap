@@ -3,7 +3,10 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-pair :: forall (a :: Type) (b :: Type). Pair a b => a -> b -> { a :: a, b :: b }
+pair ::
+  forall (a :: Type) (b :: Type).
+    Pair (a :: Type) (b :: Type) =>
+    (a :: Type) -> (b :: Type) -> { a :: (a :: Type), b :: (b :: Type) }
 
 Types
 Pair :: Type -> Type -> Constraint

@@ -3,13 +3,14 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-identity :: forall (a :: Type). Phantom a => a -> a
-Proxy :: forall (t1 :: Type) (a :: t1). Proxy @t1 a
-forceSolve :: forall (t8 :: Type) (t9 :: t8). { solution :: Proxy @t8 t9 }
+identity :: forall (a :: Type). Phantom (a :: Type) => (a :: Type) -> (a :: Type)
+Proxy :: forall (t1 :: Type) (a :: (t1 :: Type)). Proxy @(t1 :: Type) (a :: ???)
+forceSolve ::
+  forall (t8 :: Type) (t9 :: (t8 :: Type)). { solution :: Proxy @(t8 :: Type) (t9 :: ???) }
 
 Types
 Phantom :: Type -> Constraint
-Proxy :: forall (t1 :: Type). t1 -> Type
+Proxy :: forall (t1 :: Type). (t1 :: Type) -> Type
 
 Data
 Proxy
@@ -24,5 +25,5 @@ Classes
 class Phantom (&0 :: Type)
 
 Instances
-instance forall (&0 :: Type). Phantom (Proxy @&0 &1 :: Type)
+instance forall (&0 :: Type). Phantom (Proxy @(&0 :: Type) (&1 :: ???) :: Type)
   chain: 0

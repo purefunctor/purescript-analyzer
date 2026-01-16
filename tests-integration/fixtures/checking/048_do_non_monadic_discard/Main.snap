@@ -3,8 +3,9 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-bind :: forall (a :: Type) (b :: Type). a -> (a -> b) -> b
-discard :: forall (a :: Type) (b :: Type). a -> (a -> b) -> b
+bind :: forall (a :: Type) (b :: Type). (a :: Type) -> ((a :: Type) -> (b :: Type)) -> (b :: Type)
+discard ::
+  forall (a :: Type) (b :: Type). (a :: Type) -> ((a :: Type) -> (b :: Type)) -> (b :: Type)
 test :: Int
 test' :: Int
 

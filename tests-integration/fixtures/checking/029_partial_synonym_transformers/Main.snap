@@ -3,10 +3,16 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-Identity :: forall (a :: Type). a -> Identity a
-ReaderT :: forall (r :: Type) (m :: Type -> Type) (a :: Type). (r -> m a) -> ReaderT r m a
-StateT :: forall (s :: Type) (m :: Type -> Type) (a :: Type). (s -> m (Tuple a s)) -> StateT s m a
-Tuple :: forall (a :: Type) (b :: Type). a -> b -> Tuple a b
+Identity :: forall (a :: Type). (a :: Type) -> Identity (a :: Type)
+ReaderT ::
+  forall (r :: Type) (m :: Type -> Type) (a :: Type).
+    ((r :: Type) -> (m :: Type -> Type) (a :: Type)) ->
+    ReaderT (r :: Type) (m :: Type -> Type) (a :: Type)
+StateT ::
+  forall (s :: Type) (m :: Type -> Type) (a :: Type).
+    ((s :: Type) -> (m :: Type -> Type) (Tuple (a :: Type) (s :: Type))) ->
+    StateT (s :: Type) (m :: Type -> Type) (a :: Type)
+Tuple :: forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type) -> Tuple (a :: Type) (b :: Type)
 
 Types
 Identity :: Type -> Type
@@ -15,23 +21,24 @@ StateT :: Type -> (Type -> Type) -> Type -> Type
 Tuple :: Type -> Type -> Type
 Reader :: Type -> Type -> Type
 State :: Type -> Type -> Type
-Apply :: forall (k :: Type) (l :: Type). (k -> l) -> k -> l
+Apply :: forall (k :: Type) (l :: Type). ((k :: Type) -> (l :: Type)) -> (k :: Type) -> (l :: Type)
 ReaderInt :: Type
 StateString :: Type
 NestedReader :: Type
 
 Synonyms
-Reader = forall (r :: Type). ReaderT r Identity
+Reader = forall (r :: Type). ReaderT (r :: Type) Identity
   Quantified = :0
   Kind = :0
   Type = :1
 
-State = forall (s :: Type). StateT s Identity
+State = forall (s :: Type). StateT (s :: Type) Identity
   Quantified = :0
   Kind = :0
   Type = :1
 
-Apply = forall (k :: Type) (l :: Type) (f :: k -> l) (a :: k). f a
+Apply = forall (k :: Type) (l :: Type) (f :: (k :: Type) -> (l :: Type)) (a :: (k :: Type)).
+  (f :: (k :: Type) -> (l :: Type)) (a :: (k :: Type))
   Quantified = :0
   Kind = :2
   Type = :2

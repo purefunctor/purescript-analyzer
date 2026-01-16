@@ -3,12 +3,14 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-Proxy :: forall (k :: Type) (a :: k). Proxy @k a
-invalid :: forall (s :: Symbol). Append "hello" s "xyz" => Proxy @Symbol s
-forceSolve :: forall (t7 :: Symbol). Append "hello" t7 "xyz" => { invalid :: Proxy @Symbol t7 }
+Proxy :: forall (k :: Type) (a :: (k :: Type)). Proxy @(k :: Type) (a :: (k :: Type))
+invalid :: forall (s :: Symbol). Append "hello" (s :: Symbol) "xyz" => Proxy @Symbol (s :: Symbol)
+forceSolve ::
+  forall (t7 :: Symbol).
+    Append "hello" (t7 :: Symbol) "xyz" => { invalid :: Proxy @Symbol (t7 :: Symbol) }
 
 Types
-Proxy :: forall (k :: Type). k -> Type
+Proxy :: forall (k :: Type). (k :: Type) -> Type
 
 Data
 Proxy

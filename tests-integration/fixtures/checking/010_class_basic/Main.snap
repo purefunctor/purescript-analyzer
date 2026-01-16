@@ -3,7 +3,7 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-show :: forall (a :: Type). Show a => a -> String
+show :: forall (a :: Type). Show (a :: Type) => (a :: Type) -> String
 
 Types
 Show :: Type -> Constraint

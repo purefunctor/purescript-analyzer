@@ -3,10 +3,12 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-Pair :: forall (t1 :: Type) (a :: Type) (b :: t1). a -> Pair @t1 a b
+Pair ::
+  forall (t1 :: Type) (a :: Type) (b :: (t1 :: Type)).
+    (a :: Type) -> Pair @(t1 :: Type) (a :: Type) (b :: ???)
 
 Types
-Pair :: forall (t1 :: Type). Type -> t1 -> Type
+Pair :: forall (t1 :: Type). Type -> (t1 :: Type) -> Type
 
 Data
 Pair

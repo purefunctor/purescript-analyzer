@@ -3,8 +3,8 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-eq :: forall (a :: Type). Eq a => a -> a -> Boolean
-test :: forall (a :: Type). Eq a => a -> Boolean
+eq :: forall (a :: Type). Eq (a :: Type) => (a :: Type) -> (a :: Type) -> Boolean
+test :: forall (a :: Type). Eq (a :: Type) => (a :: Type) -> Boolean
 
 Types
 Eq :: Type -> Constraint

@@ -3,8 +3,8 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-Left :: forall (a :: Type) (b :: Type). a -> Either a b
-Right :: forall (a :: Type) (b :: Type). b -> Either a b
+Left :: forall (a :: Type) (b :: Type). (a :: Type) -> Either (a :: Type) (b :: Type)
+Right :: forall (a :: Type) (b :: Type). (b :: Type) -> Either (a :: Type) (b :: Type)
 
 Types
 Either :: Type -> Type -> Type
@@ -19,8 +19,8 @@ Roles
 Either = [Representational, Representational]
 
 Derived
-derive Eq &0 => Eq (Either Int &0 :: Type)
-derive Eq (Either Int &0 :: Type)
+derive Eq (&0 :: Type) => Eq (Either Int (&0 :: Type) :: Type)
+derive Eq (Either Int (&0 :: Type) :: Type)
 
 Errors
-NoInstanceFound { Eq &0 } at [TermDeclaration(Idx::<TermItem>(3))]
+NoInstanceFound { Eq (&0 :: Type) } at [TermDeclaration(Idx::<TermItem>(3))]

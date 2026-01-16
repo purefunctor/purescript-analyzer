@@ -3,17 +3,23 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-Id :: forall (a :: Type). a -> Id a
-Wrap :: forall (t5 :: Type) (f :: t5 -> Type) (a :: t5). f a -> Wrap @t5 f a
+Id :: forall (a :: Type). (a :: Type) -> Id (a :: Type)
+Wrap ::
+  forall (t5 :: Type) (f :: (t5 :: Type) -> Type) (a :: (t5 :: Type)).
+    (f :: ??? -> Type) (a :: ???) -> Wrap @(t5 :: Type) (f :: ??? -> Type) (a :: ???)
 Compose ::
-  forall (t12 :: Type) (t16 :: Type) (f :: t12 -> Type) (g :: t16 -> t12) (a :: t16).
-    f (g a) -> Compose @t16 f g a
-NoOrd :: forall (a :: Type). a -> NoOrd a
+  forall (t12 :: Type) (t16 :: Type) (f :: (t12 :: Type) -> Type)
+    (g :: (t16 :: Type) -> (t12 :: Type)) (a :: (t16 :: Type)).
+    (f :: ??? -> Type) ((g :: ??? -> ???) (a :: ???)) ->
+    Compose @(t16 :: Type) (f :: ??? -> Type) (g :: ??? -> ???) (a :: ???)
+NoOrd :: forall (a :: Type). (a :: Type) -> NoOrd (a :: Type)
 
 Types
 Id :: Type -> Type
-Wrap :: forall (t5 :: Type). (t5 -> Type) -> t5 -> Type
-Compose :: forall (t12 :: Type) (t16 :: Type). (t12 -> Type) -> (t16 -> t12) -> t16 -> Type
+Wrap :: forall (t5 :: Type). ((t5 :: Type) -> Type) -> (t5 :: Type) -> Type
+Compose ::
+  forall (t12 :: Type) (t16 :: Type).
+    ((t12 :: Type) -> Type) -> ((t16 :: Type) -> (t12 :: Type)) -> (t16 :: Type) -> Type
 NoOrd :: Type -> Type
 
 Data
@@ -41,23 +47,23 @@ Compose = [Representational, Representational, Nominal]
 NoOrd = [Representational]
 
 Derived
-derive forall (&0 :: Type). (Eq1 &1, Eq (&2 &3)) => Eq (Compose @Type @&0 &1 &2 &3 :: Type)
-derive forall (&0 :: Type). (Ord1 &1, Ord (&2 &3)) => Ord (Compose @Type @&0 &1 &2 &3 :: Type)
-derive Eq1 &0 => Eq1 (Compose @Type @Type &0 &1 :: Type -> Type)
-derive Ord1 &0 => Ord1 (Compose @Type @Type &0 &1 :: Type -> Type)
-derive Eq &0 => Eq (NoOrd &0 :: Type)
+derive forall (&0 :: Type). (Eq1 (&1 :: Type -> Type), Eq ((&2 :: ??? -> Type) (&3 :: ???))) => Eq (Compose @Type @(&0 :: Type) (&1 :: Type -> Type) (&2 :: ??? -> Type) (&3 :: ???) :: Type)
+derive forall (&0 :: Type). (Ord1 (&1 :: Type -> Type), Ord ((&2 :: ??? -> Type) (&3 :: ???))) => Ord (Compose @Type @(&0 :: Type) (&1 :: Type -> Type) (&2 :: ??? -> Type) (&3 :: ???) :: Type)
+derive Eq1 (&0 :: Type -> Type) => Eq1 (Compose @Type @Type (&0 :: Type -> Type) (&1 :: Type -> Type) :: Type -> Type)
+derive Ord1 (&0 :: Type -> Type) => Ord1 (Compose @Type @Type (&0 :: Type -> Type) (&1 :: Type -> Type) :: Type -> Type)
+derive Eq (&0 :: Type) => Eq (NoOrd (&0 :: Type) :: Type)
 derive Eq1 (NoOrd :: Type -> Type)
 derive Ord1 (NoOrd :: Type -> Type)
-derive Eq &0 => Eq (Id &0 :: Type)
+derive Eq (&0 :: Type) => Eq (Id (&0 :: Type) :: Type)
 derive Eq1 (Id :: Type -> Type)
-derive Ord &0 => Ord (Id &0 :: Type)
+derive Ord (&0 :: Type) => Ord (Id (&0 :: Type) :: Type)
 derive Ord1 (Id :: Type -> Type)
-derive (Eq1 &0, Eq &1) => Eq (Wrap @Type &0 &1 :: Type)
-derive Eq1 &0 => Eq1 (Wrap @Type &0 :: Type -> Type)
-derive (Ord1 &0, Ord &1) => Ord (Wrap @Type &0 &1 :: Type)
-derive Ord1 &0 => Ord1 (Wrap @Type &0 :: Type -> Type)
+derive (Eq1 (&0 :: Type -> Type), Eq (&1 :: Type)) => Eq (Wrap @Type (&0 :: Type -> Type) (&1 :: Type) :: Type)
+derive Eq1 (&0 :: Type -> Type) => Eq1 (Wrap @Type (&0 :: Type -> Type) :: Type -> Type)
+derive (Ord1 (&0 :: Type -> Type), Ord (&1 :: Type)) => Ord (Wrap @Type (&0 :: Type -> Type) (&1 :: Type) :: Type)
+derive Ord1 (&0 :: Type -> Type) => Ord1 (Wrap @Type (&0 :: Type -> Type) :: Type -> Type)
 
 Errors
-NoInstanceFound { Eq (&1 ~&2) } at [TermDeclaration(Idx::<TermItem>(13))]
-NoInstanceFound { Ord (&1 ~&2) } at [TermDeclaration(Idx::<TermItem>(14))]
-NoInstanceFound { Ord (NoOrd ~&0) } at [TermDeclaration(Idx::<TermItem>(18))]
+NoInstanceFound { Eq ((&1 :: Type -> Type) (~&2 :: Type)) } at [TermDeclaration(Idx::<TermItem>(13))]
+NoInstanceFound { Ord ((&1 :: Type -> Type) (~&2 :: Type)) } at [TermDeclaration(Idx::<TermItem>(14))]
+NoInstanceFound { Ord (NoOrd (~&0 :: Type)) } at [TermDeclaration(Idx::<TermItem>(18))]

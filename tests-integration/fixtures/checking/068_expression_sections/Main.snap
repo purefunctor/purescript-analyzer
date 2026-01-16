@@ -4,25 +4,31 @@ expression: report
 ---
 Terms
 + :: Int -> Int -> Int
-Tuple :: forall (a :: Type) (b :: Type). a -> b -> Tuple a b
+Tuple :: forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type) -> Tuple (a :: Type) (b :: Type)
 add :: Int -> Int -> Int
 negate :: Int -> Int
 test1 :: Int -> Int
 test2 :: Int -> Int
 test3 :: Int -> Int -> Int
-test4 :: forall (t15 :: Type) (t16 :: Row Type). { foo :: t15 | t16 } -> t15
-test5 :: forall (t20 :: Type) (t21 :: Row Type). { foo :: t20 | t21 } -> { foo :: Int | t21 }
-test6 :: forall (t27 :: Type). Boolean -> t27 -> t27 -> t27
+test4 ::
+  forall (t15 :: Type) (t16 :: Row Type).
+    { foo :: (t15 :: Type) | (t16 :: Row Type) } -> (t15 :: Type)
+test5 ::
+  forall (t20 :: Type) (t21 :: Row Type).
+    { foo :: (t20 :: Type) | (t21 :: Row Type) } -> { foo :: Int | (t21 :: Row Type) }
+test6 :: forall (t27 :: Type). Boolean -> (t27 :: Type) -> (t27 :: Type) -> (t27 :: Type)
 test7 :: Int -> Int
 test8 :: Int -> Int
 test9 :: Int -> Int -> Int
-test10 :: forall (t41 :: Type). ((Int -> Int) -> t41) -> t41
-test11 :: forall (t48 :: Type). t48 -> Array t48
-test12 :: forall (t51 :: Type). t51 -> { foo :: t51 }
-test13 :: forall (t54 :: Type). t54 -> t54
-test14 :: forall (t59 :: Type). t59 -> t59 -> Array t59
-test15 :: forall (t62 :: Type) (t63 :: Type). t62 -> t63 -> { a :: t62, b :: t63 }
-test16 :: forall (t67 :: Type). t67 -> Tuple t67 Int
+test10 :: forall (t41 :: Type). ((Int -> Int) -> (t41 :: Type)) -> (t41 :: Type)
+test11 :: forall (t48 :: Type). (t48 :: Type) -> Array (t48 :: Type)
+test12 :: forall (t51 :: Type). (t51 :: Type) -> { foo :: (t51 :: Type) }
+test13 :: forall (t54 :: Type). (t54 :: Type) -> (t54 :: Type)
+test14 :: forall (t59 :: Type). (t59 :: Type) -> (t59 :: Type) -> Array (t59 :: Type)
+test15 ::
+  forall (t62 :: Type) (t63 :: Type).
+    (t62 :: Type) -> (t63 :: Type) -> { a :: (t62 :: Type), b :: (t63 :: Type) }
+test16 :: forall (t67 :: Type). (t67 :: Type) -> Tuple (t67 :: Type) Int
 test17 :: Tuple String Int
 test18 :: Int -> Int
 

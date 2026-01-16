@@ -3,12 +3,12 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-Proxy :: forall (t0 :: Type) (a :: t0). Proxy @t0 a
+Proxy :: forall (t0 :: Type) (a :: (t0 :: Type)). Proxy @(t0 :: Type) (a :: ???)
 MkNoEq :: NoEq
 MkContainsNoEq :: NoEq -> ContainsNoEq
 
 Types
-Proxy :: forall (t0 :: Type). t0 -> Type
+Proxy :: forall (t0 :: Type). (t0 :: Type) -> Type
 NoEq :: Type
 ContainsNoEq :: Type
 
@@ -32,7 +32,7 @@ NoEq = []
 ContainsNoEq = []
 
 Derived
-derive forall (&0 :: Type). Eq (Proxy @&0 &1 :: Type)
+derive forall (&0 :: Type). Eq (Proxy @(&0 :: Type) (&1 :: ???) :: Type)
 derive Eq (ContainsNoEq :: Type)
 
 Errors

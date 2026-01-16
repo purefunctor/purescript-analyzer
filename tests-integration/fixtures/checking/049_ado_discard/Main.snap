@@ -4,9 +4,13 @@ expression: report
 ---
 Terms
 Unit :: Unit
-pure :: forall (a :: Type). a -> Effect a
-map :: forall (a :: Type) (b :: Type). (a -> b) -> Effect a -> Effect b
-apply :: forall (a :: Type) (b :: Type). Effect (a -> b) -> Effect a -> Effect b
+pure :: forall (a :: Type). (a :: Type) -> Effect (a :: Type)
+map ::
+  forall (a :: Type) (b :: Type).
+    ((a :: Type) -> (b :: Type)) -> Effect (a :: Type) -> Effect (b :: Type)
+apply ::
+  forall (a :: Type) (b :: Type).
+    Effect ((a :: Type) -> (b :: Type)) -> Effect (a :: Type) -> Effect (b :: Type)
 unit :: Unit
 test :: Effect Unit
 test' :: Effect Unit

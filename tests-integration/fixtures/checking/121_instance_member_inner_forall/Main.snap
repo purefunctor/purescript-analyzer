@@ -3,8 +3,13 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-map :: forall (f :: Type -> Type) (a :: Type) (b :: Type). Functor f => (a -> b) -> f a -> f b
-Box :: forall (a :: Type). a -> Box a
+map ::
+  forall (f :: Type -> Type) (a :: Type) (b :: Type).
+    Functor (f :: Type -> Type) =>
+    ((a :: Type) -> (b :: Type)) ->
+    (f :: Type -> Type) (a :: Type) ->
+    (f :: Type -> Type) (b :: Type)
+Box :: forall (a :: Type). (a :: Type) -> Box (a :: Type)
 
 Types
 Functor :: (Type -> Type) -> Constraint

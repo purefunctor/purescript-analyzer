@@ -3,22 +3,40 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-Proxy :: forall (k :: Type) (a :: k). Proxy @k a
+Proxy :: forall (k :: Type) (a :: (k :: Type)). Proxy @(k :: Type) (a :: (k :: Type))
 deriveAppended ::
-  forall (appended :: Symbol). Append "Hello" "World" appended => Proxy @Symbol appended
-deriveLeft :: forall (left :: Symbol). Append left "World" "HelloWorld" => Proxy @Symbol left
-deriveRight :: forall (right :: Symbol). Append "Hello" right "HelloWorld" => Proxy @Symbol right
-appendEmpty :: forall (result :: Symbol). Append "" "test" result => Proxy @Symbol result
-appendEmptyRight :: forall (result :: Symbol). Append "test" "" result => Proxy @Symbol result
-compareLT :: forall (ord :: Ordering). Compare "a" "b" ord => Proxy @Ordering ord
-compareEQ :: forall (ord :: Ordering). Compare "hello" "hello" ord => Proxy @Ordering ord
-compareGT :: forall (ord :: Ordering). Compare "z" "a" ord => Proxy @Ordering ord
-comparePrefix :: forall (ord :: Ordering). Compare "ab" "abc" ord => Proxy @Ordering ord
-deriveCons :: forall (symbol :: Symbol). Cons "H" "ello" symbol => Proxy @Symbol symbol
+  forall (appended :: Symbol).
+    Append "Hello" "World" (appended :: Symbol) => Proxy @Symbol (appended :: Symbol)
+deriveLeft ::
+  forall (left :: Symbol).
+    Append (left :: Symbol) "World" "HelloWorld" => Proxy @Symbol (left :: Symbol)
+deriveRight ::
+  forall (right :: Symbol).
+    Append "Hello" (right :: Symbol) "HelloWorld" => Proxy @Symbol (right :: Symbol)
+appendEmpty ::
+  forall (result :: Symbol). Append "" "test" (result :: Symbol) => Proxy @Symbol (result :: Symbol)
+appendEmptyRight ::
+  forall (result :: Symbol). Append "test" "" (result :: Symbol) => Proxy @Symbol (result :: Symbol)
+compareLT ::
+  forall (ord :: Ordering). Compare "a" "b" (ord :: Ordering) => Proxy @Ordering (ord :: Ordering)
+compareEQ ::
+  forall (ord :: Ordering).
+    Compare "hello" "hello" (ord :: Ordering) => Proxy @Ordering (ord :: Ordering)
+compareGT ::
+  forall (ord :: Ordering). Compare "z" "a" (ord :: Ordering) => Proxy @Ordering (ord :: Ordering)
+comparePrefix ::
+  forall (ord :: Ordering).
+    Compare "ab" "abc" (ord :: Ordering) => Proxy @Ordering (ord :: Ordering)
+deriveCons ::
+  forall (symbol :: Symbol). Cons "H" "ello" (symbol :: Symbol) => Proxy @Symbol (symbol :: Symbol)
 deriveHeadTail ::
-  forall (head :: Symbol) (tail :: Symbol). Cons head tail "World" => Proxy @Symbol head
-consEmptyTail :: forall (symbol :: Symbol). Cons "X" "" symbol => Proxy @Symbol symbol
-consSingleChar :: forall (head :: Symbol) (tail :: Symbol). Cons head tail "A" => Proxy @Symbol tail
+  forall (head :: Symbol) (tail :: Symbol).
+    Cons (head :: Symbol) (tail :: Symbol) "World" => Proxy @Symbol (head :: Symbol)
+consEmptyTail ::
+  forall (symbol :: Symbol). Cons "X" "" (symbol :: Symbol) => Proxy @Symbol (symbol :: Symbol)
+consSingleChar ::
+  forall (head :: Symbol) (tail :: Symbol).
+    Cons (head :: Symbol) (tail :: Symbol) "A" => Proxy @Symbol (tail :: Symbol)
 forceSolve ::
   { appendEmpty :: Proxy @Symbol "test"
   , appendEmptyRight :: Proxy @Symbol "test"
@@ -36,7 +54,7 @@ forceSolve ::
   }
 
 Types
-Proxy :: forall (k :: Type). k -> Type
+Proxy :: forall (k :: Type). (k :: Type) -> Type
 
 Data
 Proxy

@@ -3,7 +3,7 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-Pair :: forall (a :: Type) (b :: Type). a -> b -> Pair a b
+Pair :: forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type) -> Pair (a :: Type) (b :: Type)
 Unit :: Unit
 
 Types

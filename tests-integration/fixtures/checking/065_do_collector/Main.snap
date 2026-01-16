@@ -5,11 +5,15 @@ expression: report
 Terms
 bind ::
   forall (a :: Type) (b :: Type) (x :: Type) (y :: Type).
-    Collector x a -> (a -> Collector y b) -> Collector (Tuple x y) b
+    Collector (x :: Type) (a :: Type) ->
+    ((a :: Type) -> Collector (y :: Type) (b :: Type)) ->
+    Collector (Tuple (x :: Type) (y :: Type)) (b :: Type)
 discard ::
   forall (a :: Type) (b :: Type) (x :: Type) (y :: Type).
-    Collector x a -> (a -> Collector y b) -> Collector (Tuple x y) b
-pure :: forall (a :: Type). a -> Collector a a
+    Collector (x :: Type) (a :: Type) ->
+    ((a :: Type) -> Collector (y :: Type) (b :: Type)) ->
+    Collector (Tuple (x :: Type) (y :: Type)) (b :: Type)
+pure :: forall (a :: Type). (a :: Type) -> Collector (a :: Type) (a :: Type)
 test1 ::
   Collector
     (Tuple Int (Tuple String (Tuple Char { x :: Int, y :: String, z :: Char })))

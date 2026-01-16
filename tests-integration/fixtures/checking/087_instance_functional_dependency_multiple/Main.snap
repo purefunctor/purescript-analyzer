@@ -3,7 +3,9 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-typeEq :: forall (a :: Type) (b :: Type) (c :: Type). TypeEq a b c => a -> b -> c
+typeEq ::
+  forall (a :: Type) (b :: Type) (c :: Type).
+    TypeEq (a :: Type) (b :: Type) (c :: Type) => (a :: Type) -> (b :: Type) -> (c :: Type)
 test :: Boolean
 
 Types

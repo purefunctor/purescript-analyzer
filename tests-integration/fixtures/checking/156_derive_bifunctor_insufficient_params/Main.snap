@@ -3,7 +3,9 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-Triple :: forall (a :: Type) (b :: Type) (c :: Type). a -> b -> c -> Triple a b c
+Triple ::
+  forall (a :: Type) (b :: Type) (c :: Type).
+    (a :: Type) -> (b :: Type) -> (c :: Type) -> Triple (a :: Type) (b :: Type) (c :: Type)
 
 Types
 Triple :: Type -> Type -> Type -> Type
@@ -22,4 +24,4 @@ derive Bifunctor (Triple Int String :: Type -> Type)
 
 Errors
 CannotUnify { Type, Type -> Type } at [TermDeclaration(Idx::<TermItem>(1)), CheckingKind(AstId<syntax::cst::Type>(21))]
-CannotDeriveForType { type_id: Id<checking::core::Type>(47) } at [TermDeclaration(Idx::<TermItem>(1))]
+CannotDeriveForType { type_id: Id<checking::core::Type>(46) } at [TermDeclaration(Idx::<TermItem>(1))]

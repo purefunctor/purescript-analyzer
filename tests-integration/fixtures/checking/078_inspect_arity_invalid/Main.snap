@@ -1,12 +1,11 @@
 ---
 source: tests-integration/tests/checking/generated.rs
-assertion_line: 11
 expression: report
 ---
 Terms
-addWrong :: forall (a :: Type). BinaryOp a
-composeWrong :: forall (a :: Type). ReturnUnary a
-constWrong :: forall (a :: Type) (b :: Type). a -> b -> a
+addWrong :: forall (a :: Type). BinaryOp (a :: Type)
+composeWrong :: forall (a :: Type). ReturnUnary (a :: Type)
+constWrong :: forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type) -> (a :: Type)
 
 Types
 BinaryOp :: Type -> Type
@@ -15,22 +14,22 @@ ReturnUnary :: Type -> Type
 Const :: Type
 
 Synonyms
-BinaryOp = forall (a :: Type). a -> a -> a
+BinaryOp = forall (a :: Type). (a :: Type) -> (a :: Type) -> (a :: Type)
   Quantified = :0
   Kind = :0
   Type = :1
 
-UnaryOp = forall (a :: Type). a -> a
+UnaryOp = forall (a :: Type). (a :: Type) -> (a :: Type)
   Quantified = :0
   Kind = :0
   Type = :1
 
-ReturnUnary = forall (a :: Type). a -> UnaryOp a
+ReturnUnary = forall (a :: Type). (a :: Type) -> UnaryOp (a :: Type)
   Quantified = :0
   Kind = :0
   Type = :1
 
-Const = forall (a :: Type) (b :: Type). a -> b -> a
+Const = forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type) -> (a :: Type)
   Quantified = :0
   Kind = :0
   Type = :0

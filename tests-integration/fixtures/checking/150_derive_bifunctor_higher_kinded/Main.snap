@@ -4,16 +4,33 @@ expression: report
 ---
 Terms
 WrapBoth ::
-  forall (t6 :: Type) (t10 :: Type) (f :: t6 -> Type) (g :: t10 -> Type) (a :: t6) (b :: t10).
-    f a -> g b -> WrapBoth @t6 @t10 f g a b
+  forall (t6 :: Type) (t10 :: Type) (f :: (t6 :: Type) -> Type) (g :: (t10 :: Type) -> Type)
+    (a :: (t6 :: Type)) (b :: (t10 :: Type)).
+    (f :: ??? -> Type) (a :: ???) ->
+    (g :: ??? -> Type) (b :: ???) ->
+    WrapBoth @(t6 :: Type) @(t10 :: Type)
+      (f :: ??? -> Type)
+      (g :: ??? -> Type)
+      (a :: ???)
+      (b :: ???)
 WrapBothNoConstraint ::
-  forall (t18 :: Type) (t22 :: Type) (f :: t18 -> Type) (g :: t22 -> Type) (a :: t18) (b :: t22).
-    f a -> g b -> WrapBothNoConstraint @t18 @t22 f g a b
+  forall (t18 :: Type) (t22 :: Type) (f :: (t18 :: Type) -> Type) (g :: (t22 :: Type) -> Type)
+    (a :: (t18 :: Type)) (b :: (t22 :: Type)).
+    (f :: ??? -> Type) (a :: ???) ->
+    (g :: ??? -> Type) (b :: ???) ->
+    WrapBothNoConstraint @(t18 :: Type) @(t22 :: Type)
+      (f :: ??? -> Type)
+      (g :: ??? -> Type)
+      (a :: ???)
+      (b :: ???)
 
 Types
-WrapBoth :: forall (t6 :: Type) (t10 :: Type). (t6 -> Type) -> (t10 -> Type) -> t6 -> t10 -> Type
+WrapBoth ::
+  forall (t6 :: Type) (t10 :: Type).
+    ((t6 :: Type) -> Type) -> ((t10 :: Type) -> Type) -> (t6 :: Type) -> (t10 :: Type) -> Type
 WrapBothNoConstraint ::
-  forall (t18 :: Type) (t22 :: Type). (t18 -> Type) -> (t22 -> Type) -> t18 -> t22 -> Type
+  forall (t18 :: Type) (t22 :: Type).
+    ((t18 :: Type) -> Type) -> ((t22 :: Type) -> Type) -> (t18 :: Type) -> (t22 :: Type) -> Type
 
 Data
 WrapBoth
@@ -30,9 +47,9 @@ WrapBoth = [Representational, Representational, Nominal, Nominal]
 WrapBothNoConstraint = [Representational, Representational, Nominal, Nominal]
 
 Derived
-derive (Functor &0, Functor &1) => Bifunctor (WrapBoth @Type @Type &0 &1 :: Type -> Type -> Type)
-derive Bifunctor (WrapBothNoConstraint @Type @Type &0 &1 :: Type -> Type -> Type)
+derive (Functor (&0 :: Type -> Type), Functor (&1 :: Type -> Type)) => Bifunctor (WrapBoth @Type @Type (&0 :: Type -> Type) (&1 :: Type -> Type) :: Type -> Type -> Type)
+derive Bifunctor (WrapBothNoConstraint @Type @Type (&0 :: Type -> Type) (&1 :: Type -> Type) :: Type -> Type -> Type)
 
 Errors
-NoInstanceFound { Functor &0 } at [TermDeclaration(Idx::<TermItem>(3))]
-NoInstanceFound { Functor &1 } at [TermDeclaration(Idx::<TermItem>(3))]
+NoInstanceFound { Functor (&0 :: Type -> Type) } at [TermDeclaration(Idx::<TermItem>(3))]
+NoInstanceFound { Functor (&1 :: Type -> Type) } at [TermDeclaration(Idx::<TermItem>(3))]

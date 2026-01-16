@@ -3,9 +3,9 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-add :: forall (a :: Type). Semiring a => a -> a -> a
+add :: forall (a :: Type). Semiring (a :: Type) => (a :: Type) -> (a :: Type) -> (a :: Type)
 addImpl :: Int -> Int -> Int
-+ :: forall (a :: Type). Semiring a => a -> a -> a
++ :: forall (a :: Type). Semiring (a :: Type) => (a :: Type) -> (a :: Type) -> (a :: Type)
 test :: Int
 test' :: Int
 

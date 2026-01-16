@@ -3,7 +3,7 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-eq :: forall (a :: Type). Eq a => a -> a -> Boolean
+eq :: forall (a :: Type). Eq (a :: Type) => (a :: Type) -> (a :: Type) -> Boolean
 
 Types
 Eq :: Type -> Constraint
@@ -12,5 +12,5 @@ Classes
 class Eq (&0 :: Type)
 
 Instances
-instance Eq &0 => Eq (Array &0 :: Type)
+instance Eq (&0 :: Type) => Eq (Array (&0 :: Type) :: Type)
   chain: 0
