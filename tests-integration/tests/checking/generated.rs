@@ -419,3 +419,7 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_203_is_symbol_main() { run_test("203_is_symbol", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_204_reflectable_main() { run_test("204_reflectable", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_205_builtin_warn_main() { run_test("205_builtin_warn", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_206_builtin_fail_main() { run_test("206_builtin_fail", "Main"); }

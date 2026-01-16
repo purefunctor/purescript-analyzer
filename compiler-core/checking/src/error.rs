@@ -97,6 +97,12 @@ pub enum ErrorKind {
         file_id: files::FileId,
         item_id: indexing::TypeItemId,
     },
+    CustomWarning {
+        message_id: u32,
+    },
+    CustomFailure {
+        message_id: u32,
+    },
 }
 
 #[derive(Debug, PartialEq, Eq)]

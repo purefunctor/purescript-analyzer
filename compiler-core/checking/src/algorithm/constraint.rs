@@ -869,6 +869,14 @@ where
         } else {
             None
         }
+    } else if file_id == context.prim_type_error.file_id {
+        if item_id == context.prim_type_error.warn {
+            prim_warn(state, context, arguments)
+        } else if item_id == context.prim_type_error.fail {
+            prim_fail(state, context, arguments)
+        } else {
+            None
+        }
     } else if context.known_reflectable.is_symbol == Some((file_id, item_id)) {
         prim_is_symbol(state, arguments)
     } else if context.known_reflectable.reflectable == Some((file_id, item_id)) {

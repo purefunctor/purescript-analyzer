@@ -409,6 +409,20 @@ pub fn report_checked(engine: &QueryEngine, id: FileId) -> String {
                 )
                 .unwrap();
             }
+            CustomWarning { message_id } => {
+                let message = &checked.custom_messages[message_id as usize];
+                writeln!(snapshot, "CustomWarning {{ .. }} at {step:?}").unwrap();
+                for line in message.lines() {
+                    writeln!(snapshot, "  {line}").unwrap();
+                }
+            }
+            CustomFailure { message_id } => {
+                let message = &checked.custom_messages[message_id as usize];
+                writeln!(snapshot, "CustomFailure {{ .. }} at {step:?}").unwrap();
+                for line in message.lines() {
+                    writeln!(snapshot, "  {line}").unwrap();
+                }
+            }
             _ => {
                 writeln!(snapshot, "{:?} at {step:?}", error.kind).unwrap();
             }

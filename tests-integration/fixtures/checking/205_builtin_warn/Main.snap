@@ -1,0 +1,59 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+Proxy :: forall (k :: Type) (a :: k). Proxy @k a
+warnBasic :: forall (a :: Type). Warn (Text "This function is deprecated") => a -> a
+useWarnBasic :: Int
+warnBeside :: forall (a :: Type). Warn (Beside (Text "Left ") (Text "Right")) => a -> a
+useWarnBeside :: Int
+warnAbove :: forall (a :: Type). Warn (Above (Text "Line 1") (Text "Line 2")) => a -> a
+useWarnAbove :: Int
+warnQuote ::
+  forall (t10 :: Type) (a :: t10).
+    Warn (Beside (Text "Got type: ") (Quote @t10 a)) => Proxy @t10 a -> Proxy @t10 a
+useWarnQuote :: Proxy @Type Int
+warnQuoteLabel ::
+  forall (a :: Type). Warn (Beside (Text "Label: ") (QuoteLabel "myField")) => a -> a
+useWarnQuoteLabel :: Int
+warnQuoteLabelSpaces ::
+  forall (a :: Type). Warn (Beside (Text "Label: ") (QuoteLabel "h e l l o")) => a -> a
+useWarnQuoteLabelSpaces :: Int
+warnQuoteLabelQuote ::
+  forall (a :: Type). Warn (Beside (Text "Label: ") (QuoteLabel "hel\"lo")) => a -> a
+useWarnQuoteLabelQuote :: Int
+warnQuoteLabelRaw ::
+  forall (a :: Type). Warn (Beside (Text "Label: ") (QuoteLabel """raw\nstring""")) => a -> a
+useWarnQuoteLabelRaw :: Int
+
+Types
+Proxy :: forall (k :: Type). k -> Type
+
+Data
+Proxy
+  Quantified = :0
+  Kind = :1
+
+
+Roles
+Proxy = [Phantom]
+
+Errors
+CustomWarning { .. } at [TermDeclaration(Idx::<TermItem>(2))]
+  This function is deprecated
+CustomWarning { .. } at [TermDeclaration(Idx::<TermItem>(4))]
+  Left Right
+CustomWarning { .. } at [TermDeclaration(Idx::<TermItem>(6))]
+  Line 1
+  Line 2
+CustomWarning { .. } at [TermDeclaration(Idx::<TermItem>(8))]
+  Got type: Int
+CustomWarning { .. } at [TermDeclaration(Idx::<TermItem>(10))]
+  Label: myField
+CustomWarning { .. } at [TermDeclaration(Idx::<TermItem>(12))]
+  Label: "h e l l o"
+CustomWarning { .. } at [TermDeclaration(Idx::<TermItem>(14))]
+  Label: "hel\"lo"
+CustomWarning { .. } at [TermDeclaration(Idx::<TermItem>(16))]
+  Label: """raw\nstring"""

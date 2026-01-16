@@ -45,6 +45,7 @@ pub struct CheckedModule {
     pub roles: FxHashMap<TypeItemId, Arc<[core::Role]>>,
 
     pub errors: Vec<CheckError>,
+    pub custom_messages: Vec<String>,
 }
 
 impl CheckedModule {

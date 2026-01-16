@@ -337,6 +337,7 @@ where
     pub prim_row: PrimRowCore,
     pub prim_row_list: PrimRowListCore,
     pub prim_coerce: PrimCoerceCore,
+    pub prim_type_error: PrimTypeErrorCore,
     pub known_types: KnownTypesCore,
     pub known_reflectable: KnownReflectableCore,
     pub known_generic: Option<KnownGeneric>,
@@ -375,6 +376,7 @@ where
         let prim_row = PrimRowCore::collect(queries, state)?;
         let prim_row_list = PrimRowListCore::collect(queries, state)?;
         let prim_coerce = PrimCoerceCore::collect(queries)?;
+        let prim_type_error = PrimTypeErrorCore::collect(queries, state)?;
         let known_types = KnownTypesCore::collect(queries)?;
         let known_reflectable = KnownReflectableCore::collect(queries, &mut state.storage)?;
         let known_generic = KnownGeneric::collect(queries, &mut state.storage)?;
@@ -392,6 +394,7 @@ where
             prim_row,
             prim_row_list,
             prim_coerce,
+            prim_type_error,
             known_types,
             known_reflectable,
             known_generic,
@@ -668,6 +671,39 @@ impl PrimCoerceCore {
             .unwrap_or_else(|| unreachable!("invariant violated: Coercible not in Prim.Coerce"));
 
         Ok(PrimCoerceCore { file_id, coercible })
+    }
+}
+
+pub struct PrimTypeErrorCore {
+    pub file_id: FileId,
+    pub warn: TypeItemId,
+    pub fail: TypeItemId,
+    pub text: TypeId,
+    pub quote: TypeId,
+    pub quote_label: TypeId,
+    pub beside: TypeId,
+    pub above: TypeId,
+}
+
+impl PrimTypeErrorCore {
+    fn collect(queries: &impl ExternalQueries, state: &mut CheckState) -> QueryResult<Self> {
+        let file_id = queries
+            .module_file("Prim.TypeError")
+            .unwrap_or_else(|| unreachable!("invariant violated: Prim.TypeError not found"));
+
+        let resolved = queries.resolved(file_id)?;
+        let mut lookup = PrimLookup::new(&resolved, &mut state.storage, "Prim.TypeError");
+
+        Ok(PrimTypeErrorCore {
+            file_id,
+            warn: lookup.type_item("Warn"),
+            fail: lookup.type_item("Fail"),
+            text: lookup.type_constructor("Text"),
+            quote: lookup.type_constructor("Quote"),
+            quote_label: lookup.type_constructor("QuoteLabel"),
+            beside: lookup.type_constructor("Beside"),
+            above: lookup.type_constructor("Above"),
+        })
     }
 }
 
