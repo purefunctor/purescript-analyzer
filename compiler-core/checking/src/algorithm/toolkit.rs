@@ -126,9 +126,9 @@ pub fn instantiate_forall(state: &mut CheckState, mut type_id: TypeId) -> TypeId
 pub fn instantiate_with_arguments(
     state: &mut CheckState,
     mut type_id: TypeId,
-    arguments: impl IntoIterator<Item = TypeId>,
+    arguments: impl AsRef<[TypeId]>,
 ) -> TypeId {
-    let mut arguments_iter = arguments.into_iter();
+    let mut arguments_iter = arguments.as_ref().iter().copied();
 
     safe_loop! {
         type_id = state.normalize_type(type_id);

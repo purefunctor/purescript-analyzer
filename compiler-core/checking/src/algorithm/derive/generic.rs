@@ -17,7 +17,7 @@ use smol_str::SmolStr;
 use crate::ExternalQueries;
 use crate::algorithm::derive::{self, tools};
 use crate::algorithm::state::{CheckContext, CheckState, KnownGeneric};
-use crate::algorithm::{transfer, unification};
+use crate::algorithm::{toolkit, transfer, unification};
 use crate::core::{Type, TypeId};
 use crate::error::ErrorKind;
 
@@ -82,8 +82,10 @@ where
         return Ok(known_generic.no_constructors);
     };
 
+    let arguments = toolkit::extract_all_applications(state, derived_type);
+
     let last =
-        build_generic_constructor(state, context, known_generic, data_file, derived_type, last)?;
+        build_generic_constructor(state, context, known_generic, data_file, &arguments, last)?;
 
     rest.iter().rev().try_fold(last, |accumulator, &constructor_id| {
         let constructor = build_generic_constructor(
@@ -91,7 +93,7 @@ where
             context,
             known_generic,
             data_file,
-            derived_type,
+            &arguments,
             constructor_id,
         )?;
         let applied = state.storage.intern(Type::Application(known_generic.sum, constructor));
@@ -105,7 +107,7 @@ fn build_generic_constructor<Q>(
     context: &CheckContext<Q>,
     known_generic: &KnownGeneric,
     data_file: FileId,
-    derived_type: TypeId,
+    arguments: &[TypeId],
     constructor_id: TermItemId,
 ) -> QueryResult<TypeId>
 where
@@ -129,7 +131,7 @@ where
         derive::lookup_local_term_type(state, context, data_file, constructor_id)?;
 
     let field_types = if let Some(constructor_type) = constructor_type {
-        derive::extract_constructor_fields(state, constructor_type, derived_type)
+        derive::instantiate_constructor_fields(state, constructor_type, arguments)
     } else {
         vec![]
     };

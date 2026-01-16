@@ -299,7 +299,8 @@ where
         return Ok(context.prim.unknown);
     };
 
-    let fields = extract_constructor_fields(state, constructor_type, newtype_type);
+    let arguments = toolkit::extract_all_applications(state, newtype_type);
+    let fields = instantiate_constructor_fields(state, constructor_type, &arguments);
     Ok(fields.into_iter().next().unwrap_or(context.prim.unknown))
 }
 
@@ -329,11 +330,13 @@ where
         None
     };
 
+    let arguments = toolkit::extract_all_applications(state, derived_type);
+
     for constructor_id in constructors {
         let constructor_type = lookup_local_term_type(state, context, data_file, constructor_id)?;
         let Some(constructor_type) = constructor_type else { continue };
 
-        let field_types = extract_constructor_fields(state, constructor_type, derived_type);
+        let field_types = instantiate_constructor_fields(state, constructor_type, &arguments);
         for field_type in field_types {
             higher_kinded::generate_constraint(state, context, field_type, class, class1);
         }
@@ -342,12 +345,11 @@ where
     Ok(())
 }
 
-/// Extracts constructor fields from a constructor.
+/// Instantiates and extracts constructor fields from a constructor type.
 ///
-/// This function uses [`toolkit::extract_all_applications`] to deconstruct
-/// the instance head, then uses [`toolkit::instantiate_with_arguments`] to
-/// effectively specialise the constructor type for the instance head in
-/// particular. Consider the ff:
+/// This function uses [`toolkit::instantiate_with_arguments`] to specialise
+/// the constructor type with the given type arguments, then extracts the
+/// function arguments. Consider the ff:
 ///
 /// ```purescript
 /// data Either a b = Left a | Right b
@@ -361,12 +363,15 @@ where
 /// derive instance Eq (Proxy @Type Int)
 /// -- Proxy :: Proxy @Type Int
 /// ```
-fn extract_constructor_fields(
+///
+/// The `arguments` parameter should be obtained by calling
+/// [`toolkit::extract_all_applications`] on the derived type once,
+/// then passed to this function for each constructor.
+fn instantiate_constructor_fields(
     state: &mut CheckState,
     constructor_type: TypeId,
-    derived_type: TypeId,
+    arguments: &[TypeId],
 ) -> Vec<TypeId> {
-    let arguments = toolkit::extract_all_applications(state, derived_type);
     let constructor = toolkit::instantiate_with_arguments(state, constructor_type, arguments);
     let (fields, _) = toolkit::extract_function_arguments(state, constructor);
     fields
