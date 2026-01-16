@@ -29,6 +29,6 @@ derive Profunctor (WrongFirst :: Type -> Type -> Type)
 derive Profunctor (WrongSecond :: Type -> Type -> Type)
 
 Errors
-CovariantOccurrence { type_id: Id<checking::core::Type>(45) } at [TermDeclaration(Idx::<TermItem>(1))]
-ContravariantOccurrence { type_id: Id<checking::core::Type>(46) } at [TermDeclaration(Idx::<TermItem>(3))]
-CovariantOccurrence { type_id: Id<checking::core::Type>(45) } at [TermDeclaration(Idx::<TermItem>(3))]
+CovariantOccurrence { type_id: Id<checking::core::Type>(48) } at [TermDeclaration(Idx::<TermItem>(1))]
+ContravariantOccurrence { type_id: Id<checking::core::Type>(49) } at [TermDeclaration(Idx::<TermItem>(3))]
+CovariantOccurrence { type_id: Id<checking::core::Type>(48) } at [TermDeclaration(Idx::<TermItem>(3))]

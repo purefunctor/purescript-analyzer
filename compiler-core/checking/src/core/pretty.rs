@@ -479,7 +479,7 @@ fn render_variable<'a>(
 ) -> Doc<'a> {
     match variable {
         Variable::Skolem(level, _) => arena.text(format!("~{}", level)),
-        Variable::Bound(level) => {
+        Variable::Bound(level, _) => {
             let name = context.names.get(&level.0).cloned();
             arena.text(name.unwrap_or_else(|| format!("{}", level)))
         }

@@ -255,7 +255,7 @@ where
     let class_reference = {
         let reference_type = state.storage.intern(Type::Constructor(context.id, item_id));
         type_variables.iter().cloned().fold(reference_type, |reference_type, binder| {
-            let variable = Variable::Bound(binder.level);
+            let variable = Variable::Bound(binder.level, binder.kind);
             let variable = state.storage.intern(Type::Variable(variable));
             state.storage.intern(Type::Application(reference_type, variable))
         })
@@ -492,7 +492,7 @@ where
     let reference_type = state.storage.intern(Type::Constructor(context.id, item_id));
 
     let reference_type = kind_variables.iter().fold(reference_type, |reference, binder| {
-        let variable = Variable::Bound(binder.level);
+        let variable = Variable::Bound(binder.level, binder.kind);
         let variable = state.storage.intern(Type::Variable(variable));
         state.storage.intern(Type::KindApplication(reference, variable))
     });
@@ -510,7 +510,7 @@ where
     });
 
     type_variables.iter().fold(reference_type, |reference, binder| {
-        let variable = Variable::Bound(binder.level);
+        let variable = Variable::Bound(binder.level, binder.kind);
         let variable = state.storage.intern(Type::Variable(variable));
         state.storage.intern(Type::Application(reference, variable))
     })
@@ -874,7 +874,7 @@ fn infer_roles(
     ) {
         let type_id = state.normalize_type(type_id);
         match state.storage[type_id].clone() {
-            Type::Variable(Variable::Bound(level)) => {
+            Type::Variable(Variable::Bound(level, _)) => {
                 if let Some(index) = variables.iter().position(|v| v.level == level) {
                     // The following cases infer to nominal roles:
                     //
@@ -897,7 +897,7 @@ fn infer_roles(
             Type::Application(function, argument) => {
                 let function_id = state.normalize_type(function);
                 let is_type_variable =
-                    matches!(state.storage[function_id], Type::Variable(Variable::Bound(_)));
+                    matches!(state.storage[function_id], Type::Variable(Variable::Bound(..)));
 
                 aux(state, roles, variables, function, under_constraint, false);
                 aux(state, roles, variables, argument, under_constraint, is_type_variable);

@@ -77,17 +77,11 @@ where
         return false;
     };
 
-    let Some(kind) = lookup_variable_kind(state, variable) else {
-        return false;
+    let kind = match variable {
+        Variable::Skolem(_, kind) => *kind,
+        Variable::Bound(_, kind) => *kind,
+        Variable::Free(_) => context.prim.unknown,
     };
 
     Zonk::on(state, kind) == context.prim.type_to_type
-}
-
-fn lookup_variable_kind(state: &CheckState, variable: &Variable) -> Option<TypeId> {
-    match variable {
-        Variable::Skolem(_, kind) => Some(*kind),
-        Variable::Bound(level) => state.type_scope.kinds.get(*level).copied(),
-        Variable::Free(_) => None,
-    }
 }

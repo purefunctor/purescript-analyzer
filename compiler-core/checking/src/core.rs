@@ -20,7 +20,7 @@ pub struct ForallBinder {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Variable {
     Skolem(debruijn::Level, TypeId),
-    Bound(debruijn::Level),
+    Bound(debruijn::Level, TypeId),
     Free(SmolStr),
 }
 

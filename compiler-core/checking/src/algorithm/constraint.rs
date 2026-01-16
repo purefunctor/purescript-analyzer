@@ -469,7 +469,7 @@ fn match_type(
     let given_core = &state.storage[given];
 
     match (wanted_core, given_core) {
-        (_, Type::Variable(Variable::Bound(level))) => {
+        (_, Type::Variable(Variable::Bound(level, _))) => {
             if let Some(&bound) = bindings.get(level) {
                 match can_unify(state, wanted, bound) {
                     CanUnify::Equal => MatchType::Match,
@@ -724,19 +724,16 @@ where
         CollectBoundLevels::on(state, localized, &mut argument_levels);
     }
 
-    let mut constraint_levels = FxHashSet::default();
+    let mut constraint_variables = FxHashMap::default();
     for &(constraint, _) in &instance.constraints {
         let localized = transfer::localize(state, context, constraint);
-        CollectBoundLevels::on(state, localized, &mut constraint_levels);
+        CollectBoundVariables::on(state, localized, &mut constraint_variables);
     }
 
-    for constraint_level in constraint_levels.difference(&argument_levels).copied() {
-        if !bindings.contains_key(&constraint_level) {
-            // TODO: We default to a fresh unification variable here for the
-            // kind too as kind information for constraint applications have
-            // already been discarded at this point.
-            let unification = state.fresh_unification(context);
-            bindings.insert(constraint_level, unification);
+    for (level, kind) in constraint_variables {
+        if !argument_levels.contains(&level) && !bindings.contains_key(&level) {
+            let unification = state.fresh_unification_kinded(kind);
+            bindings.insert(level, unification);
         }
     }
 
@@ -902,7 +899,7 @@ impl<'a> ApplyBindings<'a> {
 impl TypeFold for ApplyBindings<'_> {
     fn transform(&mut self, _state: &mut CheckState, id: TypeId, t: &Type) -> FoldAction {
         match t {
-            Type::Variable(Variable::Bound(level)) => {
+            Type::Variable(Variable::Bound(level, _)) => {
                 let id = self.bindings.get(level).copied().unwrap_or(id);
                 FoldAction::Replace(id)
             }
@@ -925,8 +922,31 @@ impl<'a> CollectBoundLevels<'a> {
 impl TypeFold for CollectBoundLevels<'_> {
     fn transform(&mut self, _state: &mut CheckState, id: TypeId, t: &Type) -> FoldAction {
         match t {
-            Type::Variable(Variable::Bound(level)) => {
+            Type::Variable(Variable::Bound(level, _)) => {
                 self.levels.insert(*level);
+                FoldAction::Replace(id)
+            }
+            _ => FoldAction::Continue,
+        }
+    }
+}
+
+/// Collects all bound variables with their kinds from a type.
+struct CollectBoundVariables<'a> {
+    variables: &'a mut FxHashMap<debruijn::Level, TypeId>,
+}
+
+impl<'a> CollectBoundVariables<'a> {
+    fn on(state: &mut CheckState, type_id: TypeId, variables: &'a mut FxHashMap<debruijn::Level, TypeId>) {
+        fold_type(state, type_id, &mut CollectBoundVariables { variables });
+    }
+}
+
+impl TypeFold for CollectBoundVariables<'_> {
+    fn transform(&mut self, _state: &mut CheckState, id: TypeId, t: &Type) -> FoldAction {
+        match t {
+            Type::Variable(Variable::Bound(level, kind)) => {
+                self.variables.insert(*level, *kind);
                 FoldAction::Replace(id)
             }
             _ => FoldAction::Continue,

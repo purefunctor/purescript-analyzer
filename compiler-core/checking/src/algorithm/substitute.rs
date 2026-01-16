@@ -26,7 +26,7 @@ impl SubstituteBound {
 
 impl TypeFold for SubstituteBound {
     fn transform(&mut self, _state: &mut CheckState, _id: TypeId, t: &Type) -> FoldAction {
-        if let Type::Variable(Variable::Bound(level)) = t
+        if let Type::Variable(Variable::Bound(level, _)) = t
             && *level == self.target_level
         {
             return FoldAction::Replace(self.with_type);
@@ -55,9 +55,9 @@ impl ShiftBound {
 
 impl TypeFold for ShiftBound {
     fn transform(&mut self, state: &mut CheckState, _id: TypeId, t: &Type) -> FoldAction {
-        if let Type::Variable(Variable::Bound(level)) = t {
+        if let Type::Variable(Variable::Bound(level, kind)) = t {
             let level = debruijn::Level(level.0 + self.offset);
-            FoldAction::Replace(state.storage.intern(Type::Variable(Variable::Bound(level))))
+            FoldAction::Replace(state.storage.intern(Type::Variable(Variable::Bound(level, *kind))))
         } else {
             FoldAction::Continue
         }
@@ -68,7 +68,7 @@ impl TypeFold for ShiftBound {
     }
 }
 
-pub type UniToLevel = FxHashMap<u32, debruijn::Level>;
+pub type UniToLevel = FxHashMap<u32, (debruijn::Level, TypeId)>;
 
 pub struct SubstituteUnification<'a> {
     substitutions: &'a UniToLevel,
@@ -87,9 +87,9 @@ impl SubstituteUnification<'_> {
 impl TypeFold for SubstituteUnification<'_> {
     fn transform(&mut self, state: &mut CheckState, id: TypeId, t: &Type) -> FoldAction {
         if let Type::Unification(unification_id) = t {
-            if let Some(&level) = self.substitutions.get(unification_id) {
+            if let Some(&(level, kind)) = self.substitutions.get(unification_id) {
                 return FoldAction::Replace(
-                    state.storage.intern(Type::Variable(Variable::Bound(level))),
+                    state.storage.intern(Type::Variable(Variable::Bound(level, kind))),
                 );
             }
             return FoldAction::Replace(id);
@@ -119,7 +119,7 @@ impl SubstituteBindings<'_> {
 impl TypeFold for SubstituteBindings<'_> {
     fn transform(&mut self, _state: &mut CheckState, id: TypeId, t: &Type) -> FoldAction {
         match t {
-            Type::Variable(Variable::Bound(level)) => {
+            Type::Variable(Variable::Bound(level, _)) => {
                 let id = self.bindings.get(level).copied().unwrap_or(id);
                 FoldAction::Replace(id)
             }

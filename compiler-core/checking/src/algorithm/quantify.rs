@@ -47,7 +47,7 @@ pub fn quantify(state: &mut CheckState, id: TypeId) -> Option<(TypeId, debruijn:
         let binder = ForallBinder { visible: false, name, level, kind };
         quantified = state.storage.intern(Type::Forall(binder, quantified));
 
-        substitutions.insert(id, level);
+        substitutions.insert(id, (level, kind));
     }
 
     let quantified = SubstituteUnification::on(&substitutions, state, quantified);
@@ -219,9 +219,11 @@ pub fn quantify_class(state: &mut CheckState, class: &mut Class) -> Option<debru
 
     let mut substitutions = UniToLevel::default();
     for (index, &id) in unsolved.iter().rev().enumerate() {
+        let kind = state.unification.get(id).kind;
+        let kind = ShiftBound::on(state, kind, size.0);
         let index = debruijn::Index(index as u32);
         let level = index.to_level(size)?;
-        substitutions.insert(id, level);
+        substitutions.insert(id, (level, kind));
     }
 
     let type_variable_kinds = class.type_variable_kinds.iter().map(|&kind| {
@@ -273,16 +275,14 @@ pub fn quantify_instance(state: &mut CheckState, instance: &mut Instance) -> Opt
 
     let mut substitutions = UniToLevel::default();
     for (index, &id) in unsolved.iter().rev().enumerate() {
+        let kind = state.unification.get(id).kind;
+        let kind = ShiftBound::on(state, kind, size.0);
         let index = debruijn::Index(index as u32);
         let level = index.to_level(size)?;
-        substitutions.insert(id, level);
+        substitutions.insert(id, (level, kind));
     }
 
-    let kind_variables = substitutions.iter().map(|(&id, &level)| {
-        let kind = state.unification.get(id).kind;
-        (level, kind)
-    });
-
+    let kind_variables = substitutions.values().copied();
     let kind_variables = kind_variables.sorted_by_key(|(level, _)| *level);
     let kind_variables = kind_variables.map(|(_, kind)| kind).collect_vec();
 
