@@ -6,13 +6,13 @@ Terms
 WrapBoth ::
   forall (t6 :: Type) (t10 :: Type) (f :: (t6 :: Type) -> Type) (g :: (t10 :: Type) -> Type)
     (a :: (t6 :: Type)) (b :: (t10 :: Type)).
-    (f :: ??? -> Type) (a :: ???) ->
-    (g :: ??? -> Type) (b :: ???) ->
+    (f :: (t6 :: Type) -> Type) (a :: (t6 :: Type)) ->
+    (g :: (t10 :: Type) -> Type) (b :: (t10 :: Type)) ->
     WrapBoth @(t6 :: Type) @(t10 :: Type)
-      (f :: ??? -> Type)
-      (g :: ??? -> Type)
-      (a :: ???)
-      (b :: ???)
+      (f :: (t6 :: Type) -> Type)
+      (g :: (t10 :: Type) -> Type)
+      (a :: (t6 :: Type))
+      (b :: (t10 :: Type))
 
 Types
 WrapBoth ::

@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::algorithm::state::CheckState;
-use crate::core::{ForallBinder, RowType, Type, TypeId};
+use crate::core::{ForallBinder, RowType, Type, TypeId, Variable};
 
 /// Controls behavior during type folding.
 pub enum FoldAction {
@@ -103,7 +103,17 @@ pub fn fold_type<F: TypeFold>(state: &mut CheckState, id: TypeId, folder: &mut F
             state.storage.intern(Type::SynonymApplication(saturation, file_id, type_id, arguments))
         }
         Type::Unification(_) => id,
-        Type::Variable(_) => id,
+        Type::Variable(variable) => match variable {
+            Variable::Bound(level, kind) => {
+                let kind = fold_type(state, kind, folder);
+                state.storage.intern(Type::Variable(Variable::Bound(level, kind)))
+            }
+            Variable::Skolem(level, kind) => {
+                let kind = fold_type(state, kind, folder);
+                state.storage.intern(Type::Variable(Variable::Skolem(level, kind)))
+            }
+            Variable::Free(_) => id,
+        },
         Type::Unknown => id,
     }
 }

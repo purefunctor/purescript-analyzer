@@ -10,7 +10,7 @@ InferTuplePoly :: forall (t7 :: Type) (t8 :: Type). (t7 :: Type) -> (t8 :: Type)
 
 Synonyms
 InferTuplePoly = forall (t7 :: Type) (t8 :: Type) (x :: (t7 :: Type)) (y :: (t8 :: Type)).
-  TuplePoly @(t7 :: Type) @(t8 :: Type) (x :: ???) (y :: ???)
+  TuplePoly @(t7 :: Type) @(t8 :: Type) (x :: (t7 :: Type)) (y :: (t8 :: Type))
   Quantified = :2
   Kind = :0
   Type = :2

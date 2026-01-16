@@ -5,8 +5,8 @@ expression: report
 Terms
 add ::
   forall (t9 :: Type) (t11 :: Type) (n :: (t9 :: Type)) (m :: (t11 :: Type)).
-    Program @(t9 :: Type) @(t11 :: Type) (n :: ???) (m :: ???) =>
-    Proxy @(t9 :: Type) (n :: ???) -> Proxy @(t11 :: Type) (m :: ???)
+    Program @(t9 :: Type) @(t11 :: Type) (n :: (t9 :: Type)) (m :: (t11 :: Type)) =>
+    Proxy @(t9 :: Type) (n :: (t9 :: Type)) -> Proxy @(t11 :: Type) (m :: (t11 :: Type))
 test :: Proxy @Int 3
 
 Types

@@ -5,10 +5,12 @@ expression: report
 Terms
 MkWrap ::
   forall (t4 :: Type) (f :: (t4 :: Type) -> Type) (a :: (t4 :: Type)).
-    (f :: ??? -> Type) (a :: ???) -> Wrap @(t4 :: Type) (f :: ??? -> Type) (a :: ???)
+    (f :: (t4 :: Type) -> Type) (a :: (t4 :: Type)) ->
+    Wrap @(t4 :: Type) (f :: (t4 :: Type) -> Type) (a :: (t4 :: Type))
 MkWrapNoOrd1 ::
   forall (t10 :: Type) (f :: (t10 :: Type) -> Type) (a :: (t10 :: Type)).
-    (f :: ??? -> Type) (a :: ???) -> WrapNoOrd1 @(t10 :: Type) (f :: ??? -> Type) (a :: ???)
+    (f :: (t10 :: Type) -> Type) (a :: (t10 :: Type)) ->
+    WrapNoOrd1 @(t10 :: Type) (f :: (t10 :: Type) -> Type) (a :: (t10 :: Type))
 
 Types
 Wrap :: forall (t4 :: Type). ((t4 :: Type) -> Type) -> (t4 :: Type) -> Type

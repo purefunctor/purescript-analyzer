@@ -9,12 +9,16 @@ Mixed :: forall (a :: Type). Int -> (a :: Type) -> Boolean -> Mixed (a :: Type)
 Rec :: forall (a :: Type). { count :: Int, value :: (a :: Type) } -> Rec (a :: Type)
 Wrap ::
   forall (t9 :: Type) (f :: (t9 :: Type) -> Type) (a :: (t9 :: Type)).
-    (f :: ??? -> Type) (a :: ???) -> Wrap @(t9 :: Type) (f :: ??? -> Type) (a :: ???)
+    (f :: (t9 :: Type) -> Type) (a :: (t9 :: Type)) ->
+    Wrap @(t9 :: Type) (f :: (t9 :: Type) -> Type) (a :: (t9 :: Type))
 Compose ::
   forall (t16 :: Type) (t20 :: Type) (f :: (t16 :: Type) -> Type)
     (g :: (t20 :: Type) -> (t16 :: Type)) (a :: (t20 :: Type)).
-    (f :: ??? -> Type) ((g :: ??? -> ???) (a :: ???)) ->
-    Compose @(t20 :: Type) (f :: ??? -> Type) (g :: ??? -> ???) (a :: ???)
+    (f :: (t16 :: Type) -> Type) ((g :: (t20 :: Type) -> (t16 :: Type)) (a :: (t20 :: Type))) ->
+    Compose @(t20 :: Type)
+      (f :: (t16 :: Type) -> Type)
+      (g :: (t20 :: Type) -> (t16 :: Type))
+      (a :: (t20 :: Type))
 Left' :: forall (a :: Type). (a :: Type) -> Either' (a :: Type)
 Right' :: forall (a :: Type). (a :: Type) -> Either' (a :: Type)
 NoEq :: forall (a :: Type). (a :: Type) -> NoEq (a :: Type)
@@ -77,7 +81,7 @@ NoEq = [Representational]
 
 Derived
 derive Eq1 (&0 :: Type -> Type) => Eq1 (Wrap @Type (&0 :: Type -> Type) :: Type -> Type)
-derive forall (&0 :: Type). (Eq1 (&1 :: Type -> Type), Eq ((&2 :: ??? -> Type) (&3 :: ???))) => Eq (Compose @Type @(&0 :: Type) (&1 :: Type -> Type) (&2 :: ??? -> Type) (&3 :: ???) :: Type)
+derive forall (&0 :: Type). (Eq1 (&1 :: Type -> Type), Eq ((&2 :: (&0 :: Type) -> Type) (&3 :: (&0 :: Type)))) => Eq (Compose @Type @(&0 :: Type) (&1 :: Type -> Type) (&2 :: (&0 :: Type) -> Type) (&3 :: (&0 :: Type)) :: Type)
 derive Eq1 (&0 :: Type -> Type) => Eq1 (Compose @Type @Type (&0 :: Type -> Type) (&1 :: Type -> Type) :: Type -> Type)
 derive Eq (&0 :: Type) => Eq (Id (&0 :: Type) :: Type)
 derive Eq (&0 :: Type) => Eq (Either' (&0 :: Type) :: Type)

@@ -9,7 +9,7 @@ Left :: forall (a :: Type) (b :: Type). (a :: Type) -> Either (a :: Type) (b :: 
 Right :: forall (a :: Type) (b :: Type). (b :: Type) -> Either (a :: Type) (b :: Type)
 Tuple :: forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type) -> Tuple (a :: Type) (b :: Type)
 Wrapper :: forall (a :: Type). (a :: Type) -> Wrapper (a :: Type)
-Proxy :: forall (t6 :: Type) (a :: (t6 :: Type)). Proxy @(t6 :: Type) (a :: ???)
+Proxy :: forall (t6 :: Type) (a :: (t6 :: Type)). Proxy @(t6 :: Type) (a :: (t6 :: Type))
 getVoid :: forall (rep :: Type). Generic Void (rep :: Type) => Proxy @Type (rep :: Type)
 getMyUnit :: forall (rep :: Type). Generic MyUnit (rep :: Type) => Proxy @Type (rep :: Type)
 getIdentity ::

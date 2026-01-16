@@ -3,10 +3,10 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-Proxy :: forall (t0 :: Type) (a :: (t0 :: Type)). Proxy @(t0 :: Type) (a :: ???)
+Proxy :: forall (t0 :: Type) (a :: (t0 :: Type)). Proxy @(t0 :: Type) (a :: (t0 :: Type))
 coerceProxy ::
   forall (t4 :: Type) (t6 :: Type) (a :: (t4 :: Type)) (b :: (t6 :: Type)).
-    Proxy @(t4 :: Type) (a :: ???) -> Proxy @(t6 :: Type) (b :: ???)
+    Proxy @(t4 :: Type) (a :: (t4 :: Type)) -> Proxy @(t6 :: Type) (b :: (t6 :: Type))
 coerceProxyIntString :: Proxy @Type Int -> Proxy @Type String
 
 Types

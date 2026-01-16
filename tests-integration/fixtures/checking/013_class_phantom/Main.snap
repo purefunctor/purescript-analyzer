@@ -3,7 +3,7 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-value :: forall (t0 :: Type) (a :: (t0 :: Type)). Phantom (a :: ???) => Int
+value :: forall (t0 :: Type) (a :: (t0 :: Type)). Phantom (a :: (t0 :: Type)) => Int
 
 Types
 Phantom :: forall (t0 :: Type). (t0 :: Type) -> Constraint

@@ -146,13 +146,13 @@ fn traverse<'a, Q: ExternalQueries>(source: &mut TraversalSource<'a, Q>, id: Typ
             Type::SynonymApplication(saturation, file_id, type_id, arguments)
         }
 
-        Type::Unification(unification_id) => match source.mode {
+        Type::Unification(_) => match source.mode {
             TraversalMode::FromGlobal => {
-                eprintln!("localize: unification variable ?{unification_id} escaped");
+                // eprintln!("localize: unification variable ?{unification_id} escaped");
                 Type::Unknown
             }
             TraversalMode::FromLocal => {
-                eprintln!("globalize: unification variable ?{unification_id} escaped");
+                // eprintln!("globalize: unification variable ?{unification_id} escaped");
                 Type::Unknown
             }
         },

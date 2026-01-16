@@ -8,7 +8,8 @@ Right :: forall (a :: Type) (b :: Type). (b :: Type) -> Either (a :: Type) (b ::
 Pair :: forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type) -> Pair (a :: Type) (b :: Type)
 Const2 ::
   forall (t5 :: Type) (t6 :: Type) (e :: Type) (a :: (t5 :: Type)) (b :: (t6 :: Type)).
-    (e :: Type) -> Const2 @(t5 :: Type) @(t6 :: Type) (e :: Type) (a :: ???) (b :: ???)
+    (e :: Type) ->
+    Const2 @(t5 :: Type) @(t6 :: Type) (e :: Type) (a :: (t5 :: Type)) (b :: (t6 :: Type))
 
 Types
 Either :: Type -> Type -> Type

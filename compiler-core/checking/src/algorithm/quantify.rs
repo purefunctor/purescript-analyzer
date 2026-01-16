@@ -14,7 +14,7 @@ use crate::algorithm::constraint::{self, ConstraintApplication};
 use crate::algorithm::fold::Zonk;
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::substitute::{ShiftBound, SubstituteUnification, UniToLevel};
-use crate::core::{Class, ForallBinder, Instance, RowType, Type, TypeId, debruijn};
+use crate::core::{Class, ForallBinder, Instance, RowType, Type, TypeId, Variable, debruijn};
 
 pub fn quantify(state: &mut CheckState, id: TypeId) -> Option<(TypeId, debruijn::Size)> {
     let graph = collect_unification(state, id);
@@ -418,7 +418,12 @@ pub fn collect_unification_into(graph: &mut UniGraph, state: &mut CheckState, id
                 let entry = state.unification.get(unification_id);
                 aux(graph, state, entry.kind, Some(unification_id));
             }
-            Type::Variable(_) => (),
+            Type::Variable(ref variable) => match variable {
+                Variable::Bound(_, kind) | Variable::Skolem(_, kind) => {
+                    aux(graph, state, *kind, dependent);
+                }
+                Variable::Free(_) => {}
+            },
             Type::Unknown => (),
         }
     }

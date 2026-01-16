@@ -9,8 +9,9 @@ failBasic ::
 useFailBasic :: Int
 failComplex ::
   forall (t8 :: Type) (a :: (t8 :: Type)).
-    Fail (Above (Text "Error:") (Beside (Text "Type ") (Quote @(t8 :: Type) (a :: ???)))) =>
-    Proxy @(t8 :: Type) (a :: ???) -> Proxy @(t8 :: Type) (a :: ???)
+    Fail
+      (Above (Text "Error:") (Beside (Text "Type ") (Quote @(t8 :: Type) (a :: (t8 :: Type))))) =>
+    Proxy @(t8 :: Type) (a :: (t8 :: Type)) -> Proxy @(t8 :: Type) (a :: (t8 :: Type))
 useFailComplex :: Proxy @Type String
 
 Types

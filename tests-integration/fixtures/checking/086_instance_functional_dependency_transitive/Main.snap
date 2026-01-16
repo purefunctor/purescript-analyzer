@@ -5,7 +5,7 @@ expression: report
 Terms
 chain ::
   forall (t1 :: Type) (a :: Type) (b :: (t1 :: Type)) (c :: Type).
-    Chain (a :: Type) (b :: ???) (c :: Type) => (a :: Type) -> (c :: Type)
+    Chain (a :: Type) (b :: (t1 :: Type)) (c :: Type) => (a :: Type) -> (c :: Type)
 test :: Boolean
 
 Types

@@ -11,7 +11,7 @@ Test1 :: Type
 Test2 :: Int
 
 Synonyms
-Identity = forall (t0 :: Type) (a :: (t0 :: Type)). (a :: ???)
+Identity = forall (t0 :: Type) (a :: (t0 :: Type)). (a :: (t0 :: Type))
   Quantified = :1
   Kind = :0
   Type = :1

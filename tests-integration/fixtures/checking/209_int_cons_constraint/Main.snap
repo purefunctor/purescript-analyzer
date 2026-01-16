@@ -5,8 +5,8 @@ expression: report
 Terms
 build ::
   forall (t9 :: Type) (t11 :: Type) (n :: (t9 :: Type)) (r :: (t11 :: Type)).
-    Build @(t9 :: Type) @(t11 :: Type) (n :: ???) (r :: ???) =>
-    Proxy @(t9 :: Type) (n :: ???) -> Proxy @(t11 :: Type) (r :: ???)
+    Build @(t9 :: Type) @(t11 :: Type) (n :: (t9 :: Type)) (r :: (t11 :: Type)) =>
+    Proxy @(t9 :: Type) (n :: (t9 :: Type)) -> Proxy @(t11 :: Type) (r :: (t11 :: Type))
 test :: Proxy @(Row Int) ( n1 :: 1, n2 :: 2, n3 :: 3, n4 :: 4, n5 :: 5 )
 
 Types

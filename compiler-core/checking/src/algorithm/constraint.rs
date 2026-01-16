@@ -109,7 +109,7 @@ where
     Ok(residual)
 }
 
-#[derive(Clone, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub(crate) struct ConstraintApplication {
     pub(crate) file_id: FileId,
     pub(crate) item_id: TypeItemId,
@@ -553,6 +553,28 @@ fn match_given_type(state: &mut CheckState, wanted: TypeId, given: TypeId) -> Ma
         (Type::Unification(_), _) => MatchType::Stuck,
 
         (
+            Type::Variable(Variable::Bound(w_level, w_kind)),
+            Type::Variable(Variable::Bound(g_level, g_kind)),
+        ) => {
+            if w_level == g_level {
+                match_given_type(state, *w_kind, *g_kind)
+            } else {
+                MatchType::Apart
+            }
+        }
+
+        (
+            Type::Variable(Variable::Skolem(w_level, w_kind)),
+            Type::Variable(Variable::Skolem(g_level, g_kind)),
+        ) => {
+            if w_level == g_level {
+                match_given_type(state, *w_kind, *g_kind)
+            } else {
+                MatchType::Apart
+            }
+        }
+
+        (
             &Type::Application(w_function, w_argument),
             &Type::Application(g_function, g_argument),
         ) => match_given_type(state, w_function, g_function)
@@ -663,6 +685,22 @@ fn can_unify(state: &mut CheckState, t1: TypeId, t2: TypeId) -> CanUnify {
                 let a2 = Arc::clone(a2);
                 iter::zip(a1.iter(), a2.iter())
                     .fold(Equal, |result, (&a1, &a2)| result.and_also(|| can_unify(state, a1, a2)))
+            } else {
+                Apart
+            }
+        }
+
+        (&Type::Variable(Variable::Bound(l1, k1)), &Type::Variable(Variable::Bound(l2, k2))) => {
+            if l1 == l2 {
+                can_unify(state, k1, k2)
+            } else {
+                Apart
+            }
+        }
+
+        (&Type::Variable(Variable::Skolem(l1, k1)), &Type::Variable(Variable::Skolem(l2, k2))) => {
+            if l1 == l2 {
+                can_unify(state, k1, k2)
             } else {
                 Apart
             }
@@ -937,7 +975,11 @@ struct CollectBoundVariables<'a> {
 }
 
 impl<'a> CollectBoundVariables<'a> {
-    fn on(state: &mut CheckState, type_id: TypeId, variables: &'a mut FxHashMap<debruijn::Level, TypeId>) {
+    fn on(
+        state: &mut CheckState,
+        type_id: TypeId,
+        variables: &'a mut FxHashMap<debruijn::Level, TypeId>,
+    ) {
         fold_type(state, type_id, &mut CollectBoundVariables { variables });
     }
 }

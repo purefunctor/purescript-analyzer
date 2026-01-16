@@ -21,7 +21,7 @@ EmptyRecord = {}
   Kind = :0
   Type = :0
 
-TailOnly = forall (t7 :: Type) (r :: Row (t7 :: Type)). ( | (r :: Row ???) )
+TailOnly = forall (t7 :: Type) (r :: Row (t7 :: Type)). ( | (r :: Row (t7 :: Type)) )
   Quantified = :1
   Kind = :0
   Type = :1

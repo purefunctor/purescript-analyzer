@@ -948,12 +948,18 @@ fn infer_roles(
                 }
             }
 
+            Type::Variable(ref variable) => match variable {
+                Variable::Bound(_, kind) | Variable::Skolem(_, kind) => {
+                    aux(state, roles, variables, *kind, under_constraint, false);
+                }
+                Variable::Free(_) => {}
+            },
+
             Type::Constructor(_, _)
             | Type::Integer(_)
             | Type::Operator(_, _)
             | Type::String(_, _)
             | Type::Unification(_)
-            | Type::Variable(_)
             | Type::Unknown => (),
         }
     }

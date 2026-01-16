@@ -2,7 +2,7 @@ use files::FileId;
 use rustc_hash::FxHashSet;
 
 use crate::algorithm::state::CheckState;
-use crate::core::{ForallBinder, RowType, Type, TypeId};
+use crate::core::{ForallBinder, RowType, Type, TypeId, Variable};
 
 /// Controls behavior during type visiting.
 pub enum VisitAction {
@@ -96,7 +96,12 @@ pub fn visit_type<V: TypeVisitor>(state: &mut CheckState, id: TypeId, visitor: &
             }
         }
         Type::Unification(_) => {}
-        Type::Variable(_) => {}
+        Type::Variable(variable) => match variable {
+            Variable::Bound(_, kind) | Variable::Skolem(_, kind) => {
+                visit_type(state, kind, visitor);
+            }
+            Variable::Free(_) => {}
+        },
         Type::Unknown => {}
     }
 }

@@ -23,7 +23,8 @@ unionEmptyRight ::
     Union @Type ( a :: Int ) () (u :: Row Type) => Proxy @(Row Type) (u :: Row Type)
 unionBothEmpty ::
   forall (t31 :: Type) (u :: Row (t31 :: Type)).
-    Union @(t31 :: Type) () () (u :: Row ???) => Proxy @(Row (t31 :: Type)) (u :: Row ???)
+    Union @(t31 :: Type) () () (u :: Row (t31 :: Type)) =>
+    Proxy @(Row (t31 :: Type)) (u :: Row (t31 :: Type))
 unionMultiple ::
   forall (u :: Row Type).
     Union @Type ( a :: Int, b :: String ) ( c :: Boolean ) (u :: Row Type) =>
@@ -43,18 +44,19 @@ nestedCons ::
 lacksSimple ::
   forall (t62 :: Type) (r :: (t62 :: Type)).
     Lacks @Type "missing" ( a :: Int, b :: String ) =>
-    Proxy @(t62 :: Type) (r :: ???) -> Proxy @(t62 :: Type) (r :: ???)
+    Proxy @(t62 :: Type) (r :: (t62 :: Type)) -> Proxy @(t62 :: Type) (r :: (t62 :: Type))
 lacksEmpty ::
   forall (t69 :: Type) (t64 :: Type) (r :: (t69 :: Type)).
     Lacks @(t64 :: Type) "anything" () =>
-    Proxy @(t69 :: Type) (r :: ???) -> Proxy @(t69 :: Type) (r :: ???)
+    Proxy @(t69 :: Type) (r :: (t69 :: Type)) -> Proxy @(t69 :: Type) (r :: (t69 :: Type))
 nubNoDuplicates ::
   forall (nubbed :: Row Type).
     Nub @Type ( a :: Int, b :: String ) (nubbed :: Row Type) =>
     Proxy @(Row Type) (nubbed :: Row Type)
 nubEmpty ::
   forall (t77 :: Type) (nubbed :: Row (t77 :: Type)).
-    Nub @(t77 :: Type) () (nubbed :: Row ???) => Proxy @(Row (t77 :: Type)) (nubbed :: Row ???)
+    Nub @(t77 :: Type) () (nubbed :: Row (t77 :: Type)) =>
+    Proxy @(Row (t77 :: Type)) (nubbed :: Row (t77 :: Type))
 rowToListSimple ::
   forall (list :: RowList Type).
     RowToList @Type ( a :: Int ) (list :: RowList Type) =>
@@ -65,8 +67,8 @@ rowToListMultiple ::
     Proxy @(RowList Type) (list :: RowList Type)
 rowToListEmpty ::
   forall (t90 :: Type) (list :: RowList (t90 :: Type)).
-    RowToList @(t90 :: Type) () (list :: RowList ???) =>
-    Proxy @(RowList (t90 :: Type)) (list :: RowList ???)
+    RowToList @(t90 :: Type) () (list :: RowList (t90 :: Type)) =>
+    Proxy @(RowList (t90 :: Type)) (list :: RowList (t90 :: Type))
 rowToListThree ::
   forall (list :: RowList Type).
     RowToList @Type ( a :: Int, b :: String, c :: Boolean ) (list :: RowList Type) =>

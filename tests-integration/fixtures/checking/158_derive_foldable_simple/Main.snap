@@ -8,7 +8,7 @@ Nothing :: forall (a :: Type). Maybe (a :: Type)
 Just :: forall (a :: Type). (a :: Type) -> Maybe (a :: Type)
 Const ::
   forall (t3 :: Type) (e :: Type) (a :: (t3 :: Type)).
-    (e :: Type) -> Const @(t3 :: Type) (e :: Type) (a :: ???)
+    (e :: Type) -> Const @(t3 :: Type) (e :: Type) (a :: (t3 :: Type))
 
 Types
 Identity :: Type -> Type

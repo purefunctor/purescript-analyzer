@@ -6,12 +6,16 @@ Terms
 Id :: forall (a :: Type). (a :: Type) -> Id (a :: Type)
 Wrap ::
   forall (t5 :: Type) (f :: (t5 :: Type) -> Type) (a :: (t5 :: Type)).
-    (f :: ??? -> Type) (a :: ???) -> Wrap @(t5 :: Type) (f :: ??? -> Type) (a :: ???)
+    (f :: (t5 :: Type) -> Type) (a :: (t5 :: Type)) ->
+    Wrap @(t5 :: Type) (f :: (t5 :: Type) -> Type) (a :: (t5 :: Type))
 Compose ::
   forall (t12 :: Type) (t16 :: Type) (f :: (t12 :: Type) -> Type)
     (g :: (t16 :: Type) -> (t12 :: Type)) (a :: (t16 :: Type)).
-    (f :: ??? -> Type) ((g :: ??? -> ???) (a :: ???)) ->
-    Compose @(t16 :: Type) (f :: ??? -> Type) (g :: ??? -> ???) (a :: ???)
+    (f :: (t12 :: Type) -> Type) ((g :: (t16 :: Type) -> (t12 :: Type)) (a :: (t16 :: Type))) ->
+    Compose @(t16 :: Type)
+      (f :: (t12 :: Type) -> Type)
+      (g :: (t16 :: Type) -> (t12 :: Type))
+      (a :: (t16 :: Type))
 NoOrd :: forall (a :: Type). (a :: Type) -> NoOrd (a :: Type)
 
 Types
@@ -47,8 +51,8 @@ Compose = [Representational, Representational, Nominal]
 NoOrd = [Representational]
 
 Derived
-derive forall (&0 :: Type). (Eq1 (&1 :: Type -> Type), Eq ((&2 :: ??? -> Type) (&3 :: ???))) => Eq (Compose @Type @(&0 :: Type) (&1 :: Type -> Type) (&2 :: ??? -> Type) (&3 :: ???) :: Type)
-derive forall (&0 :: Type). (Ord1 (&1 :: Type -> Type), Ord ((&2 :: ??? -> Type) (&3 :: ???))) => Ord (Compose @Type @(&0 :: Type) (&1 :: Type -> Type) (&2 :: ??? -> Type) (&3 :: ???) :: Type)
+derive forall (&0 :: Type). (Eq1 (&1 :: Type -> Type), Eq ((&2 :: (&0 :: Type) -> Type) (&3 :: (&0 :: Type)))) => Eq (Compose @Type @(&0 :: Type) (&1 :: Type -> Type) (&2 :: (&0 :: Type) -> Type) (&3 :: (&0 :: Type)) :: Type)
+derive forall (&0 :: Type). (Ord1 (&1 :: Type -> Type), Ord ((&2 :: (&0 :: Type) -> Type) (&3 :: (&0 :: Type)))) => Ord (Compose @Type @(&0 :: Type) (&1 :: Type -> Type) (&2 :: (&0 :: Type) -> Type) (&3 :: (&0 :: Type)) :: Type)
 derive Eq1 (&0 :: Type -> Type) => Eq1 (Compose @Type @Type (&0 :: Type -> Type) (&1 :: Type -> Type) :: Type -> Type)
 derive Ord1 (&0 :: Type -> Type) => Ord1 (Compose @Type @Type (&0 :: Type -> Type) (&1 :: Type -> Type) :: Type -> Type)
 derive Eq (&0 :: Type) => Eq (NoOrd (&0 :: Type) :: Type)

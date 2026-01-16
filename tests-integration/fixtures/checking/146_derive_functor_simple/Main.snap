@@ -6,7 +6,7 @@ Terms
 Identity :: forall (a :: Type). (a :: Type) -> Identity (a :: Type)
 Const ::
   forall (t2 :: Type) (e :: Type) (a :: (t2 :: Type)).
-    (e :: Type) -> Const @(t2 :: Type) (e :: Type) (a :: ???)
+    (e :: Type) -> Const @(t2 :: Type) (e :: Type) (a :: (t2 :: Type))
 Nothing :: forall (a :: Type). Maybe (a :: Type)
 Just :: forall (a :: Type). (a :: Type) -> Maybe (a :: Type)
 

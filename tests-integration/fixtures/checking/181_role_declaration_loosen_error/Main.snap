@@ -5,7 +5,8 @@ expression: report
 Terms
 F ::
   forall (t4 :: Type) (f :: (t4 :: Type) -> Type) (a :: (t4 :: Type)).
-    (f :: ??? -> Type) (a :: ???) -> F @(t4 :: Type) (f :: ??? -> Type) (a :: ???)
+    (f :: (t4 :: Type) -> Type) (a :: (t4 :: Type)) ->
+    F @(t4 :: Type) (f :: (t4 :: Type) -> Type) (a :: (t4 :: Type))
 
 Types
 F :: forall (t4 :: Type). ((t4 :: Type) -> Type) -> (t4 :: Type) -> Type

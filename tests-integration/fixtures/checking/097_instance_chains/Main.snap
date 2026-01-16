@@ -3,13 +3,15 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-Proxy :: forall (t0 :: Type) (a :: (t0 :: Type)). Proxy @(t0 :: Type) (a :: ???)
+Proxy :: forall (t0 :: Type) (a :: (t0 :: Type)). Proxy @(t0 :: Type) (a :: (t0 :: Type))
 testSame ::
   forall (t10 :: Type) (r :: (t10 :: Type)).
-    TypeEq @Type @Type @(t10 :: Type) Int Int (r :: ???) => Proxy @(t10 :: Type) (r :: ???)
+    TypeEq @Type @Type @(t10 :: Type) Int Int (r :: (t10 :: Type)) =>
+    Proxy @(t10 :: Type) (r :: (t10 :: Type))
 testDiff ::
   forall (t17 :: Type) (r :: (t17 :: Type)).
-    TypeEq @Type @Type @(t17 :: Type) Int String (r :: ???) => Proxy @(t17 :: Type) (r :: ???)
+    TypeEq @Type @Type @(t17 :: Type) Int String (r :: (t17 :: Type)) =>
+    Proxy @(t17 :: Type) (r :: (t17 :: Type))
 test :: { testDiff :: Proxy @Boolean False, testSame :: Proxy @Boolean True }
 
 Types
@@ -31,7 +33,7 @@ Classes
 class TypeEq (&3 :: (&0 :: Type)) (&4 :: (&1 :: Type)) (&5 :: (&2 :: Type))
 
 Instances
-instance forall (&0 :: Type). TypeEq ((&1 :: ???) :: (&0 :: Type)) ((&1 :: ???) :: (&0 :: Type)) (True :: Boolean)
+instance forall (&0 :: Type). TypeEq ((&1 :: (&0 :: Type)) :: (&0 :: Type)) ((&1 :: (&0 :: Type)) :: (&0 :: Type)) (True :: Boolean)
   chain: 0
-instance forall (&0 :: Type) (&1 :: Type). TypeEq ((&2 :: ???) :: (&0 :: Type)) ((&3 :: ???) :: (&1 :: Type)) (False :: Boolean)
+instance forall (&0 :: Type) (&1 :: Type). TypeEq ((&2 :: (&0 :: Type)) :: (&0 :: Type)) ((&3 :: (&1 :: Type)) :: (&1 :: Type)) (False :: Boolean)
   chain: 1

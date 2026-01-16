@@ -6,7 +6,7 @@ Terms
 Fn :: forall (a :: Type) (b :: Type). ((a :: Type) -> (b :: Type)) -> Fn (a :: Type) (b :: Type)
 ConstR ::
   forall (t4 :: Type) (r :: Type) (a :: Type) (b :: (t4 :: Type)).
-    ((a :: Type) -> (r :: Type)) -> ConstR @(t4 :: Type) (r :: Type) (a :: Type) (b :: ???)
+    ((a :: Type) -> (r :: Type)) -> ConstR @(t4 :: Type) (r :: Type) (a :: Type) (b :: (t4 :: Type))
 GoLeft :: forall (a :: Type) (b :: Type). ((a :: Type) -> Int) -> Choice (a :: Type) (b :: Type)
 GoRight :: forall (a :: Type) (b :: Type). (b :: Type) -> Choice (a :: Type) (b :: Type)
 

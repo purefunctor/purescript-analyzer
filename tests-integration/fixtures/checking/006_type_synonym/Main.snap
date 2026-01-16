@@ -28,7 +28,7 @@ AliasTypeType = Array
   Type = :0
 
 InferApply = forall (t4 :: Type) (t9 :: Type) (f :: (t9 :: Type) -> (t4 :: Type)) (a :: (t9 :: Type)).
-  (f :: ??? -> ???) (a :: ???)
+  (f :: (t9 :: Type) -> (t4 :: Type)) (a :: (t9 :: Type))
   Quantified = :2
   Kind = :0
   Type = :2

@@ -9,7 +9,7 @@ Add :: forall (t0 :: Type) (t2 :: Type). (t0 :: Type) -> (t2 :: Type) -> (t0 :: 
 + :: forall (t0 :: Type) (t2 :: Type). (t0 :: Type) -> (t2 :: Type) -> (t0 :: Type)
 
 Synonyms
-Add = forall (t0 :: Type) (t2 :: Type) (a :: (t0 :: Type)) (b :: (t2 :: Type)). (a :: ???)
+Add = forall (t0 :: Type) (t2 :: Type) (a :: (t0 :: Type)) (b :: (t2 :: Type)). (a :: (t0 :: Type))
   Quantified = :2
   Kind = :0
   Type = :2

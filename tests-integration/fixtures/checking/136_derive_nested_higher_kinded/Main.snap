@@ -5,13 +5,15 @@ expression: report
 Terms
 T ::
   forall (t4 :: Type) (f :: (t4 :: Type) -> Type) (g :: Type -> (t4 :: Type)).
-    (f :: ??? -> Type) ((g :: Type -> ???) Int) -> T (f :: ??? -> Type) (g :: Type -> ???)
+    (f :: (t4 :: Type) -> Type) ((g :: Type -> (t4 :: Type)) Int) ->
+    T (f :: (t4 :: Type) -> Type) (g :: Type -> (t4 :: Type))
 Nothing :: forall (a :: Type). Maybe (a :: Type)
 Just :: forall (a :: Type). (a :: Type) -> Maybe (a :: Type)
 U :: forall (f :: Type -> Type). (f :: Type -> Type) (Maybe Int) -> U (f :: Type -> Type)
 V ::
   forall (t20 :: Type) (f :: (t20 :: Type) -> Type) (g :: Int -> (t20 :: Type)).
-    (f :: ??? -> Type) ((g :: Int -> ???) 42) -> V (f :: ??? -> Type) (g :: Int -> ???)
+    (f :: (t20 :: Type) -> Type) ((g :: Int -> (t20 :: Type)) 42) ->
+    V (f :: (t20 :: Type) -> Type) (g :: Int -> (t20 :: Type))
 
 Types
 T :: forall (t4 :: Type). ((t4 :: Type) -> Type) -> (Type -> (t4 :: Type)) -> Type

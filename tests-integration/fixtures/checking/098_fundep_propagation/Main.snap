@@ -3,14 +3,17 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-Proxy :: forall (t0 :: Type) (a :: (t0 :: Type)). Proxy @(t0 :: Type) (a :: ???)
+Proxy :: forall (t0 :: Type) (a :: (t0 :: Type)). Proxy @(t0 :: Type) (a :: (t0 :: Type))
 test ::
   forall (t18 :: Type) (t19 :: Type) (t22 :: Type) (r1 :: (t18 :: Type)) (r2 :: (t19 :: Type))
     (r :: (t22 :: Type)).
-    IsZero @Type @(t18 :: Type) Z (r1 :: ???) =>
-    IsZero @Type @(t19 :: Type) Z (r2 :: ???) =>
-    And @(t18 :: Type) @(t19 :: Type) @(t22 :: Type) (r1 :: ???) (r2 :: ???) (r :: ???) =>
-    Proxy @(t22 :: Type) (r :: ???)
+    IsZero @Type @(t18 :: Type) Z (r1 :: (t18 :: Type)) =>
+    IsZero @Type @(t19 :: Type) Z (r2 :: (t19 :: Type)) =>
+    And @(t18 :: Type) @(t19 :: Type) @(t22 :: Type)
+      (r1 :: (t18 :: Type))
+      (r2 :: (t19 :: Type))
+      (r :: (t22 :: Type)) =>
+    Proxy @(t22 :: Type) (r :: (t22 :: Type))
 forceSolve :: { test :: Proxy @Boolean True }
 
 Types

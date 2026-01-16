@@ -5,7 +5,8 @@ expression: report
 Terms
 MkAdd ::
   forall (t1 :: Type) (t3 :: Type) (a :: (t1 :: Type)) (b :: (t3 :: Type)).
-    (a :: ???) + (b :: ???) -> Add @(t1 :: Type) @(t3 :: Type) (a :: ???) (b :: ???)
+    (a :: (t1 :: Type)) + (b :: (t3 :: Type)) ->
+    Add @(t1 :: Type) @(t3 :: Type) (a :: (t1 :: Type)) (b :: (t3 :: Type))
 
 Types
 Add :: forall (t1 :: Type) (t3 :: Type). (t1 :: Type) -> (t3 :: Type) -> Type

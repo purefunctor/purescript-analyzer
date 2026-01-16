@@ -5,7 +5,7 @@ expression: report
 Terms
 identity ::
   forall (t2 :: Type) (a :: Type) (b :: Type) (r :: (t2 :: Type)).
-    TypeEq (a :: Type) (b :: Type) (r :: ???) => (a :: Type) -> (b :: Type)
+    TypeEq (a :: Type) (b :: Type) (r :: (t2 :: Type)) => (a :: Type) -> (b :: Type)
 test :: Int
 
 Types

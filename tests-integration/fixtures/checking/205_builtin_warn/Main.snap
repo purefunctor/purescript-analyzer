@@ -15,8 +15,8 @@ warnAbove ::
 useWarnAbove :: Int
 warnQuote ::
   forall (t10 :: Type) (a :: (t10 :: Type)).
-    Warn (Beside (Text "Got type: ") (Quote @(t10 :: Type) (a :: ???))) =>
-    Proxy @(t10 :: Type) (a :: ???) -> Proxy @(t10 :: Type) (a :: ???)
+    Warn (Beside (Text "Got type: ") (Quote @(t10 :: Type) (a :: (t10 :: Type)))) =>
+    Proxy @(t10 :: Type) (a :: (t10 :: Type)) -> Proxy @(t10 :: Type) (a :: (t10 :: Type))
 useWarnQuote :: Proxy @Type Int
 warnQuoteLabel ::
   forall (a :: Type).

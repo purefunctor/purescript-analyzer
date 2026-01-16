@@ -6,8 +6,11 @@ Terms
 Compose ::
   forall (t5 :: Type) (t9 :: Type) (f :: (t5 :: Type) -> Type) (g :: (t9 :: Type) -> (t5 :: Type))
     (a :: (t9 :: Type)).
-    (f :: ??? -> Type) ((g :: ??? -> ???) (a :: ???)) ->
-    Compose @(t9 :: Type) (f :: ??? -> Type) (g :: ??? -> ???) (a :: ???)
+    (f :: (t5 :: Type) -> Type) ((g :: (t9 :: Type) -> (t5 :: Type)) (a :: (t9 :: Type))) ->
+    Compose @(t9 :: Type)
+      (f :: (t5 :: Type) -> Type)
+      (g :: (t9 :: Type) -> (t5 :: Type))
+      (a :: (t9 :: Type))
 
 Types
 Compose ::
