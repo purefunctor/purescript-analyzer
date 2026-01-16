@@ -374,11 +374,11 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
             state.push_implicit_scope();
             let arguments = recover! {
                 let head = cst.as_ref()?.instance_head()?;
-                let arguments = head
+                
+                head
                     .children()
                     .map(|cst| recursive::lower_type(state, context, &cst))
-                    .collect();
-                arguments
+                    .collect()
             };
 
             let constraints = recover! {
@@ -420,11 +420,11 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
             state.push_implicit_scope();
             let arguments = recover! {
                 let head = cst.as_ref()?.instance_head()?;
-                let arguments = head
+                
+                head
                     .children()
                     .map(|cst| recursive::lower_type(state, context, &cst))
-                    .collect();
-                arguments
+                    .collect()
             };
 
             let constraints = recover! {
