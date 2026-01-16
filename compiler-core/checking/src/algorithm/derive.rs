@@ -18,8 +18,8 @@ use indexing::{DeriveId, TermItemId, TypeItemId};
 use crate::ExternalQueries;
 use crate::algorithm::safety::safe_loop;
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::{kind, substitute, term_item, transfer};
-use crate::core::{Type, TypeId, Variable, debruijn};
+use crate::algorithm::{kind, term_item, toolkit, transfer};
+use crate::core::{Type, TypeId, debruijn};
 use crate::error::{ErrorKind, ErrorStep};
 
 /// Input fields for [`check_derive`].
@@ -256,34 +256,6 @@ where
     Ok(is_newtype)
 }
 
-/// Extracts type and kind arguments from an application.
-///
-/// This function returns both type and kind arguments as constructors
-/// have both. These are used to instantiate the constructor type with
-/// arguments from the instance head.
-pub(crate) fn extract_type_arguments(state: &mut CheckState, applied_type: TypeId) -> Vec<TypeId> {
-    let mut arguments = vec![];
-    let mut current_id = applied_type;
-
-    safe_loop! {
-        current_id = state.normalize_type(current_id);
-        match state.storage[current_id] {
-            Type::Application(function, argument) => {
-                arguments.push(argument);
-                current_id = function;
-            }
-            Type::KindApplication(function, argument) => {
-                arguments.push(argument);
-                current_id = function;
-            }
-            _ => break,
-        }
-    }
-
-    arguments.reverse();
-    arguments
-}
-
 pub(crate) fn lookup_local_term_type<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -372,9 +344,10 @@ where
 
 /// Extracts constructor fields from a constructor.
 ///
-/// This function uses [`extract_type_arguments`] to deconstruct the instance
-/// head, then uses [`substitute::SubstituteBound`] to effectively specialise
-/// the constructor type for the instance head in particular. Consider the ff:
+/// This function uses [`toolkit::extract_all_applications`] to deconstruct
+/// the instance head, then uses [`toolkit::instantiate_with_arguments`] to
+/// effectively specialise the constructor type for the instance head in
+/// particular. Consider the ff:
 ///
 /// ```purescript
 /// data Either a b = Left a | Right b
@@ -393,41 +366,8 @@ fn extract_constructor_fields(
     constructor_type: TypeId,
     derived_type: TypeId,
 ) -> Vec<TypeId> {
-    let type_arguments = extract_type_arguments(state, derived_type);
-    let mut arguments_iter = type_arguments.into_iter();
-    let mut current_id = constructor_type;
-
-    safe_loop! {
-        current_id = state.normalize_type(current_id);
-        match &state.storage[current_id] {
-            Type::Forall(binder, inner) => {
-                let binder_level = binder.level;
-                let binder_kind = binder.kind;
-                let inner = *inner;
-
-                let argument_type = arguments_iter.next().unwrap_or_else(|| {
-                    let skolem = Variable::Skolem(binder_level, binder_kind);
-                    state.storage.intern(Type::Variable(skolem))
-                });
-
-                current_id = substitute::SubstituteBound::on(state, binder_level, argument_type, inner);
-            }
-            _ => break,
-        }
-    }
-
-    let mut fields = vec![];
-
-    safe_loop! {
-        current_id = state.normalize_type(current_id);
-        match state.storage[current_id] {
-            Type::Function(argument, result) => {
-                fields.push(argument);
-                current_id = result;
-            }
-            _ => break,
-        }
-    }
-
+    let arguments = toolkit::extract_all_applications(state, derived_type);
+    let constructor = toolkit::instantiate_with_arguments(state, constructor_type, arguments);
+    let (fields, _) = toolkit::extract_function_arguments(state, constructor);
     fields
 }

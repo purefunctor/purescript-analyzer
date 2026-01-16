@@ -2,36 +2,11 @@ use lowering::StringKind;
 use smol_str::SmolStr;
 
 use crate::algorithm::constraint::MatchInstance;
-use crate::algorithm::safety::safe_loop;
 use crate::algorithm::state::{CheckContext, CheckState};
+use crate::algorithm::toolkit;
 use crate::core::pretty;
 use crate::error::ErrorKind;
 use crate::{ExternalQueries, Type, TypeId};
-
-/// Decomposes a type application into its constructor and arguments.
-fn decompose_application(
-    state: &mut CheckState,
-    mut type_id: TypeId,
-) -> Option<(TypeId, Vec<TypeId>)> {
-    let mut arguments = vec![];
-
-    safe_loop! {
-        type_id = state.normalize_type(type_id);
-        match state.storage[type_id] {
-            Type::Application(function, argument) => {
-                arguments.push(argument);
-                type_id = function;
-            }
-            Type::KindApplication(function, _) => {
-                type_id = function;
-            }
-            _ => break,
-        }
-    }
-
-    arguments.reverse();
-    Some((type_id, arguments))
-}
 
 /// Checks if a type is stuck on a unification variable at its head.
 fn is_stuck(state: &mut CheckState, type_id: TypeId) -> bool {
@@ -108,7 +83,7 @@ where
         return None;
     }
 
-    let (constructor, arguments) = decompose_application(state, type_id)?;
+    let (constructor, arguments) = toolkit::extract_type_application(state, type_id);
     let prim = &context.prim_type_error;
 
     if constructor == prim.text {

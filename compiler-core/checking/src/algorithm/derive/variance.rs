@@ -8,10 +8,10 @@ use files::FileId;
 use indexing::TypeItemId;
 
 use crate::ExternalQueries;
-use crate::algorithm::derive::{self, extract_type_arguments, tools};
+use crate::algorithm::derive::{self, tools};
 use crate::algorithm::safety::safe_loop;
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::{substitute, transfer};
+use crate::algorithm::{substitute, toolkit, transfer};
 use crate::core::{RowType, Type, TypeId, Variable, debruijn};
 use crate::error::ErrorKind;
 
@@ -129,7 +129,7 @@ fn extract_fields_with_skolems<Q>(
 where
     Q: ExternalQueries,
 {
-    let type_arguments = extract_type_arguments(state, derived_type);
+    let type_arguments = toolkit::extract_all_applications(state, derived_type);
     let mut arguments_iter = type_arguments.into_iter();
     let mut current_id = constructor_type;
     let mut levels = vec![];

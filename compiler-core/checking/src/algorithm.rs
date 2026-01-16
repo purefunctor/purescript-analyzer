@@ -45,6 +45,9 @@ pub mod substitute;
 /// Implements type inference and checking for [`lowering::ExpressionKind`].
 pub mod term;
 
+/// Shared utilities for common type manipulation patterns.
+pub mod toolkit;
+
 /// Implements type inference and checking for [`lowering::TermItemIr`].
 pub mod term_item;
 

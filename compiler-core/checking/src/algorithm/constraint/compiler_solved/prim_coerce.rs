@@ -8,7 +8,7 @@ use itertools::izip;
 use crate::algorithm::constraint::{self, MatchInstance};
 use crate::algorithm::safety::safe_loop;
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::{derive, kind, substitute};
+use crate::algorithm::{derive, kind, substitute, toolkit};
 use crate::core::Role;
 use crate::{ExternalQueries, Type, TypeId};
 
@@ -205,8 +205,8 @@ where
         return Ok(None);
     }
 
-    let left = extract_type_arguments(state, left);
-    let right = extract_type_arguments(state, right);
+    let (_, left) = toolkit::extract_type_application(state, left);
+    let (_, right) = toolkit::extract_type_application(state, right);
 
     if left.len() != right.len() {
         return Ok(Some(MatchInstance::Apart));
@@ -258,28 +258,6 @@ where
         let checked = context.queries.checked(file_id)?;
         Ok(checked.lookup_roles(type_id))
     }
-}
-
-fn extract_type_arguments(state: &mut CheckState, type_id: TypeId) -> Vec<TypeId> {
-    let mut arguments = vec![];
-    let mut current_id = type_id;
-
-    safe_loop! {
-        current_id = state.normalize_type(current_id);
-        match state.storage[current_id] {
-            Type::Application(function, argument) => {
-                arguments.push(argument);
-                current_id = function;
-            }
-            Type::KindApplication(function, _) => {
-                current_id = function;
-            }
-            _ => break,
-        }
-    }
-
-    arguments.reverse();
-    arguments
 }
 
 fn try_row_coercion<Q>(
