@@ -425,3 +425,7 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_206_builtin_fail_main() { run_test("206_builtin_fail", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_207_operator_class_method_main() { run_test("207_operator_class_method", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_208_int_add_constraint_main() { run_test("208_int_add_constraint", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_209_int_cons_constraint_main() { run_test("209_int_cons_constraint", "Main"); }

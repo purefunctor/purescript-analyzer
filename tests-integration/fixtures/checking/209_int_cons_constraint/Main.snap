@@ -1,0 +1,21 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+build ::
+  forall (t9 :: Type) (t11 :: Type) (n :: t9) (r :: t11).
+    Build @t9 @t11 n r => Proxy @t9 n -> Proxy @t11 r
+test :: Proxy @(Row Int) ( n1 :: 1, n2 :: 2, n3 :: 3, n4 :: 4, n5 :: 5 )
+
+Types
+Build :: forall (t0 :: Type) (t1 :: Type). t0 -> t1 -> Constraint
+
+Classes
+class Build (&2 :: &0) (&3 :: &1)
+
+Instances
+instance forall (&0 :: &0). Build (0 :: Int) (() :: Row &0)
+  chain: 0
+instance (Add &2 1 &0, ToString &0 &3, Append "n" &3 &4, Build @Int @(Row Int) &2 &5, Cons @Int &4 &0 &5 &1) => Build (&0 :: Int) (&1 :: Row Int)
+  chain: 1

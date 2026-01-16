@@ -718,6 +718,28 @@ where
         }
     }
 
+    let mut argument_levels = FxHashSet::default();
+    for &(argument, _) in &instance.arguments {
+        let localized = transfer::localize(state, context, argument);
+        CollectBoundLevels::on(state, localized, &mut argument_levels);
+    }
+
+    let mut constraint_levels = FxHashSet::default();
+    for &(constraint, _) in &instance.constraints {
+        let localized = transfer::localize(state, context, constraint);
+        CollectBoundLevels::on(state, localized, &mut constraint_levels);
+    }
+
+    for constraint_level in constraint_levels.difference(&argument_levels).copied() {
+        if !bindings.contains_key(&constraint_level) {
+            // TODO: We default to a fresh unification variable here for the
+            // kind too as kind information for constraint applications have
+            // already been discarded at this point.
+            let unification = state.fresh_unification(context);
+            bindings.insert(constraint_level, unification);
+        }
+    }
+
     let constraints = instance
         .constraints
         .iter()
@@ -882,6 +904,29 @@ impl TypeFold for ApplyBindings<'_> {
         match t {
             Type::Variable(Variable::Bound(level)) => {
                 let id = self.bindings.get(level).copied().unwrap_or(id);
+                FoldAction::Replace(id)
+            }
+            _ => FoldAction::Continue,
+        }
+    }
+}
+
+/// Collects all bound variable levels from a type.
+struct CollectBoundLevels<'a> {
+    levels: &'a mut FxHashSet<debruijn::Level>,
+}
+
+impl<'a> CollectBoundLevels<'a> {
+    fn on(state: &mut CheckState, type_id: TypeId, levels: &'a mut FxHashSet<debruijn::Level>) {
+        fold_type(state, type_id, &mut CollectBoundLevels { levels });
+    }
+}
+
+impl TypeFold for CollectBoundLevels<'_> {
+    fn transform(&mut self, _state: &mut CheckState, id: TypeId, t: &Type) -> FoldAction {
+        match t {
+            Type::Variable(Variable::Bound(level)) => {
+                self.levels.insert(*level);
                 FoldAction::Replace(id)
             }
             _ => FoldAction::Continue,
