@@ -96,35 +96,31 @@ where
             let class_is = |known| Some((class_file, class_id)) == known;
             let known_types = &context.known_types;
 
-            if class_is(known_types.eq) || class_is(known_types.ord) {
-                check_derive_class(state, context, elaborated)?;
-            } else if class_is(known_types.functor) {
-                functor::check_derive_functor(state, context, elaborated)?;
-            } else if class_is(known_types.bifunctor) {
-                functor::check_derive_bifunctor(state, context, elaborated)?;
-            } else if class_is(known_types.contravariant) {
-                contravariant::check_derive_contravariant(state, context, elaborated)?;
-            } else if class_is(known_types.profunctor) {
-                contravariant::check_derive_profunctor(state, context, elaborated)?;
-            } else if class_is(known_types.foldable) {
-                foldable::check_derive_foldable(state, context, elaborated)?;
-            } else if class_is(known_types.bifoldable) {
-                foldable::check_derive_bifoldable(state, context, elaborated)?;
-            } else if class_is(known_types.traversable) {
-                traversable::check_derive_traversable(state, context, elaborated)?;
-            } else if class_is(known_types.bitraversable) {
-                traversable::check_derive_bitraversable(state, context, elaborated)?;
-            } else if class_is(known_types.eq1) {
-                eq1::check_derive_eq1(state, context, elaborated)?;
-            } else if class_is(known_types.ord1) {
-                eq1::check_derive_ord1(state, context, elaborated)?;
-            } else if class_is(known_types.newtype) {
-                newtype::check_derive_newtype(state, context, elaborated)?;
-            } else if class_is(known_types.generic) {
-                generic::check_derive_generic(state, context, elaborated)?;
-            } else {
-                state.insert_error(ErrorKind::CannotDeriveClass { class_file, class_id });
-            };
+            macro_rules! dispatch {
+                ($($($known:ident)|+ => $handler:path),+ $(,)?) => {
+                    $(if $(class_is(known_types.$known))||+ {
+                        $handler(state, context, elaborated)?;
+                    } else)+ {
+                        state.insert_error(ErrorKind::CannotDeriveClass { class_file, class_id });
+                    }
+                };
+            }
+
+            dispatch! {
+                eq | ord => check_derive_class,
+                functor => functor::check_derive_functor,
+                bifunctor => functor::check_derive_bifunctor,
+                contravariant => contravariant::check_derive_contravariant,
+                profunctor => contravariant::check_derive_profunctor,
+                foldable => foldable::check_derive_foldable,
+                bifoldable => foldable::check_derive_bifoldable,
+                traversable => traversable::check_derive_traversable,
+                bitraversable => traversable::check_derive_bitraversable,
+                eq1 => eq1::check_derive_eq1,
+                ord1 => eq1::check_derive_ord1,
+                newtype => newtype::check_derive_newtype,
+                generic => generic::check_derive_generic,
+            }
         }
 
         // Unbind type variables bound during elaboration.
