@@ -809,66 +809,55 @@ where
 {
     let ConstraintApplication { file_id, item_id, ref arguments } = *wanted;
 
-    let match_instance = if file_id == context.prim_int.file_id {
-        if item_id == context.prim_int.add {
-            prim_int_add(state, arguments)
-        } else if item_id == context.prim_int.mul {
-            prim_int_mul(state, arguments)
-        } else if item_id == context.prim_int.compare {
-            prim_int_compare(state, context, arguments, given)
-        } else if item_id == context.prim_int.to_string {
-            prim_int_to_string(state, arguments)
-        } else {
-            None
-        }
-    } else if file_id == context.prim_symbol.file_id {
-        if item_id == context.prim_symbol.append {
-            prim_symbol_append(state, arguments)
-        } else if item_id == context.prim_symbol.compare {
-            prim_symbol_compare(state, context, arguments)
-        } else if item_id == context.prim_symbol.cons {
-            prim_symbol_cons(state, arguments)
-        } else {
-            None
-        }
-    } else if file_id == context.prim_row.file_id {
-        if item_id == context.prim_row.union {
-            prim_row_union(state, arguments)
-        } else if item_id == context.prim_row.cons {
-            prim_row_cons(state, arguments)
-        } else if item_id == context.prim_row.lacks {
-            prim_row_lacks(state, arguments)
-        } else if item_id == context.prim_row.nub {
-            prim_row_nub(state, arguments)
-        } else {
-            None
-        }
-    } else if file_id == context.prim_row_list.file_id {
-        if item_id == context.prim_row_list.row_to_list {
-            prim_rowlist_row_to_list(state, context, arguments)
-        } else {
-            None
-        }
-    } else if file_id == context.prim_coerce.file_id {
-        if item_id == context.prim_coerce.coercible {
-            return prim_coercible(state, context, arguments);
-        } else {
-            None
-        }
-    } else if file_id == context.prim_type_error.file_id {
-        if item_id == context.prim_type_error.warn {
-            prim_warn(state, context, arguments)
-        } else if item_id == context.prim_type_error.fail {
-            prim_fail(state, context, arguments)
-        } else {
-            None
-        }
-    } else if context.known_reflectable.is_symbol == Some((file_id, item_id)) {
-        prim_is_symbol(state, arguments)
-    } else if context.known_reflectable.reflectable == Some((file_id, item_id)) {
-        prim_reflectable(state, context, arguments)
-    } else {
-        None
+    macro_rules! dispatch {
+        (
+            $($prim_ctx:expr => {
+                $($item:ident => $handler:expr),* $(,)?
+            }),*
+            $(, ? $optional:expr => $opt_handler:expr)* $(,)?
+        ) => {
+            $(
+                if file_id == $prim_ctx.file_id {
+                    $(if item_id == $prim_ctx.$item { $handler } else)*
+                    { None }
+                } else
+            )*
+            $(if $optional == Some((file_id, item_id)) { $opt_handler } else)*
+            { None }
+        };
+    }
+
+    let match_instance = dispatch! {
+        context.prim_int => {
+            add => prim_int_add(state, arguments),
+            mul => prim_int_mul(state, arguments),
+            compare => prim_int_compare(state, context, arguments, given),
+            to_string => prim_int_to_string(state, arguments),
+        },
+        context.prim_symbol => {
+            append => prim_symbol_append(state, arguments),
+            compare => prim_symbol_compare(state, context, arguments),
+            cons => prim_symbol_cons(state, arguments),
+        },
+        context.prim_row => {
+            union => prim_row_union(state, arguments),
+            cons => prim_row_cons(state, arguments),
+            lacks => prim_row_lacks(state, arguments),
+            nub => prim_row_nub(state, arguments),
+        },
+        context.prim_row_list => {
+            row_to_list => prim_rowlist_row_to_list(state, context, arguments),
+        },
+        context.prim_coerce => {
+            coercible => prim_coercible(state, context, arguments)?,
+        },
+        context.prim_type_error => {
+            warn => prim_warn(state, context, arguments),
+            fail => prim_fail(state, context, arguments),
+        },
+        // These classes are defined in `prelude` and may be optional.
+        ? context.known_reflectable.is_symbol => prim_is_symbol(state, arguments),
+        ? context.known_reflectable.reflectable => prim_reflectable(state, context, arguments),
     };
 
     Ok(match_instance)
