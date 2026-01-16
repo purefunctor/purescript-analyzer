@@ -992,9 +992,7 @@ fn check_roles(
             lowering::Role::Unknown => continue,
         };
 
-        if is_foreign {
-            *validated = declared;
-        } else if declared >= inferred {
+        if is_foreign || declared >= inferred {
             *validated = declared;
         } else {
             state.insert_error(ErrorKind::InvalidRoleDeclaration {
