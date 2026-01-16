@@ -371,14 +371,13 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
                 state.resolve_type_reference(context, qualifier.as_deref(), &name)
             });
 
+            state.push_implicit_scope();
             let arguments = recover! {
                 let head = cst.as_ref()?.instance_head()?;
-                state.push_implicit_scope();
                 let arguments = head
                     .children()
                     .map(|cst| recursive::lower_type(state, context, &cst))
                     .collect();
-                state.finish_implicit_scope();
                 arguments
             };
 
@@ -389,6 +388,7 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
                     .map(|cst| recursive::lower_type(state, context, &cst))
                     .collect()
             };
+            state.finish_implicit_scope();
 
             let kind = TermItemIr::Derive { newtype, constraints, resolution, arguments };
             state.info.term_item.insert(item_id, kind);
@@ -417,14 +417,13 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
                 state.resolve_type_reference(context, qualifier.as_deref(), &name)
             });
 
+            state.push_implicit_scope();
             let arguments = recover! {
                 let head = cst.as_ref()?.instance_head()?;
-                state.push_implicit_scope();
                 let arguments = head
                     .children()
                     .map(|cst| recursive::lower_type(state, context, &cst))
                     .collect();
-                state.finish_implicit_scope();
                 arguments
             };
 
@@ -435,6 +434,7 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
                     .map(|cst| recursive::lower_type(state, context, &cst))
                     .collect()
             };
+            state.finish_implicit_scope();
 
             let members = recover! {
                 let statements = cst.as_ref()?.instance_statements()?;

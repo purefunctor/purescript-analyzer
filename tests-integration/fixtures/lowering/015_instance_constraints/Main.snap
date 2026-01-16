@@ -1,0 +1,26 @@
+---
+source: tests-integration/tests/lowering/generated.rs
+expression: report
+---
+module Main
+
+Expressions:
+
+
+Types:
+
+n@Some(Position { line: 6, character: 22 })
+  resolves to a constraint variable "n"
+    Some(Position { line: 6, character: 48 })
+n@Some(Position { line: 6, character: 48 })
+  introduces a constraint variable "n"
+o@Some(Position { line: 6, character: 36 })
+  resolves to a constraint variable "o"
+    Some(Position { line: 6, character: 50 })
+m@Some(Position { line: 6, character: 24 })
+  introduces a constraint variable "m"
+o@Some(Position { line: 6, character: 50 })
+  introduces a constraint variable "o"
+m@Some(Position { line: 6, character: 34 })
+  resolves to a constraint variable "m"
+    Some(Position { line: 6, character: 24 })
