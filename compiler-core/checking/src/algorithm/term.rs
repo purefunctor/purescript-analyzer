@@ -5,7 +5,7 @@ use smol_str::SmolStr;
 
 use crate::ExternalQueries;
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::{binder, inspect, kind, operator, substitute, transfer, unification};
+use crate::algorithm::{binder, inspect, kind, operator, substitute, toolkit, transfer, unification};
 use crate::core::{RowField, RowType, Type, TypeId};
 use crate::error::{ErrorKind, ErrorStep};
 
@@ -836,7 +836,8 @@ where
                 let id = infer_expression(state, context, *value)?;
 
                 // Instantiate to avoid polymorphic types in record fields.
-                let id = instantiate_type(state, context, id)?;
+                let id = toolkit::instantiate_forall(state, id);
+                let id = toolkit::collect_constraints(state, id);
 
                 fields.push(RowField { label, id });
             }
@@ -848,7 +849,8 @@ where
                 let id = lookup_term_variable(state, context, *resolution)?;
 
                 // Instantiate to avoid polymorphic types in record fields.
-                let id = instantiate_type(state, context, id)?;
+                let id = toolkit::instantiate_forall(state, id);
+                let id = toolkit::collect_constraints(state, id);
 
                 fields.push(RowField { label, id });
             }
@@ -1318,7 +1320,7 @@ where
             Ok(result_u)
         }
 
-        // Instantiation rule, like `instantiate_type`
+        // Instantiation rule, like `toolkit::instantiate_forall`
         Type::Forall(ref binder, inner) => {
             let binder_level = binder.level;
             let binder_kind = binder.kind;
@@ -1329,7 +1331,7 @@ where
             check_function_application_core(state, context, function_t, argument_id, check_argument)
         }
 
-        // Constraint generation, like `instantiate_type`
+        // Constraint generation, like `toolkit::collect_constraints`
         Type::Constrained(constraint, constrained) => {
             state.constraints.push_wanted(constraint);
             check_function_application_core(
@@ -1478,40 +1480,4 @@ where
 
         Ok(())
     }
-}
-
-/// Instantiates a polymorphic type with unification variables and collects
-/// wanted [`CheckState::constraints`].
-pub fn instantiate_type<Q>(
-    state: &mut CheckState,
-    _: &CheckContext<Q>,
-    id: TypeId,
-) -> QueryResult<TypeId>
-where
-    Q: ExternalQueries,
-{
-    const FUEL: u32 = 1_000_000;
-
-    let mut current = id;
-
-    for _ in 0..FUEL {
-        current = state.normalize_type(current);
-        match state.storage[current] {
-            Type::Forall(ref binder, inner) => {
-                let binder_level = binder.level;
-                let binder_kind = binder.kind;
-                let unification = state.fresh_unification_kinded(binder_kind);
-                current = substitute::SubstituteBound::on(state, binder_level, unification, inner);
-            }
-
-            Type::Constrained(constraint, constrained) => {
-                state.constraints.push_wanted(constraint);
-                current = constrained;
-            }
-
-            _ => return Ok(current),
-        }
-    }
-
-    unreachable!("critical violation: limit reached in instantiate_type")
 }

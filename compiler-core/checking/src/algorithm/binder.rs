@@ -3,7 +3,7 @@ use smol_str::SmolStr;
 
 use crate::ExternalQueries;
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::{binder, kind, operator, term, unification};
+use crate::algorithm::{binder, kind, operator, term, toolkit, unification};
 use crate::core::{RowField, RowType, Type, TypeId};
 use crate::error::ErrorStep;
 
@@ -108,7 +108,8 @@ where
             // Instantiate nullary constructors to avoid polymorphic types.
             // Non-nullary constructors are instantiated during application.
             let inferred_type = if arguments.is_empty() {
-                term::instantiate_type(state, context, constructor_t)?
+                constructor_t = toolkit::instantiate_forall(state, constructor_t);
+                toolkit::collect_constraints(state, constructor_t)
             } else {
                 for &argument in arguments.iter() {
                     constructor_t = binder::check_constructor_binder_application(

@@ -109,6 +109,19 @@ pub fn instantiate_forall(state: &mut CheckState, mut type_id: TypeId) -> TypeId
     }
 }
 
+/// Collects [`Type::Constrained`] as wanted constraints.
+pub fn collect_constraints(state: &mut CheckState, mut type_id: TypeId) -> TypeId {
+    safe_loop! {
+        type_id = state.normalize_type(type_id);
+        if let Type::Constrained(constraint, constrained) = state.storage[type_id] {
+            state.constraints.push_wanted(constraint);
+            type_id = constrained;
+        } else {
+            break type_id;
+        }
+    }
+}
+
 /// Instantiates [`Type::Forall`] with the provided arguments.
 ///
 /// This function falls back to constructing skolem variables if there's

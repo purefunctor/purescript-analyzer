@@ -1,0 +1,20 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+add :: forall (a :: Type). Semiring a => a -> a -> a
+addImpl :: Int -> Int -> Int
++ :: forall (a :: Type). Semiring a => a -> a -> a
+test :: Int
+test' :: Int
+
+Types
+Semiring :: Type -> Constraint
+
+Classes
+class Semiring (&0 :: Type)
+
+Instances
+instance Semiring (Int :: Type)
+  chain: 0

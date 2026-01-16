@@ -423,3 +423,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_205_builtin_warn_main() { run_test("205_builtin_warn", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_206_builtin_fail_main() { run_test("206_builtin_fail", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_207_operator_class_method_main() { run_test("207_operator_class_method", "Main"); }

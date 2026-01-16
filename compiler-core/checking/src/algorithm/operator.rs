@@ -106,7 +106,7 @@ where
     };
 
     let operator_type = toolkit::instantiate_forall(state, operator_type);
-    let operator_type = state.normalize_type(operator_type);
+    let operator_type = toolkit::collect_constraints(state, operator_type);
 
     let Type::Function(left_type, operator_type) = state.storage[operator_type] else {
         return Ok(unknown);
