@@ -26,6 +26,13 @@ pub struct Config {
     pub lsp_log: LevelFilter,
     #[arg(
         long,
+        value_name("LevelFilter"),
+        help("Log level for the type checker"),
+        default_value("off")
+    )]
+    pub checker_log: LevelFilter,
+    #[arg(
+        long,
         help("Command to use to get source files"),
         long_help("This argument also disables the spago.lock integration")
     )]
