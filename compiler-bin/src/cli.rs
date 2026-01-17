@@ -30,7 +30,7 @@ pub struct Config {
         help("Log level for the type checker"),
         default_value("off")
     )]
-    pub checker_log: LevelFilter,
+    pub checking_log: LevelFilter,
     #[arg(
         long,
         help("Command to use to get source files"),

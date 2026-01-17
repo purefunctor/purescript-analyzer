@@ -92,6 +92,7 @@ where
     }
 }
 
+#[tracing::instrument(skip_all, name = "unify")]
 pub fn unify<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -104,7 +105,10 @@ where
     let t1 = synonym::normalize_expand_type(state, context, t1)?;
     let t2 = synonym::normalize_expand_type(state, context, t2)?;
 
+    crate::debug_fields!(state, context, { t1 = t1, t2 = t2 });
+
     if t1 == t2 {
+        tracing::trace!("identical");
         return Ok(true);
     }
 

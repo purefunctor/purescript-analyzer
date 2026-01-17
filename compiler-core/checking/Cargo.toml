@@ -3,7 +3,12 @@ name = "checking"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+default = []
+no-tracing = ["tracing/max_level_off"]
+
 [dependencies]
+tracing = "0.1.44"
 building-types = { version = "0.1.0", path = "../building-types" }
 files = { version = "0.1.0", path = "../files" }
 indexing = { version = "0.1.0", path = "../indexing" }

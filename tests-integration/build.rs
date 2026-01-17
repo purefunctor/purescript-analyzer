@@ -134,7 +134,15 @@ fn run_test(folder: &str, file: &str) {{
     let path = std::path::Path::new("fixtures/checking").join(folder);
     let (engine, _) = tests_integration::load_compiler(&path);
     let Some(id) = engine.module_file(file) else {{ return }};
-    let report = tests_integration::generated::basic::report_checked(&engine, id);
+
+    let (report, trace_output) = tests_integration::trace::with_capture(tracing::Level::DEBUG, || {{
+        tests_integration::generated::basic::report_checked(&engine, id)
+    }});
+
+    if !trace_output.is_empty() {{
+        println!("{{}}", trace_output);
+    }}
+
     let mut settings = insta::Settings::clone_current();
     settings.set_snapshot_path(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("fixtures/checking").join(folder));
     settings.set_prepend_module_to_snapshot(false);

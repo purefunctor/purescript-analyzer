@@ -1,5 +1,6 @@
 pub mod algorithm;
 pub mod error;
+pub mod trace;
 
 pub mod core;
 pub use core::{Type, TypeId, TypeInterner};
