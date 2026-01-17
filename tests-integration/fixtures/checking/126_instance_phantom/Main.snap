@@ -6,7 +6,7 @@ Terms
 identity :: forall (a :: Type). Phantom (a :: Type) => (a :: Type) -> (a :: Type)
 Proxy :: forall (t1 :: Type) (a :: (t1 :: Type)). Proxy @(t1 :: Type) (a :: (t1 :: Type))
 forceSolve ::
-  forall (t8 :: Type) (t9 :: (t8 :: Type)). { solution :: Proxy @(t8 :: Type) (t9 :: ???) }
+  forall (t8 :: Type) (t9 :: (t8 :: Type)). { solution :: Proxy @(t8 :: Type) (t9 :: (t8 :: Type)) }
 
 Types
 Phantom :: Type -> Constraint

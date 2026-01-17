@@ -2,6 +2,6 @@
 source: tests-integration/tests/checking.rs
 expression: snapshot
 ---
-forall (t0 :: Type) (t1 :: (t0 :: Type)) (t2 :: (t1 :: ?0[:0])) (t3 :: Type) (t4 :: (t3 :: Type))
-  (t5 :: (t4 :: ?3[:0])).
-  (t2 :: ?1[:0]) -> (t5 :: ?4[:0])
+forall (t0 :: Type) (t1 :: (t0 :: Type)) (t2 :: (t1 :: (t0 :: Type))) (t3 :: Type)
+  (t4 :: (t3 :: Type)) (t5 :: (t4 :: (t3 :: Type))).
+  (t2 :: (t1 :: (t0 :: Type))) -> (t5 :: (t4 :: (t3 :: Type)))

@@ -57,7 +57,8 @@ impl TypeFold for ShiftBound {
     fn transform(&mut self, state: &mut CheckState, _id: TypeId, t: &Type) -> FoldAction {
         if let Type::Variable(Variable::Bound(level, kind)) = t {
             let level = debruijn::Level(level.0 + self.offset);
-            FoldAction::Replace(state.storage.intern(Type::Variable(Variable::Bound(level, *kind))))
+            let kind = ShiftBound::on(state, *kind, self.offset);
+            FoldAction::Replace(state.storage.intern(Type::Variable(Variable::Bound(level, kind))))
         } else {
             FoldAction::Continue
         }
@@ -88,6 +89,7 @@ impl TypeFold for SubstituteUnification<'_> {
     fn transform(&mut self, state: &mut CheckState, id: TypeId, t: &Type) -> FoldAction {
         if let Type::Unification(unification_id) = t {
             if let Some(&(level, kind)) = self.substitutions.get(unification_id) {
+                let kind = SubstituteUnification::on(self.substitutions, state, kind);
                 return FoldAction::Replace(
                     state.storage.intern(Type::Variable(Variable::Bound(level, kind))),
                 );
