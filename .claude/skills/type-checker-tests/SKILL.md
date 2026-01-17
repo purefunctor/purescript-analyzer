@@ -16,6 +16,7 @@ Use this skill when adding new type checker functions or expanding behavior.
 |--------|---------|
 | Find next test number | `ls tests-integration/fixtures/checking/ \| tail -5` |
 | Run a test or multiple tests | `just tc NNN` or `just tc 101 102` |
+| Run with tracing enabled | `just tc --debug NNN` |
 | Run all checking tests | `just tc` |
 | Accept all pending snapshots | `cargo insta accept` |
 
@@ -162,6 +163,55 @@ When investigating a potential compiler bug:
 ```bash
 # Focus on single test to reduce noise
 just tc NNN
+
+# Enable tracing to see type checker behaviour
+just tc --debug NNN
+```
+
+### Trace Files
+
+The `--debug` flag emits detailed type checker traces to `target/compiler-tracing/`.
+
+**Trace file naming:** `{test_id}_{module_name}.jsonl`
+- Example: `200_int_compare_transitive_Main.jsonl`
+
+**Output format:** JSON Lines (one JSON object per line), containing:
+- `timestamp` - when the event occurred
+- `level` - DEBUG, INFO, or TRACE
+- `fields` - trace data (e.g., types being unified)
+- `target` - the module emitting the trace (e.g., `checking::algorithm::unification`)
+- `span`/`spans` - current span and span stack
+
+**Example trace line:**
+```json
+{"timestamp":"...","level":"DEBUG","fields":{"t1":"?0","t2":"Int"},"target":"checking::algorithm::unification","span":{"name":"unify"}}
+```
+
+When `--debug` is used, the trace file path is shown alongside pending snapshots:
+```
+UPDATED tests-integration/fixtures/checking/200_int_compare_transitive/Main.snap
+  TRACE target/compiler-tracing/200_int_compare_transitive_Main.jsonl
+```
+
+### Analysing Traces
+
+Trace files can be large for complex tests. Use sampling and filtering:
+
+```bash
+# Check file size and line count
+wc -l target/compiler-tracing/NNN_*.jsonl
+
+# Sample random lines to get an overview
+shuf -n 20 target/compiler-tracing/NNN_*.jsonl | jq .
+
+# Filter by level
+jq 'select(.level == "DEBUG")' target/compiler-tracing/NNN_*.jsonl
+
+# Filter by target module
+jq 'select(.target | contains("unification"))' target/compiler-tracing/NNN_*.jsonl
+
+# Extract specific fields
+jq '{level, target, fields}' target/compiler-tracing/NNN_*.jsonl
 ```
 
 You should run `just tc` to check for regressions.
