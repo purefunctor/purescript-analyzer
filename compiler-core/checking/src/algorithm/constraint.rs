@@ -19,7 +19,7 @@ use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::algorithm::fold::{FoldAction, TypeFold, fold_type};
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::visit::CollectFileReferences;
+use crate::algorithm::visit::{CollectFileReferences, TypeVisitor, VisitAction, visit_type};
 use crate::algorithm::{toolkit, transfer, unification};
 use crate::core::{Class, Instance, InstanceKind, Variable, debruijn};
 use crate::{CheckedModule, ExternalQueries, Type, TypeId};
@@ -976,19 +976,16 @@ struct CollectBoundLevels<'a> {
 
 impl<'a> CollectBoundLevels<'a> {
     fn on(state: &mut CheckState, type_id: TypeId, levels: &'a mut FxHashSet<debruijn::Level>) {
-        fold_type(state, type_id, &mut CollectBoundLevels { levels });
+        visit_type(state, type_id, &mut CollectBoundLevels { levels });
     }
 }
 
-impl TypeFold for CollectBoundLevels<'_> {
-    fn transform(&mut self, _state: &mut CheckState, id: TypeId, t: &Type) -> FoldAction {
-        match t {
-            Type::Variable(Variable::Bound(level, _)) => {
-                self.levels.insert(*level);
-                FoldAction::Replace(id)
-            }
-            _ => FoldAction::Continue,
+impl TypeVisitor for CollectBoundLevels<'_> {
+    fn visit(&mut self, _state: &mut CheckState, _id: TypeId, t: &Type) -> VisitAction {
+        if let Type::Variable(Variable::Bound(level, _)) = t {
+            self.levels.insert(*level);
         }
+        VisitAction::Continue
     }
 }
 
@@ -1003,18 +1000,15 @@ impl<'a> CollectBoundVariables<'a> {
         type_id: TypeId,
         variables: &'a mut FxHashMap<debruijn::Level, TypeId>,
     ) {
-        fold_type(state, type_id, &mut CollectBoundVariables { variables });
+        visit_type(state, type_id, &mut CollectBoundVariables { variables });
     }
 }
 
-impl TypeFold for CollectBoundVariables<'_> {
-    fn transform(&mut self, _state: &mut CheckState, id: TypeId, t: &Type) -> FoldAction {
-        match t {
-            Type::Variable(Variable::Bound(level, kind)) => {
-                self.variables.insert(*level, *kind);
-                FoldAction::Replace(id)
-            }
-            _ => FoldAction::Continue,
+impl TypeVisitor for CollectBoundVariables<'_> {
+    fn visit(&mut self, _state: &mut CheckState, _id: TypeId, t: &Type) -> VisitAction {
+        if let Type::Variable(Variable::Bound(level, kind)) = t {
+            self.variables.insert(*level, *kind);
         }
+        VisitAction::Continue
     }
 }
