@@ -42,6 +42,7 @@ use crate::error::ErrorKind;
 ///   subtype (?a -> ?a) (~a -> ~a)
 ///     subtype ?a ~a
 /// ```
+#[tracing::instrument(skip_all, name = "subtype")]
 pub fn subtype<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -54,7 +55,10 @@ where
     let t1 = synonym::normalize_expand_type(state, context, t1)?;
     let t2 = synonym::normalize_expand_type(state, context, t2)?;
 
+    crate::debug_fields!(state, context, { t1 = t1, t2 = t2 });
+
     if t1 == t2 {
+        crate::trace_fields!(state, context, { t1 = t1, t2 = t2 }, "identical");
         return Ok(true);
     }
 
@@ -108,7 +112,7 @@ where
     crate::debug_fields!(state, context, { t1 = t1, t2 = t2 });
 
     if t1 == t2 {
-        tracing::trace!("identical");
+        crate::trace_fields!(state, context, { t1 = t1, t2 = t2 }, "identical");
         return Ok(true);
     }
 
@@ -176,6 +180,7 @@ where
     Ok(unifies)
 }
 
+#[tracing::instrument(skip_all, name = "solve")]
 pub fn solve<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -185,10 +190,18 @@ pub fn solve<Q>(
 where
     Q: ExternalQueries,
 {
-    let codomain = state.type_scope.size();
-    let occurs = unification_id;
+    crate::trace_fields!(state, context, {
+        ?unification_id = unification_id,
+        solution = solution,
+    });
 
-    if !promote_type(state, occurs, codomain, unification_id, solution) {
+    let codomain = state.type_scope.size();
+
+    if !promote_type(state, codomain, unification_id, solution) {
+        crate::trace_fields!(state, context, {
+            ?unification_id = unification_id,
+            solution = solution,
+        }, "occurs check failed");
         return Ok(None);
     }
 
@@ -203,7 +216,6 @@ where
 
 pub fn promote_type(
     state: &mut CheckState,
-    occurs: u32,
     codomain: debruijn::Size,
     unification_id: u32,
     solution: TypeId,
@@ -211,58 +223,58 @@ pub fn promote_type(
     let solution = state.normalize_type(solution);
     match state.storage[solution] {
         Type::Application(function, argument) => {
-            promote_type(state, occurs, codomain, unification_id, function)
-                && promote_type(state, occurs, codomain, unification_id, argument)
+            promote_type(state, codomain, unification_id, function)
+                && promote_type(state, codomain, unification_id, argument)
         }
 
         Type::Constrained(constraint, inner) => {
-            promote_type(state, occurs, codomain, unification_id, constraint)
-                && promote_type(state, occurs, codomain, unification_id, inner)
+            promote_type(state, codomain, unification_id, constraint)
+                && promote_type(state, codomain, unification_id, inner)
         }
 
         Type::Constructor(_, _) => true,
 
         Type::Forall(ref binder, inner) => {
             let inner_codomain = codomain.increment();
-            promote_type(state, occurs, codomain, unification_id, binder.kind)
-                && promote_type(state, occurs, inner_codomain, unification_id, inner)
+            promote_type(state, codomain, unification_id, binder.kind)
+                && promote_type(state, inner_codomain, unification_id, inner)
         }
 
         Type::Function(argument, result) => {
-            promote_type(state, occurs, codomain, unification_id, argument)
-                && promote_type(state, occurs, codomain, unification_id, result)
+            promote_type(state, codomain, unification_id, argument)
+                && promote_type(state, codomain, unification_id, result)
         }
 
         Type::Integer(_) => true,
 
         Type::KindApplication(function, argument) => {
-            promote_type(state, occurs, codomain, unification_id, function)
-                && promote_type(state, occurs, codomain, unification_id, argument)
+            promote_type(state, codomain, unification_id, function)
+                && promote_type(state, codomain, unification_id, argument)
         }
 
         Type::Kinded(inner, kind) => {
-            promote_type(state, occurs, codomain, unification_id, inner)
-                && promote_type(state, occurs, codomain, unification_id, kind)
+            promote_type(state, codomain, unification_id, inner)
+                && promote_type(state, codomain, unification_id, kind)
         }
 
         Type::Operator(_, _) => true,
 
         Type::OperatorApplication(_, _, left, right) => {
-            promote_type(state, occurs, codomain, unification_id, left)
-                && promote_type(state, occurs, codomain, unification_id, right)
+            promote_type(state, codomain, unification_id, left)
+                && promote_type(state, codomain, unification_id, right)
         }
 
         Type::Row(RowType { ref fields, tail }) => {
             let fields = Arc::clone(fields);
 
             for field in fields.iter() {
-                if !promote_type(state, occurs, codomain, unification_id, field.id) {
+                if !promote_type(state, codomain, unification_id, field.id) {
                     return false;
                 }
             }
 
             if let Some(tail) = tail
-                && !promote_type(state, occurs, codomain, unification_id, tail)
+                && !promote_type(state, codomain, unification_id, tail)
             {
                 return false;
             }
@@ -275,7 +287,7 @@ pub fn promote_type(
         Type::SynonymApplication(_, _, _, ref arguments) => {
             let arguments = Arc::clone(arguments);
             for argument in arguments.iter() {
-                if !promote_type(state, occurs, codomain, unification_id, *argument) {
+                if !promote_type(state, codomain, unification_id, *argument) {
                     return false;
                 }
             }
@@ -286,7 +298,7 @@ pub fn promote_type(
             let unification = state.unification.get(unification_id);
             let solution = state.unification.get(solution_id);
 
-            if occurs == solution_id {
+            if unification_id == solution_id {
                 return false;
             }
 
@@ -310,11 +322,9 @@ pub fn promote_type(
                     if level.0 >= unification.domain.0 {
                         return false;
                     }
-                    promote_type(state, occurs, codomain, unification_id, *kind)
+                    promote_type(state, codomain, unification_id, *kind)
                 }
-                Variable::Skolem(_, kind) => {
-                    promote_type(state, occurs, codomain, unification_id, *kind)
-                }
+                Variable::Skolem(_, kind) => promote_type(state, codomain, unification_id, *kind),
                 Variable::Free(_) => true,
             }
         }
