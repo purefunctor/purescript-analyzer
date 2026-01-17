@@ -1,6 +1,8 @@
 //! Tracing capture utilities for tests.
 
-use std::io::{self, Write};
+use std::fs::{self, File};
+use std::io::{BufWriter, Write};
+use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 use tracing::Level;
@@ -9,75 +11,54 @@ use tracing_subscriber::fmt::format::FmtSpan;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::EnvFilter;
 
-/// A writer that appends to a shared buffer.
 #[derive(Clone)]
-struct BufferWriter(Arc<Mutex<Vec<u8>>>);
+struct FileWriter(Arc<Mutex<BufWriter<File>>>);
 
-impl Write for BufferWriter {
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.0.lock().unwrap().extend_from_slice(buf);
-        Ok(buf.len())
+impl Write for FileWriter {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        self.0.lock().unwrap().write(buf)
     }
-
-    fn flush(&mut self) -> io::Result<()> {
-        Ok(())
+    fn flush(&mut self) -> std::io::Result<()> {
+        self.0.lock().unwrap().flush()
     }
 }
 
-impl<'a> MakeWriter<'a> for BufferWriter {
+impl<'a> MakeWriter<'a> for FileWriter {
     type Writer = Self;
     fn make_writer(&'a self) -> Self::Writer {
         self.clone()
     }
 }
 
-/// Captures tracing output during closure execution (human-readable format).
-pub fn with_capture<F, T>(level: Level, f: F) -> (T, String)
+/// Writes trace output to a file at the given level.
+/// Pass `env!("CARGO_TARGET_TMPDIR")` from test code as `target_tmp_dir`.
+pub fn with_file_trace<F, T>(level: Level, target_tmp_dir: &str, test_name: &str, f: F) -> (T, PathBuf)
 where
     F: FnOnce() -> T,
 {
-    let buffer = BufferWriter(Arc::new(Mutex::new(Vec::new())));
-    let buffer_ref = buffer.clone();
+    let dir_path = PathBuf::from(target_tmp_dir)
+        .parent()
+        .expect("no parent directory")
+        .join("compiler-tracing");
+
+    fs::create_dir_all(&dir_path).expect("failed to create trace directory");
+
+    let file_path = dir_path.join(format!("{}.jsonl", test_name));
+    let file = File::create(&file_path).expect("failed to create trace file");
+    let writer = FileWriter(Arc::new(Mutex::new(BufWriter::new(file))));
+    let writer_ref = writer.clone();
 
     let subscriber = tracing_subscriber::registry()
         .with(
             tracing_subscriber::fmt::layer()
-                .with_writer(buffer_ref)
-                .with_ansi(false)
-                .with_target(true)
-                .with_level(true)
+                .with_writer(writer_ref)
                 .with_span_events(FmtSpan::CLOSE)
-                .compact(),
+                .json(),
         )
         .with(EnvFilter::default().add_directive(level.into()));
 
     let result = tracing::subscriber::with_default(subscriber, f);
-    let bytes = Arc::try_unwrap(buffer.0).unwrap().into_inner().unwrap();
-    (result, String::from_utf8_lossy(&bytes).into_owned())
-}
+    writer.0.lock().unwrap().flush().expect("failed to flush trace file");
 
-/// Captures tracing output in JSON format with timing information.
-pub fn with_json_capture<F, T>(level: Level, f: F) -> (T, String)
-where
-    F: FnOnce() -> T,
-{
-    let buffer = BufferWriter(Arc::new(Mutex::new(Vec::new())));
-    let buffer_ref = buffer.clone();
-
-    let subscriber = tracing_subscriber::registry()
-        .with(
-            tracing_subscriber::fmt::layer()
-                .json()
-                .with_writer(buffer_ref)
-                .with_target(true)
-                .with_level(true)
-                .with_span_events(FmtSpan::NEW | FmtSpan::CLOSE)
-                .with_current_span(true)
-                .with_span_list(true),
-        )
-        .with(EnvFilter::default().add_directive(level.into()));
-
-    let result = tracing::subscriber::with_default(subscriber, f);
-    let bytes = Arc::try_unwrap(buffer.0).unwrap().into_inner().unwrap();
-    (result, String::from_utf8_lossy(&bytes).into_owned())
+    (result, file_path)
 }

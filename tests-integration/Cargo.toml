@@ -4,10 +4,6 @@ version = "0.1.0"
 edition = "2024"
 build = "build.rs"
 
-[features]
-default = ["no-tracing"]
-no-tracing = ["checking/no-tracing"]
-
 [dependencies]
 analyzer = { version = "0.1.0", path = "../compiler-lsp/analyzer" }
 async-lsp = "0.2.2"
