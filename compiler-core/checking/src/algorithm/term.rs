@@ -272,6 +272,7 @@ where
 }
 
 /// Checks the type of an expression.
+#[tracing::instrument(skip_all, name = "check_expression")]
 pub fn check_expression<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -281,14 +282,17 @@ pub fn check_expression<Q>(
 where
     Q: ExternalQueries,
 {
+    crate::trace_fields!(state, context, { expected = expected });
     state.with_error_step(ErrorStep::CheckingExpression(expr_id), |state| {
         let inferred = infer_expression_quiet(state, context, expr_id)?;
         let _ = unification::subtype(state, context, inferred, expected)?;
+        crate::trace_fields!(state, context, { inferred = inferred, expected = expected });
         Ok(inferred)
     })
 }
 
 /// Infers the type of an expression.
+#[tracing::instrument(skip_all, name = "infer_expression")]
 pub fn infer_expression<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -298,7 +302,9 @@ where
     Q: ExternalQueries,
 {
     state.with_error_step(ErrorStep::InferringExpression(expr_id), |state| {
-        infer_expression_quiet(state, context, expr_id)
+        let inferred = infer_expression_quiet(state, context, expr_id)?;
+        crate::trace_fields!(state, context, { inferred = inferred });
+        Ok(inferred)
     })
 }
 
@@ -1277,6 +1283,7 @@ where
 /// [`lowering::ExpressionKind::Do`] and [`lowering::ExpressionKind::Ado`].
 ///
 /// [`check_constructor_binder_application`]: binder::check_constructor_binder_application
+#[tracing::instrument(skip_all, name = "check_function_application")]
 pub fn check_function_application_core<Q, A, F>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -1288,6 +1295,7 @@ where
     Q: ExternalQueries,
     F: FnOnce(&mut CheckState, &CheckContext<Q>, A, TypeId) -> QueryResult<TypeId>,
 {
+    crate::trace_fields!(state, context, { function = function_t });
     let function_t = state.normalize_type(function_t);
     match state.storage[function_t] {
         // Check that `argument_id :: argument_type`

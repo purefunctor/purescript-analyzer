@@ -32,13 +32,70 @@ mod enabled {
         }
     }
 
+    /// A trace value that can be either pretty-printed or debug-formatted.
+    pub enum TraceValue {
+        Pretty(TypeTrace),
+        Debug(String),
+    }
+
+    impl fmt::Display for TraceValue {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            match self {
+                TraceValue::Pretty(trace) => fmt::Display::fmt(trace, f),
+                TraceValue::Debug(s) => f.write_str(s),
+            }
+        }
+    }
+
+    impl fmt::Debug for TraceValue {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            match self {
+                TraceValue::Pretty(trace) => fmt::Debug::fmt(trace, f),
+                TraceValue::Debug(s) => write!(f, "{:?}", s),
+            }
+        }
+    }
+
+    /// Trait for types that can be traced with type context.
+    pub trait Traceable<Q>
+    where
+        Q: ExternalQueries,
+    {
+        fn trace(self, state: &mut CheckState, context: &CheckContext<Q>) -> TraceValue;
+    }
+
+    impl<Q> Traceable<Q> for TypeId
+    where
+        Q: ExternalQueries,
+    {
+        fn trace(self, state: &mut CheckState, context: &CheckContext<Q>) -> TraceValue {
+            TraceValue::Pretty(render(state, context, self))
+        }
+    }
+
+    /// Wrapper for tracing arbitrary `Debug` types.
+    pub struct Dbg<T>(pub T);
+
+    impl<T, Q> Traceable<Q> for Dbg<T>
+    where
+        T: fmt::Debug,
+        Q: ExternalQueries,
+    {
+        fn trace(self, _state: &mut CheckState, _context: &CheckContext<Q>) -> TraceValue {
+            TraceValue::Debug(format!("{:?}", self.0))
+        }
+    }
+
     /// Renders a type for tracing, normalising through unification chains.
     #[inline]
-    pub fn render<Q: ExternalQueries>(
+    pub fn render<Q>(
         state: &mut CheckState,
-        context: &CheckContext<'_, Q>,
+        context: &CheckContext<Q>,
         type_id: TypeId,
-    ) -> TypeTrace {
+    ) -> TypeTrace
+    where
+        Q: ExternalQueries,
+    {
         let normalised = state.normalize_type(type_id);
         TypeTrace(print_local(state, context, normalised))
     }
@@ -48,20 +105,93 @@ mod enabled {
 pub use enabled::*;
 
 /// Core macro for emitting type fields at a configurable tracing level.
+///
+/// Supports both pretty-printed types and debug-formatted values:
+/// - `name = expr` - pretty-prints TypeId values via Traceable
+/// - `?name = expr` - debug-formats arbitrary values via Dbg wrapper
+///
+/// # Examples
+///
+/// ```ignore
+/// // Pretty-print TypeIds
+/// trace_fields!(state, context, { t1 = t1, t2 = t2 });
+///
+/// // Debug-format primitives with ? prefix
+/// trace_fields!(state, context, { ?count = count });
+///
+/// // Mix both with a message
+/// trace_fields!(state, context, { t1 = t1, ?level = level }, "solving");
+/// ```
 #[cfg(not(feature = "no-tracing"))]
 #[macro_export]
 macro_rules! type_fields {
-    ($level:expr, $state:expr, $context:expr, { $($name:ident = $type_id:expr),* $(,)? }) => {
+    // Entry point: fields only
+    ($level:expr, $state:expr, $context:expr, { $($fields:tt)* }) => {
+        $crate::type_fields!(@impl $level, $state, $context, [] { $($fields)* })
+    };
+    // Entry point: fields + message
+    ($level:expr, $state:expr, $context:expr, { $($fields:tt)* }, $($msg:tt)+) => {
+        $crate::type_fields!(@impl_msg $level, $state, $context, [] { $($fields)* }, $($msg)+)
+    };
+
+    // === No-message variant ===
+
+    // Done processing fields
+    (@impl $level:expr, $state:expr, $context:expr, [$(($name:ident, $bind:expr))*] { $(,)? }) => {
         if ::tracing::enabled!($level) {
-            $(let $name = $crate::trace::render($state, $context, $type_id);)*
+            $(let $name = $bind;)*
             ::tracing::event!($level, $($name = %$name),*);
         }
     };
-    ($level:expr, $state:expr, $context:expr, { $($name:ident = $type_id:expr),* $(,)? }, $($msg:tt)+) => {
+
+    // Match ?name = expr,
+    (@impl $level:expr, $state:expr, $context:expr, [$($acc:tt)*] { ? $name:ident = $value:expr, $($rest:tt)* }) => {
+        $crate::type_fields!(@impl $level, $state, $context, [$($acc)* ($name, $crate::trace::Traceable::trace($crate::trace::Dbg($value), $state, $context))] { $($rest)* })
+    };
+
+    // Match ?name = expr (last, no comma)
+    (@impl $level:expr, $state:expr, $context:expr, [$($acc:tt)*] { ? $name:ident = $value:expr }) => {
+        $crate::type_fields!(@impl $level, $state, $context, [$($acc)* ($name, $crate::trace::Traceable::trace($crate::trace::Dbg($value), $state, $context))] { })
+    };
+
+    // Match name = expr,
+    (@impl $level:expr, $state:expr, $context:expr, [$($acc:tt)*] { $name:ident = $value:expr, $($rest:tt)* }) => {
+        $crate::type_fields!(@impl $level, $state, $context, [$($acc)* ($name, $crate::trace::Traceable::trace($value, $state, $context))] { $($rest)* })
+    };
+
+    // Match name = expr (last, no comma)
+    (@impl $level:expr, $state:expr, $context:expr, [$($acc:tt)*] { $name:ident = $value:expr }) => {
+        $crate::type_fields!(@impl $level, $state, $context, [$($acc)* ($name, $crate::trace::Traceable::trace($value, $state, $context))] { })
+    };
+
+    // === Message variant ===
+
+    // Done processing fields
+    (@impl_msg $level:expr, $state:expr, $context:expr, [$(($name:ident, $bind:expr))*] { $(,)? }, $($msg:tt)+) => {
         if ::tracing::enabled!($level) {
-            $(let $name = $crate::trace::render($state, $context, $type_id);)*
+            $(let $name = $bind;)*
             ::tracing::event!($level, $($name = %$name,)* $($msg)+);
         }
+    };
+
+    // Match ?name = expr,
+    (@impl_msg $level:expr, $state:expr, $context:expr, [$($acc:tt)*] { ? $name:ident = $value:expr, $($rest:tt)* }, $($msg:tt)+) => {
+        $crate::type_fields!(@impl_msg $level, $state, $context, [$($acc)* ($name, $crate::trace::Traceable::trace($crate::trace::Dbg($value), $state, $context))] { $($rest)* }, $($msg)+)
+    };
+
+    // Match ?name = expr (last, no comma)
+    (@impl_msg $level:expr, $state:expr, $context:expr, [$($acc:tt)*] { ? $name:ident = $value:expr }, $($msg:tt)+) => {
+        $crate::type_fields!(@impl_msg $level, $state, $context, [$($acc)* ($name, $crate::trace::Traceable::trace($crate::trace::Dbg($value), $state, $context))] { }, $($msg)+)
+    };
+
+    // Match name = expr,
+    (@impl_msg $level:expr, $state:expr, $context:expr, [$($acc:tt)*] { $name:ident = $value:expr, $($rest:tt)* }, $($msg:tt)+) => {
+        $crate::type_fields!(@impl_msg $level, $state, $context, [$($acc)* ($name, $crate::trace::Traceable::trace($value, $state, $context))] { $($rest)* }, $($msg)+)
+    };
+
+    // Match name = expr (last, no comma)
+    (@impl_msg $level:expr, $state:expr, $context:expr, [$($acc:tt)*] { $name:ident = $value:expr }, $($msg:tt)+) => {
+        $crate::type_fields!(@impl_msg $level, $state, $context, [$($acc)* ($name, $crate::trace::Traceable::trace($value, $state, $context))] { }, $($msg)+)
     };
 }
 

@@ -24,6 +24,7 @@ use crate::algorithm::{toolkit, transfer, unification};
 use crate::core::{Class, Instance, InstanceKind, Variable, debruijn};
 use crate::{CheckedModule, ExternalQueries, Type, TypeId};
 
+#[tracing::instrument(skip_all, name = "solve_constraints")]
 pub fn solve_constraints<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -33,6 +34,11 @@ pub fn solve_constraints<Q>(
 where
     Q: ExternalQueries,
 {
+    crate::debug_fields!(state, context, {
+        ?wanted = wanted.len(),
+        ?given = given.len(),
+    });
+
     let given = elaborate_given(state, context, given)?;
 
     let mut work_queue = wanted;
@@ -42,6 +48,8 @@ where
         let mut made_progress = false;
 
         'work: while let Some(wanted) = work_queue.pop_front() {
+            crate::trace_fields!(state, context, { wanted = wanted }, "work");
+
             let Some(application) = constraint_application(state, wanted) else {
                 residual.push(wanted);
                 continue;
@@ -105,6 +113,8 @@ where
             break;
         }
     }
+
+    crate::debug_fields!(state, context, { ?residual = residual.len() });
 
     Ok(residual)
 }
@@ -734,6 +744,7 @@ fn can_unify(state: &mut CheckState, t1: TypeId, t2: TypeId) -> CanUnify {
 }
 
 /// Matches a wanted constraint to an instance.
+#[tracing::instrument(skip_all, name = "match_instance")]
 fn match_instance<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -756,6 +767,7 @@ where
         let match_result = match_type(state, &mut bindings, &mut equalities, *wanted, given);
 
         if matches!(match_result, MatchType::Apart) {
+            crate::trace_fields!(state, context, { ?wanted = wanted, ?given = given }, "apart");
             return Ok(MatchInstance::Apart);
         }
 
@@ -768,6 +780,7 @@ where
 
     if !stuck_positions.is_empty() {
         if !can_determine_stuck(context, file_id, item_id, &match_results, &stuck_positions)? {
+            crate::trace_fields!(state, context, { ?wanted = wanted }, "stuck");
             return Ok(MatchInstance::Stuck);
         }
 
@@ -798,7 +811,7 @@ where
         }
     }
 
-    let constraints = instance
+    let constraints: Vec<_> = instance
         .constraints
         .iter()
         .map(|(constraint, _)| {
@@ -806,6 +819,11 @@ where
             ApplyBindings::on(state, &bindings, localized)
         })
         .collect();
+
+    crate::trace_fields!(state, context, {
+        ?constraints = constraints.len(),
+        ?equalities = equalities.len()
+    }, "match");
 
     Ok(MatchInstance::Match { constraints, equalities })
 }
