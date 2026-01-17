@@ -646,61 +646,84 @@ fn can_unify(state: &mut CheckState, t1: TypeId, t2: TypeId) -> CanUnify {
 
         (Type::Row(_), Type::Row(_)) => Unify,
 
-        (&Type::Application(f1, a1), &Type::Application(f2, a2)) => {
-            can_unify(state, f1, f2).and_also(|| can_unify(state, a1, a2))
-        }
+        (
+            &Type::Application(t1_function, t1_argument),
+            &Type::Application(t2_function, t2_argument),
+        ) => can_unify(state, t1_function, t2_function)
+            .and_also(|| can_unify(state, t1_argument, t2_argument)),
 
-        (&Type::Function(a1, r1), &Type::Function(a2, r2)) => {
-            can_unify(state, a1, a2).and_also(|| can_unify(state, r1, r2))
+        (&Type::Function(t1_argument, t1_result), &Type::Function(t2_argument, t2_result)) => {
+            can_unify(state, t1_argument, t2_argument)
+                .and_also(|| can_unify(state, t1_result, t2_result))
         }
-
-        (&Type::KindApplication(f1, a1), &Type::KindApplication(f2, a2)) => {
-            can_unify(state, f1, f2).and_also(|| can_unify(state, a1, a2))
-        }
-
-        (&Type::Kinded(t1, k1), &Type::Kinded(t2, k2)) => {
-            can_unify(state, t1, t2).and_also(|| can_unify(state, k1, k2))
-        }
-
-        (&Type::Constrained(c1, b1), &Type::Constrained(c2, b2)) => {
-            can_unify(state, c1, c2).and_also(|| can_unify(state, b1, b2))
-        }
-
-        (&Type::Forall(_, b1), &Type::Forall(_, b2)) => can_unify(state, b1, b2),
 
         (
-            &Type::OperatorApplication(f1, t1, l1, r1),
-            &Type::OperatorApplication(f2, t2, l2, r2),
+            &Type::KindApplication(t1_function, t1_argument),
+            &Type::KindApplication(t2_function, t2_argument),
+        ) => can_unify(state, t1_function, t2_function)
+            .and_also(|| can_unify(state, t1_argument, t2_argument)),
+
+        (&Type::Kinded(t1_type, t1_kind), &Type::Kinded(t2_type, t2_kind)) => {
+            can_unify(state, t1_type, t2_type).and_also(|| can_unify(state, t1_kind, t2_kind))
+        }
+
+        (
+            &Type::Constrained(t1_constraint, t1_body),
+            &Type::Constrained(t2_constraint, t2_body),
+        ) => can_unify(state, t1_constraint, t2_constraint)
+            .and_also(|| can_unify(state, t1_body, t2_body)),
+
+        (&Type::Forall(_, t1_body), &Type::Forall(_, t2_body)) => {
+            can_unify(state, t1_body, t2_body)
+        }
+
+        (
+            &Type::OperatorApplication(t1_file, t1_item, t1_left, t1_right),
+            &Type::OperatorApplication(t2_file, t2_item, t2_left, t2_right),
         ) => {
-            if f1 == f2 && t1 == t2 {
-                can_unify(state, l1, l2).and_also(|| can_unify(state, r1, r2))
+            if t1_file == t2_file && t1_item == t2_item {
+                can_unify(state, t1_left, t2_left).and_also(|| can_unify(state, t1_right, t2_right))
             } else {
                 Apart
             }
         }
 
-        (Type::SynonymApplication(_, f1, t1, a1), Type::SynonymApplication(_, f2, t2, a2)) => {
-            if f1 == f2 && t1 == t2 && a1.len() == a2.len() {
-                let a1 = Arc::clone(a1);
-                let a2 = Arc::clone(a2);
-                iter::zip(a1.iter(), a2.iter())
-                    .fold(Equal, |result, (&a1, &a2)| result.and_also(|| can_unify(state, a1, a2)))
+        (
+            Type::SynonymApplication(_, t1_file, t1_item, t1_arguments),
+            Type::SynonymApplication(_, t2_file, t2_item, t2_arguments),
+        ) => {
+            if t1_file == t2_file && t1_item == t2_item && t1_arguments.len() == t2_arguments.len()
+            {
+                let t1_arguments = Arc::clone(t1_arguments);
+                let t2_arguments = Arc::clone(t2_arguments);
+                iter::zip(t1_arguments.iter(), t2_arguments.iter()).fold(
+                    Equal,
+                    |result, (&t1_argument, &t2_argument)| {
+                        result.and_also(|| can_unify(state, t1_argument, t2_argument))
+                    },
+                )
             } else {
                 Apart
             }
         }
 
-        (&Type::Variable(Variable::Bound(l1, k1)), &Type::Variable(Variable::Bound(l2, k2))) => {
-            if l1 == l2 {
-                can_unify(state, k1, k2)
+        (
+            &Type::Variable(Variable::Bound(t1_level, t1_kind)),
+            &Type::Variable(Variable::Bound(t2_level, t2_kind)),
+        ) => {
+            if t1_level == t2_level {
+                can_unify(state, t1_kind, t2_kind)
             } else {
                 Apart
             }
         }
 
-        (&Type::Variable(Variable::Skolem(l1, k1)), &Type::Variable(Variable::Skolem(l2, k2))) => {
-            if l1 == l2 {
-                can_unify(state, k1, k2)
+        (
+            &Type::Variable(Variable::Skolem(t1_level, t1_kind)),
+            &Type::Variable(Variable::Skolem(t2_level, t2_kind)),
+        ) => {
+            if t1_level == t2_level {
+                can_unify(state, t1_kind, t2_kind)
             } else {
                 Apart
             }
