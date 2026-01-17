@@ -3,14 +3,16 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-Identity :: forall (a :: Type). a -> Identity a
-Const :: forall (t2 :: Type) (e :: Type) (a :: t2). e -> Const @t2 e a
-Nothing :: forall (a :: Type). Maybe a
-Just :: forall (a :: Type). a -> Maybe a
+Identity :: forall (a :: Type). (a :: Type) -> Identity (a :: Type)
+Const ::
+  forall (t2 :: Type) (e :: Type) (a :: (t2 :: Type)).
+    (e :: Type) -> Const @(t2 :: Type) (e :: Type) (a :: (t2 :: Type))
+Nothing :: forall (a :: Type). Maybe (a :: Type)
+Just :: forall (a :: Type). (a :: Type) -> Maybe (a :: Type)
 
 Types
 Identity :: Type -> Type
-Const :: forall (t2 :: Type). Type -> t2 -> Type
+Const :: forall (t2 :: Type). Type -> (t2 :: Type) -> Type
 Maybe :: Type -> Type
 
 Data
@@ -34,5 +36,5 @@ Maybe = [Representational]
 
 Derived
 derive Functor (Identity :: Type -> Type)
-derive Functor (Const @Type &0 :: Type -> Type)
+derive Functor (Const @Type (&0 :: Type) :: Type -> Type)
 derive Functor (Maybe :: Type -> Type)

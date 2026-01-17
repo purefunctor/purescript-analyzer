@@ -3,12 +3,18 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-MkWrap :: forall (t4 :: Type) (f :: t4 -> Type) (a :: t4). f a -> Wrap @t4 f a
-MkWrapNoEq1 :: forall (t10 :: Type) (f :: t10 -> Type) (a :: t10). f a -> WrapNoEq1 @t10 f a
+MkWrap ::
+  forall (t4 :: Type) (f :: (t4 :: Type) -> Type) (a :: (t4 :: Type)).
+    (f :: (t4 :: Type) -> Type) (a :: (t4 :: Type)) ->
+    Wrap @(t4 :: Type) (f :: (t4 :: Type) -> Type) (a :: (t4 :: Type))
+MkWrapNoEq1 ::
+  forall (t10 :: Type) (f :: (t10 :: Type) -> Type) (a :: (t10 :: Type)).
+    (f :: (t10 :: Type) -> Type) (a :: (t10 :: Type)) ->
+    WrapNoEq1 @(t10 :: Type) (f :: (t10 :: Type) -> Type) (a :: (t10 :: Type))
 
 Types
-Wrap :: forall (t4 :: Type). (t4 -> Type) -> t4 -> Type
-WrapNoEq1 :: forall (t10 :: Type). (t10 -> Type) -> t10 -> Type
+Wrap :: forall (t4 :: Type). ((t4 :: Type) -> Type) -> (t4 :: Type) -> Type
+WrapNoEq1 :: forall (t10 :: Type). ((t10 :: Type) -> Type) -> (t10 :: Type) -> Type
 
 Data
 Wrap
@@ -25,8 +31,8 @@ Wrap = [Representational, Nominal]
 WrapNoEq1 = [Representational, Nominal]
 
 Derived
-derive (Eq1 &0, Eq &1) => Eq (Wrap @Type &0 &1 :: Type)
-derive Eq &1 => Eq (WrapNoEq1 @Type &0 &1 :: Type)
+derive (Eq1 (&0 :: Type -> Type), Eq (&1 :: Type)) => Eq (Wrap @Type (&0 :: Type -> Type) (&1 :: Type) :: Type)
+derive Eq (&1 :: Type) => Eq (WrapNoEq1 @Type (&0 :: Type -> Type) (&1 :: Type) :: Type)
 
 Errors
-NoInstanceFound { Eq1 &0 } at [TermDeclaration(Idx::<TermItem>(3))]
+NoInstanceFound { Eq1 (&0 :: Type -> Type) } at [TermDeclaration(Idx::<TermItem>(3))]

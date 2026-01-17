@@ -3,8 +3,8 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-id :: forall (a :: Type). a -> a
+id :: forall (a :: Type). (a :: Type) -> (a :: Type)
 monomorphic :: Array Int
-polymorphic :: forall (t8 :: Type). Array (t8 -> t8)
+polymorphic :: forall (t8 :: Type). Array ((t8 :: Type) -> (t8 :: Type))
 
 Types

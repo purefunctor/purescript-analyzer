@@ -26,7 +26,7 @@
 use std::sync::Arc;
 
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::core::RowType;
+use crate::core::{RowType, Variable};
 use crate::{ExternalQueries, Type, TypeId};
 
 /// Moves a type from local memory to global memory.
@@ -148,20 +148,26 @@ fn traverse<'a, Q: ExternalQueries>(source: &mut TraversalSource<'a, Q>, id: Typ
 
         Type::Unification(_) => match source.mode {
             TraversalMode::FromGlobal => {
-                // unreachable!(
-                //     "invariant violated: forbidden unification variable transfer from Localize"
-                // );
+                // eprintln!("localize: unification variable ?{unification_id} escaped");
                 Type::Unknown
             }
             TraversalMode::FromLocal => {
-                // unreachable!(
-                //     "invariant violated: forbidden unification variable transfer from Globalize"
-                // );
+                // eprintln!("globalize: unification variable ?{unification_id} escaped");
                 Type::Unknown
             }
         },
 
-        Type::Variable(variable) => Type::Variable(variable),
+        Type::Variable(variable) => match variable {
+            Variable::Skolem(level, kind) => {
+                let kind = traverse(source, kind);
+                Type::Variable(Variable::Skolem(level, kind))
+            }
+            Variable::Bound(level, kind) => {
+                let kind = traverse(source, kind);
+                Type::Variable(Variable::Bound(level, kind))
+            }
+            free @ Variable::Free(_) => Type::Variable(free),
+        },
 
         Type::Unknown => Type::Unknown,
     };

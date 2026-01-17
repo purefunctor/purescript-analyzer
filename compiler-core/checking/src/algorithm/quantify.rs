@@ -14,7 +14,7 @@ use crate::algorithm::constraint::{self, ConstraintApplication};
 use crate::algorithm::fold::Zonk;
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::substitute::{ShiftBound, SubstituteUnification, UniToLevel};
-use crate::core::{Class, ForallBinder, Instance, RowType, Type, TypeId, debruijn};
+use crate::core::{Class, ForallBinder, Instance, RowType, Type, TypeId, Variable, debruijn};
 
 pub fn quantify(state: &mut CheckState, id: TypeId) -> Option<(TypeId, debruijn::Size)> {
     let graph = collect_unification(state, id);
@@ -47,7 +47,7 @@ pub fn quantify(state: &mut CheckState, id: TypeId) -> Option<(TypeId, debruijn:
         let binder = ForallBinder { visible: false, name, level, kind };
         quantified = state.storage.intern(Type::Forall(binder, quantified));
 
-        substitutions.insert(id, level);
+        substitutions.insert(id, (level, kind));
     }
 
     let quantified = SubstituteUnification::on(&substitutions, state, quantified);
@@ -219,9 +219,11 @@ pub fn quantify_class(state: &mut CheckState, class: &mut Class) -> Option<debru
 
     let mut substitutions = UniToLevel::default();
     for (index, &id) in unsolved.iter().rev().enumerate() {
+        let kind = state.unification.get(id).kind;
+        let kind = ShiftBound::on(state, kind, size.0);
         let index = debruijn::Index(index as u32);
         let level = index.to_level(size)?;
-        substitutions.insert(id, level);
+        substitutions.insert(id, (level, kind));
     }
 
     let type_variable_kinds = class.type_variable_kinds.iter().map(|&kind| {
@@ -273,16 +275,14 @@ pub fn quantify_instance(state: &mut CheckState, instance: &mut Instance) -> Opt
 
     let mut substitutions = UniToLevel::default();
     for (index, &id) in unsolved.iter().rev().enumerate() {
+        let kind = state.unification.get(id).kind;
+        let kind = ShiftBound::on(state, kind, size.0);
         let index = debruijn::Index(index as u32);
         let level = index.to_level(size)?;
-        substitutions.insert(id, level);
+        substitutions.insert(id, (level, kind));
     }
 
-    let kind_variables = substitutions.iter().map(|(&id, &level)| {
-        let kind = state.unification.get(id).kind;
-        (level, kind)
-    });
-
+    let kind_variables = substitutions.values().copied();
     let kind_variables = kind_variables.sorted_by_key(|(level, _)| *level);
     let kind_variables = kind_variables.map(|(_, kind)| kind).collect_vec();
 
@@ -418,7 +418,12 @@ pub fn collect_unification_into(graph: &mut UniGraph, state: &mut CheckState, id
                 let entry = state.unification.get(unification_id);
                 aux(graph, state, entry.kind, Some(unification_id));
             }
-            Type::Variable(_) => (),
+            Type::Variable(ref variable) => match variable {
+                Variable::Bound(_, kind) | Variable::Skolem(_, kind) => {
+                    aux(graph, state, *kind, dependent);
+                }
+                Variable::Free(_) => {}
+            },
             Type::Unknown => (),
         }
     }

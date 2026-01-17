@@ -12,16 +12,20 @@ test2 :: Int
 test2' :: Int
 test3 :: Int
 test3' :: Int
-const :: forall (a :: Type) (b :: Type). a -> b -> a
+const :: forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type) -> (a :: Type)
 test4 :: Int
 test4' :: Int
 test5 :: Int
 test5' :: Int
-apply :: forall (a :: Type) (b :: Type). (a -> b) -> a -> b
-chain :: forall (a :: Type) (b :: Type) (c :: Type). (b -> c) -> (a -> b) -> a -> c
+apply :: forall (a :: Type) (b :: Type). ((a :: Type) -> (b :: Type)) -> (a :: Type) -> (b :: Type)
+chain ::
+  forall (a :: Type) (b :: Type) (c :: Type).
+    ((b :: Type) -> (c :: Type)) -> ((a :: Type) -> (b :: Type)) -> (a :: Type) -> (c :: Type)
 test6 :: Int
 test6' :: Int
-curry :: forall (a :: Type) (b :: Type) (c :: Type). (a -> b -> c) -> a -> b -> c
+curry ::
+  forall (a :: Type) (b :: Type) (c :: Type).
+    ((a :: Type) -> (b :: Type) -> (c :: Type)) -> (a :: Type) -> (b :: Type) -> (c :: Type)
 test7 :: Int -> Int
 test7' :: Int -> Int
 

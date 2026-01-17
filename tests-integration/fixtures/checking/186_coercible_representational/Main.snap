@@ -3,8 +3,8 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-Nothing :: forall (a :: Type). Maybe a
-Just :: forall (a :: Type). a -> Maybe a
+Nothing :: forall (a :: Type). Maybe (a :: Type)
+Just :: forall (a :: Type). (a :: Type) -> Maybe (a :: Type)
 Age :: Int -> Age
 coerceMaybe :: Maybe Age -> Maybe Int
 coerceMaybeReverse :: Maybe Int -> Maybe Age

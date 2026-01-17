@@ -3,8 +3,8 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-Nil :: forall (a :: Type). List a
-Cons :: forall (a :: Type). a -> List a -> List a
+Nil :: forall (a :: Type). List (a :: Type)
+Cons :: forall (a :: Type). (a :: Type) -> List (a :: Type) -> List (a :: Type)
 
 Types
 List :: Type -> Type

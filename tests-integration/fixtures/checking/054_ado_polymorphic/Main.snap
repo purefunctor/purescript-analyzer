@@ -3,12 +3,20 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-Tuple :: forall (a :: Type) (b :: Type). a -> b -> Tuple a b
-map :: forall (f :: Type -> Type) (a :: Type) (b :: Type). (a -> b) -> f a -> f b
-apply :: forall (f :: Type -> Type) (a :: Type) (b :: Type). f (a -> b) -> f a -> f b
-pure :: forall (f :: Type -> Type) (a :: Type). a -> f a
-test :: forall (f :: Type -> Type). f (Tuple Int String)
-test' :: forall (t54 :: Type -> Type). t54 (Tuple Int String)
+Tuple :: forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type) -> Tuple (a :: Type) (b :: Type)
+map ::
+  forall (f :: Type -> Type) (a :: Type) (b :: Type).
+    ((a :: Type) -> (b :: Type)) ->
+    (f :: Type -> Type) (a :: Type) ->
+    (f :: Type -> Type) (b :: Type)
+apply ::
+  forall (f :: Type -> Type) (a :: Type) (b :: Type).
+    (f :: Type -> Type) ((a :: Type) -> (b :: Type)) ->
+    (f :: Type -> Type) (a :: Type) ->
+    (f :: Type -> Type) (b :: Type)
+pure :: forall (f :: Type -> Type) (a :: Type). (a :: Type) -> (f :: Type -> Type) (a :: Type)
+test :: forall (f :: Type -> Type). (f :: Type -> Type) (Tuple Int String)
+test' :: forall (t54 :: Type -> Type). (t54 :: Type -> Type) (Tuple Int String)
 
 Types
 Tuple :: Type -> Type -> Type

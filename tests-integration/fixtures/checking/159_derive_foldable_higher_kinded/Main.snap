@@ -3,12 +3,18 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-Wrap :: forall (t4 :: Type) (f :: t4 -> Type) (a :: t4). f a -> Wrap @t4 f a
-WrapNoFoldable :: forall (t10 :: Type) (f :: t10 -> Type) (a :: t10). f a -> WrapNoFoldable @t10 f a
+Wrap ::
+  forall (t4 :: Type) (f :: (t4 :: Type) -> Type) (a :: (t4 :: Type)).
+    (f :: (t4 :: Type) -> Type) (a :: (t4 :: Type)) ->
+    Wrap @(t4 :: Type) (f :: (t4 :: Type) -> Type) (a :: (t4 :: Type))
+WrapNoFoldable ::
+  forall (t10 :: Type) (f :: (t10 :: Type) -> Type) (a :: (t10 :: Type)).
+    (f :: (t10 :: Type) -> Type) (a :: (t10 :: Type)) ->
+    WrapNoFoldable @(t10 :: Type) (f :: (t10 :: Type) -> Type) (a :: (t10 :: Type))
 
 Types
-Wrap :: forall (t4 :: Type). (t4 -> Type) -> t4 -> Type
-WrapNoFoldable :: forall (t10 :: Type). (t10 -> Type) -> t10 -> Type
+Wrap :: forall (t4 :: Type). ((t4 :: Type) -> Type) -> (t4 :: Type) -> Type
+WrapNoFoldable :: forall (t10 :: Type). ((t10 :: Type) -> Type) -> (t10 :: Type) -> Type
 
 Data
 Wrap
@@ -25,8 +31,8 @@ Wrap = [Representational, Nominal]
 WrapNoFoldable = [Representational, Nominal]
 
 Derived
-derive Foldable &0 => Foldable (Wrap @Type &0 :: Type -> Type)
-derive Foldable (WrapNoFoldable @Type &0 :: Type -> Type)
+derive Foldable (&0 :: Type -> Type) => Foldable (Wrap @Type (&0 :: Type -> Type) :: Type -> Type)
+derive Foldable (WrapNoFoldable @Type (&0 :: Type -> Type) :: Type -> Type)
 
 Errors
-NoInstanceFound { Foldable &0 } at [TermDeclaration(Idx::<TermItem>(3))]
+NoInstanceFound { Foldable (&0 :: Type -> Type) } at [TermDeclaration(Idx::<TermItem>(3))]

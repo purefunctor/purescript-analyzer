@@ -3,9 +3,9 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-Tree :: forall (a :: Type). a -> Forest a -> Tree a
-Nil :: forall (a :: Type). Forest a
-Cons :: forall (a :: Type). Tree a -> Forest a -> Forest a
+Tree :: forall (a :: Type). (a :: Type) -> Forest (a :: Type) -> Tree (a :: Type)
+Nil :: forall (a :: Type). Forest (a :: Type)
+Cons :: forall (a :: Type). Tree (a :: Type) -> Forest (a :: Type) -> Forest (a :: Type)
 
 Types
 Tree :: Type -> Type

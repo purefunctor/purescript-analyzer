@@ -3,16 +3,18 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-Left :: forall (a :: Type) (b :: Type). a -> Either a b
-Right :: forall (a :: Type) (b :: Type). b -> Either a b
-EitherAlias :: forall (a :: Type) (b :: Type). Either a b -> EitherAlias a b
+Left :: forall (a :: Type) (b :: Type). (a :: Type) -> Either (a :: Type) (b :: Type)
+Right :: forall (a :: Type) (b :: Type). (b :: Type) -> Either (a :: Type) (b :: Type)
+EitherAlias ::
+  forall (a :: Type) (b :: Type).
+    Either (a :: Type) (b :: Type) -> EitherAlias (a :: Type) (b :: Type)
 coerceContainer ::
   Container @(Type -> Type -> Type) Either -> Container @(Type -> Type -> Type) EitherAlias
 
 Types
 Either :: Type -> Type -> Type
 EitherAlias :: Type -> Type -> Type
-Container :: forall (k :: Type). k -> Type
+Container :: forall (k :: Type). (k :: Type) -> Type
 
 Data
 Either

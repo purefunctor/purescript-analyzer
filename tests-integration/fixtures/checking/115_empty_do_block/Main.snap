@@ -3,9 +3,13 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-pure :: forall (a :: Type). a -> Effect a
-bind :: forall (a :: Type) (b :: Type). Effect a -> (a -> Effect b) -> Effect b
-discard :: forall (a :: Type) (b :: Type). Effect a -> (a -> Effect b) -> Effect b
+pure :: forall (a :: Type). (a :: Type) -> Effect (a :: Type)
+bind ::
+  forall (a :: Type) (b :: Type).
+    Effect (a :: Type) -> ((a :: Type) -> Effect (b :: Type)) -> Effect (b :: Type)
+discard ::
+  forall (a :: Type) (b :: Type).
+    Effect (a :: Type) -> ((a :: Type) -> Effect (b :: Type)) -> Effect (b :: Type)
 test :: ???
 
 Types

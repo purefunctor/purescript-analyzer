@@ -3,7 +3,7 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-show :: forall (a :: Type). Show a => a -> String
+show :: forall (a :: Type). Show (a :: Type) => (a :: Type) -> String
 
 Types
 Show :: Type -> Constraint
@@ -16,5 +16,5 @@ instance Show (Boolean :: Type)
   chain: 0
 
 Errors
-CannotUnify { forall (a :: Type). a -> String, Boolean -> String } at [TermDeclaration(Idx::<TermItem>(1))]
-InstanceMemberTypeMismatch { expected: Boolean -> String, actual: forall (a :: Type). a -> String } at [TermDeclaration(Idx::<TermItem>(1))]
+CannotUnify { forall (a :: Type). (a :: Type) -> String, Boolean -> String } at [TermDeclaration(Idx::<TermItem>(1))]
+InstanceMemberTypeMismatch { expected: Boolean -> String, actual: forall (a :: Type). (a :: Type) -> String } at [TermDeclaration(Idx::<TermItem>(1))]

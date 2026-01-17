@@ -3,15 +3,22 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-Just :: forall (k :: Type) (n :: k) (a :: Type). a -> Maybe @k n a
-Nothing :: forall (k :: Type) (n :: k) (a :: Type). Maybe @k n a
-MaybeAlias :: forall (k :: Type) (n :: k) (a :: Type). Maybe @k n a -> MaybeAlias @k n a
+Just ::
+  forall (k :: Type) (n :: (k :: Type)) (a :: Type).
+    (a :: Type) -> Maybe @(k :: Type) (n :: (k :: Type)) (a :: Type)
+Nothing ::
+  forall (k :: Type) (n :: (k :: Type)) (a :: Type).
+    Maybe @(k :: Type) (n :: (k :: Type)) (a :: Type)
+MaybeAlias ::
+  forall (k :: Type) (n :: (k :: Type)) (a :: Type).
+    Maybe @(k :: Type) (n :: (k :: Type)) (a :: Type) ->
+    MaybeAlias @(k :: Type) (n :: (k :: Type)) (a :: Type)
 coerceContainer :: Container Maybe -> Container MaybeAlias
 coerceContainerReverse :: Container MaybeAlias -> Container Maybe
 
 Types
-Maybe :: forall (k :: Type). k -> Type -> Type
-MaybeAlias :: forall (k :: Type). k -> Type -> Type
+Maybe :: forall (k :: Type). (k :: Type) -> Type -> Type
+MaybeAlias :: forall (k :: Type). (k :: Type) -> Type -> Type
 Container :: (Type -> Type -> Type) -> Type
 
 Data

@@ -3,15 +3,17 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-Identity :: forall (a :: Type). a -> Identity a
-Nothing :: forall (a :: Type). Maybe a
-Just :: forall (a :: Type). a -> Maybe a
-Const :: forall (t3 :: Type) (e :: Type) (a :: t3). e -> Const @t3 e a
+Identity :: forall (a :: Type). (a :: Type) -> Identity (a :: Type)
+Nothing :: forall (a :: Type). Maybe (a :: Type)
+Just :: forall (a :: Type). (a :: Type) -> Maybe (a :: Type)
+Const ::
+  forall (t3 :: Type) (e :: Type) (a :: (t3 :: Type)).
+    (e :: Type) -> Const @(t3 :: Type) (e :: Type) (a :: (t3 :: Type))
 
 Types
 Identity :: Type -> Type
 Maybe :: Type -> Type
-Const :: forall (t3 :: Type). Type -> t3 -> Type
+Const :: forall (t3 :: Type). Type -> (t3 :: Type) -> Type
 
 Data
 Identity
@@ -35,4 +37,4 @@ Const = [Representational, Phantom]
 Derived
 derive Foldable (Identity :: Type -> Type)
 derive Foldable (Maybe :: Type -> Type)
-derive Foldable (Const @Type &0 :: Type -> Type)
+derive Foldable (Const @Type (&0 :: Type) :: Type -> Type)

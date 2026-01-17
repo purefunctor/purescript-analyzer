@@ -4,7 +4,7 @@ expression: report
 ---
 Terms
 Foo :: Foo
-eq :: forall (a :: Type). Eq a => a -> a -> Boolean
+eq :: forall (a :: Type). Eq (a :: Type) => (a :: Type) -> (a :: Type) -> Boolean
 test :: Boolean
 
 Types

@@ -2,4 +2,4 @@
 source: tests-integration/tests/checking.rs
 expression: snapshot
 ---
-&0 -> &1 :: Type
+(&0 :: Int) -> (&1 :: String) :: Type

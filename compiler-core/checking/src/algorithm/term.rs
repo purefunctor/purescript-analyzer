@@ -5,7 +5,9 @@ use smol_str::SmolStr;
 
 use crate::ExternalQueries;
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::{binder, inspect, kind, operator, substitute, toolkit, transfer, unification};
+use crate::algorithm::{
+    binder, inspect, kind, operator, substitute, toolkit, transfer, unification,
+};
 use crate::core::{RowField, RowType, Type, TypeId};
 use crate::error::{ErrorKind, ErrorStep};
 

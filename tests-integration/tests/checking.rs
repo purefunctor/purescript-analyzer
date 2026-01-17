@@ -26,14 +26,14 @@ impl<'a> ContextState<'a> {
 }
 
 trait CheckStateExt {
-    fn bound_variable(&mut self, index: u32) -> TypeId;
+    fn bound_variable(&mut self, index: u32, kind: TypeId) -> TypeId;
 
     fn function(&mut self, argument: TypeId, result: TypeId) -> TypeId;
 }
 
 impl CheckStateExt for CheckState {
-    fn bound_variable(&mut self, index: u32) -> TypeId {
-        let var = Variable::Bound(debruijn::Level(index));
+    fn bound_variable(&mut self, index: u32, kind: TypeId) -> TypeId {
+        let var = Variable::Bound(debruijn::Level(index), kind);
         self.storage.intern(Type::Variable(var))
     }
 
@@ -99,8 +99,8 @@ fn test_solve_bound() {
         unreachable!("invariant violated");
     };
 
-    let bound_b = state.bound_variable(0);
-    let bound_a = state.bound_variable(1);
+    let bound_b = state.bound_variable(0, context.prim.int);
+    let bound_a = state.bound_variable(1, context.prim.string);
     let b_to_a = state.function(bound_b, bound_a);
 
     unification::solve(state, context, unification_id, b_to_a).unwrap();
@@ -135,8 +135,8 @@ fn test_solve_invalid() {
         .type_scope
         .bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_2), context.prim.string);
 
-    let bound_b = state.bound_variable(0);
-    let bound_a = state.bound_variable(1);
+    let bound_b = state.bound_variable(0, context.prim.int);
+    let bound_a = state.bound_variable(1, context.prim.string);
     let b_to_a = state.function(bound_b, bound_a);
 
     state.type_scope.unbind(level);
@@ -282,7 +282,7 @@ fn make_forall_a_to_a(context: &CheckContext<QueryEngine>, state: &mut CheckStat
 
     let level = state.type_scope.bind_forall(fake_id, context.prim.t);
 
-    let bound_a = state.bound_variable(0);
+    let bound_a = state.bound_variable(0, context.prim.t);
     let a_to_a = state.function(bound_a, bound_a);
 
     let binder = ForallBinder { visible: false, name: "a".into(), level, kind: context.prim.t };
@@ -346,8 +346,8 @@ fn test_subtype_nested_forall() {
     let level_b =
         state.type_scope.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_2), context.prim.t);
 
-    let bound_a = state.bound_variable(1);
-    let bound_b = state.bound_variable(0);
+    let bound_a = state.bound_variable(1, context.prim.t);
+    let bound_b = state.bound_variable(0, context.prim.t);
     let b_to_a = state.function(bound_b, bound_a);
     let a_to_b_to_a = state.function(bound_a, b_to_a);
 

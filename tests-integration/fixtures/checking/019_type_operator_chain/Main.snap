@@ -11,17 +11,17 @@ Chain :: Type -> Type -> Type -> Type
 ChainParen :: Type -> Type -> Type -> Type
 
 Synonyms
-Add = forall (a :: Type) (b :: Type). a
+Add = forall (a :: Type) (b :: Type). (a :: Type)
   Quantified = :0
   Kind = :0
   Type = :2
 
-Chain = forall (a :: Type) (b :: Type) (c :: Type). a + b + c
+Chain = forall (a :: Type) (b :: Type) (c :: Type). (a :: Type) + (b :: Type) + (c :: Type)
   Quantified = :0
   Kind = :0
   Type = :3
 
-ChainParen = forall (a :: Type) (b :: Type) (c :: Type). a + b + c
+ChainParen = forall (a :: Type) (b :: Type) (c :: Type). (a :: Type) + (b :: Type) + (c :: Type)
   Quantified = :0
   Kind = :0
   Type = :3

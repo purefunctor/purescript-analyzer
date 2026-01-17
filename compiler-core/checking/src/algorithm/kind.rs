@@ -258,13 +258,13 @@ fn infer_forall_variable(
 ) -> (TypeId, TypeId) {
     let level =
         state.type_scope.lookup_forall(forall).expect("invariant violated: TypeScope::bind_forall");
-    let variable = Variable::Bound(level);
-
-    let t = state.storage.intern(Type::Variable(variable));
     let k = state
         .type_scope
         .lookup_forall_kind(forall)
         .expect("invariant violated: TypeScope::bind_forall");
+
+    let variable = Variable::Bound(level, k);
+    let t = state.storage.intern(Type::Variable(variable));
 
     (t, k)
 }
@@ -274,26 +274,26 @@ fn infer_implicit_variable<Q: ExternalQueries>(
     context: &CheckContext<Q>,
     implicit: &lowering::ImplicitTypeVariable,
 ) -> (TypeId, TypeId) {
-    let t = if implicit.binding {
+    let (t, k) = if implicit.binding {
         let kind = state.fresh_unification(context);
 
         let level = state.type_scope.bind_implicit(implicit.node, implicit.id, kind);
-        let variable = Variable::Bound(level);
+        let variable = Variable::Bound(level, kind);
 
-        state.storage.intern(Type::Variable(variable))
+        (state.storage.intern(Type::Variable(variable)), kind)
     } else {
         let level = state
             .type_scope
             .lookup_implicit(implicit.node, implicit.id)
             .expect("invariant violated: TypeScope::bind_implicit");
-        let variable = Variable::Bound(level);
-        state.storage.intern(Type::Variable(variable))
-    };
+        let kind = state
+            .type_scope
+            .lookup_implicit_kind(implicit.node, implicit.id)
+            .expect("invariant violated: TypeScope::bind_implicit");
 
-    let k = state
-        .type_scope
-        .lookup_implicit_kind(implicit.node, implicit.id)
-        .expect("invariant violated: TypeScope::bind_implicit");
+        let variable = Variable::Bound(level, kind);
+        (state.storage.intern(Type::Variable(variable)), kind)
+    };
 
     (t, k)
 }
@@ -508,9 +508,7 @@ where
         Type::Unification(unification_id) => state.unification.get(unification_id).kind,
 
         Type::Variable(ref variable) => match variable {
-            Variable::Bound(level) => {
-                state.type_scope.kinds.get(*level).copied().unwrap_or(unknown)
-            }
+            Variable::Bound(_, kind) => *kind,
             Variable::Skolem(_, kind) => *kind,
             Variable::Free(_) => unknown,
         },

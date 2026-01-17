@@ -3,18 +3,27 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-Proxy :: forall (t0 :: Type) (a :: t0). Proxy @t0 a
+Proxy :: forall (t0 :: Type) (a :: (t0 :: Type)). Proxy @(t0 :: Type) (a :: (t0 :: Type))
 test ::
-  forall (t18 :: Type) (t19 :: Type) (t22 :: Type) (r1 :: t18) (r2 :: t19) (r :: t22).
-    IsZero @Type @t18 Z r1 => IsZero @Type @t19 Z r2 => And @t18 @t19 @t22 r1 r2 r => Proxy @t22 r
+  forall (t18 :: Type) (t19 :: Type) (t22 :: Type) (r1 :: (t18 :: Type)) (r2 :: (t19 :: Type))
+    (r :: (t22 :: Type)).
+    IsZero @Type @(t18 :: Type) Z (r1 :: (t18 :: Type)) =>
+    IsZero @Type @(t19 :: Type) Z (r2 :: (t19 :: Type)) =>
+    And @(t18 :: Type) @(t19 :: Type) @(t22 :: Type)
+      (r1 :: (t18 :: Type))
+      (r2 :: (t19 :: Type))
+      (r :: (t22 :: Type)) =>
+    Proxy @(t22 :: Type) (r :: (t22 :: Type))
 forceSolve :: { test :: Proxy @Boolean True }
 
 Types
-Proxy :: forall (t0 :: Type). t0 -> Type
-IsZero :: forall (t1 :: Type) (t2 :: Type). t1 -> t2 -> Constraint
+Proxy :: forall (t0 :: Type). (t0 :: Type) -> Type
+IsZero :: forall (t1 :: Type) (t2 :: Type). (t1 :: Type) -> (t2 :: Type) -> Constraint
 Z :: Type
 S :: Type -> Type
-And :: forall (t3 :: Type) (t4 :: Type) (t5 :: Type). t3 -> t4 -> t5 -> Constraint
+And ::
+  forall (t3 :: Type) (t4 :: Type) (t5 :: Type).
+    (t3 :: Type) -> (t4 :: Type) -> (t5 :: Type) -> Constraint
 
 Data
 Proxy
@@ -28,13 +37,13 @@ Z = []
 S = [Nominal]
 
 Classes
-class IsZero (&2 :: &0) (&3 :: &1)
-class And (&3 :: &0) (&4 :: &1) (&5 :: &2)
+class IsZero (&2 :: (&0 :: Type)) (&3 :: (&1 :: Type))
+class And (&3 :: (&0 :: Type)) (&4 :: (&1 :: Type)) (&5 :: (&2 :: Type))
 
 Instances
 instance IsZero (Z :: Type) (True :: Boolean)
   chain: 0
-instance IsZero (S &0 :: Type) (False :: Boolean)
+instance IsZero (S (&0 :: Type) :: Type) (False :: Boolean)
   chain: 0
 instance And (True :: Boolean) (True :: Boolean) (True :: Boolean)
   chain: 0

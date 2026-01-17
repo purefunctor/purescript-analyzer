@@ -3,10 +3,10 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-Proxy :: forall (k :: Type) (a :: k). Proxy @k a
+Proxy :: forall (k :: Type) (a :: (k :: Type)). Proxy @(k :: Type) (a :: (k :: Type))
 
 Types
-Proxy :: forall (k :: Type). k -> Type
+Proxy :: forall (k :: Type). (k :: Type) -> Type
 
 Data
 Proxy

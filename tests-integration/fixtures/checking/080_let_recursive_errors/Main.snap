@@ -3,7 +3,7 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-id :: forall (a :: Type). a -> a
+id :: forall (a :: Type). (a :: Type) -> (a :: Type)
 typeMismatch :: Int -> Int
 occurCheck :: Int -> Int
 inferConflict :: Int -> Int

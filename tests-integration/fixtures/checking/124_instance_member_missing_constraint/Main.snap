@@ -3,9 +3,14 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-show :: forall (a :: Type). Show a => a -> String
-map :: forall (f :: Type -> Type) (a :: Type) (b :: Type). Functor f => (a -> b) -> f a -> f b
-Box :: forall (a :: Type). a -> Box a
+show :: forall (a :: Type). Show (a :: Type) => (a :: Type) -> String
+map ::
+  forall (f :: Type -> Type) (a :: Type) (b :: Type).
+    Functor (f :: Type -> Type) =>
+    ((a :: Type) -> (b :: Type)) ->
+    (f :: Type -> Type) (a :: Type) ->
+    (f :: Type -> Type) (b :: Type)
+Box :: forall (a :: Type). (a :: Type) -> Box (a :: Type)
 
 Types
 Show :: Type -> Constraint
@@ -30,4 +35,4 @@ instance Functor (Box :: Type -> Type)
   chain: 0
 
 Errors
-NoInstanceFound { Show ~&1 } at [TermDeclaration(Idx::<TermItem>(3))]
+NoInstanceFound { Show (~&1 :: Type) } at [TermDeclaration(Idx::<TermItem>(3))]

@@ -5,11 +5,12 @@ expression: report
 Terms
 
 Types
-TuplePoly :: forall (a :: Type) (b :: Type). a -> b -> Type
-InferTuplePoly :: forall (t7 :: Type) (t8 :: Type). t7 -> t8 -> Type
+TuplePoly :: forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type) -> Type
+InferTuplePoly :: forall (t7 :: Type) (t8 :: Type). (t7 :: Type) -> (t8 :: Type) -> Type
 
 Synonyms
-InferTuplePoly = forall (t7 :: Type) (t8 :: Type) (x :: t7) (y :: t8). TuplePoly @t7 @t8 x y
+InferTuplePoly = forall (t7 :: Type) (t8 :: Type) (x :: (t7 :: Type)) (y :: (t8 :: Type)).
+  TuplePoly @(t7 :: Type) @(t8 :: Type) (x :: (t7 :: Type)) (y :: (t8 :: Type))
   Quantified = :2
   Kind = :0
   Type = :2

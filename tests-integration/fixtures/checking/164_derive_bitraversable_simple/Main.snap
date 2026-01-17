@@ -3,9 +3,9 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-Left :: forall (a :: Type) (b :: Type). a -> Either a b
-Right :: forall (a :: Type) (b :: Type). b -> Either a b
-Pair :: forall (a :: Type) (b :: Type). a -> b -> Pair a b
+Left :: forall (a :: Type) (b :: Type). (a :: Type) -> Either (a :: Type) (b :: Type)
+Right :: forall (a :: Type) (b :: Type). (b :: Type) -> Either (a :: Type) (b :: Type)
+Pair :: forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type) -> Pair (a :: Type) (b :: Type)
 
 Types
 Either :: Type -> Type -> Type

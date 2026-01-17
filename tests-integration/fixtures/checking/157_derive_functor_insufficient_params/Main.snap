@@ -3,7 +3,7 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-Pair :: forall (a :: Type) (b :: Type). a -> b -> Pair a b
+Pair :: forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type) -> Pair (a :: Type) (b :: Type)
 Unit :: Unit
 
 Types
@@ -30,6 +30,6 @@ derive Functor (Unit :: Type)
 
 Errors
 CannotUnify { Type, Type -> Type } at [TermDeclaration(Idx::<TermItem>(1)), CheckingKind(AstId<syntax::cst::Type>(19))]
-CannotDeriveForType { type_id: Id<checking::core::Type>(34) } at [TermDeclaration(Idx::<TermItem>(1))]
+CannotDeriveForType { type_id: Id<checking::core::Type>(35) } at [TermDeclaration(Idx::<TermItem>(1))]
 CannotUnify { Type, Type -> Type } at [TermDeclaration(Idx::<TermItem>(3)), CheckingKind(AstId<syntax::cst::Type>(28))]
 CannotDeriveForType { type_id: Id<checking::core::Type>(17) } at [TermDeclaration(Idx::<TermItem>(3))]

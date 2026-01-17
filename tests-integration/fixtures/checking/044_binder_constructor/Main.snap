@@ -3,19 +3,19 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-Pair :: forall (a :: Type) (b :: Type). a -> b -> Pair a b
-Nothing :: forall (a :: Type). Maybe a
-Just :: forall (a :: Type). a -> Maybe a
-Nil :: forall (a :: Type). List a
-Cons :: forall (a :: Type). a -> List a -> List a
+Pair :: forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type) -> Pair (a :: Type) (b :: Type)
+Nothing :: forall (a :: Type). Maybe (a :: Type)
+Just :: forall (a :: Type). (a :: Type) -> Maybe (a :: Type)
+Nil :: forall (a :: Type). List (a :: Type)
+Cons :: forall (a :: Type). (a :: Type) -> List (a :: Type) -> List (a :: Type)
 foo :: Pair Int String -> Int
 bar :: Maybe Int -> Int
 baz :: List Int -> Int
 qux :: Pair String String -> String
-foo' :: forall (t15 :: Type) (t16 :: Type). Pair t16 t15 -> t16
+foo' :: forall (t15 :: Type) (t16 :: Type). Pair (t16 :: Type) (t15 :: Type) -> (t16 :: Type)
 bar' :: Maybe Int -> Int
 baz' :: List Int -> Int
-qux' :: forall (t29 :: Type) (t30 :: Type). Pair t30 t29 -> t30
+qux' :: forall (t29 :: Type) (t30 :: Type). Pair (t30 :: Type) (t29 :: Type) -> (t30 :: Type)
 
 Types
 Pair :: Type -> Type -> Type

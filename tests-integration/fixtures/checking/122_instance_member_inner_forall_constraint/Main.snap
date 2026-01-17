@@ -3,12 +3,17 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-show :: forall (a :: Type). Show a => a -> String
+show :: forall (a :: Type). Show (a :: Type) => (a :: Type) -> String
 map ::
-  forall (f :: Type -> Type) (a :: Type) (b :: Type). Functor f => Show a => (a -> b) -> f a -> f b
-Box :: forall (a :: Type). a -> Box a
-Nothing :: forall (a :: Type). Maybe a
-Just :: forall (a :: Type). a -> Maybe a
+  forall (f :: Type -> Type) (a :: Type) (b :: Type).
+    Functor (f :: Type -> Type) =>
+    Show (a :: Type) =>
+    ((a :: Type) -> (b :: Type)) ->
+    (f :: Type -> Type) (a :: Type) ->
+    (f :: Type -> Type) (b :: Type)
+Box :: forall (a :: Type). (a :: Type) -> Box (a :: Type)
+Nothing :: forall (a :: Type). Maybe (a :: Type)
+Just :: forall (a :: Type). (a :: Type) -> Maybe (a :: Type)
 
 Types
 Show :: Type -> Constraint

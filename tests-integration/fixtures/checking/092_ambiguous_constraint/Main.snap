@@ -3,8 +3,8 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-read :: forall (a :: Type). Read a => String -> a
-show :: forall (a :: Type). Show a => a -> String
+read :: forall (a :: Type). Read (a :: Type) => String -> (a :: Type)
+show :: forall (a :: Type). Show (a :: Type) => (a :: Type) -> String
 test :: String -> String
 
 Types

@@ -3,7 +3,7 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-Wrapper :: forall (a :: Type). a -> Wrapper a
+Wrapper :: forall (a :: Type). (a :: Type) -> Wrapper (a :: Type)
 
 Types
 Wrapper :: Type -> Type
@@ -18,4 +18,4 @@ Roles
 Wrapper = [Representational]
 
 Derived
-derive Newtype (Wrapper &0 :: Type) (&0 :: Type)
+derive Newtype (Wrapper (&0 :: Type) :: Type) ((&0 :: Type) :: Type)

@@ -20,32 +20,34 @@ Compose :: (Type -> Type) -> (Type -> Type) -> Type -> Type
 Composed :: Type
 
 Synonyms
-Apply1 = forall (f :: Type -> Type) (a :: Type). f a
+Apply1 = forall (f :: Type -> Type) (a :: Type). (f :: Type -> Type) (a :: Type)
   Quantified = :0
   Kind = :0
   Type = :2
 
-Apply2 = forall (f :: Type -> Type -> Type) (a :: Type) (b :: Type). f a b
+Apply2 = forall (f :: Type -> Type -> Type) (a :: Type) (b :: Type).
+  (f :: Type -> Type -> Type) (a :: Type) (b :: Type)
   Quantified = :0
   Kind = :0
   Type = :3
 
-Const = forall (a :: Type) (b :: Type). a
+Const = forall (a :: Type) (b :: Type). (a :: Type)
   Quantified = :0
   Kind = :0
   Type = :2
 
-Flip = forall (f :: Type -> Type -> Type) (a :: Type) (b :: Type). f b a
+Flip = forall (f :: Type -> Type -> Type) (a :: Type) (b :: Type).
+  (f :: Type -> Type -> Type) (b :: Type) (a :: Type)
   Quantified = :0
   Kind = :0
   Type = :3
 
-Wrapper = forall (a :: Type). a
+Wrapper = forall (a :: Type). (a :: Type)
   Quantified = :0
   Kind = :0
   Type = :1
 
-Pair = forall (a :: Type) (b :: Type). a
+Pair = forall (a :: Type) (b :: Type). (a :: Type)
   Quantified = :0
   Kind = :0
   Type = :2
@@ -65,7 +67,8 @@ Deep3 = Apply2 (Flip Pair) Int String
   Kind = :0
   Type = :0
 
-Apply3 = forall (f :: (Type -> Type) -> Type -> Type) (g :: Type -> Type) (a :: Type). f g a
+Apply3 = forall (f :: (Type -> Type) -> Type -> Type) (g :: Type -> Type) (a :: Type).
+  (f :: (Type -> Type) -> Type -> Type) (g :: Type -> Type) (a :: Type)
   Quantified = :0
   Kind = :0
   Type = :3
@@ -75,7 +78,8 @@ Deep4 = Apply3 Apply1 Wrapper Int
   Kind = :0
   Type = :0
 
-Compose = forall (f :: Type -> Type) (g :: Type -> Type) (a :: Type). f (g a)
+Compose = forall (f :: Type -> Type) (g :: Type -> Type) (a :: Type).
+  (f :: Type -> Type) ((g :: Type -> Type) (a :: Type))
   Quantified = :0
   Kind = :0
   Type = :3

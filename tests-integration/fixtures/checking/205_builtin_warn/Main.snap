@@ -3,32 +3,40 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-Proxy :: forall (k :: Type) (a :: k). Proxy @k a
-warnBasic :: forall (a :: Type). Warn (Text "This function is deprecated") => a -> a
+Proxy :: forall (k :: Type) (a :: (k :: Type)). Proxy @(k :: Type) (a :: (k :: Type))
+warnBasic ::
+  forall (a :: Type). Warn (Text "This function is deprecated") => (a :: Type) -> (a :: Type)
 useWarnBasic :: Int
-warnBeside :: forall (a :: Type). Warn (Beside (Text "Left ") (Text "Right")) => a -> a
+warnBeside ::
+  forall (a :: Type). Warn (Beside (Text "Left ") (Text "Right")) => (a :: Type) -> (a :: Type)
 useWarnBeside :: Int
-warnAbove :: forall (a :: Type). Warn (Above (Text "Line 1") (Text "Line 2")) => a -> a
+warnAbove ::
+  forall (a :: Type). Warn (Above (Text "Line 1") (Text "Line 2")) => (a :: Type) -> (a :: Type)
 useWarnAbove :: Int
 warnQuote ::
-  forall (t10 :: Type) (a :: t10).
-    Warn (Beside (Text "Got type: ") (Quote @t10 a)) => Proxy @t10 a -> Proxy @t10 a
+  forall (t10 :: Type) (a :: (t10 :: Type)).
+    Warn (Beside (Text "Got type: ") (Quote @(t10 :: Type) (a :: (t10 :: Type)))) =>
+    Proxy @(t10 :: Type) (a :: (t10 :: Type)) -> Proxy @(t10 :: Type) (a :: (t10 :: Type))
 useWarnQuote :: Proxy @Type Int
 warnQuoteLabel ::
-  forall (a :: Type). Warn (Beside (Text "Label: ") (QuoteLabel "myField")) => a -> a
+  forall (a :: Type).
+    Warn (Beside (Text "Label: ") (QuoteLabel "myField")) => (a :: Type) -> (a :: Type)
 useWarnQuoteLabel :: Int
 warnQuoteLabelSpaces ::
-  forall (a :: Type). Warn (Beside (Text "Label: ") (QuoteLabel "h e l l o")) => a -> a
+  forall (a :: Type).
+    Warn (Beside (Text "Label: ") (QuoteLabel "h e l l o")) => (a :: Type) -> (a :: Type)
 useWarnQuoteLabelSpaces :: Int
 warnQuoteLabelQuote ::
-  forall (a :: Type). Warn (Beside (Text "Label: ") (QuoteLabel "hel\"lo")) => a -> a
+  forall (a :: Type).
+    Warn (Beside (Text "Label: ") (QuoteLabel "hel\"lo")) => (a :: Type) -> (a :: Type)
 useWarnQuoteLabelQuote :: Int
 warnQuoteLabelRaw ::
-  forall (a :: Type). Warn (Beside (Text "Label: ") (QuoteLabel """raw\nstring""")) => a -> a
+  forall (a :: Type).
+    Warn (Beside (Text "Label: ") (QuoteLabel """raw\nstring""")) => (a :: Type) -> (a :: Type)
 useWarnQuoteLabelRaw :: Int
 
 Types
-Proxy :: forall (k :: Type). k -> Type
+Proxy :: forall (k :: Type). (k :: Type) -> Type
 
 Data
 Proxy

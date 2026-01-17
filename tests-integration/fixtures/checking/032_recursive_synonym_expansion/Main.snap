@@ -9,9 +9,9 @@ testH :: H -> H
 testValid :: Int -> Int
 
 Types
-F :: forall (t3 :: Type). t3
-G :: forall (t3 :: Type). t3
-H :: forall (t5 :: Type). t5
+F :: forall (t3 :: Type). (t3 :: Type)
+G :: forall (t3 :: Type). (t3 :: Type)
+H :: forall (t5 :: Type). (t5 :: Type)
 Valid :: Type
 
 Synonyms

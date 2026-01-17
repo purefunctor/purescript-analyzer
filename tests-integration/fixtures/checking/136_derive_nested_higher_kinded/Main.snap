@@ -3,17 +3,23 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-T :: forall (t4 :: Type) (f :: t4 -> Type) (g :: Type -> t4). f (g Int) -> T f g
-Nothing :: forall (a :: Type). Maybe a
-Just :: forall (a :: Type). a -> Maybe a
-U :: forall (f :: Type -> Type). f (Maybe Int) -> U f
-V :: forall (t20 :: Type) (f :: t20 -> Type) (g :: Int -> t20). f (g 42) -> V f g
+T ::
+  forall (t4 :: Type) (f :: (t4 :: Type) -> Type) (g :: Type -> (t4 :: Type)).
+    (f :: (t4 :: Type) -> Type) ((g :: Type -> (t4 :: Type)) Int) ->
+    T (f :: (t4 :: Type) -> Type) (g :: Type -> (t4 :: Type))
+Nothing :: forall (a :: Type). Maybe (a :: Type)
+Just :: forall (a :: Type). (a :: Type) -> Maybe (a :: Type)
+U :: forall (f :: Type -> Type). (f :: Type -> Type) (Maybe Int) -> U (f :: Type -> Type)
+V ::
+  forall (t20 :: Type) (f :: (t20 :: Type) -> Type) (g :: Int -> (t20 :: Type)).
+    (f :: (t20 :: Type) -> Type) ((g :: Int -> (t20 :: Type)) 42) ->
+    V (f :: (t20 :: Type) -> Type) (g :: Int -> (t20 :: Type))
 
 Types
-T :: forall (t4 :: Type). (t4 -> Type) -> (Type -> t4) -> Type
+T :: forall (t4 :: Type). ((t4 :: Type) -> Type) -> (Type -> (t4 :: Type)) -> Type
 Maybe :: Type -> Type
 U :: (Type -> Type) -> Type
-V :: forall (t20 :: Type). (t20 -> Type) -> (Int -> t20) -> Type
+V :: forall (t20 :: Type). ((t20 :: Type) -> Type) -> (Int -> (t20 :: Type)) -> Type
 
 Data
 T
@@ -40,17 +46,17 @@ U = [Representational]
 V = [Representational, Representational]
 
 Derived
-derive Eq1 &0 => Eq (V @Type &0 &1 :: Type)
-derive Ord1 &0 => Ord (V @Type &0 &1 :: Type)
-derive Eq1 &0 => Eq (T @Type &0 &1 :: Type)
-derive Ord1 &0 => Ord (T @Type &0 &1 :: Type)
-derive Eq &0 => Eq (Maybe &0 :: Type)
-derive Ord &0 => Ord (Maybe &0 :: Type)
-derive Eq1 &0 => Eq (U &0 :: Type)
-derive Ord1 &0 => Ord (U &0 :: Type)
+derive Eq1 (&0 :: Type -> Type) => Eq (V @Type (&0 :: Type -> Type) (&1 :: Int -> Type) :: Type)
+derive Ord1 (&0 :: Type -> Type) => Ord (V @Type (&0 :: Type -> Type) (&1 :: Int -> Type) :: Type)
+derive Eq1 (&0 :: Type -> Type) => Eq (T @Type (&0 :: Type -> Type) (&1 :: Type -> Type) :: Type)
+derive Ord1 (&0 :: Type -> Type) => Ord (T @Type (&0 :: Type -> Type) (&1 :: Type -> Type) :: Type)
+derive Eq (&0 :: Type) => Eq (Maybe (&0 :: Type) :: Type)
+derive Ord (&0 :: Type) => Ord (Maybe (&0 :: Type) :: Type)
+derive Eq1 (&0 :: Type -> Type) => Eq (U (&0 :: Type -> Type) :: Type)
+derive Ord1 (&0 :: Type -> Type) => Ord (U (&0 :: Type -> Type) :: Type)
 
 Errors
-NoInstanceFound { Eq (&1 Int) } at [TermDeclaration(Idx::<TermItem>(1))]
-NoInstanceFound { Ord (&1 Int) } at [TermDeclaration(Idx::<TermItem>(2))]
-NoInstanceFound { Eq (&1 42) } at [TermDeclaration(Idx::<TermItem>(11))]
-NoInstanceFound { Ord (&1 42) } at [TermDeclaration(Idx::<TermItem>(12))]
+NoInstanceFound { Eq ((&1 :: Type -> Type) Int) } at [TermDeclaration(Idx::<TermItem>(1))]
+NoInstanceFound { Ord ((&1 :: Type -> Type) Int) } at [TermDeclaration(Idx::<TermItem>(2))]
+NoInstanceFound { Eq ((&1 :: Int -> Type) 42) } at [TermDeclaration(Idx::<TermItem>(11))]
+NoInstanceFound { Ord ((&1 :: Int -> Type) 42) } at [TermDeclaration(Idx::<TermItem>(12))]

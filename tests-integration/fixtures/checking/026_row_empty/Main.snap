@@ -5,9 +5,9 @@ expression: report
 Terms
 
 Types
-EmptyRow :: forall (t1 :: Type). Row t1
+EmptyRow :: forall (t1 :: Type). Row (t1 :: Type)
 EmptyRecord :: Type
-TailOnly :: forall (t7 :: Type). Row t7 -> Row t7
+TailOnly :: forall (t7 :: Type). Row (t7 :: Type) -> Row (t7 :: Type)
 TailOnlyRecord :: Row Type -> Type
 
 Synonyms
@@ -21,12 +21,12 @@ EmptyRecord = {}
   Kind = :0
   Type = :0
 
-TailOnly = forall (t7 :: Type) (r :: Row t7). ( | r )
+TailOnly = forall (t7 :: Type) (r :: Row (t7 :: Type)). ( | (r :: Row (t7 :: Type)) )
   Quantified = :1
   Kind = :0
   Type = :1
 
-TailOnlyRecord = forall (r :: Row Type). { | r }
+TailOnlyRecord = forall (r :: Row Type). { | (r :: Row Type) }
   Quantified = :0
   Kind = :0
   Type = :1

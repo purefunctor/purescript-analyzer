@@ -3,9 +3,12 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-Predicate :: forall (a :: Type). (a -> Boolean) -> Predicate a
-Reader :: forall (r :: Type) (a :: Type). (r -> a) -> Reader r a
-Cont :: forall (r :: Type) (a :: Type). ((a -> r) -> r) -> Cont r a
+Predicate :: forall (a :: Type). ((a :: Type) -> Boolean) -> Predicate (a :: Type)
+Reader ::
+  forall (r :: Type) (a :: Type). ((r :: Type) -> (a :: Type)) -> Reader (r :: Type) (a :: Type)
+Cont ::
+  forall (r :: Type) (a :: Type).
+    (((a :: Type) -> (r :: Type)) -> (r :: Type)) -> Cont (r :: Type) (a :: Type)
 
 Types
 Predicate :: Type -> Type
@@ -33,8 +36,8 @@ Cont = [Representational, Representational]
 
 Derived
 derive Functor (Predicate :: Type -> Type)
-derive Functor (Reader &0 :: Type -> Type)
-derive Functor (Cont &0 :: Type -> Type)
+derive Functor (Reader (&0 :: Type) :: Type -> Type)
+derive Functor (Cont (&0 :: Type) :: Type -> Type)
 
 Errors
-ContravariantOccurrence { type_id: Id<checking::core::Type>(44) } at [TermDeclaration(Idx::<TermItem>(1))]
+ContravariantOccurrence { type_id: Id<checking::core::Type>(45) } at [TermDeclaration(Idx::<TermItem>(1))]

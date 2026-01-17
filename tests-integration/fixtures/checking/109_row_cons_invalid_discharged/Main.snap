@@ -3,16 +3,18 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-Proxy :: forall (k :: Type) (a :: k). Proxy @k a
+Proxy :: forall (k :: Type) (a :: (k :: Type)). Proxy @(k :: Type) (a :: (k :: Type))
 invalid ::
   forall (t :: Row Type).
-    Cons @Type "missing" Int t ( a :: Int, b :: String ) => Proxy @(Row Type) t
+    Cons @Type "missing" Int (t :: Row Type) ( a :: Int, b :: String ) =>
+    Proxy @(Row Type) (t :: Row Type)
 forceSolve ::
   forall (t9 :: Row Type).
-    Cons @Type "missing" Int t9 ( a :: Int, b :: String ) => { invalid :: Proxy @(Row Type) t9 }
+    Cons @Type "missing" Int (t9 :: Row Type) ( a :: Int, b :: String ) =>
+    { invalid :: Proxy @(Row Type) (t9 :: Row Type) }
 
 Types
-Proxy :: forall (k :: Type). k -> Type
+Proxy :: forall (k :: Type). (k :: Type) -> Type
 
 Data
 Proxy

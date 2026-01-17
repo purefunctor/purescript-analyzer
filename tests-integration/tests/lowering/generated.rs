@@ -39,3 +39,7 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_013_ado_statement_let_main() { run_test("013_ado_statement_let", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_014_ado_statement_binder_main() { run_test("014_ado_statement_binder", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_015_instance_constraints_main() { run_test("015_instance_constraints", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_016_derive_constraints_main() { run_test("016_derive_constraints", "Main"); }

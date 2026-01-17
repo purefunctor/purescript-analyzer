@@ -3,7 +3,8 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-convert :: forall (a :: Type) (b :: Type). Convert a b => a -> b
+convert ::
+  forall (a :: Type) (b :: Type). Convert (a :: Type) (b :: Type) => (a :: Type) -> (b :: Type)
 test :: String
 
 Types

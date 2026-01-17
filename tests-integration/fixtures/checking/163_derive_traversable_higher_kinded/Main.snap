@@ -4,11 +4,18 @@ expression: report
 ---
 Terms
 Compose ::
-  forall (t5 :: Type) (t9 :: Type) (f :: t5 -> Type) (g :: t9 -> t5) (a :: t9).
-    f (g a) -> Compose @t9 f g a
+  forall (t5 :: Type) (t9 :: Type) (f :: (t5 :: Type) -> Type) (g :: (t9 :: Type) -> (t5 :: Type))
+    (a :: (t9 :: Type)).
+    (f :: (t5 :: Type) -> Type) ((g :: (t9 :: Type) -> (t5 :: Type)) (a :: (t9 :: Type))) ->
+    Compose @(t9 :: Type)
+      (f :: (t5 :: Type) -> Type)
+      (g :: (t9 :: Type) -> (t5 :: Type))
+      (a :: (t9 :: Type))
 
 Types
-Compose :: forall (t5 :: Type) (t9 :: Type). (t5 -> Type) -> (t9 -> t5) -> t9 -> Type
+Compose ::
+  forall (t5 :: Type) (t9 :: Type).
+    ((t5 :: Type) -> Type) -> ((t9 :: Type) -> (t5 :: Type)) -> (t9 :: Type) -> Type
 
 Data
 Compose
@@ -20,6 +27,6 @@ Roles
 Compose = [Representational, Representational, Nominal]
 
 Derived
-derive (Functor &0, Functor &1) => Functor (Compose @Type @Type &0 &1 :: Type -> Type)
-derive (Foldable &0, Foldable &1) => Foldable (Compose @Type @Type &0 &1 :: Type -> Type)
-derive (Traversable &0, Traversable &1) => Traversable (Compose @Type @Type &0 &1 :: Type -> Type)
+derive (Functor (&0 :: Type -> Type), Functor (&1 :: Type -> Type)) => Functor (Compose @Type @Type (&0 :: Type -> Type) (&1 :: Type -> Type) :: Type -> Type)
+derive (Foldable (&0 :: Type -> Type), Foldable (&1 :: Type -> Type)) => Foldable (Compose @Type @Type (&0 :: Type -> Type) (&1 :: Type -> Type) :: Type -> Type)
+derive (Traversable (&0 :: Type -> Type), Traversable (&1 :: Type -> Type)) => Traversable (Compose @Type @Type (&0 :: Type -> Type) (&1 :: Type -> Type) :: Type -> Type)

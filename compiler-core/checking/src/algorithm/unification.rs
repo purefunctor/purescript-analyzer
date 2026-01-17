@@ -300,13 +300,19 @@ pub fn promote_type(
         Type::Variable(ref variable) => {
             // A bound variable escapes if its level >= the unification variable's domain.
             // This means the variable was bound at or after the unification was created.
-            if let Variable::Bound(level) = variable {
-                let unification = state.unification.get(unification_id);
-                if level.0 >= unification.domain.0 {
-                    return false;
+            match variable {
+                Variable::Bound(level, kind) => {
+                    let unification = state.unification.get(unification_id);
+                    if level.0 >= unification.domain.0 {
+                        return false;
+                    }
+                    promote_type(state, occurs, codomain, unification_id, *kind)
                 }
+                Variable::Skolem(_, kind) => {
+                    promote_type(state, occurs, codomain, unification_id, *kind)
+                }
+                Variable::Free(_) => true,
             }
-            true
         }
 
         Type::Unknown => true,

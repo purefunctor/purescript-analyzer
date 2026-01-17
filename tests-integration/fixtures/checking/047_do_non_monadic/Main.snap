@@ -3,9 +3,10 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-Tuple :: forall (a :: Type) (b :: Type). a -> b -> Tuple a b
-bind :: forall (a :: Type) (b :: Type). a -> (a -> b) -> b
-discard :: forall (a :: Type) (b :: Type). a -> (a -> b) -> b
+Tuple :: forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type) -> Tuple (a :: Type) (b :: Type)
+bind :: forall (a :: Type) (b :: Type). (a :: Type) -> ((a :: Type) -> (b :: Type)) -> (b :: Type)
+discard ::
+  forall (a :: Type) (b :: Type). (a :: Type) -> ((a :: Type) -> (b :: Type)) -> (b :: Type)
 test :: Tuple Int String
 test' :: Tuple Int String
 

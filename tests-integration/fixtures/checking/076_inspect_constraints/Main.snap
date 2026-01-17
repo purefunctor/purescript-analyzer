@@ -3,13 +3,15 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-show :: forall (a :: Type). Show a => a -> String
-eq :: forall (a :: Type). Eq a => a -> a -> Boolean
-showIt :: forall (a :: Type). Show a => a -> String
-compare :: forall (a :: Type). Show a => Eq a => a -> a -> String
-showFn :: forall (a :: Type). ShowFunction a
-constrainedReturn :: forall (a :: Type). Show a => a -> ReturnsString a
-nested :: forall (a :: Type). Eq a => NestedConstraint a
+show :: forall (a :: Type). Show (a :: Type) => (a :: Type) -> String
+eq :: forall (a :: Type). Eq (a :: Type) => (a :: Type) -> (a :: Type) -> Boolean
+showIt :: forall (a :: Type). Show (a :: Type) => (a :: Type) -> String
+compare ::
+  forall (a :: Type). Show (a :: Type) => Eq (a :: Type) => (a :: Type) -> (a :: Type) -> String
+showFn :: forall (a :: Type). ShowFunction (a :: Type)
+constrainedReturn ::
+  forall (a :: Type). Show (a :: Type) => (a :: Type) -> ReturnsString (a :: Type)
+nested :: forall (a :: Type). Eq (a :: Type) => NestedConstraint (a :: Type)
 
 Types
 Show :: Type -> Constraint
@@ -19,17 +21,17 @@ ReturnsString :: Type -> Type
 NestedConstraint :: Type -> Type
 
 Synonyms
-ShowFunction = forall (a :: Type). Show a => a -> String
+ShowFunction = forall (a :: Type). Show (a :: Type) => (a :: Type) -> String
   Quantified = :0
   Kind = :0
   Type = :1
 
-ReturnsString = forall (a :: Type). a -> String
+ReturnsString = forall (a :: Type). (a :: Type) -> String
   Quantified = :0
   Kind = :0
   Type = :1
 
-NestedConstraint = forall (a :: Type) (b :: Type). Show b => a -> b -> String
+NestedConstraint = forall (a :: Type) (b :: Type). Show (b :: Type) => (a :: Type) -> (b :: Type) -> String
   Quantified = :0
   Kind = :0
   Type = :1

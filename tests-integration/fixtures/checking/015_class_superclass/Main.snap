@@ -3,8 +3,15 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-map :: forall (f :: Type -> Type) (a :: Type) (b :: Type). Functor f => (a -> b) -> f a -> f b
-pure :: forall (f :: Type -> Type) (a :: Type). Applicative f => a -> f a
+map ::
+  forall (f :: Type -> Type) (a :: Type) (b :: Type).
+    Functor (f :: Type -> Type) =>
+    ((a :: Type) -> (b :: Type)) ->
+    (f :: Type -> Type) (a :: Type) ->
+    (f :: Type -> Type) (b :: Type)
+pure ::
+  forall (f :: Type -> Type) (a :: Type).
+    Applicative (f :: Type -> Type) => (a :: Type) -> (f :: Type -> Type) (a :: Type)
 
 Types
 Functor :: (Type -> Type) -> Constraint
@@ -12,4 +19,4 @@ Applicative :: (Type -> Type) -> Constraint
 
 Classes
 class Functor (&0 :: Type -> Type)
-class Functor &0 <= Applicative (&0 :: Type -> Type)
+class Functor (&0 :: Type -> Type) <= Applicative (&0 :: Type -> Type)

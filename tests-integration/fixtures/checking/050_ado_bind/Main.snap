@@ -3,10 +3,14 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-Tuple :: forall (a :: Type) (b :: Type). a -> b -> Tuple a b
-pure :: forall (a :: Type). a -> Effect a
-map :: forall (a :: Type) (b :: Type). (a -> b) -> Effect a -> Effect b
-apply :: forall (a :: Type) (b :: Type). Effect (a -> b) -> Effect a -> Effect b
+Tuple :: forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type) -> Tuple (a :: Type) (b :: Type)
+pure :: forall (a :: Type). (a :: Type) -> Effect (a :: Type)
+map ::
+  forall (a :: Type) (b :: Type).
+    ((a :: Type) -> (b :: Type)) -> Effect (a :: Type) -> Effect (b :: Type)
+apply ::
+  forall (a :: Type) (b :: Type).
+    Effect ((a :: Type) -> (b :: Type)) -> Effect (a :: Type) -> Effect (b :: Type)
 test :: Effect (Tuple Int Int)
 test' :: Effect (Tuple Int Int)
 

@@ -5,36 +5,39 @@ expression: report
 Terms
 
 Types
-PolyApply :: forall (k :: Type). (k -> Type) -> k -> Type
-RowApply :: forall (k :: Type). (Row k -> Row k) -> Row k -> Row k
+PolyApply :: forall (k :: Type). ((k :: Type) -> Type) -> (k :: Type) -> Type
+RowApply ::
+  forall (k :: Type). (Row (k :: Type) -> Row (k :: Type)) -> Row (k :: Type) -> Row (k :: Type)
 AddField :: Row Type -> Row Type
 AddAnother :: Row Type -> Row Type
 Applied1 :: Row Type
 Applied2 :: Row Type
 ComposeRow :: (Row Type -> Row Type) -> (Row Type -> Row Type) -> Row Type -> Row Type
 Combined :: Row Type
-NaturalTransformation :: forall (k :: Type). (k -> Type) -> (k -> Type) -> Type
-Endo :: forall (k :: Type). (k -> k -> Type) -> k -> Type
+NaturalTransformation :: forall (k :: Type). ((k :: Type) -> Type) -> ((k :: Type) -> Type) -> Type
+Endo :: forall (k :: Type). ((k :: Type) -> (k :: Type) -> Type) -> (k :: Type) -> Type
 EndoFn :: Type -> Type
 Function :: Type -> Type -> Type
 
 Synonyms
-PolyApply = forall (k :: Type) (f :: k -> Type) (a :: k). f a
+PolyApply = forall (k :: Type) (f :: (k :: Type) -> Type) (a :: (k :: Type)).
+  (f :: (k :: Type) -> Type) (a :: (k :: Type))
   Quantified = :0
   Kind = :1
   Type = :2
 
-RowApply = forall (k :: Type) (f :: Row k -> Row k) (r :: Row k). f r
+RowApply = forall (k :: Type) (f :: Row (k :: Type) -> Row (k :: Type)) (r :: Row (k :: Type)).
+  (f :: Row (k :: Type) -> Row (k :: Type)) (r :: Row (k :: Type))
   Quantified = :0
   Kind = :1
   Type = :2
 
-AddField = forall (r :: Row Type). ( field :: String | r )
+AddField = forall (r :: Row Type). ( field :: String | (r :: Row Type) )
   Quantified = :0
   Kind = :0
   Type = :1
 
-AddAnother = forall (r :: Row Type). ( another :: Int | r )
+AddAnother = forall (r :: Row Type). ( another :: Int | (r :: Row Type) )
   Quantified = :0
   Kind = :0
   Type = :1
@@ -49,7 +52,8 @@ Applied2 = RowApply AddAnother ()
   Kind = :0
   Type = :0
 
-ComposeRow = forall (f :: Row Type -> Row Type) (g :: Row Type -> Row Type) (r :: Row Type). f (g r)
+ComposeRow = forall (f :: Row Type -> Row Type) (g :: Row Type -> Row Type) (r :: Row Type).
+  (f :: Row Type -> Row Type) ((g :: Row Type -> Row Type) (r :: Row Type))
   Quantified = :0
   Kind = :0
   Type = :3
@@ -59,17 +63,19 @@ Combined = ComposeRow AddField AddAnother ()
   Kind = :0
   Type = :0
 
-NaturalTransformation = forall (k :: Type) (f :: k -> Type) (g :: k -> Type) (a :: k). f a -> g a
+NaturalTransformation = forall (k :: Type) (f :: (k :: Type) -> Type) (g :: (k :: Type) -> Type) (a :: (k :: Type)).
+  (f :: (k :: Type) -> Type) (a :: (k :: Type)) -> (g :: (k :: Type) -> Type) (a :: (k :: Type))
   Quantified = :0
   Kind = :1
   Type = :2
 
-Endo = forall (k :: Type) (c :: k -> k -> Type) (a :: k). c a a
+Endo = forall (k :: Type) (c :: (k :: Type) -> (k :: Type) -> Type) (a :: (k :: Type)).
+  (c :: (k :: Type) -> (k :: Type) -> Type) (a :: (k :: Type)) (a :: (k :: Type))
   Quantified = :0
   Kind = :1
   Type = :2
 
-EndoFn = forall (a :: Type). Endo Function a
+EndoFn = forall (a :: Type). Endo Function (a :: Type)
   Quantified = :0
   Kind = :0
   Type = :1

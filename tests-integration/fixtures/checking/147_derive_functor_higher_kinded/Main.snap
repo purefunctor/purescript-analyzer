@@ -3,12 +3,18 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-Wrap :: forall (t4 :: Type) (f :: t4 -> Type) (a :: t4). f a -> Wrap @t4 f a
-WrapNoFunctor :: forall (t10 :: Type) (f :: t10 -> Type) (a :: t10). f a -> WrapNoFunctor @t10 f a
+Wrap ::
+  forall (t4 :: Type) (f :: (t4 :: Type) -> Type) (a :: (t4 :: Type)).
+    (f :: (t4 :: Type) -> Type) (a :: (t4 :: Type)) ->
+    Wrap @(t4 :: Type) (f :: (t4 :: Type) -> Type) (a :: (t4 :: Type))
+WrapNoFunctor ::
+  forall (t10 :: Type) (f :: (t10 :: Type) -> Type) (a :: (t10 :: Type)).
+    (f :: (t10 :: Type) -> Type) (a :: (t10 :: Type)) ->
+    WrapNoFunctor @(t10 :: Type) (f :: (t10 :: Type) -> Type) (a :: (t10 :: Type))
 
 Types
-Wrap :: forall (t4 :: Type). (t4 -> Type) -> t4 -> Type
-WrapNoFunctor :: forall (t10 :: Type). (t10 -> Type) -> t10 -> Type
+Wrap :: forall (t4 :: Type). ((t4 :: Type) -> Type) -> (t4 :: Type) -> Type
+WrapNoFunctor :: forall (t10 :: Type). ((t10 :: Type) -> Type) -> (t10 :: Type) -> Type
 
 Data
 Wrap
@@ -25,8 +31,8 @@ Wrap = [Representational, Nominal]
 WrapNoFunctor = [Representational, Nominal]
 
 Derived
-derive Functor &0 => Functor (Wrap @Type &0 :: Type -> Type)
-derive Functor (WrapNoFunctor @Type &0 :: Type -> Type)
+derive Functor (&0 :: Type -> Type) => Functor (Wrap @Type (&0 :: Type -> Type) :: Type -> Type)
+derive Functor (WrapNoFunctor @Type (&0 :: Type -> Type) :: Type -> Type)
 
 Errors
-NoInstanceFound { Functor &0 } at [TermDeclaration(Idx::<TermItem>(3))]
+NoInstanceFound { Functor (&0 :: Type -> Type) } at [TermDeclaration(Idx::<TermItem>(3))]

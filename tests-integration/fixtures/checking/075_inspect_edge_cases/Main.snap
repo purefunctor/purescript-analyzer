@@ -4,11 +4,11 @@ expression: report
 ---
 Terms
 justInt :: Int
-notFunction :: forall (a :: Type). a -> Int
-deeply :: forall (a :: Type). Level3 a
-outer :: forall (a :: Type). a -> a
+notFunction :: forall (a :: Type). (a :: Type) -> Int
+deeply :: forall (a :: Type). Level3 (a :: Type)
+outer :: forall (a :: Type). (a :: Type) -> (a :: Type)
 parens :: (Int -> Int) -> Int
-zeroArg :: forall (a :: Type). a
+zeroArg :: forall (a :: Type). (a :: Type)
 
 Types
 JustInt :: Type
@@ -41,17 +41,17 @@ Level2 = Int -> Int -> Int
   Kind = :0
   Type = :0
 
-Level3 = forall (a :: Type). a -> Int -> Int -> Int
+Level3 = forall (a :: Type). (a :: Type) -> Int -> Int -> Int
   Quantified = :0
   Kind = :0
   Type = :1
 
-Inner = forall (a :: Type). a -> a
+Inner = forall (a :: Type). (a :: Type) -> (a :: Type)
   Quantified = :0
   Kind = :0
   Type = :0
 
-Outer = forall (a :: Type). a -> a
+Outer = forall (a :: Type). (a :: Type) -> (a :: Type)
   Quantified = :0
   Kind = :0
   Type = :0

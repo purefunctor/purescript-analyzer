@@ -3,14 +3,16 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-chain :: forall (t1 :: Type) (a :: Type) (b :: t1) (c :: Type). Chain a b c => a -> c
+chain ::
+  forall (t1 :: Type) (a :: Type) (b :: (t1 :: Type)) (c :: Type).
+    Chain (a :: Type) (b :: (t1 :: Type)) (c :: Type) => (a :: Type) -> (c :: Type)
 test :: Boolean
 
 Types
-Chain :: forall (t1 :: Type). Type -> t1 -> Type -> Constraint
+Chain :: forall (t1 :: Type). Type -> (t1 :: Type) -> Type -> Constraint
 
 Classes
-class Chain (&1 :: Type) (&2 :: &0) (&3 :: Type)
+class Chain (&1 :: Type) (&2 :: (&0 :: Type)) (&3 :: Type)
 
 Instances
 instance Chain (Int :: Type) (String :: Type) (Boolean :: Type)

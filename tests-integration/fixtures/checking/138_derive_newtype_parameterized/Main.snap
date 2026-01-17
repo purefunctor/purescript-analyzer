@@ -3,7 +3,7 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-Identity :: forall (a :: Type). a -> Identity a
+Identity :: forall (a :: Type). (a :: Type) -> Identity (a :: Type)
 
 Types
 Identity :: Type -> Type

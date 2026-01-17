@@ -3,13 +3,15 @@ source: tests-integration/tests/checking/generated.rs
 expression: report
 ---
 Terms
-identity :: forall (t2 :: Type) (a :: Type) (b :: Type) (r :: t2). TypeEq a b r => a -> b
+identity ::
+  forall (t2 :: Type) (a :: Type) (b :: Type) (r :: (t2 :: Type)).
+    TypeEq (a :: Type) (b :: Type) (r :: (t2 :: Type)) => (a :: Type) -> (b :: Type)
 test :: Int
 
 Types
 True :: Type
 False :: Type
-TypeEq :: forall (t2 :: Type). Type -> Type -> t2 -> Constraint
+TypeEq :: forall (t2 :: Type). Type -> Type -> (t2 :: Type) -> Constraint
 
 Data
 True
@@ -26,8 +28,8 @@ True = []
 False = []
 
 Classes
-class TypeEq (&1 :: Type) (&2 :: Type) (&3 :: &0)
+class TypeEq (&1 :: Type) (&2 :: Type) (&3 :: (&0 :: Type))
 
 Instances
-instance TypeEq (&0 :: Type) (&0 :: Type) (True :: Type)
+instance TypeEq ((&0 :: Type) :: Type) ((&0 :: Type) :: Type) (True :: Type)
   chain: 0
