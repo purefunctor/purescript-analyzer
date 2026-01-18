@@ -39,6 +39,8 @@ where
     Q: ExternalQueries,
 {
     state.with_error_step(ErrorStep::TermDeclaration(item_id), |state| {
+        let _span = tracing::debug_span!("check_term_signature").entered();
+
         let Some(item) = context.lowered.info.get_term_item(item_id) else {
             return Ok(());
         };
@@ -56,6 +58,8 @@ where
                 let quantified_type = quantify::quantify(state, inferred_type)
                     .map(|(quantified_type, _)| quantified_type)
                     .unwrap_or(inferred_type);
+
+                crate::debug_fields!(state, context, { quantified_type = quantified_type });
 
                 let global_type = transfer::globalize(state, context, quantified_type);
                 state.checked.terms.insert(item_id, global_type);
@@ -106,9 +110,13 @@ where
 {
     let CheckInstance { item_id, constraints, arguments, resolution } = input;
     state.with_error_step(ErrorStep::TermDeclaration(item_id), |state| {
+        let _span = tracing::debug_span!("check_instance").entered();
+
         let Some((class_file, class_item)) = *resolution else {
             return Ok(());
         };
+
+        crate::debug_fields!(state, context, { ?class_file = class_file, ?class_item = class_item });
 
         let TermItemKind::Instance { id: instance_id } = context.indexed.items[item_id].kind else {
             return Ok(());
@@ -252,6 +260,7 @@ where
 {
     let CheckValueGroup { item_id, signature, equations } = input;
     state.with_error_step(ErrorStep::TermDeclaration(item_id), |state| {
+        let _span = tracing::debug_span!("check_value_group").entered();
         if let Some(signature_id) = signature {
             let group_type = term::lookup_file_term(state, context, context.id, item_id)?;
 
@@ -262,10 +271,12 @@ where
                 inspect::inspect_signature_core(state, context, group_type, surface_bindings)?;
 
             term::check_equations(state, context, *signature_id, signature, equations)?;
+            crate::debug_fields!(state, context, { group_type = group_type }, "checking");
             Ok(None)
         } else {
             let (inferred_type, residual_constraints) =
                 term::infer_equations(state, context, item_id, equations)?;
+            crate::debug_fields!(state, context, { inferred_type = inferred_type }, "inferring");
             Ok(Some(InferredValueGroup { inferred_type, residual_constraints }))
         }
     })
@@ -290,6 +301,7 @@ where
     };
 
     state.with_error_step(ErrorStep::TermDeclaration(item_id), |state| {
+        let _span = tracing::debug_span!("commit_value_group").entered();
         for constraint in result.ambiguous {
             let constraint = transfer::globalize(state, context, constraint);
             state.insert_error(ErrorKind::AmbiguousConstraint { constraint });
@@ -298,6 +310,7 @@ where
             let constraint = transfer::globalize(state, context, constraint);
             state.insert_error(ErrorKind::NoInstanceFound { constraint });
         }
+        crate::debug_fields!(state, context, { quantified = result.quantified });
     });
 
     let type_id = transfer::globalize(state, context, result.quantified);
@@ -435,6 +448,8 @@ where
     } = input;
 
     state.with_error_step(ErrorStep::TermDeclaration(instance_id), |state| {
+        let _span = tracing::debug_span!("check_instance_member_group").entered();
+
         // Save the current size of the environment for unbinding.
         let size = state.type_scope.size();
 

@@ -13,11 +13,14 @@ use indexing::{DeriveId, IndexedModule, InstanceId, TermItemId, TypeItemId};
 use lowering::{GroupedModule, LoweredModule};
 use resolving::ResolvedModule;
 use rustc_hash::FxHashMap;
+use stabilizing::StabilizedModule;
 
 use crate::error::CheckError;
 
 pub trait ExternalQueries:
     QueryProxy<
+        Parsed = parsing::FullParsedModule,
+        Stabilized = Arc<StabilizedModule>,
         Indexed = Arc<IndexedModule>,
         Lowered = Arc<LoweredModule>,
         Grouped = Arc<GroupedModule>,
@@ -76,6 +79,7 @@ impl CheckedModule {
 }
 
 pub fn check_module(queries: &impl ExternalQueries, file_id: FileId) -> QueryResult<CheckedModule> {
+    let _span = trace::check_module(queries, file_id)?;
     let prim_id = queries.prim_id();
     if file_id == prim_id {
         algorithm::check_prim(queries, prim_id)

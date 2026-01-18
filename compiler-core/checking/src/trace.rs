@@ -4,6 +4,52 @@
 //! with pretty-printed type information. All tracing is compiled out when the
 //! `no-tracing` feature is enabled.
 
+use building_types::QueryResult;
+
+use crate::ExternalQueries;
+use crate::algorithm::state::CheckContext;
+use crate::error::ErrorStep;
+
+/// Extracts the byte offset range from an error step.
+pub fn step_byte_range<Q>(step: &ErrorStep, context: &CheckContext<Q>) -> Option<(u32, u32)>
+where
+    Q: ExternalQueries,
+{
+    let pointer = match step {
+        ErrorStep::ConstructorArgument(id) => context.stabilized.syntax_ptr(*id)?,
+        ErrorStep::InferringKind(id) | ErrorStep::CheckingKind(id) => {
+            context.stabilized.syntax_ptr(*id)?
+        }
+        ErrorStep::InferringBinder(id) | ErrorStep::CheckingBinder(id) => {
+            context.stabilized.syntax_ptr(*id)?
+        }
+        ErrorStep::InferringExpression(id) | ErrorStep::CheckingExpression(id) => {
+            context.stabilized.syntax_ptr(*id)?
+        }
+        ErrorStep::TermDeclaration(id) => {
+            context.indexed.term_item_ptr(&context.stabilized, *id).next()?
+        }
+        ErrorStep::TypeDeclaration(id) => {
+            context.indexed.type_item_ptr(&context.stabilized, *id).next()?
+        }
+    };
+
+    let range = pointer.text_range();
+
+    let start = range.start().into();
+    let end = range.end().into();
+
+    Some((start, end))
+}
+
+/// Returns the byte offset range for the most specific (innermost) error step.
+pub fn current_offset<Q>(check_steps: &[ErrorStep], context: &CheckContext<Q>) -> Option<(u32, u32)>
+where
+    Q: ExternalQueries,
+{
+    check_steps.last().and_then(|step| step_byte_range(step, context))
+}
+
 #[cfg(not(feature = "no-tracing"))]
 mod enabled {
     use std::fmt;
@@ -73,10 +119,23 @@ mod enabled {
         }
     }
 
-    /// Wrapper for tracing arbitrary `Debug` types.
-    pub struct Dbg<T>(pub T);
+    impl<Q> Traceable<Q> for Option<TypeId>
+    where
+        Q: ExternalQueries,
+    {
+        fn trace(self, state: &mut CheckState, context: &CheckContext<Q>) -> TraceValue {
+            if let Some(value) = self {
+                value.trace(state, context)
+            } else {
+                TraceValue::Debug("None".to_string())
+            }
+        }
+    }
 
-    impl<T, Q> Traceable<Q> for Dbg<T>
+    /// Wrapper for tracing arbitrary `Debug` types.
+    pub struct TraceDebug<T>(pub T);
+
+    impl<T, Q> Traceable<Q> for TraceDebug<T>
     where
         T: fmt::Debug,
         Q: ExternalQueries,
@@ -140,18 +199,22 @@ macro_rules! type_fields {
     (@impl $level:expr, $state:expr, $context:expr, [$(($name:ident, $bind:expr))*] { $(,)? }) => {
         if ::tracing::enabled!($level) {
             $(let $name = $bind;)*
-            ::tracing::event!($level, $($name = %$name),*);
+            if let Some((offset_start, offset_end)) = $crate::trace::current_offset(&$state.check_steps, $context) {
+                ::tracing::event!($level, offset_start, offset_end, $($name = %$name),*);
+            } else {
+                ::tracing::event!($level, $($name = %$name),*);
+            }
         }
     };
 
     // Match ?name = expr,
     (@impl $level:expr, $state:expr, $context:expr, [$($acc:tt)*] { ? $name:ident = $value:expr, $($rest:tt)* }) => {
-        $crate::type_fields!(@impl $level, $state, $context, [$($acc)* ($name, $crate::trace::Traceable::trace($crate::trace::Dbg($value), $state, $context))] { $($rest)* })
+        $crate::type_fields!(@impl $level, $state, $context, [$($acc)* ($name, $crate::trace::Traceable::trace($crate::trace::TraceDebug($value), $state, $context))] { $($rest)* })
     };
 
     // Match ?name = expr (last, no comma)
     (@impl $level:expr, $state:expr, $context:expr, [$($acc:tt)*] { ? $name:ident = $value:expr }) => {
-        $crate::type_fields!(@impl $level, $state, $context, [$($acc)* ($name, $crate::trace::Traceable::trace($crate::trace::Dbg($value), $state, $context))] { })
+        $crate::type_fields!(@impl $level, $state, $context, [$($acc)* ($name, $crate::trace::Traceable::trace($crate::trace::TraceDebug($value), $state, $context))] { })
     };
 
     // Match name = expr,
@@ -170,18 +233,22 @@ macro_rules! type_fields {
     (@impl_msg $level:expr, $state:expr, $context:expr, [$(($name:ident, $bind:expr))*] { $(,)? }, $($msg:tt)+) => {
         if ::tracing::enabled!($level) {
             $(let $name = $bind;)*
-            ::tracing::event!($level, $($name = %$name,)* $($msg)+);
+            if let Some((offset_start, offset_end)) = $crate::trace::current_offset(&$state.check_steps, $context) {
+                ::tracing::event!($level, offset_start, offset_end, $($name = %$name,)* $($msg)+);
+            } else {
+                ::tracing::event!($level, $($name = %$name,)* $($msg)+);
+            }
         }
     };
 
     // Match ?name = expr,
     (@impl_msg $level:expr, $state:expr, $context:expr, [$($acc:tt)*] { ? $name:ident = $value:expr, $($rest:tt)* }, $($msg:tt)+) => {
-        $crate::type_fields!(@impl_msg $level, $state, $context, [$($acc)* ($name, $crate::trace::Traceable::trace($crate::trace::Dbg($value), $state, $context))] { $($rest)* }, $($msg)+)
+        $crate::type_fields!(@impl_msg $level, $state, $context, [$($acc)* ($name, $crate::trace::Traceable::trace($crate::trace::TraceDebug($value), $state, $context))] { $($rest)* }, $($msg)+)
     };
 
     // Match ?name = expr (last, no comma)
     (@impl_msg $level:expr, $state:expr, $context:expr, [$($acc:tt)*] { ? $name:ident = $value:expr }, $($msg:tt)+) => {
-        $crate::type_fields!(@impl_msg $level, $state, $context, [$($acc)* ($name, $crate::trace::Traceable::trace($crate::trace::Dbg($value), $state, $context))] { }, $($msg)+)
+        $crate::type_fields!(@impl_msg $level, $state, $context, [$($acc)* ($name, $crate::trace::Traceable::trace($crate::trace::TraceDebug($value), $state, $context))] { }, $($msg)+)
     };
 
     // Match name = expr,
@@ -223,4 +290,26 @@ macro_rules! trace_fields {
     ($($args:tt)*) => {
         $crate::type_fields!(::tracing::Level::TRACE, $($args)*)
     };
+}
+
+/// Creates an info-level span for module checking.
+#[cfg(not(feature = "no-tracing"))]
+#[inline]
+pub fn check_module(
+    queries: &impl ExternalQueries,
+    file_id: files::FileId,
+) -> QueryResult<tracing::span::EnteredSpan> {
+    const UNKNOWN: smol_str::SmolStr = smol_str::SmolStr::new_static("<Unknown>");
+
+    let (parsed, _) = queries.parsed(file_id)?;
+    let module_name = parsed.module_name();
+    let module_name = module_name.unwrap_or(UNKNOWN);
+
+    Ok(tracing::info_span!("check_module", ?file_id, %module_name).entered())
+}
+
+#[cfg(feature = "no-tracing")]
+#[inline]
+pub fn module_span(_queries: &impl ExternalQueries, _file_id: files::FileId) -> QueryResult<()> {
+    Ok(())
 }
