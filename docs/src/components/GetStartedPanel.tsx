@@ -8,6 +8,10 @@ import RiBox3Line from "~icons/ri/box-3-line";
 import RiShapesLine from "~icons/ri/shapes-line";
 import RiArrowRightLine from "~icons/ri/arrow-right-line";
 import RiLinksLine from "~icons/ri/links-line";
+import RiMagicLine from "~icons/ri/magic-line";
+import RiSparklingLine from "~icons/ri/sparkling-line";
+import RiScales3Line from "~icons/ri/scales-3-line";
+import RiLoopLeftLine from "~icons/ri/loop-left-line";
 import { EXAMPLES, CATEGORIES, type Example } from "../lib/examples";
 
 const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -21,6 +25,10 @@ const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   cube: RiShapesLine,
   arrow: RiArrowRightLine,
   link: RiLinksLine,
+  wand: RiMagicLine,
+  sparkles: RiSparklingLine,
+  scale: RiScales3Line,
+  loop: RiLoopLeftLine,
 };
 
 interface ExampleCardProps {

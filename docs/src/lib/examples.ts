@@ -8,10 +8,141 @@ export interface Example {
 }
 
 export const EXAMPLES: Example[] = [
+  // Basics - proving compiler capabilities
+  {
+    id: "constraint-generalisation",
+    title: "Constraint Generalisation",
+    description: "Infer type class constraints from usage in untyped bindings.",
+    category: "Basics",
+    icon: "sparkles",
+    source: `module Main where
+
+class Functor f where
+  map :: forall a b. (a -> b) -> f a -> f b
+
+class Functor f <= Apply f where
+  apply :: forall a b. f (a -> b) -> f a -> f b
+
+class Apply m <= Bind m where
+  bind :: forall a b. m a -> (a -> m b) -> m b
+
+class Semigroup a where
+  append :: a -> a -> a
+
+-- No type signature: the compiler infers Functor f constraint
+-- Hover to see: forall f a b. Functor f => (a -> b) -> f a -> f b
+inferredMap f xs = map f xs
+
+-- Infers Apply constraint from usage of apply
+-- Hover to see: forall f a b. Apply f => f (a -> b) -> f a -> f b
+inferredApply ff fa = apply ff fa
+
+-- Infers multiple constraints: Bind m, Semigroup a
+-- Hover to see: forall m a. Bind m => Semigroup a => m a -> m a -> m a
+inferredBindAppend ma mb = bind ma (\\a -> map (append a) mb)
+`,
+  },
+  {
+    id: "instance-deriving",
+    title: "Instance Deriving",
+    description: "Derive Generic and Newtype instances for data declarations.",
+    category: "Basics",
+    icon: "wand",
+    source: `module Main where
+
+import Data.Generic.Rep (class Generic)
+import Data.Newtype (class Newtype)
+
+-- Algebraic data types derive Generic
+data Maybe a = Nothing | Just a
+data Either a b = Left a | Right b
+data Tree a = Leaf | Branch (Tree a) a (Tree a)
+
+derive instance Generic (Maybe a) _
+derive instance Generic (Either a b) _
+derive instance Generic (Tree a) _
+
+-- Newtypes derive both Generic and Newtype
+newtype UserId = UserId Int
+newtype Email = Email String
+newtype Wrapper a = Wrapper a
+
+derive instance Generic UserId _
+derive instance Generic Email _
+derive instance Generic (Wrapper a) _
+
+derive instance Newtype UserId _
+derive instance Newtype Email _
+derive instance Newtype (Wrapper a) _
+
+-- Force Generic solving to see Rep types
+data Proxy a = Proxy
+
+getTreeRep :: forall a rep. Generic (Tree a) rep => Proxy rep
+getTreeRep = Proxy
+
+getMaybeRep :: forall a rep. Generic (Maybe a) rep => Proxy rep
+getMaybeRep = Proxy
+
+forceSolve = { getTreeRep, getMaybeRep }
+`,
+  },
+  {
+    id: "type-classes",
+    title: "Type Classes",
+    description: "Type classes, functional dependencies, and instance chains.",
+    category: "Basics",
+    icon: "layers",
+    source: `module Main where
+
+import Prim.Boolean (True, False)
+
+data Proxy a = Proxy
+
+-- Basic type class with functional dependency
+-- Knowing 'a' determines 'b'
+class Convert a b | a -> b where
+  convert :: a -> b
+
+instance Convert Int String where
+  convert _ = "int"
+
+instance Convert Boolean String where
+  convert _ = "bool"
+
+-- Fundep guides inference: no type annotation needed
+testConvert = convert 42
+
+-- Instance chains with 'else' for overlapping instances
+class TypeEq a b (result :: Boolean) | a b -> result
+
+instance TypeEq a a True
+else instance TypeEq a b False
+
+-- Multi-parameter class with two fundeps
+class Combine a b c | a b -> c, c -> a b where
+  combine :: a -> b -> c
+  split :: c -> { fst :: a, snd :: b }
+
+instance Combine Int String { int :: Int, str :: String } where
+  combine i s = { int: i, str: s }
+  split r = { fst: r.int, snd: r.str }
+
+-- Force solving to verify inferred types
+eqSame :: forall r. TypeEq Int Int r => Proxy r
+eqSame = Proxy
+
+eqDiff :: forall r. TypeEq Int String r => Proxy r
+eqDiff = Proxy
+
+test = { eqSame, eqDiff, testConvert }
+`,
+  },
+
   // Type-Level Programming
   {
     id: "row-union",
-    title: "Row Union Solving",
+    title: "Row Union",
     description: "Bidirectional Row.Union constraint solving for extensible records.",
     category: "Type-Level Programming",
     icon: "merge",
@@ -22,153 +153,36 @@ import Prim.Row as Row
 data Proxy :: forall k. k -> Type
 data Proxy a = Proxy
 
+-- Derive the union from left and right
 deriveUnion :: forall u. Row.Union (a :: Int) (b :: String) u => Proxy u
 deriveUnion = Proxy
 
-deriveUnionLeft :: forall l. Row.Union l (b :: String) (a :: Int, b :: String) => Proxy l
-deriveUnionLeft = Proxy
-
-deriveUnionRight :: forall r. Row.Union (a :: Int) r (a :: Int, b :: String) => Proxy r
-deriveUnionRight = Proxy
-
-solveUnion = { deriveUnion, deriveUnionLeft, deriveUnionRight }
-`,
-  },
-  {
-    id: "row-cons",
-    title: "Row.Cons Operations",
-    description: "Construct and deconstruct row types at the type level.",
-    category: "Type-Level Programming",
-    icon: "layers",
-    source: `module Main where
-
-import Prim.Row as Row
-
-data Proxy :: forall k. k -> Type
-data Proxy a = Proxy
-
--- Derive the full row from label, type, and tail
-deriveCons :: forall row. Row.Cons "name" String () row => Proxy row
-deriveCons = Proxy
-
--- Derive the tail from the full row
-deriveTail :: forall tail. Row.Cons "name" String tail (name :: String, age :: Int) => Proxy tail
-deriveTail = Proxy
-
--- Derive the field type from the full row
-deriveType :: forall t. Row.Cons "name" t () (name :: String) => Proxy t
-deriveType = Proxy
-
-solveCons = { deriveCons, deriveTail, deriveType }
-`,
-  },
-  {
-    id: "rowlist",
-    title: "RowToList Conversion",
-    description: "Convert row types to type-level lists for iteration.",
-    category: "Type-Level Programming",
-    icon: "list",
-    source: `module Main where
-
-import Prim.RowList as RL
-
-data Proxy :: forall k. k -> Type
-data Proxy a = Proxy
-
-rowToListSimple :: forall list. RL.RowToList (a :: Int) list => Proxy list
-rowToListSimple = Proxy
-
-rowToListMultiple :: forall list. RL.RowToList (b :: String, a :: Int) list => Proxy list
-rowToListMultiple = Proxy
-
-rowToListEmpty :: forall list. RL.RowToList () list => Proxy list
-rowToListEmpty = Proxy
-
-solveRowToList = { rowToListSimple, rowToListMultiple, rowToListEmpty }
-`,
-  },
-  {
-    id: "symbol-ops",
-    title: "Symbol Operations",
-    description: "Type-level string operations: append, compare, and cons.",
-    category: "Type-Level Programming",
-    icon: "text-fields",
-    source: `module Main where
-
-import Prim.Symbol (class Append, class Compare, class Cons)
-import Prim.Ordering (Ordering, LT, EQ, GT)
-
-data Proxy :: forall k. k -> Type
-data Proxy a = Proxy
-
--- Append: Derive appended from left and right
-deriveAppended :: forall appended. Append "Hello" "World" appended => Proxy appended
-deriveAppended = Proxy
-
--- Append: Derive left from right and appended
-deriveLeft :: forall left. Append left "World" "HelloWorld" => Proxy left
+-- Derive the left row from right and union
+deriveLeft :: forall l. Row.Union l (b :: String) (a :: Int, b :: String) => Proxy l
 deriveLeft = Proxy
 
--- Compare symbols
-compareLT :: forall ord. Compare "a" "b" ord => Proxy ord
-compareLT = Proxy
-
-compareEQ :: forall ord. Compare "hello" "hello" ord => Proxy ord
-compareEQ = Proxy
-
--- Cons: Derive symbol from head and tail
-deriveCons :: forall symbol. Cons "H" "ello" symbol => Proxy symbol
-deriveCons = Proxy
-
-forceSolve = { deriveAppended, deriveLeft, compareLT, compareEQ, deriveCons }
-`,
-  },
-  {
-    id: "int-ops",
-    title: "Type-Level Integers",
-    description: "Compile-time integer arithmetic: add, multiply, compare.",
-    category: "Type-Level Programming",
-    icon: "calculator",
-    source: `module Main where
-
-import Prim.Int (class Add, class Mul, class Compare, class ToString)
-import Prim.Ordering (Ordering, LT, EQ, GT)
-
-data Proxy :: forall k. k -> Type
-data Proxy a = Proxy
-
--- Add: Derive sum from operands
-deriveSum :: forall sum. Add 1 2 sum => Proxy sum
-deriveSum = Proxy
-
--- Add: Derive right operand from left and sum
-deriveRight :: forall right. Add 1 right 3 => Proxy right
+-- Derive the right row from left and union
+deriveRight :: forall r. Row.Union (a :: Int) r (a :: Int, b :: String) => Proxy r
 deriveRight = Proxy
 
--- Mul: Derive product from operands
-deriveMul :: forall product. Mul 3 4 product => Proxy product
-deriveMul = Proxy
+-- Practical example: extensible record functions
+merge :: forall left right union.
+  Row.Union left right union =>
+  Row.Nub union union =>
+  Record left -> Record right -> Record union
+merge l r = unsafeMerge l r
 
--- Compare integers
-compareLT :: forall ord. Compare 1 2 ord => Proxy ord
-compareLT = Proxy
+foreign import unsafeMerge :: forall a b c. a -> b -> c
 
-compareGT :: forall ord. Compare 10 3 ord => Proxy ord
-compareGT = Proxy
-
--- ToString: Convert integer to symbol
-deriveString :: forall s. ToString 42 s => Proxy s
-deriveString = Proxy
-
-forceSolve = { deriveSum, deriveRight, deriveMul, compareLT, compareGT, deriveString }
+test = merge { a: 1 } { b: "hello" }
 `,
   },
   {
-    id: "int-compare-proofs",
+    id: "int-compare",
     title: "Comparison Proofs",
     description: "Type-level proofs of integer comparison transitivity and symmetry.",
     category: "Type-Level Programming",
-    icon: "link",
+    icon: "scale",
     source: `module Main where
 
 import Prim.Int (class Compare)
@@ -177,214 +191,42 @@ import Prim.Ordering (LT, EQ, GT)
 data Proxy :: forall k. k -> Type
 data Proxy a = Proxy
 
--- Assertion helpers using row types to capture comparison results
-assertLesser :: forall l r. Compare l r LT => Proxy ( left :: l, right :: r )
-assertLesser = Proxy
+-- Assertion helpers capture comparison results in row types
+assertLT :: forall l r. Compare l r LT => Proxy (left :: l, right :: r)
+assertLT = Proxy
 
-assertGreater :: forall l r. Compare l r GT => Proxy ( left :: l, right :: r )
-assertGreater = Proxy
+assertGT :: forall l r. Compare l r GT => Proxy (left :: l, right :: r)
+assertGT = Proxy
 
-assertEqual :: forall l r. Compare l r EQ => Proxy ( left :: l, right :: r )
-assertEqual = Proxy
+assertEQ :: forall l r. Compare l r EQ => Proxy (left :: l, right :: r)
+assertEQ = Proxy
 
 -- Symmetry: if m > n then n < m
-symmLt :: forall m n. Compare m n GT => Proxy ( left :: n, right :: m )
-symmLt = assertLesser
+symmLT :: forall m n. Compare m n GT => Proxy (left :: n, right :: m)
+symmLT = assertLT
 
 -- Reflexivity: n == n for any integer
-reflEq :: forall (n :: Int). Proxy ( left :: n, right :: n )
-reflEq = assertEqual
+reflEQ :: forall (n :: Int). Proxy (left :: n, right :: n)
+reflEQ = assertEQ
 
 -- Transitivity: if m < n and n < p, then m < p
-transLt :: forall m n p. Compare m n LT => Compare n p LT => Proxy n -> Proxy ( left :: m, right :: p )
-transLt _ = assertLesser
+transLT :: forall m n p.
+  Compare m n LT =>
+  Compare n p LT =>
+  Proxy n -> Proxy (left :: m, right :: p)
+transLT _ = assertLT
 
 -- Concrete proof: 1 < 5 < 10 implies 1 < 10
-proof1Lt10 :: Proxy ( left :: 1, right :: 10 )
-proof1Lt10 = transLt (Proxy :: Proxy 5)
-`,
-  },
-
-  // Generic Deriving
-  {
-    id: "derive-generic",
-    title: "Generic Deriving",
-    description: "Derive Generic instances to get type-level representations.",
-    category: "Generic Deriving",
-    icon: "dna",
-    source: `module Main where
-
-import Data.Generic.Rep (class Generic)
-
-data Void
-
-data MyUnit = MyUnit
-
-data Either a b = Left a | Right b
-
-data Tuple a b = Tuple a b
-
-newtype Wrapper a = Wrapper a
-
-derive instance Generic Void _
-derive instance Generic MyUnit _
-derive instance Generic (Either a b) _
-derive instance Generic (Tuple a b) _
-derive instance Generic (Wrapper a) _
-
--- Use Proxy to force solving and emit Rep types
-data Proxy a = Proxy
-
-getVoid :: forall rep. Generic Void rep => Proxy rep
-getVoid = Proxy
-
-getMyUnit :: forall rep. Generic MyUnit rep => Proxy rep
-getMyUnit = Proxy
-
-getEither :: forall a b rep. Generic (Either a b) rep => Proxy rep
-getEither = Proxy
-
-forceSolve = { getVoid, getMyUnit, getEither }
-`,
-  },
-  {
-    id: "derive-newtype",
-    title: "Newtype Deriving",
-    description: "Derive Newtype instances for wrapper types to enable coercions.",
-    category: "Generic Deriving",
-    icon: "box",
-    source: `module Main where
-
-import Data.Newtype (class Newtype)
-
-newtype UserId = UserId Int
-
-newtype Email = Email String
-
-newtype Wrapper a = Wrapper a
-
-derive instance Newtype UserId _
-derive instance Newtype Email _
-derive instance Newtype (Wrapper a) _
-`,
-  },
-  {
-    id: "safe-coerce",
-    title: "Safe Coerce",
-    description: "Zero-cost conversions between representationally equal types.",
-    category: "Generic Deriving",
-    icon: "arrow",
-    source: `module Main where
-
-import Safe.Coerce (coerce)
-
--- Newtypes have zero runtime overhead
-newtype Age = Age Int
-newtype Years = Years Age
-
--- Wrap and unwrap with no runtime cost
-wrapAge :: Int -> Age
-wrapAge = coerce
-
-unwrapAge :: Age -> Int
-unwrapAge = coerce
-
--- Coerce through containers (representational role)
-data Maybe a = Nothing | Just a
-
-coerceMaybe :: Maybe Age -> Maybe Int
-coerceMaybe = coerce
-
--- Transitive coercion: Int -> Age -> Years
-coerceTransitive :: Int -> Years
-coerceTransitive = coerce
-
-unwrapTransitive :: Years -> Int
-unwrapTransitive = coerce
-`,
-  },
-
-  // Type Classes
-  {
-    id: "class-functor",
-    title: "Functor Class",
-    description: "Higher-kinded type class for mappable containers.",
-    category: "Type Classes",
-    icon: "cube",
-    source: `module Main where
-
-class Functor f where
-  map :: forall a b. (a -> b) -> f a -> f b
-
-data Maybe a = Nothing | Just a
-
-instance Functor Maybe where
-  map _ Nothing = Nothing
-  map f (Just a) = Just (f a)
-
-data List a = Nil | Cons a (List a)
-
-instance Functor List where
-  map _ Nil = Nil
-  map f (Cons x xs) = Cons (f x) (map f xs)
-`,
-  },
-  {
-    id: "fundep",
-    title: "Functional Dependencies",
-    description: "Use functional dependencies to guide type inference.",
-    category: "Type Classes",
-    icon: "arrow",
-    source: `module Main where
-
--- Class with functional dependency: knowing 'a' determines 'b'
-class Convert a b | a -> b where
-  convert :: a -> b
-
-instance Convert Int String where
-  convert _ = "int"
-
-instance Convert Boolean String where
-  convert _ = "bool"
-
--- The fundep allows inferring the return type from the input type
-testInt = convert 42
-testBool = convert true
-`,
-  },
-  {
-    id: "instance-chains",
-    title: "Instance Chains",
-    description: "Use 'else' to create overlapping instances with fallback.",
-    category: "Type Classes",
-    icon: "link",
-    source: `module Main where
-
-import Prim.Boolean (True, False)
-
-data Proxy a = Proxy
-
-class TypeEq a b r | a b -> r
-
-instance TypeEq a a True
-else instance TypeEq a b False
-
-testSame :: forall r. TypeEq Int Int r => Proxy r
-testSame = Proxy
-
-testDiff :: forall r. TypeEq Int String r => Proxy r
-testDiff = Proxy
-
--- Force instantiation to verify resolved types
-test = { testSame, testDiff }
+proof1LT10 :: Proxy (left :: 1, right :: 10)
+proof1LT10 = transLT (Proxy :: Proxy 5)
 `,
   },
   {
     id: "recursive-constraints",
     title: "Recursive Constraints",
     description: "Build row types recursively using type-level integers and symbols.",
-    category: "Type Classes",
-    icon: "calculator",
+    category: "Type-Level Programming",
+    icon: "loop",
     source: `module Main where
 
 import Prim.Int (class Add, class ToString)
