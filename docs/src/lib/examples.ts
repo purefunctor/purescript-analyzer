@@ -3,6 +3,7 @@ export interface Example {
   title: string;
   description: string;
   category: string;
+  icon: string;
   source: string;
 }
 
@@ -11,8 +12,9 @@ export const EXAMPLES: Example[] = [
   {
     id: "row-union",
     title: "Row Union Solving",
-    description: "Demonstrates bidirectional Row.Union constraint solving for extensible records.",
+    description: "Bidirectional Row.Union constraint solving for extensible records.",
     category: "Type-Level Programming",
+    icon: "merge",
     source: `module Main where
 
 import Prim.Row as Row
@@ -35,8 +37,9 @@ solveUnion = { deriveUnion, deriveUnionLeft, deriveUnionRight }
   {
     id: "row-cons",
     title: "Row.Cons Operations",
-    description: "Shows how Row.Cons constructs and deconstructs row types at the type level.",
+    description: "Construct and deconstruct row types at the type level.",
     category: "Type-Level Programming",
+    icon: "layers",
     source: `module Main where
 
 import Prim.Row as Row
@@ -62,8 +65,9 @@ solveCons = { deriveCons, deriveTail, deriveType }
   {
     id: "rowlist",
     title: "RowToList Conversion",
-    description: "Converts row types to type-level lists for type-level iteration.",
+    description: "Convert row types to type-level lists for iteration.",
     category: "Type-Level Programming",
+    icon: "list",
     source: `module Main where
 
 import Prim.RowList as RL
@@ -88,6 +92,7 @@ solveRowToList = { rowToListSimple, rowToListMultiple, rowToListEmpty }
     title: "Symbol Operations",
     description: "Type-level string operations: append, compare, and cons.",
     category: "Type-Level Programming",
+    icon: "text-fields",
     source: `module Main where
 
 import Prim.Symbol (class Append, class Compare, class Cons)
@@ -123,6 +128,7 @@ forceSolve = { deriveAppended, deriveLeft, compareLT, compareEQ, deriveCons }
     title: "Type-Level Integers",
     description: "Compile-time integer arithmetic: add, multiply, compare.",
     category: "Type-Level Programming",
+    icon: "calculator",
     source: `module Main where
 
 import Prim.Int (class Add, class Mul, class Compare, class ToString)
@@ -157,13 +163,55 @@ deriveString = Proxy
 forceSolve = { deriveSum, deriveRight, deriveMul, compareLT, compareGT, deriveString }
 `,
   },
+  {
+    id: "int-compare-proofs",
+    title: "Comparison Proofs",
+    description: "Type-level proofs of integer comparison transitivity and symmetry.",
+    category: "Type-Level Programming",
+    icon: "link",
+    source: `module Main where
+
+import Prim.Int (class Compare)
+import Prim.Ordering (LT, EQ, GT)
+
+data Proxy :: forall k. k -> Type
+data Proxy a = Proxy
+
+-- Assertion helpers using row types to capture comparison results
+assertLesser :: forall l r. Compare l r LT => Proxy ( left :: l, right :: r )
+assertLesser = Proxy
+
+assertGreater :: forall l r. Compare l r GT => Proxy ( left :: l, right :: r )
+assertGreater = Proxy
+
+assertEqual :: forall l r. Compare l r EQ => Proxy ( left :: l, right :: r )
+assertEqual = Proxy
+
+-- Symmetry: if m > n then n < m
+symmLt :: forall m n. Compare m n GT => Proxy ( left :: n, right :: m )
+symmLt = assertLesser
+
+-- Reflexivity: n == n for any integer
+reflEq :: forall (n :: Int). Proxy ( left :: n, right :: n )
+reflEq = assertEqual
+
+-- Transitivity: if m < n and n < p, then m < p
+transLt :: forall m n p. Compare m n LT => Compare n p LT => Proxy n -> Proxy ( left :: m, right :: p )
+transLt _ = assertLesser
+
+-- Concrete proof: 1 < 5 < 10 implies 1 < 10
+proof1Lt10 :: Proxy ( left :: 1, right :: 10 )
+proof1Lt10 = transLt (Proxy :: Proxy 5)
+`,
+  },
 
   // Generic Deriving
   {
     id: "derive-generic",
     title: "Generic Deriving",
-    description: "Derive Generic instances to get type-level representations of data types.",
+    description: "Derive Generic instances to get type-level representations.",
     category: "Generic Deriving",
+    icon: "dna",
     source: `module Main where
 
 import Data.Generic.Rep (class Generic)
@@ -204,6 +252,7 @@ forceSolve = { getVoid, getMyUnit, getEither }
     title: "Newtype Deriving",
     description: "Derive Newtype instances for wrapper types to enable coercions.",
     category: "Generic Deriving",
+    icon: "box",
     source: `module Main where
 
 import Data.Newtype (class Newtype)
@@ -219,6 +268,41 @@ derive instance Newtype Email _
 derive instance Newtype (Wrapper a) _
 `,
   },
+  {
+    id: "safe-coerce",
+    title: "Safe Coerce",
+    description: "Zero-cost conversions between representationally equal types.",
+    category: "Generic Deriving",
+    icon: "arrow",
+    source: `module Main where
+
+import Safe.Coerce (coerce)
+
+-- Newtypes have zero runtime overhead
+newtype Age = Age Int
+newtype Years = Years Age
+
+-- Wrap and unwrap with no runtime cost
+wrapAge :: Int -> Age
+wrapAge = coerce
+
+unwrapAge :: Age -> Int
+unwrapAge = coerce
+
+-- Coerce through containers (representational role)
+data Maybe a = Nothing | Just a
+
+coerceMaybe :: Maybe Age -> Maybe Int
+coerceMaybe = coerce
+
+-- Transitive coercion: Int -> Age -> Years
+coerceTransitive :: Int -> Years
+coerceTransitive = coerce
+
+unwrapTransitive :: Years -> Int
+unwrapTransitive = coerce
+`,
+  },
 
   // Type Classes
   {
@@ -226,6 +310,7 @@ derive instance Newtype (Wrapper a) _
     title: "Functor Class",
     description: "Higher-kinded type class for mappable containers.",
     category: "Type Classes",
+    icon: "cube",
     source: `module Main where
 
 class Functor f where
@@ -249,6 +334,7 @@ instance Functor List where
     title: "Functional Dependencies",
     description: "Use functional dependencies to guide type inference.",
     category: "Type Classes",
+    icon: "arrow",
     source: `module Main where
 
 -- Class with functional dependency: knowing 'a' determines 'b'
@@ -269,8 +355,9 @@ testBool = convert true
   {
     id: "instance-chains",
     title: "Instance Chains",
-    description: "Use 'else' to create overlapping instances with fallback behavior.",
+    description: "Use 'else' to create overlapping instances with fallback.",
     category: "Type Classes",
+    icon: "link",
     source: `module Main where
 
 import Prim.Boolean (True, False)
@@ -290,6 +377,41 @@ testDiff = Proxy
 
 -- Force instantiation to verify resolved types
 test = { testSame, testDiff }
+`,
+  },
+  {
+    id: "recursive-constraints",
+    title: "Recursive Constraints",
+    description: "Build row types recursively using type-level integers and symbols.",
+    category: "Type Classes",
+    icon: "calculator",
+    source: `module Main where
+
+import Prim.Int (class Add, class ToString)
+import Prim.Row (class Cons)
+import Prim.Symbol (class Append)
+
+data Proxy :: forall k. k -> Type
+data Proxy a = Proxy
+
+-- Recursively build a row type from an integer
+-- Build 3 r => r ~ (n1 :: 1, n2 :: 2, n3 :: 3)
+class Build n r | n -> r
+
+instance Build 0 ()
+else instance
+  ( Add minusOne 1 currentId
+  , ToString currentId labelId
+  , Append "n" labelId actualLabel
+  , Build minusOne minusOneResult
+  , Cons actualLabel currentId minusOneResult finalResult
+  ) => Build currentId finalResult
+
+build :: forall n r. Build n r => Proxy n -> Proxy r
+build _ = Proxy
+
+-- Builds: (n1 :: 1, n2 :: 2, n3 :: 3, n4 :: 4, n5 :: 5)
+test = build (Proxy :: Proxy 5)
 `,
   },
 ];

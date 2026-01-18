@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import type { PackageSet, PackageLoadProgress, PackageStatus } from "../lib/packages/types";
 
 interface Props {
@@ -8,6 +8,8 @@ interface Props {
   onAddPackage: (name: string) => void;
   onClearPackages: () => void;
   isLoading: boolean;
+  error: string | null;
+  onDismissError: () => void;
 }
 
 function StatusBadge({ status }: { status: PackageStatus }) {
@@ -40,10 +42,27 @@ export function PackagePanel({
   onAddPackage,
   onClearPackages,
   isLoading,
+  error,
+  onDismissError,
 }: Props) {
   const [input, setInput] = useState("");
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Click-outside handler for suggestions dropdown
+  useEffect(() => {
+    if (!showSuggestions) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showSuggestions]);
 
   const handleInputChange = useCallback(
     (value: string) => {
@@ -90,15 +109,24 @@ export function PackagePanel({
     <div className="space-y-4">
       <h3 className="text-xs font-semibold uppercase tracking-wider text-fg-subtle">Packages</h3>
 
+      {/* Error display */}
+      {error && (
+        <div className="flex items-center justify-between rounded border border-red-400/30 bg-red-400/10 px-3 py-2 text-sm text-red-400">
+          <span>{error}</span>
+          <button onClick={onDismissError} className="ml-2 hover:text-red-300">
+            Dismiss
+          </button>
+        </div>
+      )}
+
       {/* Search/Add Package */}
-      <div className="relative">
+      <div ref={containerRef} className="relative">
         <input
           type="text"
           value={input}
           onChange={(e) => handleInputChange(e.target.value)}
           onKeyDown={handleKeyDown}
           onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-          onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
           placeholder="Add package (e.g., prelude)"
           className="w-full rounded bg-bg-lighter px-3 py-2 text-sm text-fg placeholder-fg-subtle outline-none focus:ring-1 focus:ring-teal-400/50"
           disabled={!packageSet || isLoading}
