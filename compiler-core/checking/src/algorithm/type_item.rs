@@ -73,6 +73,8 @@ where
     Q: ExternalQueries,
 {
     state.with_error_step(ErrorStep::TypeDeclaration(item_id), |state| {
+        let _span = tracing::debug_span!("check_type_item").entered();
+
         let Some(item) = context.lowered.info.get_type_item(item_id) else {
             return Ok(None);
         };
@@ -168,6 +170,8 @@ where
         state.type_scope.unbind(level);
     }
 
+    crate::debug_fields!(state, context, { inferred_kind = inferred_kind });
+
     Ok(Some(CheckedTypeItem::Data(CheckedData {
         inferred_kind,
         kind_variables,
@@ -215,6 +219,8 @@ where
     if let Some(variable) = kind_variables.first() {
         state.type_scope.unbind(variable.level);
     }
+
+    crate::debug_fields!(state, context, { synonym_type = synonym_type });
 
     Ok(Some(CheckedTypeItem::Synonym(CheckedSynonym {
         inferred_kind,
@@ -286,6 +292,8 @@ where
     if let Some(variable) = kind_variables.first() {
         state.type_scope.unbind(variable.level);
     }
+
+    crate::debug_fields!(state, context, { ?superclass_count = superclasses.len(), ?member_count = members.len() });
 
     Ok(Some(CheckedTypeItem::Class(CheckedClass {
         inferred_kind,
@@ -630,6 +638,8 @@ where
     Q: ExternalQueries,
 {
     state.with_error_step(ErrorStep::TypeDeclaration(item_id), |state| {
+        let _span = tracing::debug_span!("check_type_signature").entered();
+
         let Some(item) = context.lowered.info.get_type_item(item_id) else {
             return Ok(());
         };
@@ -831,6 +841,7 @@ fn check_constructor_arguments<Q>(
 where
     Q: ExternalQueries,
 {
+    let _span = tracing::debug_span!("check_constructor_arguments").entered();
     let mut constructors = vec![];
 
     for item_id in context.indexed.pairs.data_constructors(item_id) {
@@ -840,22 +851,31 @@ where
             continue;
         };
 
-        let mut inferred_arguments = vec![];
+        let arguments = arguments
+            .iter()
+            .map(|argument| infer_constructor_argument(state, context, *argument))
+            .try_collect()?;
 
-        for &argument in arguments.iter() {
-            let inferred_type =
-                state.with_error_step(ErrorStep::ConstructorArgument(argument), |state| {
-                    let (inferred_type, _) =
-                        kind::check_surface_kind(state, context, argument, context.prim.t)?;
-                    Ok(inferred_type)
-                })?;
-            inferred_arguments.push(inferred_type);
-        }
-
-        constructors.push(CheckedConstructor { item_id, arguments: inferred_arguments });
+        constructors.push(CheckedConstructor { item_id, arguments });
     }
 
     Ok(constructors)
+}
+
+fn infer_constructor_argument<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    argument: lowering::TypeId,
+) -> Result<interner::Id<Type>, building_types::QueryError>
+where
+    Q: ExternalQueries,
+{
+    state.with_error_step(ErrorStep::ConstructorArgument(argument), |state| {
+        let _span = tracing::debug_span!("infer_constructor_argument").entered();
+        let (inferred_type, _) =
+            kind::check_surface_kind(state, context, argument, context.prim.t)?;
+        Ok(inferred_type)
+    })
 }
 
 /// Infers roles for type parameters based on their usage in constructors.

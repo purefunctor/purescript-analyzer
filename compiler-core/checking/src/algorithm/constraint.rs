@@ -19,11 +19,12 @@ use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::algorithm::fold::{FoldAction, TypeFold, fold_type};
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::visit::CollectFileReferences;
+use crate::algorithm::visit::{CollectFileReferences, TypeVisitor, VisitAction, visit_type};
 use crate::algorithm::{toolkit, transfer, unification};
 use crate::core::{Class, Instance, InstanceKind, Variable, debruijn};
 use crate::{CheckedModule, ExternalQueries, Type, TypeId};
 
+#[tracing::instrument(skip_all, name = "solve_constraints")]
 pub fn solve_constraints<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -33,6 +34,11 @@ pub fn solve_constraints<Q>(
 where
     Q: ExternalQueries,
 {
+    crate::debug_fields!(state, context, {
+        ?wanted = wanted.len(),
+        ?given = given.len(),
+    });
+
     let given = elaborate_given(state, context, given)?;
 
     let mut work_queue = wanted;
@@ -42,6 +48,8 @@ where
         let mut made_progress = false;
 
         'work: while let Some(wanted) = work_queue.pop_front() {
+            crate::trace_fields!(state, context, { wanted = wanted }, "work");
+
             let Some(application) = constraint_application(state, wanted) else {
                 residual.push(wanted);
                 continue;
@@ -105,6 +113,8 @@ where
             break;
         }
     }
+
+    crate::debug_fields!(state, context, { ?residual = residual.len() });
 
     Ok(residual)
 }
@@ -646,61 +656,84 @@ fn can_unify(state: &mut CheckState, t1: TypeId, t2: TypeId) -> CanUnify {
 
         (Type::Row(_), Type::Row(_)) => Unify,
 
-        (&Type::Application(f1, a1), &Type::Application(f2, a2)) => {
-            can_unify(state, f1, f2).and_also(|| can_unify(state, a1, a2))
-        }
+        (
+            &Type::Application(t1_function, t1_argument),
+            &Type::Application(t2_function, t2_argument),
+        ) => can_unify(state, t1_function, t2_function)
+            .and_also(|| can_unify(state, t1_argument, t2_argument)),
 
-        (&Type::Function(a1, r1), &Type::Function(a2, r2)) => {
-            can_unify(state, a1, a2).and_also(|| can_unify(state, r1, r2))
+        (&Type::Function(t1_argument, t1_result), &Type::Function(t2_argument, t2_result)) => {
+            can_unify(state, t1_argument, t2_argument)
+                .and_also(|| can_unify(state, t1_result, t2_result))
         }
-
-        (&Type::KindApplication(f1, a1), &Type::KindApplication(f2, a2)) => {
-            can_unify(state, f1, f2).and_also(|| can_unify(state, a1, a2))
-        }
-
-        (&Type::Kinded(t1, k1), &Type::Kinded(t2, k2)) => {
-            can_unify(state, t1, t2).and_also(|| can_unify(state, k1, k2))
-        }
-
-        (&Type::Constrained(c1, b1), &Type::Constrained(c2, b2)) => {
-            can_unify(state, c1, c2).and_also(|| can_unify(state, b1, b2))
-        }
-
-        (&Type::Forall(_, b1), &Type::Forall(_, b2)) => can_unify(state, b1, b2),
 
         (
-            &Type::OperatorApplication(f1, t1, l1, r1),
-            &Type::OperatorApplication(f2, t2, l2, r2),
+            &Type::KindApplication(t1_function, t1_argument),
+            &Type::KindApplication(t2_function, t2_argument),
+        ) => can_unify(state, t1_function, t2_function)
+            .and_also(|| can_unify(state, t1_argument, t2_argument)),
+
+        (&Type::Kinded(t1_type, t1_kind), &Type::Kinded(t2_type, t2_kind)) => {
+            can_unify(state, t1_type, t2_type).and_also(|| can_unify(state, t1_kind, t2_kind))
+        }
+
+        (
+            &Type::Constrained(t1_constraint, t1_body),
+            &Type::Constrained(t2_constraint, t2_body),
+        ) => can_unify(state, t1_constraint, t2_constraint)
+            .and_also(|| can_unify(state, t1_body, t2_body)),
+
+        (&Type::Forall(_, t1_body), &Type::Forall(_, t2_body)) => {
+            can_unify(state, t1_body, t2_body)
+        }
+
+        (
+            &Type::OperatorApplication(t1_file, t1_item, t1_left, t1_right),
+            &Type::OperatorApplication(t2_file, t2_item, t2_left, t2_right),
         ) => {
-            if f1 == f2 && t1 == t2 {
-                can_unify(state, l1, l2).and_also(|| can_unify(state, r1, r2))
+            if t1_file == t2_file && t1_item == t2_item {
+                can_unify(state, t1_left, t2_left).and_also(|| can_unify(state, t1_right, t2_right))
             } else {
                 Apart
             }
         }
 
-        (Type::SynonymApplication(_, f1, t1, a1), Type::SynonymApplication(_, f2, t2, a2)) => {
-            if f1 == f2 && t1 == t2 && a1.len() == a2.len() {
-                let a1 = Arc::clone(a1);
-                let a2 = Arc::clone(a2);
-                iter::zip(a1.iter(), a2.iter())
-                    .fold(Equal, |result, (&a1, &a2)| result.and_also(|| can_unify(state, a1, a2)))
+        (
+            Type::SynonymApplication(_, t1_file, t1_item, t1_arguments),
+            Type::SynonymApplication(_, t2_file, t2_item, t2_arguments),
+        ) => {
+            if t1_file == t2_file && t1_item == t2_item && t1_arguments.len() == t2_arguments.len()
+            {
+                let t1_arguments = Arc::clone(t1_arguments);
+                let t2_arguments = Arc::clone(t2_arguments);
+                iter::zip(t1_arguments.iter(), t2_arguments.iter()).fold(
+                    Equal,
+                    |result, (&t1_argument, &t2_argument)| {
+                        result.and_also(|| can_unify(state, t1_argument, t2_argument))
+                    },
+                )
             } else {
                 Apart
             }
         }
 
-        (&Type::Variable(Variable::Bound(l1, k1)), &Type::Variable(Variable::Bound(l2, k2))) => {
-            if l1 == l2 {
-                can_unify(state, k1, k2)
+        (
+            &Type::Variable(Variable::Bound(t1_level, t1_kind)),
+            &Type::Variable(Variable::Bound(t2_level, t2_kind)),
+        ) => {
+            if t1_level == t2_level {
+                can_unify(state, t1_kind, t2_kind)
             } else {
                 Apart
             }
         }
 
-        (&Type::Variable(Variable::Skolem(l1, k1)), &Type::Variable(Variable::Skolem(l2, k2))) => {
-            if l1 == l2 {
-                can_unify(state, k1, k2)
+        (
+            &Type::Variable(Variable::Skolem(t1_level, t1_kind)),
+            &Type::Variable(Variable::Skolem(t2_level, t2_kind)),
+        ) => {
+            if t1_level == t2_level {
+                can_unify(state, t1_kind, t2_kind)
             } else {
                 Apart
             }
@@ -711,6 +744,7 @@ fn can_unify(state: &mut CheckState, t1: TypeId, t2: TypeId) -> CanUnify {
 }
 
 /// Matches a wanted constraint to an instance.
+#[tracing::instrument(skip_all, name = "match_instance")]
 fn match_instance<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -733,6 +767,7 @@ where
         let match_result = match_type(state, &mut bindings, &mut equalities, *wanted, given);
 
         if matches!(match_result, MatchType::Apart) {
+            crate::trace_fields!(state, context, { ?wanted = wanted, ?given = given }, "apart");
             return Ok(MatchInstance::Apart);
         }
 
@@ -745,6 +780,7 @@ where
 
     if !stuck_positions.is_empty() {
         if !can_determine_stuck(context, file_id, item_id, &match_results, &stuck_positions)? {
+            crate::trace_fields!(state, context, { ?wanted = wanted }, "stuck");
             return Ok(MatchInstance::Stuck);
         }
 
@@ -775,7 +811,7 @@ where
         }
     }
 
-    let constraints = instance
+    let constraints: Vec<_> = instance
         .constraints
         .iter()
         .map(|(constraint, _)| {
@@ -783,6 +819,11 @@ where
             ApplyBindings::on(state, &bindings, localized)
         })
         .collect();
+
+    crate::trace_fields!(state, context, {
+        ?constraints = constraints.len(),
+        ?equalities = equalities.len()
+    }, "match");
 
     Ok(MatchInstance::Match { constraints, equalities })
 }
@@ -953,19 +994,16 @@ struct CollectBoundLevels<'a> {
 
 impl<'a> CollectBoundLevels<'a> {
     fn on(state: &mut CheckState, type_id: TypeId, levels: &'a mut FxHashSet<debruijn::Level>) {
-        fold_type(state, type_id, &mut CollectBoundLevels { levels });
+        visit_type(state, type_id, &mut CollectBoundLevels { levels });
     }
 }
 
-impl TypeFold for CollectBoundLevels<'_> {
-    fn transform(&mut self, _state: &mut CheckState, id: TypeId, t: &Type) -> FoldAction {
-        match t {
-            Type::Variable(Variable::Bound(level, _)) => {
-                self.levels.insert(*level);
-                FoldAction::Replace(id)
-            }
-            _ => FoldAction::Continue,
+impl TypeVisitor for CollectBoundLevels<'_> {
+    fn visit(&mut self, _state: &mut CheckState, _id: TypeId, t: &Type) -> VisitAction {
+        if let Type::Variable(Variable::Bound(level, _)) = t {
+            self.levels.insert(*level);
         }
+        VisitAction::Continue
     }
 }
 
@@ -980,18 +1018,15 @@ impl<'a> CollectBoundVariables<'a> {
         type_id: TypeId,
         variables: &'a mut FxHashMap<debruijn::Level, TypeId>,
     ) {
-        fold_type(state, type_id, &mut CollectBoundVariables { variables });
+        visit_type(state, type_id, &mut CollectBoundVariables { variables });
     }
 }
 
-impl TypeFold for CollectBoundVariables<'_> {
-    fn transform(&mut self, _state: &mut CheckState, id: TypeId, t: &Type) -> FoldAction {
-        match t {
-            Type::Variable(Variable::Bound(level, kind)) => {
-                self.variables.insert(*level, *kind);
-                FoldAction::Replace(id)
-            }
-            _ => FoldAction::Continue,
+impl TypeVisitor for CollectBoundVariables<'_> {
+    fn visit(&mut self, _state: &mut CheckState, _id: TypeId, t: &Type) -> VisitAction {
+        if let Type::Variable(Variable::Bound(level, kind)) = t {
+            self.variables.insert(*level, *kind);
         }
+        VisitAction::Continue
     }
 }

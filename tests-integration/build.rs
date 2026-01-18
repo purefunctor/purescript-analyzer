@@ -134,7 +134,23 @@ fn run_test(folder: &str, file: &str) {{
     let path = std::path::Path::new("fixtures/checking").join(folder);
     let (engine, _) = tests_integration::load_compiler(&path);
     let Some(id) = engine.module_file(file) else {{ return }};
-    let report = tests_integration::generated::basic::report_checked(&engine, id);
+
+    let level = match std::env::var("TRACE_LEVEL").as_deref() {{
+        Ok("debug") => tracing::Level::DEBUG,
+        _ => tracing::Level::WARN,
+    }};
+
+    let target_dir = env!("CARGO_TARGET_TMPDIR");
+    let test_name = format!("{{}}_{{}}",  folder, file);
+    let (report, trace_path) = tests_integration::trace::with_file_trace(
+        level,
+        target_dir,
+        &test_name,
+        || tests_integration::generated::basic::report_checked(&engine, id)
+    );
+
+    println!("trace: {{}}", trace_path.display());
+
     let mut settings = insta::Settings::clone_current();
     settings.set_snapshot_path(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("fixtures/checking").join(folder));
     settings.set_prepend_module_to_snapshot(false);

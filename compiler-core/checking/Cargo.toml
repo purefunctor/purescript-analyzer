@@ -3,7 +3,12 @@ name = "checking"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+default = []
+no-tracing = ["tracing/max_level_off"]
+
 [dependencies]
+tracing = "0.1.44"
 building-types = { version = "0.1.0", path = "../building-types" }
 files = { version = "0.1.0", path = "../files" }
 indexing = { version = "0.1.0", path = "../indexing" }
@@ -11,9 +16,11 @@ indexmap = "2.12.1"
 interner = { version = "0.1.0", path = "../interner" }
 itertools = "0.14.0"
 lowering = { version = "0.1.0", path = "../lowering" }
+parsing = { version = "0.1.0", path = "../parsing" }
 petgraph = "0.8.3"
 pretty = "0.12"
 resolving = { version = "0.1.0", path = "../resolving" }
 rustc-hash = "2.1.1"
 smol_str = "0.3.4"
+stabilizing = { version = "0.1.0", path = "../stabilizing" }
 sugar = { version = "0.1.0", path = "../sugar" }

@@ -1,4 +1,5 @@
 pub mod generated;
+pub mod trace;
 
 use std::fs;
 use std::path::{Path, PathBuf};

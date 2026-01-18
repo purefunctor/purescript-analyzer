@@ -15,6 +15,7 @@ use lowering::{
 };
 use resolving::ResolvedModule;
 use rustc_hash::FxHashMap;
+use stabilizing::StabilizedModule;
 use sugar::{Bracketed, Sectioned};
 
 use crate::algorithm::{constraint, transfer};
@@ -343,6 +344,7 @@ where
     pub known_generic: Option<KnownGeneric>,
 
     pub id: FileId,
+    pub stabilized: Arc<StabilizedModule>,
     pub indexed: Arc<IndexedModule>,
     pub lowered: Arc<LoweredModule>,
     pub grouped: Arc<GroupedModule>,
@@ -363,6 +365,7 @@ where
         state: &mut CheckState,
         id: FileId,
     ) -> QueryResult<CheckContext<'a, Q>> {
+        let stabilized = queries.stabilized(id)?;
         let indexed = queries.indexed(id)?;
         let lowered = queries.lowered(id)?;
         let grouped = queries.grouped(id)?;
@@ -399,6 +402,7 @@ where
             known_reflectable,
             known_generic,
             id,
+            stabilized,
             indexed,
             lowered,
             grouped,

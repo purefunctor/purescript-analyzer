@@ -17,6 +17,7 @@ use crate::error::ErrorStep;
 
 const MISSING_NAME: SmolStr = SmolStr::new_static("<MissingName>");
 
+#[tracing::instrument(skip_all, name = "infer_surface_kind")]
 pub fn infer_surface_kind<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -26,7 +27,9 @@ where
     Q: ExternalQueries,
 {
     state.with_error_step(ErrorStep::InferringKind(id), |state| {
-        infer_surface_kind_core(state, context, id)
+        let (t, k) = infer_surface_kind_core(state, context, id)?;
+        crate::trace_fields!(state, context, { inferred_type = t, inferred_kind = k });
+        Ok((t, k))
     })
 }
 
@@ -403,6 +406,7 @@ where
     }
 }
 
+#[tracing::instrument(skip_all, name = "elaborate_kind")]
 pub fn elaborate_kind<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -411,6 +415,8 @@ pub fn elaborate_kind<Q>(
 where
     Q: ExternalQueries,
 {
+    crate::trace_fields!(state, context, { type_ = id });
+
     let unknown = context.prim.unknown;
     let id = state.normalize_type(id);
 
@@ -519,6 +525,7 @@ where
     Ok(type_id)
 }
 
+#[tracing::instrument(skip_all, name = "check_surface_kind")]
 pub fn check_surface_kind<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -528,9 +535,16 @@ pub fn check_surface_kind<Q>(
 where
     Q: ExternalQueries,
 {
+    crate::trace_fields!(state, context, { expected_kind = kind });
+
     state.with_error_step(ErrorStep::CheckingKind(id), |state| {
         let (inferred_type, inferred_kind) = infer_surface_kind_core(state, context, id)?;
         let _ = unification::subtype(state, context, inferred_kind, kind)?;
+        crate::trace_fields!(state, context, {
+            inferred_type = inferred_type,
+            inferred_kind = inferred_kind,
+            expected_kind = kind
+        });
         Ok((inferred_type, inferred_kind))
     })
 }
