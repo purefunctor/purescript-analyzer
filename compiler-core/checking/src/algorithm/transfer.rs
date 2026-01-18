@@ -30,6 +30,7 @@ use crate::core::{RowType, Variable};
 use crate::{ExternalQueries, Type, TypeId};
 
 /// Moves a type from local memory to global memory.
+#[tracing::instrument(skip_all, name = "localise")]
 pub fn localize<Q>(state: &mut CheckState, context: &CheckContext<Q>, id: TypeId) -> TypeId
 where
     Q: ExternalQueries,
@@ -40,6 +41,7 @@ where
 }
 
 /// Moves a type from global memory to local memory.
+#[tracing::instrument(skip_all, name = "globalise")]
 pub fn globalize<Q>(state: &mut CheckState, context: &CheckContext<Q>, id: TypeId) -> TypeId
 where
     Q: ExternalQueries,
@@ -146,13 +148,13 @@ fn traverse<'a, Q: ExternalQueries>(source: &mut TraversalSource<'a, Q>, id: Typ
             Type::SynonymApplication(saturation, file_id, type_id, arguments)
         }
 
-        Type::Unification(_) => match source.mode {
+        Type::Unification(unification_id) => match source.mode {
             TraversalMode::FromGlobal => {
-                // eprintln!("localize: unification variable ?{unification_id} escaped");
+                tracing::trace!(unification_id = ?unification_id, "escaped unification variable");
                 Type::Unknown
             }
             TraversalMode::FromLocal => {
-                // eprintln!("globalize: unification variable ?{unification_id} escaped");
+                tracing::trace!(unification_id = ?unification_id, "escaped unification variable");
                 Type::Unknown
             }
         },
