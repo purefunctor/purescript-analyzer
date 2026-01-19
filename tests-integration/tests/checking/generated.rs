@@ -445,3 +445,11 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_208_int_add_constraint_main() { run_test("208_int_add_constraint", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_209_int_cons_constraint_main() { run_test("209_int_cons_constraint", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_210_row_constraint_generalization_main() { run_test("210_row_constraint_generalization", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_211_row_constraint_result_main() { run_test("211_row_constraint_result", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_212_row_constraint_chained_main() { run_test("212_row_constraint_chained", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_213_row_constraint_multiple_main() { run_test("213_row_constraint_multiple", "Main"); }

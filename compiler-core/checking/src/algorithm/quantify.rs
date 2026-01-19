@@ -9,12 +9,12 @@ use petgraph::visit::{DfsPostOrder, Reversed};
 use rustc_hash::FxHashSet;
 use smol_str::SmolStrBuilder;
 
-use crate::ExternalQueries;
 use crate::algorithm::constraint::{self, ConstraintApplication};
 use crate::algorithm::fold::Zonk;
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::substitute::{ShiftBound, SubstituteUnification, UniToLevel};
 use crate::core::{Class, ForallBinder, Instance, RowType, Type, TypeId, Variable, debruijn};
+use crate::{ExternalQueries, safe_loop};
 
 pub fn quantify(state: &mut CheckState, id: TypeId) -> Option<(TypeId, debruijn::Size)> {
     let graph = collect_unification(state, id);
@@ -96,28 +96,25 @@ where
         return Ok(Some(quantified_with_constraints));
     }
 
-    let unsolved_graph = collect_unification(state, type_id);
-    let unsolved_nodes: FxHashSet<u32> = unsolved_graph.nodes().collect();
-
-    let mut valid: FxHashSet<TypeId> = FxHashSet::default();
-    let mut ambiguous = vec![];
+    let mut pending = vec![];
     let mut unsatisfied = vec![];
 
     for constraint in constraints {
         let constraint = Zonk::on(state, constraint);
-        let unsolved_graph = collect_unification(state, constraint);
-        if unsolved_graph.node_count() == 0 {
+        let unification: FxHashSet<u32> = collect_unification(state, constraint).nodes().collect();
+        if unification.is_empty() {
             unsatisfied.push(constraint);
-        } else if unsolved_graph.nodes().all(|unification| unsolved_nodes.contains(&unification)) {
-            valid.insert(constraint);
         } else {
-            ambiguous.push(constraint);
+            pending.push((constraint, unification));
         }
     }
 
+    let in_signature = collect_unification(state, type_id).nodes().collect();
+    let (generalised, ambiguous) = classify_constraints_by_reachability(pending, in_signature);
+
     // Subtle: stable ordering for consistent output
-    let valid = valid.into_iter().sorted().collect_vec();
-    let minimized = minimize_by_superclasses(state, context, valid)?;
+    let generalised = generalised.into_iter().sorted().collect_vec();
+    let minimized = minimize_by_superclasses(state, context, generalised)?;
 
     let constrained_type = minimized.into_iter().rfold(type_id, |constrained, constraint| {
         state.storage.intern(Type::Constrained(constraint, constrained))
@@ -184,6 +181,40 @@ where
         .into_iter()
         .filter_map(|constraint| constraint::constraint_application(state, constraint))
         .collect())
+}
+
+/// Classifies constraints as valid or ambiguous based on variable reachability.
+///
+/// A constraint is valid if its variables are transitively reachable from the
+/// signature variables. The algorithm uses fixed-point iteration. As long as
+/// a constraint shares any variable with the reachable set, all its variables
+/// become reachable.
+fn classify_constraints_by_reachability(
+    pending: Vec<(TypeId, FxHashSet<u32>)>,
+    in_signature: FxHashSet<u32>,
+) -> (FxHashSet<TypeId>, Vec<TypeId>) {
+    let mut reachable = in_signature;
+    let mut valid = FxHashSet::default();
+    let mut remaining = pending;
+
+    safe_loop! {
+        let (connected, disconnected): (Vec<_>, Vec<_>) =
+            remaining.into_iter().partition(|(_, unification)| {
+                unification.iter().any(|variable| reachable.contains(variable))
+            });
+
+        if connected.is_empty() {
+            let ambiguous = disconnected.into_iter().map(|(id, _)| id).collect();
+            return (valid, ambiguous);
+        }
+
+        for (constraint, unification) in connected {
+            valid.insert(constraint);
+            reachable.extend(unification);
+        }
+
+        remaining = disconnected;
+    }
 }
 
 fn generate_type_name(id: u32) -> smol_str::SmolStr {

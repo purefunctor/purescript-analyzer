@@ -1,0 +1,18 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+unsafeCoerce :: forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type)
+chainedUnion ::
+  forall (r1 :: Row Type) (r2 :: Row Type) (r3 :: Row Type) (r4 :: Row Type) (r5 :: Row Type).
+    Union @Type (r1 :: Row Type) (r2 :: Row Type) (r3 :: Row Type) =>
+    Union @Type (r3 :: Row Type) (r4 :: Row Type) (r5 :: Row Type) =>
+    {| (r1 :: Row Type) } -> {| (r5 :: Row Type) }
+test ::
+  forall (t16 :: Row Type) (t17 :: Row Type) (t18 :: Row Type) (t19 :: Row Type).
+    Union @Type (t17 :: Row Type) (t18 :: Row Type) (t19 :: Row Type) =>
+    Union @Type ( x :: Int ) (t16 :: Row Type) (t17 :: Row Type) =>
+    {| (t19 :: Row Type) }
+
+Types

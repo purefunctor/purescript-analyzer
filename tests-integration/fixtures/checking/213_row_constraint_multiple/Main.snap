@@ -1,0 +1,27 @@
+---
+source: tests-integration/tests/checking/generated.rs
+expression: report
+---
+Terms
+unsafeCoerce :: forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type)
+multiMerge ::
+  forall (r1 :: Row Type) (r2 :: Row Type) (r3 :: Row Type) (r4 :: Row Type) (r5 :: Row Type)
+    (r6 :: Row Type).
+    Union @Type (r1 :: Row Type) (r2 :: Row Type) (r3 :: Row Type) =>
+    Nub @Type (r3 :: Row Type) (r4 :: Row Type) =>
+    Union @Type (r4 :: Row Type) (r5 :: Row Type) (r6 :: Row Type) =>
+    {| (r1 :: Row Type) } -> {| (r5 :: Row Type) } -> {| (r6 :: Row Type) }
+test1 ::
+  forall (t19 :: Row Type) (t20 :: Row Type) (t21 :: Row Type) (t22 :: Row Type) (t23 :: Row Type).
+    Nub @Type (t20 :: Row Type) (t21 :: Row Type) =>
+    Union @Type (t21 :: Row Type) (t22 :: Row Type) (t23 :: Row Type) =>
+    Union @Type ( a :: Int ) (t19 :: Row Type) (t20 :: Row Type) =>
+    {| (t22 :: Row Type) } -> {| (t23 :: Row Type) }
+test2 ::
+  forall (t28 :: Row Type) (t29 :: Row Type) (t30 :: Row Type) (t32 :: Row Type).
+    Nub @Type (t29 :: Row Type) (t30 :: Row Type) =>
+    Union @Type ( a :: Int ) (t28 :: Row Type) (t29 :: Row Type) =>
+    Union @Type (t30 :: Row Type) ( b :: Int ) (t32 :: Row Type) =>
+    {| (t32 :: Row Type) }
+
+Types
