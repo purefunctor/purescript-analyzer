@@ -66,5 +66,5 @@ export interface Lib {
     onProgress: (progress: PackageLoadProgress) => void
   ): Promise<LoadedPackage[]>;
   clearPackages(): Promise<void>;
-  registerModule(moduleName: string, source: string): Promise<void>;
+  registerModule(path: string, source: string): Promise<string | undefined>;
 }

@@ -84,19 +84,30 @@ impl WasmQueryEngine {
         }
     }
 
-    /// Register an external module (from a package).
-    /// Returns the FileId for the module.
-    pub fn register_external_module(&mut self, module_name: &str, source: &str) -> FileId {
-        let path = format!("pkg://registry/{module_name}.purs");
-        let id = self.files.borrow_mut().insert(path.as_str(), source);
+    /// Register an external module source, parsing the module name from source.
+    /// Returns the parsed module name on success, or None if parsing fails.
+    pub fn register_external_source(&mut self, path: &str, source: &str) -> Option<String> {
+        // 1. Insert file into VFS → FileId
+        let virtual_path = format!("pkg://registry/{path}");
+        let id = self.files.borrow_mut().insert(virtual_path.as_str(), source);
 
+        // 2. Set content in input storage
         self.input.borrow_mut().content.insert(id, Arc::from(source));
 
-        let name_id = self.interned.borrow_mut().module.intern(module_name);
+        // 3. Parse (using cached query infrastructure)
+        let (parsed, _) = self.parsed(id).ok()?;
+
+        // 4. Extract module name
+        let module_name = parsed.module_name()?;
+
+        // 5. Register module name → FileId mapping
+        let name_id = self.interned.borrow_mut().module.intern(&module_name);
         self.input.borrow_mut().module.insert(name_id, id);
 
+        // Track for cleanup
         self.external_ids.push(id);
-        id
+
+        Some(module_name.to_string())
     }
 
     /// Clear all external modules (packages), keeping Prim and user modules.

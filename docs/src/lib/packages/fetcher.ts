@@ -1,5 +1,5 @@
 import pako from "pako";
-import type { PackageModule, PackageSet } from "./types";
+import type { RawModule, PackageSet } from "./types";
 
 const REGISTRY_URL = "https://packages.registry.purescript.org";
 const PACKAGE_SET_URL =
@@ -53,20 +53,11 @@ function parseTar(data: Uint8Array): Map<string, string> {
   return files;
 }
 
-/**
- * Extract module name from PureScript source.
- * Parses the "module X.Y.Z where" declaration.
- */
-function extractModuleName(source: string): string | null {
-  const match = source.match(/^\s*module\s+([\w.]+)/m);
-  return match ? match[1] : null;
-}
-
 export async function fetchPackage(
   packageName: string,
   version: string,
   onProgress?: (progress: number) => void
-): Promise<PackageModule[]> {
+): Promise<RawModule[]> {
   // Strip 'v' prefix from version for registry URL
   const versionNum = version.startsWith("v") ? version.slice(1) : version;
   const url = `${REGISTRY_URL}/${packageName}/${versionNum}.tar.gz`;
@@ -108,13 +99,10 @@ export async function fetchPackage(
   // Extract .purs files
   const files = parseTar(tarData);
 
-  // Convert to modules
-  const modules: PackageModule[] = [];
-  for (const [, source] of files) {
-    const moduleName = extractModuleName(source);
-    if (moduleName) {
-      modules.push({ name: moduleName, source });
-    }
+  // Convert to raw modules (path + source, no module name parsing)
+  const modules: RawModule[] = [];
+  for (const [path, source] of files) {
+    modules.push({ path, source });
   }
 
   return modules;

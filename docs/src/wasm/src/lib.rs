@@ -314,12 +314,11 @@ pub fn check(source: &str) -> JsValue {
     serde_wasm_bindgen::to_value(&result).unwrap()
 }
 
-/// Register an external module (from a package) with the engine.
+/// Register an external module source, parsing the module name from source.
+/// Returns the parsed module name on success, or undefined if parsing fails.
 #[wasm_bindgen]
-pub fn register_module(module_name: &str, source: &str) {
-    ENGINE.with_borrow_mut(|engine| {
-        engine.register_external_module(module_name, source);
-    });
+pub fn register_source(path: &str, source: &str) -> Option<String> {
+    ENGINE.with_borrow_mut(|engine| engine.register_external_source(path, source))
 }
 
 /// Clear all external modules (packages), keeping Prim and user modules.

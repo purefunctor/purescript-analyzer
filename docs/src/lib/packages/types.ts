@@ -7,9 +7,16 @@ export interface PackageSetEntry {
 
 export type PackageSet = Record<string, PackageSetEntry>;
 
-// Internal state
+// Raw module data from tar extraction (before WASM parsing)
+export interface RawModule {
+  path: string; // tar path, e.g., "prelude-6.0.1/src/Data/Maybe.purs"
+  source: string; // PureScript source code
+}
+
+// Internal state (after WASM parsing extracts module name)
 export interface PackageModule {
-  name: string; // e.g., "Data.Maybe"
+  path: string; // tar path, e.g., "prelude-6.0.1/src/Data/Maybe.purs"
+  name: string; // module name returned from WASM, e.g., "Data.Maybe"
   source: string; // PureScript source code
 }
 

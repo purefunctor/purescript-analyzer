@@ -3,6 +3,7 @@ import init, * as docsLib from "docs-lib";
 import type { ParseResult, CheckResult } from "../lib/types";
 import type {
   PackageSet,
+  PackageModule,
   LoadedPackage,
   PackageLoadProgress,
   PackageStatus,
@@ -60,7 +61,7 @@ const lib = {
           onProgress({ ...progress, packages: new Map(progress.packages) });
 
           try {
-            const modules = await fetchPackage(pkgName, entry.version, (p) => {
+            const rawModules = await fetchPackage(pkgName, entry.version, (p) => {
               progress.packages.set(pkgName, { state: "downloading", progress: p });
               onProgress({ ...progress, packages: new Map(progress.packages) });
             });
@@ -68,9 +69,13 @@ const lib = {
             progress.packages.set(pkgName, { state: "extracting" });
             onProgress({ ...progress, packages: new Map(progress.packages) });
 
-            // Register modules with WASM engine
-            for (const mod of modules) {
-              docsLib.register_module(mod.name, mod.source);
+            // Register modules with WASM engine (parses module name from source)
+            const modules: PackageModule[] = [];
+            for (const raw of rawModules) {
+              const moduleName = docsLib.register_source(raw.path, raw.source);
+              if (moduleName) {
+                modules.push({ path: raw.path, name: moduleName, source: raw.source });
+              }
             }
 
             progress.packages.set(pkgName, { state: "ready", moduleCount: modules.length });
@@ -105,8 +110,8 @@ const lib = {
     docsLib.clear_packages();
   },
 
-  async registerModule(moduleName: string, source: string): Promise<void> {
-    docsLib.register_module(moduleName, source);
+  async registerModule(path: string, source: string): Promise<string | undefined> {
+    return docsLib.register_source(path, source);
   },
 };
 
