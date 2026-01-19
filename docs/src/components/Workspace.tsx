@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useCallback } from "react";
 import type { Remote } from "comlink";
 import { useLocation } from "wouter";
 import { useEditorState } from "../hooks/useEditorState";
@@ -43,23 +43,16 @@ export function Workspace({
 }: Props) {
   const [, navigate] = useLocation();
 
-  const { source, cst, typeChecker, timing, selectExample, pendingNavigation } = useEditorState({
+  const { source, cst, typeChecker, selectExample } = useEditorState({
     exampleId,
     docsLib,
     mode,
+    onTimingChange,
+    onNavigate: useCallback(
+      (exampleId: string) => navigate(`/types/${exampleId}`),
+      [navigate]
+    ),
   });
-
-  // Sync timing to parent for header display
-  useEffect(() => {
-    onTimingChange(timing);
-  }, [timing, onTimingChange]);
-
-  // Handle pending navigation from prefetch
-  useEffect(() => {
-    if (pendingNavigation) {
-      navigate(`/types/${pendingNavigation.exampleId}`);
-    }
-  }, [pendingNavigation, navigate]);
 
   return (
     <main className="grid flex-1 grid-cols-2 gap-0 overflow-hidden">

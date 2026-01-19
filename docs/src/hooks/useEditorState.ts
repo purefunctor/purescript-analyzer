@@ -86,6 +86,8 @@ interface UseEditorStateOptions {
   exampleId: string | undefined;
   docsLib: Remote<Lib>;
   mode: "cst" | "typechecker" | "getstarted" | "packages";
+  onTimingChange?: (timing: Timing) => void;
+  onNavigate?: (exampleId: string) => void;
 }
 
 interface SourceState {
@@ -102,15 +104,15 @@ interface EditorState {
   source: SourceState;
   cst: AnalysisState<ParseResult>;
   typeChecker: AnalysisState<CheckResult>;
-  timing: Timing | null;
   selectExample: (exampleId: string) => void;
-  pendingNavigation: { exampleId: string } | null;
 }
 
 export function useEditorState({
   exampleId,
   docsLib,
   mode,
+  onTimingChange,
+  onNavigate,
 }: UseEditorStateOptions): EditorState {
   const getSourceForExample = useCallback(
     (id: string | undefined) =>
@@ -128,6 +130,17 @@ export function useEditorState({
   const loadedExampleRef = useRef(exampleId);
   const prefetchTimeoutRef = useRef<number | null>(null);
   const pendingAnalysisRef = useRef<{ source: string; cancelled: boolean } | null>(null);
+
+  // Refs for callbacks (prevents stale closures across async boundaries)
+  const onTimingChangeRef = useRef(onTimingChange);
+  const onNavigateRef = useRef(onNavigate);
+  const targetExampleIdRef = useRef<string | null>(null);
+
+  // Keep callback refs in sync
+  useEffect(() => {
+    onTimingChangeRef.current = onTimingChange;
+    onNavigateRef.current = onNavigate;
+  });
 
   // Handle URL changes (direct navigation: back/forward, shared links, typed URL)
   // vs in-app navigation (selectExample sets source first, then navigate happens)
@@ -154,6 +167,9 @@ export function useEditorState({
   // Run analysis when source changes
   useEffect(() => {
     const sourceSnapshot = analysisSource;
+
+    // Capture prefetching state BEFORE async work
+    const wasPrefetching = state.status === "prefetching";
 
     // Cancel any pending analysis
     if (pendingAnalysisRef.current) {
@@ -200,6 +216,15 @@ export function useEditorState({
           source: sourceSnapshot,
           results: { cst, typeChecker, timing },
         });
+
+        // Call timing callback
+        onTimingChangeRef.current?.(timing);
+
+        // Navigate if we were prefetching
+        if (wasPrefetching && targetExampleIdRef.current) {
+          onNavigateRef.current?.(targetExampleIdRef.current);
+          targetExampleIdRef.current = null;
+        }
       } catch (err) {
         console.error("Analysis error:", err);
       }
@@ -210,13 +235,20 @@ export function useEditorState({
     return () => {
       analysisContext.cancelled = true;
     };
-  }, [docsLib, analysisSource, mode]);
+  }, [docsLib, analysisSource, mode, state.status]);
 
   // Handle prefetch timeout
   useEffect(() => {
     if (state.status === "prefetching") {
+      const targetId = targetExampleIdRef.current; // Capture before timeout
+
       prefetchTimeoutRef.current = window.setTimeout(() => {
         dispatch({ type: "PREFETCH_TIMEOUT" });
+        // Navigate on timeout (analysis didn't complete in time)
+        if (targetId) {
+          onNavigateRef.current?.(targetId);
+          targetExampleIdRef.current = null;
+        }
       }, PREFETCH_TIMEOUT_MS);
 
       return () => {
@@ -233,27 +265,13 @@ export function useEditorState({
   }, []);
 
   const selectExample = useCallback(
-    (targetExampleId: string) => {
-      const source = getSourceForExample(targetExampleId);
-      dispatch({ type: "SELECT_EXAMPLE", exampleId: targetExampleId, source });
+    (exampleId: string) => {
+      targetExampleIdRef.current = exampleId; // Store before dispatch
+      const source = getSourceForExample(exampleId);
+      dispatch({ type: "SELECT_EXAMPLE", exampleId, source });
     },
     [getSourceForExample]
   );
-
-  // Determine pending navigation
-  // Navigate when we're no longer prefetching and URL doesn't match the current source
-  const pendingNavigation = (() => {
-    // Still prefetching - don't navigate yet
-    if (state.status === "prefetching") return null;
-
-    // Check if current source corresponds to an example that differs from URL
-    const currentExample = EXAMPLES.find((e) => e.source === state.source);
-    if (currentExample && currentExample.id !== loadedExampleRef.current) {
-      return { exampleId: currentExample.id };
-    }
-
-    return null;
-  })();
 
   // Determine loading state - only show spinner for loading state (not prefetching)
   const isLoading = state.status === "loading";
@@ -272,8 +290,6 @@ export function useEditorState({
       isLoading,
       result: results?.typeChecker ?? null,
     },
-    timing: results?.timing ?? null,
     selectExample,
-    pendingNavigation,
   };
 }
