@@ -1,17 +1,25 @@
+import RiLoader4Line from "~icons/ri/loader-4-line";
 import type { CheckResult } from "../lib/types";
 import { HighlightedCode } from "./HighlightedCode";
 
 interface Props {
   data: CheckResult | null;
+  loading?: boolean;
 }
 
-export function TypeCheckerPanel({ data }: Props) {
-  if (!data) {
+export function TypeCheckerPanel({ data, loading }: Props) {
+  // Only show spinner when explicitly loading (after delay threshold)
+  // No data + not loading = waiting quietly, show nothing
+  if (loading) {
     return (
       <div className="flex h-full items-center justify-center text-fg-muted">
-        Enter PureScript code to see type information
+        <RiLoader4Line className="h-5 w-5 animate-spin" />
       </div>
     );
+  }
+
+  if (!data) {
+    return null;
   }
 
   return (

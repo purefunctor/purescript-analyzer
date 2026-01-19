@@ -1,78 +1,151 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useRoute } from "wouter";
+import * as Comlink from "comlink";
 import { useDocsLib } from "./hooks/useDocsLib";
-import { useDebounce } from "./hooks/useDebounce";
-import { MonacoEditor } from "./components/Editor/MonacoEditor";
-import { Tabs } from "./components/Tabs";
-import { CstPanel } from "./components/CstPanel";
-import { TypeCheckerPanel } from "./components/TypeCheckerPanel";
 import { PerformanceBar } from "./components/PerformanceBar";
 import { ThemeSwitcher } from "./components/ThemeSwitcher";
-import type { ParseResult, CheckResult, Mode, Timing } from "./lib/types";
-
-const DEFAULT_SOURCE = `module Main where
-
-import Prim.Row as Row
-
-data Proxy :: forall k. k -> Type
-data Proxy a = Proxy
-
-deriveUnion :: forall u. Row.Union (a :: Int) (b :: String) u => Proxy u
-deriveUnion = Proxy
-
-deriveUnionLeft :: forall l. Row.Union l (b :: String) (a :: Int, b :: String) => Proxy l
-deriveUnionLeft = Proxy
-
-solveUnion = { deriveUnion, deriveUnionLeft }
-`;
+import { Workspace } from "./components/Workspace";
+import type { Mode, Timing } from "./lib/types";
+import type { PackageSet, PackageLoadProgress } from "./lib/packages/types";
+import {
+  loadCachedPackageSet,
+  savePackageSetToCache,
+  loadCachedPackages,
+  saveCachedPackages,
+  clearCachedPackages,
+} from "./lib/packages/cache";
 
 export default function App() {
   const docsLib = useDocsLib();
-  const [source, setSource] = useState(DEFAULT_SOURCE);
-  const [mode, setMode] = useState<Mode>("cst");
-  const [parseResult, setParseResult] = useState<ParseResult | null>(null);
-  const [checkResult, setCheckResult] = useState<CheckResult | null>(null);
+
+  // Derive mode and exampleId from routes
+  const [isHome] = useRoute("/");
+  const [isCst] = useRoute("/cst");
+  const [isCstExample, cstParams] = useRoute("/cst/:exampleId");
+  const [isTypes] = useRoute("/types");
+  const [isTypesExample, typesParams] = useRoute("/types/:exampleId");
+  const [isPackages] = useRoute("/packages");
+
+  const mode: Mode = isHome
+    ? "getstarted"
+    : isCst || isCstExample
+      ? "cst"
+      : isTypes || isTypesExample
+        ? "typechecker"
+        : isPackages
+          ? "packages"
+          : "getstarted";
+
+  const exampleId = cstParams?.exampleId || typesParams?.exampleId;
+
+  // Timing state (displayed in header, updated by Workspace)
   const [timing, setTiming] = useState<Timing | null>(null);
 
-  const debouncedSource = useDebounce(source, 150);
+  // Package state (global, persists across example changes)
+  const [packageSet, setPackageSet] = useState<PackageSet | null>(null);
+  const [loadProgress, setLoadProgress] = useState<PackageLoadProgress | null>(null);
+  const [loadedPackages, setLoadedPackages] = useState<string[]>([]);
+  const [isLoadingPackages, setIsLoadingPackages] = useState(false);
+  const [packageError, setPackageError] = useState<string | null>(null);
 
-  const runAnalysis = useCallback(async () => {
+  const loadingRef = useRef(false);
+  const hasRestoredRef = useRef(false);
+
+  // Load package set on mount
+  useEffect(() => {
+    if (docsLib.status !== "ready") return;
+    const lib = docsLib.lib;
+
+    const loadPackageSet = async () => {
+      const cached = loadCachedPackageSet();
+      if (cached) {
+        setPackageSet(cached);
+        return;
+      }
+
+      try {
+        const ps = await lib.fetchPackageSet();
+        setPackageSet(ps);
+        savePackageSetToCache(ps);
+      } catch (e) {
+        console.error("Failed to fetch package set:", e);
+      }
+    };
+
+    loadPackageSet();
+  }, [docsLib]);
+
+  // Restore cached packages on mount
+  useEffect(() => {
+    if (docsLib.status !== "ready" || !packageSet || hasRestoredRef.current) return;
+    hasRestoredRef.current = true;
+    const lib = docsLib.lib;
+
+    const restoreCachedPackages = async () => {
+      const cached = loadCachedPackages();
+      if (cached.size === 0) return;
+
+      setIsLoadingPackages(true);
+      const packageNames = Array.from(cached.keys());
+      const progressProxy = Comlink.proxy((progress: PackageLoadProgress) =>
+        setLoadProgress(progress)
+      );
+
+      try {
+        const loaded = await lib.loadPackages(packageSet, packageNames, progressProxy);
+        setLoadedPackages(loaded.map((p) => p.name));
+      } catch (e) {
+        console.error("Failed to restore cached packages:", e);
+        setPackageError("Failed to restore cached packages");
+      } finally {
+        setIsLoadingPackages(false);
+      }
+    };
+
+    restoreCachedPackages();
+  }, [docsLib, packageSet]);
+
+  const handleAddPackage = useCallback(
+    async (packageName: string) => {
+      if (!packageSet || docsLib.status !== "ready" || loadingRef.current) return;
+      loadingRef.current = true;
+
+      setIsLoadingPackages(true);
+      setPackageError(null);
+      const packagesToLoad = [...loadedPackages, packageName];
+      const progressProxy = Comlink.proxy((progress: PackageLoadProgress) =>
+        setLoadProgress(progress)
+      );
+
+      try {
+        const loaded = await docsLib.lib.loadPackages(
+          packageSet,
+          packagesToLoad,
+          progressProxy
+        );
+
+        const loadedNames = loaded.map((p) => p.name);
+        setLoadedPackages(loadedNames);
+        saveCachedPackages(new Map(loaded.map((p) => [p.name, p])));
+      } catch (e) {
+        console.error("Failed to load package:", e);
+        setPackageError(e instanceof Error ? e.message : "Failed to load package");
+      } finally {
+        loadingRef.current = false;
+        setIsLoadingPackages(false);
+      }
+    },
+    [packageSet, loadedPackages, docsLib]
+  );
+
+  const handleClearPackages = useCallback(async () => {
     if (docsLib.status !== "ready") return;
 
-    try {
-      // Always parse for CST mode
-      const parsed = await docsLib.lib.parse(debouncedSource);
-      setParseResult(parsed);
-      setTiming({
-        lex: parsed.lex,
-        layout: parsed.layout,
-        parse: parsed.parse,
-        total: parsed.lex + parsed.layout + parsed.parse,
-      });
-
-      // Run type checker if in that mode
-      if (mode === "typechecker") {
-        const checked = await docsLib.lib.check(debouncedSource);
-        setCheckResult(checked);
-        setTiming({
-          lex: checked.timing.lex,
-          layout: checked.timing.layout,
-          parse: checked.timing.parse,
-          stabilize: checked.timing.stabilize,
-          index: checked.timing.index,
-          resolve: checked.timing.resolve,
-          lower: checked.timing.lower,
-          check: checked.timing.check,
-          total: checked.timing.total,
-        });
-      }
-    } catch (err) {
-      console.error("Analysis error:", err);
-    }
-  }, [docsLib, debouncedSource, mode]);
-
-  useEffect(() => {
-    runAnalysis();
-  }, [runAnalysis]);
+    await docsLib.lib.clearPackages();
+    setLoadedPackages([]);
+    setLoadProgress(null);
+    clearCachedPackages();
+  }, [docsLib]);
 
   if (docsLib.status === "loading") {
     return (
@@ -100,19 +173,20 @@ export default function App() {
         </div>
       </header>
 
-      <main className="grid flex-1 grid-cols-2 gap-0 overflow-hidden">
-        <div className="h-full overflow-hidden border-r border-bg-lighter">
-          <MonacoEditor value={source} onChange={setSource} />
-        </div>
-
-        <div className="flex h-full flex-col overflow-hidden">
-          <Tabs activeTab={mode} onTabChange={setMode} />
-          <div className="flex-1 overflow-auto p-5">
-            {mode === "cst" && <CstPanel output={parseResult?.output ?? ""} />}
-            {mode === "typechecker" && <TypeCheckerPanel data={checkResult} />}
-          </div>
-        </div>
-      </main>
+      <Workspace
+        mode={mode}
+        exampleId={exampleId}
+        docsLib={docsLib.lib}
+        onTimingChange={setTiming}
+        packageSet={packageSet}
+        loadProgress={loadProgress}
+        loadedPackages={loadedPackages}
+        onAddPackage={handleAddPackage}
+        onClearPackages={handleClearPackages}
+        isLoadingPackages={isLoadingPackages}
+        packageError={packageError}
+        onDismissPackageError={() => setPackageError(null)}
+      />
     </div>
   );
 }
