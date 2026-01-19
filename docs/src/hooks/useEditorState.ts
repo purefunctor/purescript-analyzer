@@ -146,10 +146,13 @@ export function useEditorState({
   // vs in-app navigation (selectExample sets source first, then navigate happens)
   useEffect(() => {
     if (exampleId !== loadedExampleRef.current) {
-      const expectedSource = getSourceForExample(exampleId);
-      // If source doesn't match what the URL expects, this is direct navigation
-      if (expectedSource !== state.source) {
-        dispatch({ type: "URL_LOADED", source: expectedSource });
+      // Only update source when navigating TO an example, not when leaving
+      if (exampleId) {
+        const expectedSource = getSourceForExample(exampleId);
+        // If source doesn't match what the URL expects, this is direct navigation
+        if (expectedSource !== state.source) {
+          dispatch({ type: "URL_LOADED", source: expectedSource });
+        }
       }
       // Update ref regardless - URL now matches
       loadedExampleRef.current = exampleId;

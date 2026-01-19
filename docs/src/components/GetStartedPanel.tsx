@@ -63,10 +63,12 @@ export function GetStartedPanel({ onSelectExample }: GetStartedPanelProps) {
   return (
     <div className="space-y-10">
       <div className="max-w-2xl">
-        <h2 className="text-xl font-semibold">Welcome to PureScript Analyzer</h2>
-        <p className="mt-3 leading-relaxed text-fg-muted">
-          Explore PureScript's type system interactively. Select an example below to load it into
-          the editor, then switch to the Type Checker tab to see inferred types.
+        <h2 className="text-xl font-semibold mb-3">PureScript Analyzer Playground</h2>
+        <p className="leading-relaxed text-fg-muted">
+          Select an example below to load it into the editor.
+        </p>
+        <p className="leading-relaxed text-fg-muted">
+          You can also load registry packages in the packages tab.
         </p>
       </div>
 
