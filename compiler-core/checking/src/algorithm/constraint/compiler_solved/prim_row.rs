@@ -1,6 +1,6 @@
 use std::cmp::Ordering;
+use std::iter;
 
-use itertools::EitherOrBoth;
 use rustc_hash::FxHashSet;
 
 use crate::algorithm::constraint::{self, MatchInstance};
@@ -21,36 +21,6 @@ fn extract_closed_row(state: &CheckState, id: TypeId) -> Option<RowType> {
 fn extract_row(state: &CheckState, id: TypeId) -> Option<RowType> {
     let Type::Row(row) = &state.storage[id] else { return None };
     Some(row.clone())
-}
-
-fn merge_row_fields(
-    state: &mut CheckState,
-    left: &[RowField],
-    right: &[RowField],
-) -> Option<Vec<RowField>> {
-    let left = left.iter();
-    let right = right.iter();
-
-    let merged_by_label =
-        itertools::merge_join_by(left, right, |left, right| left.label.cmp(&right.label));
-
-    let mut result = vec![];
-    for field in merged_by_label {
-        match field {
-            EitherOrBoth::Left(left) => result.push(left.clone()),
-            EitherOrBoth::Right(right) => result.push(right.clone()),
-            EitherOrBoth::Both(left, right) => {
-                let left_type = state.normalize_type(left.id);
-                let right_type = state.normalize_type(right.id);
-                if constraint::can_unify(state, left_type, right_type).is_apart() {
-                    return None;
-                }
-                result.push(left.clone());
-            }
-        }
-    }
-
-    Some(result)
 }
 
 type SubtractResult = (Vec<RowField>, Vec<(TypeId, TypeId)>);
@@ -110,15 +80,13 @@ pub fn prim_row_union(state: &mut CheckState, arguments: &[TypeId]) -> Option<Ma
 
     match (left_row, right_row, union_row) {
         (Some(left_row), Some(right_row), _) => {
-            if let Some(merged) = merge_row_fields(state, &left_row.fields, &right_row.fields) {
-                let result = state.storage.intern(Type::Row(RowType::closed(merged)));
-                Some(MatchInstance::Match {
-                    constraints: vec![],
-                    equalities: vec![(union, result)],
-                })
-            } else {
-                Some(MatchInstance::Apart)
-            }
+            let left_fields = left_row.fields.iter();
+            let right_fields = right_row.fields.iter();
+
+            let union_fields = iter::chain(left_fields, right_fields).cloned().collect();
+            let result = state.storage.intern(Type::Row(RowType::closed(union_fields)));
+
+            Some(MatchInstance::Match { constraints: vec![], equalities: vec![(union, result)] })
         }
         (_, Some(right_row), Some(union_row)) => {
             if let Some((remaining, mut equalities)) =
