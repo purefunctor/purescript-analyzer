@@ -33,16 +33,25 @@ struct Config {
     debug: bool,
 }
 
+struct TestOutcome {
+    tests_passed: bool,
+    pending_count: usize,
+    trace_paths: Vec<PathBuf>,
+}
+
 fn main() {
     let config = Config::parse();
 
     let (fixture_hashes, hash_duration) = hash_fixtures();
     println!("{}", style(format!("Hashed fixtures in {}ms", hash_duration.as_millis())).dim());
 
-    run_tests(&config, &fixture_hashes);
+    let tests_passed = run_tests(&config, &fixture_hashes);
 
     let trace_paths = collect_trace_paths(&config);
-    process_pending_snapshots(&config, &trace_paths);
+    let pending_count = process_pending_snapshots(&config, &trace_paths);
+
+    let outcome = TestOutcome { tests_passed, pending_count, trace_paths };
+    print_next_actions(&config, &outcome);
 }
 
 fn hash_fixtures() -> (HashMap<String, String>, Duration) {
@@ -78,11 +87,12 @@ fn build_nextest_command(config: &Config, fixture_hashes: &HashMap<String, Strin
     cmd
 }
 
-fn run_tests(config: &Config, fixture_hashes: &HashMap<String, String>) {
+fn run_tests(config: &Config, fixture_hashes: &HashMap<String, String>) -> bool {
     let mut cmd = build_nextest_command(config, fixture_hashes);
 
     if config.verbose {
-        cmd.status().expect("Failed to run cargo nextest");
+        let status = cmd.status().expect("Failed to run cargo nextest");
+        status.success()
     } else {
         cmd.stdout(Stdio::null()).stderr(Stdio::null());
         let status = cmd.status().expect("Failed to run cargo nextest");
@@ -95,6 +105,8 @@ fn run_tests(config: &Config, fixture_hashes: &HashMap<String, String>) {
             let mut retry = build_nextest_command(&verbose_config, fixture_hashes);
             let _ = retry.status();
         }
+
+        status.success()
     }
 }
 
@@ -164,7 +176,7 @@ fn find_trace_for_snapshot(snap_path: &str, trace_paths: &[PathBuf]) -> Option<P
         .cloned()
 }
 
-fn process_pending_snapshots(config: &Config, trace_paths: &[PathBuf]) {
+fn process_pending_snapshots(config: &Config, trace_paths: &[PathBuf]) -> usize {
     let pending_output = Command::new("cargo")
         .arg("insta")
         .arg("pending-snapshots")
@@ -176,15 +188,9 @@ fn process_pending_snapshots(config: &Config, trace_paths: &[PathBuf]) {
     let pending = String::from_utf8_lossy(&pending_output.stdout);
     let pending = pending.trim();
 
-    if pending.is_empty() {
-        println!("{}", style("No pending snapshots.").dim());
-        return;
-    }
-
-    println!();
-
     let cwd = env::current_dir().unwrap();
 
+    let mut count = 0;
     for line in pending.lines() {
         let line = line.trim();
         if line.is_empty() {
@@ -217,8 +223,11 @@ fn process_pending_snapshots(config: &Config, trace_paths: &[PathBuf]) {
             display_new_snapshot(&snap_new, short_path, trace_path.as_deref());
         }
 
+        count += 1;
         println!();
     }
+
+    count
 }
 
 fn display_snapshot_diff(
@@ -227,6 +236,7 @@ fn display_snapshot_diff(
     short_path: &str,
     trace_path: Option<&Path>,
 ) {
+    println!();
     println!("{} {}", style("UPDATED").yellow().bold(), style(short_path).cyan());
 
     if let Some(trace) = trace_path {
@@ -256,5 +266,56 @@ fn display_new_snapshot(snap_new: &Path, short_path: &str, trace_path: Option<&P
     let new_content = fs::read_to_string(snap_new).unwrap_or_default();
     for (i, line) in strip_frontmatter(&new_content).lines().enumerate() {
         println!("{}  {}", style(format!("{:3}", i + 1)).dim(), line);
+    }
+}
+
+fn print_next_actions(config: &Config, outcome: &TestOutcome) {
+    let filters_str = if config.filters.is_empty() {
+        String::new()
+    } else {
+        format!(" {}", config.filters.join(" "))
+    };
+
+    if outcome.tests_passed && outcome.pending_count == 0 {
+        println!("{}", style("No pending snapshots.").green());
+        return;
+    }
+
+    if outcome.pending_count > 0 {
+        println!("{}", style("-".repeat(60)).dim());
+        println!();
+        println!(
+            "{} pending snapshot{}",
+            outcome.pending_count,
+            if outcome.pending_count == 1 { "" } else { "s" }
+        );
+        println!();
+        println!("  If this is expected, run {}", style("cargo insta accept").cyan());
+        println!("  If this is not expected, run {}", style("cargo insta reject").cyan());
+        println!();
+    }
+
+    if !outcome.tests_passed {
+        println!("{}", style("-".repeat(60)).dim());
+        println!();
+        println!("{}", style("Tests failed, consider consulting trace files.").red(),);
+        if !config.debug {
+            println!(
+                "Enable debug tracing for more information: {}",
+                style(format!("just tc --debug{}", filters_str)).cyan()
+            );
+        }
+        if !outcome.trace_paths.is_empty() {
+            let maximum_shown = 10;
+            for trace in outcome.trace_paths.iter().take(maximum_shown) {
+                println!("{} {}", style("TRACE").magenta().bold(), style(trace.display()).cyan());
+            }
+            if outcome.trace_paths.len() > maximum_shown {
+                let additional = outcome.trace_paths.len() - maximum_shown;
+                let additional = style(format!("An additional {additional} is stored in target/compiler-tracing")).dim();
+                println!("{additional}");
+            }
+        }
+        println!();
     }
 }
