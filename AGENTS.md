@@ -1,12 +1,18 @@
 ## Commands
 
 ```bash
-cargo check -p <crate-name> --tests     # Type check a crate (always specify -p)
-cargo nextest run -p <crate-name>       # Run all tests in a crate
+cargo check -p <crate-name> --tests  # Type check a crate (always specify -p)
+just t checking [filters...]         # Type checker integration tests
+just t lowering [filters...]         # Lowering integration tests
+just t resolving [filters...]        # Resolver integration tests
+just t lsp [filters...]              # LSP integration tests
+just fix                             # Apply clippy fixes and format
+```
+
+For unit tests in compiler-core (not tests-integration which requires the test runner shim):
+```bash
+cargo nextest run -p <crate-name>              # Run all tests in a crate
 cargo nextest run -p <crate-name> <test_name>  # Run single test
-just tc                                  # Type checker integration tests
-just tc 101                              # Run specific test (by filter)
-just fix                                 # Apply clippy fixes and format
 ```
 
 ## Architecture
