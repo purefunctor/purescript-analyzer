@@ -6,11 +6,11 @@ module Main
 
 Expressions:
 
-x'notBinder@Some(Position { line: 4, character: 4 })
-  resolves to binder Some(Position { line: 2, character: 10 })
-x'notBinder@Some(Position { line: 3, character: 21 })
-  resolves to top-level name
-pure@Some(Position { line: 3, character: 16 })
-  resolves to top-level name
+x'notBinder@4:4
+  -> binder@2:10
+x'notBinder@3:21
+  -> top-level
+pure@3:16
+  -> top-level
 
 Types:

@@ -6,38 +6,38 @@ module Main
 
 Expressions:
 
-pure@Some(Position { line: 11, character: 6 })
-  resolves to top-level name
-{ x, y, z }@Some(Position { line: 12, character: 4 })
-  resolves to binder Some(Position { line: 8, character: 10 })
-{ x, y, z }@Some(Position { line: 12, character: 4 })
-  resolves to equation Some(Position { line: 10, character: 5 })
-{ x, y, z }@Some(Position { line: 12, character: 4 })
-  resolves to binder Some(Position { line: 10, character: 15 })
-{ x }@Some(Position { line: 10, character: 9 })
-  resolves to binder Some(Position { line: 8, character: 10 })
-pure@Some(Position { line: 9, character: 6 })
-  resolves to top-level name
+pure@11:6
+  -> top-level
+{ x, y, z }@12:4
+  -> binder@8:10
+{ x, y, z }@12:4
+  -> equation@10:5
+{ x, y, z }@12:4
+  -> binder@10:15
+{ x }@10:9
+  -> binder@8:10
+pure@9:6
+  -> top-level
 
 Types:
 
-b@Some(Position { line: 5, character: 39 })
-  resolves to forall Some(Position { line: 5, character: 30 })
-a@Some(Position { line: 6, character: 61 })
-  resolves to forall Some(Position { line: 6, character: 30 })
-b@Some(Position { line: 6, character: 73 })
-  resolves to forall Some(Position { line: 6, character: 32 })
-b@Some(Position { line: 6, character: 48 })
-  resolves to forall Some(Position { line: 6, character: 32 })
-a@Some(Position { line: 5, character: 35 })
-  resolves to forall Some(Position { line: 5, character: 28 })
-a@Some(Position { line: 6, character: 44 })
-  resolves to forall Some(Position { line: 6, character: 30 })
-a@Some(Position { line: 5, character: 52 })
-  resolves to forall Some(Position { line: 5, character: 28 })
-b@Some(Position { line: 5, character: 64 })
-  resolves to forall Some(Position { line: 5, character: 30 })
-a@Some(Position { line: 4, character: 32 })
-  resolves to forall Some(Position { line: 4, character: 29 })
-a@Some(Position { line: 4, character: 44 })
-  resolves to forall Some(Position { line: 4, character: 29 })
+b@5:39
+  -> forall@5:30
+a@6:61
+  -> forall@6:30
+b@6:73
+  -> forall@6:32
+b@6:48
+  -> forall@6:32
+a@5:35
+  -> forall@5:28
+a@6:44
+  -> forall@6:30
+a@5:52
+  -> forall@5:28
+b@5:64
+  -> forall@5:30
+a@4:32
+  -> forall@4:29
+a@4:44
+  -> forall@4:29

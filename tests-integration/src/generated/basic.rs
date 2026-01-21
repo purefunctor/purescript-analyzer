@@ -161,7 +161,8 @@ pub fn report_lowered(engine: &QueryEngine, id: FileId, name: &str) -> String {
     macro_rules! pos {
         ($id:expr) => {{
             let cst = stabilized.ast_ptr($id).unwrap();
-            locate::offset_to_position(&content, cst.syntax_node_ptr().text_range().start())
+            let p = locate::offset_to_position(&content, cst.syntax_node_ptr().text_range().start()).unwrap();
+            format!("{}:{}", p.line, p.character)
         }};
     }
 
@@ -174,10 +175,10 @@ pub fn report_lowered(engine: &QueryEngine, id: FileId, name: &str) -> String {
         let node = cst.syntax_node_ptr().to_node(module.syntax());
         let text = node.text().to_string();
 
-        writeln!(buffer, "{}@{:?}", text.trim(), pos!(type_id)).unwrap();
+        writeln!(buffer, "{}@{}", text.trim(), pos!(type_id)).unwrap();
         match resolution {
             Some(TypeVariableResolution::Forall(id)) => {
-                writeln!(buffer, "  resolves to forall {:?}", pos!(*id)).unwrap();
+                writeln!(buffer, "  -> forall@{}", pos!(*id)).unwrap();
             }
             Some(TypeVariableResolution::Implicit(ImplicitTypeVariable { binding, node, id })) => {
                 let GraphNode::Implicit { bindings, .. } = &graph[*node] else {
@@ -189,14 +190,14 @@ pub fn report_lowered(engine: &QueryEngine, id: FileId, name: &str) -> String {
                 if *binding {
                     writeln!(buffer, "  introduces a constraint variable {name:?}").unwrap();
                 } else {
-                    writeln!(buffer, "  resolves to a constraint variable {name:?}").unwrap();
+                    writeln!(buffer, "  -> constraint variable {name:?}").unwrap();
                     for &tid in type_ids {
-                        writeln!(buffer, "    {:?}", pos!(tid)).unwrap();
+                        writeln!(buffer, "    {}", pos!(tid)).unwrap();
                     }
                 }
             }
             None => {
-                writeln!(buffer, "  resolves to nothing").unwrap();
+                writeln!(buffer, "  -> nothing").unwrap();
             }
         }
     }
@@ -216,38 +217,39 @@ fn report_on_term(
     let cst = stabilized.ast_ptr(expression_id).unwrap();
     let node = cst.syntax_node_ptr().to_node(module.syntax());
     let text = node.text().to_string();
-    let position = locate::offset_to_position(content, node.text_range().start());
+    let position = locate::offset_to_position(content, node.text_range().start()).unwrap();
 
-    writeln!(buffer, "{}@{:?}", text.trim(), position).unwrap();
+    writeln!(buffer, "{}@{}:{}", text.trim(), position.line, position.character).unwrap();
 
     macro_rules! pos {
         ($id:expr) => {{
             let cst = stabilized.ast_ptr($id).unwrap();
-            locate::offset_to_position(content, cst.syntax_node_ptr().text_range().start())
+            let p = locate::offset_to_position(content, cst.syntax_node_ptr().text_range().start()).unwrap();
+            format!("{}:{}", p.line, p.character)
         }};
     }
 
     match resolution {
         Some(TermVariableResolution::Binder(id)) => {
-            writeln!(buffer, "  resolves to binder {:?}", pos!(*id)).unwrap();
+            writeln!(buffer, "  -> binder@{}", pos!(*id)).unwrap();
         }
         Some(TermVariableResolution::Let(let_binding_id)) => {
             let let_binding = info.get_let_binding_group(*let_binding_id);
             if let Some(sig) = let_binding.signature {
-                writeln!(buffer, "  resolves to signature {:?}", pos!(sig)).unwrap();
+                writeln!(buffer, "  -> signature@{}", pos!(sig)).unwrap();
             }
             for eq in let_binding.equations.iter() {
-                writeln!(buffer, "  resolves to equation {:?}", pos!(*eq)).unwrap();
+                writeln!(buffer, "  -> equation@{}", pos!(*eq)).unwrap();
             }
         }
         Some(TermVariableResolution::RecordPun(id)) => {
-            writeln!(buffer, "  resolves to record pun {:?}", pos!(*id)).unwrap();
+            writeln!(buffer, "  -> record pun@{}", pos!(*id)).unwrap();
         }
         Some(TermVariableResolution::Reference(..)) => {
-            writeln!(buffer, "  resolves to top-level name").unwrap();
+            writeln!(buffer, "  -> top-level").unwrap();
         }
         None => {
-            writeln!(buffer, "  resolves to nothing").unwrap();
+            writeln!(buffer, "  -> nothing").unwrap();
         }
     }
 }
