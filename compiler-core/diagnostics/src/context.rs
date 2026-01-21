@@ -1,4 +1,5 @@
-use checking::{CheckedModule, error::ErrorStep};
+use checking::CheckedModule;
+use checking::error::ErrorStep;
 use indexing::IndexedModule;
 use rowan::ast::{AstNode, AstPtr};
 use stabilizing::StabilizedModule;

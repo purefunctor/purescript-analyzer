@@ -15,12 +15,12 @@ Use this skill when adding new type checker functions or expanding behavior.
 | Action | Command |
 |--------|---------|
 | Find next test number | `ls tests-integration/fixtures/checking/ \| tail -5` |
-| Run a test or multiple tests | `just tc NNN` or `just tc 101 102` |
-| Run with tracing enabled | `just tc --debug NNN` |
-| Run all checking tests | `just tc` |
+| Run a test or multiple tests | `just t checking NNN` or `just tc 101 102` |
+| Run with tracing enabled | `just t checking --debug NNN` |
+| Run all checking tests | `just t checking` or `just tc` |
 | Accept all pending snapshots | `cargo insta accept` |
 
-Use `just tc --help` for all options.
+Use `just t checking --help` for all options.
 
 ## Creating a Test
 
@@ -55,7 +55,7 @@ test' [x] = x
 ### 3. Generate and review snapshot
 
 ```bash
-just tc NNN
+just t checking NNN
 ```
 
 This outputs:
@@ -153,7 +153,7 @@ ErrorKind { details } at [location]
 cargo insta accept
 
 # Verify all checking tests pass
-just tc
+just t checking
 ```
 
 ## Debugging
@@ -162,10 +162,10 @@ When investigating a potential compiler bug:
 
 ```bash
 # Focus on single test to reduce noise
-just tc NNN
+just t checking NNN
 
 # Enable tracing to see type checker behaviour
-just tc --debug NNN
+just t checking --debug NNN
 ```
 
 ### Trace Files
@@ -214,4 +214,4 @@ jq 'select(.target | contains("unification"))' target/compiler-tracing/NNN_*.jso
 jq '{level, target, fields}' target/compiler-tracing/NNN_*.jsonl
 ```
 
-You should run `just tc` to check for regressions.
+You should run `just t checking` to check for regressions.
