@@ -59,8 +59,13 @@ pub fn run_nextest(
         if !status.success() {
             eprintln!("{}", style("Tests failed, re-running verbose...").yellow());
 
-            let verbose_args =
-                RunArgs { filters: args.filters.clone(), verbose: true, debug: args.debug };
+            let verbose_args = RunArgs {
+                command: None,
+                filters: args.filters.clone(),
+                verbose: true,
+                debug: args.debug,
+                diff: args.diff,
+            };
             let mut retry = build_nextest_command(category, &verbose_args, fixture_hashes);
             let _ = retry.status();
         }

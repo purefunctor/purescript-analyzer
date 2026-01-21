@@ -1,5 +1,7 @@
 use clap::Parser;
-use compiler_scripts::test_runner::{RunArgs, TestCategory, run_category};
+use compiler_scripts::test_runner::{
+    CategoryCommand, RunArgs, TestCategory, accept_category, reject_category, run_category,
+};
 
 #[derive(Parser)]
 #[command(about = "Compiler development scripts")]
@@ -13,9 +15,25 @@ struct Cli {
 
 fn main() {
     let cli = Cli::parse();
-    let outcome = run_category(cli.category, &cli.args);
 
-    if !outcome.tests_passed {
-        std::process::exit(1);
+    match &cli.args.command {
+        Some(CategoryCommand::Accept(args)) => {
+            let outcome = accept_category(cli.category, args);
+            if !outcome.success {
+                std::process::exit(1);
+            }
+        }
+        Some(CategoryCommand::Reject(args)) => {
+            let outcome = reject_category(cli.category, args);
+            if !outcome.success {
+                std::process::exit(1);
+            }
+        }
+        None => {
+            let outcome = run_category(cli.category, &cli.args);
+            if !outcome.tests_passed {
+                std::process::exit(1);
+            }
+        }
     }
 }

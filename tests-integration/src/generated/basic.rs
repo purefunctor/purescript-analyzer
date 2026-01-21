@@ -161,7 +161,8 @@ pub fn report_lowered(engine: &QueryEngine, id: FileId, name: &str) -> String {
     macro_rules! pos {
         ($id:expr) => {{
             let cst = stabilized.ast_ptr($id).unwrap();
-            let p = locate::offset_to_position(&content, cst.syntax_node_ptr().text_range().start()).unwrap();
+            let range = cst.syntax_node_ptr().text_range();
+            let p = locate::offset_to_position(&content, range.start()).unwrap();
             format!("{}:{}", p.line, p.character)
         }};
     }
@@ -224,7 +225,8 @@ fn report_on_term(
     macro_rules! pos {
         ($id:expr) => {{
             let cst = stabilized.ast_ptr($id).unwrap();
-            let p = locate::offset_to_position(content, cst.syntax_node_ptr().text_range().start()).unwrap();
+            let range = cst.syntax_node_ptr().text_range();
+            let p = locate::offset_to_position(content, range.start()).unwrap();
             format!("{}:{}", p.line, p.character)
         }};
     }

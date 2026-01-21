@@ -16,11 +16,16 @@ Use this skill when adding new type checker functions or expanding behavior.
 |--------|---------|
 | Find next test number | `ls tests-integration/fixtures/checking/ \| tail -5` |
 | Run a test or multiple tests | `just t checking NNN` or `just t c 101 102` |
+| Run with full diffs | `just t checking NNN --diff` |
 | Run with tracing enabled | `just t checking --debug NNN` |
 | Run all checking tests | `just t checking` or `just t c` |
 | Accept all pending snapshots | `cargo insta accept` |
 
 Use `just t checking --help` for all options.
+
+**Output modes:**
+- Default: Shows summary only (snapshot paths + line counts like `+5, -3`)
+- `--diff`: Shows full inline diffs for each snapshot
 
 ## Creating a Test
 
@@ -55,12 +60,15 @@ test' [x] = x
 ### 3. Generate and review snapshot
 
 ```bash
-just t checking NNN
+just t checking NNN        # summary only
+just t checking NNN --diff # full diff output
 ```
 
 This outputs:
-- `CREATED path` (green) with numbered lines showing full content
-- `UPDATED path` (yellow) with chunked diff (2 lines context, line numbers)
+- `CREATED path (+N)` (green) showing new snapshot with line count
+- `UPDATED path (+N, -M)` (yellow) showing changed lines count
+
+Use `--diff` to see full inline diffs when reviewing changes.
 
 ## Multi-File Tests
 
