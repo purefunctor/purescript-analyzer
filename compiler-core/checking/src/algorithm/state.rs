@@ -15,13 +15,14 @@ use lowering::{
 };
 use resolving::ResolvedModule;
 use rustc_hash::FxHashMap;
+use smol_str::ToSmolStr;
 use stabilizing::StabilizedModule;
 use sugar::{Bracketed, Sectioned};
 
 use crate::algorithm::{constraint, transfer};
-use crate::core::{Type, TypeId, TypeInterner, Variable, debruijn};
+use crate::core::{Type, TypeId, TypeInterner, Variable, debruijn, pretty};
 use crate::error::{CheckError, ErrorKind, ErrorStep};
-use crate::{CheckedModule, ExternalQueries};
+use crate::{CheckedModule, ExternalQueries, TypeErrorMessageId};
 
 /// Manually-managed scope for type-level bindings.
 #[derive(Default)]
@@ -977,6 +978,24 @@ impl CheckState {
         let step = self.check_steps.iter().copied().collect();
         let error = CheckError { kind, step };
         self.checked.errors.push(error);
+    }
+
+    /// Interns an error message in [`CheckedModule::error_messages`].
+    pub fn intern_error_message(&mut self, message: impl ToSmolStr) -> TypeErrorMessageId {
+        self.checked.error_messages.intern(message.to_smolstr())
+    }
+
+    /// Renders a local type and interns it in [`CheckedModule::error_messages`].
+    pub fn render_local_type<Q>(
+        &mut self,
+        context: &CheckContext<Q>,
+        t: TypeId,
+    ) -> TypeErrorMessageId
+    where
+        Q: ExternalQueries,
+    {
+        let t = pretty::print_local(self, context, t);
+        self.intern_error_message(t)
     }
 }
 

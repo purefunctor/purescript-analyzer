@@ -6,7 +6,7 @@ use itertools::{EitherOrBoth, Itertools};
 use crate::ExternalQueries;
 use crate::algorithm::kind::synonym;
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::{kind, substitute, transfer};
+use crate::algorithm::{kind, substitute};
 use crate::core::{RowField, RowType, Type, TypeId, Variable, debruijn};
 use crate::error::ErrorKind;
 
@@ -172,8 +172,8 @@ where
     if !unifies {
         // at this point, it should be impossible to have
         // unsolved unification variables within t1 and t2
-        let t1 = transfer::globalize(state, context, t1);
-        let t2 = transfer::globalize(state, context, t2);
+        let t1 = state.render_local_type(context, t1);
+        let t2 = state.render_local_type(context, t2);
         state.insert_error(ErrorKind::CannotUnify { t1, t2 });
     }
 

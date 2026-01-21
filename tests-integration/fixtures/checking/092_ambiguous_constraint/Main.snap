@@ -16,5 +16,5 @@ class Read (&0 :: Type)
 class Show (&0 :: Type)
 
 Errors
-AmbiguousConstraint { Show ??? } at [TermDeclaration(Idx::<TermItem>(2))]
-AmbiguousConstraint { Read ??? } at [TermDeclaration(Idx::<TermItem>(2))]
+AmbiguousConstraint { Show ?5[:0] } at [TermDeclaration(Idx::<TermItem>(2))]
+AmbiguousConstraint { Read ?5[:0] } at [TermDeclaration(Idx::<TermItem>(2))]

@@ -11,7 +11,7 @@ use crate::ExternalQueries;
 use crate::algorithm::derive::{self, tools};
 use crate::algorithm::safety::safe_loop;
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::{substitute, toolkit, transfer};
+use crate::algorithm::{substitute, toolkit};
 use crate::core::{RowType, Type, TypeId, Variable, debruijn};
 use crate::error::ErrorKind;
 
@@ -164,8 +164,8 @@ where
             DerivedParameter::new(*b, *b_config),
         ),
         _ => {
-            let global_type = transfer::globalize(state, context, derived_type);
-            state.insert_error(ErrorKind::CannotDeriveForType { type_id: global_type });
+            let type_message = state.render_local_type(context, derived_type);
+            state.insert_error(ErrorKind::CannotDeriveForType { type_message });
             DerivedSkolems::Invalid
         }
     };
@@ -202,11 +202,11 @@ fn check_variance_field<Q>(
             if let Some(parameter) = skolems.get(level)
                 && variance != parameter.expected
             {
-                let global = transfer::globalize(state, context, type_id);
+                let type_message = state.render_local_type(context, type_id);
                 if variance == Variance::Covariant {
-                    state.insert_error(ErrorKind::CovariantOccurrence { type_id: global });
+                    state.insert_error(ErrorKind::CovariantOccurrence { type_message });
                 } else {
-                    state.insert_error(ErrorKind::ContravariantOccurrence { type_id: global });
+                    state.insert_error(ErrorKind::ContravariantOccurrence { type_message });
                 }
             }
         }
@@ -225,14 +225,12 @@ fn check_variance_field<Q>(
                 for parameter in skolems.iter() {
                     if contains_skolem_level(state, argument, parameter.level) {
                         if variance != parameter.expected {
-                            let global = transfer::globalize(state, context, type_id);
+                            let type_message = state.render_local_type(context, type_id);
                             if variance == Variance::Covariant {
-                                state.insert_error(ErrorKind::CovariantOccurrence {
-                                    type_id: global,
-                                });
+                                state.insert_error(ErrorKind::CovariantOccurrence { type_message });
                             } else {
                                 state.insert_error(ErrorKind::ContravariantOccurrence {
-                                    type_id: global,
+                                    type_message,
                                 });
                             }
                         } else if let Some(class) = parameter.class {

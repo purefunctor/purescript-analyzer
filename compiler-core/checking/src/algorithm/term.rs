@@ -190,7 +190,7 @@ where
 
     let residual = state.solve_constraints(context)?;
     for constraint in residual {
-        let constraint = transfer::globalize(state, context, constraint);
+        let constraint = state.render_local_type(context, constraint);
         state.insert_error(ErrorKind::NoInstanceFound { constraint });
     }
 

@@ -40,4 +40,4 @@ derive Functor (Reader (&0 :: Type) :: Type -> Type)
 derive Functor (Cont (&0 :: Type) :: Type -> Type)
 
 Errors
-ContravariantOccurrence { type_id: Id<checking::core::Type>(45) } at [TermDeclaration(Idx::<TermItem>(1))]
+ContravariantOccurrence { (~&0 :: Type) } at [TermDeclaration(Idx::<TermItem>(1))]

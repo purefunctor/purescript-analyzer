@@ -2,7 +2,11 @@
 
 use std::sync::Arc;
 
-use crate::TypeId;
+use interner::{Id, Interner};
+use smol_str::SmolStr;
+
+pub type TypeErrorMessageId = Id<SmolStr>;
+pub type TypeErrorMessageInterner = Interner<SmolStr>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ErrorStep {
@@ -23,24 +27,24 @@ pub enum ErrorStep {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ErrorKind {
     AmbiguousConstraint {
-        constraint: TypeId,
+        constraint: TypeErrorMessageId,
     },
     CannotDeriveClass {
         class_file: files::FileId,
         class_id: indexing::TypeItemId,
     },
     CannotDeriveForType {
-        type_id: TypeId,
+        type_message: TypeErrorMessageId,
     },
     ContravariantOccurrence {
-        type_id: TypeId,
+        type_message: TypeErrorMessageId,
     },
     CovariantOccurrence {
-        type_id: TypeId,
+        type_message: TypeErrorMessageId,
     },
     CannotUnify {
-        t1: TypeId,
-        t2: TypeId,
+        t1: TypeErrorMessageId,
+        t2: TypeErrorMessageId,
     },
     DeriveInvalidArity {
         class_file: files::FileId,
@@ -58,17 +62,17 @@ pub enum ErrorKind {
         actual: usize,
     },
     InstanceMemberTypeMismatch {
-        expected: TypeId,
-        actual: TypeId,
+        expected: TypeErrorMessageId,
+        actual: TypeErrorMessageId,
     },
     InvalidTypeOperator {
-        id: TypeId,
+        kind_message: TypeErrorMessageId,
     },
     ExpectedNewtype {
-        type_id: TypeId,
+        type_message: TypeErrorMessageId,
     },
     NoInstanceFound {
-        constraint: TypeId,
+        constraint: TypeErrorMessageId,
     },
     PartialSynonymApplication {
         id: lowering::TypeId,
@@ -98,10 +102,10 @@ pub enum ErrorKind {
         item_id: indexing::TypeItemId,
     },
     CustomWarning {
-        message_id: u32,
+        message_id: TypeErrorMessageId,
     },
     CustomFailure {
-        message_id: u32,
+        message_id: TypeErrorMessageId,
     },
 }
 

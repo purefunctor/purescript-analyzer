@@ -303,11 +303,11 @@ where
     state.with_error_step(ErrorStep::TermDeclaration(item_id), |state| {
         let _span = tracing::debug_span!("commit_value_group").entered();
         for constraint in result.ambiguous {
-            let constraint = transfer::globalize(state, context, constraint);
+            let constraint = state.render_local_type(context, constraint);
             state.insert_error(ErrorKind::AmbiguousConstraint { constraint });
         }
         for constraint in result.unsatisfied {
-            let constraint = transfer::globalize(state, context, constraint);
+            let constraint = state.render_local_type(context, constraint);
             state.insert_error(ErrorKind::NoInstanceFound { constraint });
         }
         crate::debug_fields!(state, context, { quantified = result.quantified });
@@ -503,8 +503,8 @@ where
             if let Some(specialized_type) = specialized_type {
                 let unified = unification::unify(state, context, member_type, specialized_type)?;
                 if !unified {
-                    let expected = transfer::globalize(state, context, specialized_type);
-                    let actual = transfer::globalize(state, context, member_type);
+                    let expected = state.render_local_type(context, specialized_type);
+                    let actual = state.render_local_type(context, member_type);
                     state.insert_error(ErrorKind::InstanceMemberTypeMismatch { expected, actual });
                 }
             }
@@ -519,14 +519,14 @@ where
 
             let matches = unification::subtype(state, context, inferred_type, specialized_type)?;
             if !matches {
-                let expected = transfer::globalize(state, context, specialized_type);
-                let actual = transfer::globalize(state, context, inferred_type);
+                let expected = state.render_local_type(context, specialized_type);
+                let actual = state.render_local_type(context, inferred_type);
                 state.insert_error(ErrorKind::InstanceMemberTypeMismatch { expected, actual });
             }
 
             let residual = state.solve_constraints(context)?;
             for constraint in residual {
-                let constraint = transfer::globalize(state, context, constraint);
+                let constraint = state.render_local_type(context, constraint);
                 state.insert_error(ErrorKind::NoInstanceFound { constraint });
             }
         }

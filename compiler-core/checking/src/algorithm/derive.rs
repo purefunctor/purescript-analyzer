@@ -149,8 +149,8 @@ where
     };
 
     let Some((data_file, data_id)) = extract_type_constructor(state, derived_type) else {
-        let global_type = transfer::globalize(state, context, derived_type);
-        state.insert_error(ErrorKind::CannotDeriveForType { type_id: global_type });
+        let type_message = state.render_local_type(context, derived_type);
+        state.insert_error(ErrorKind::CannotDeriveForType { type_message });
         return Ok(());
     };
 
@@ -176,24 +176,21 @@ where
         return Ok(());
     };
 
-    let insert_error =
-        |state: &mut CheckState, context: &CheckContext<Q>, kind: fn(TypeId) -> ErrorKind| {
-            let global = transfer::globalize(state, context, newtype_type);
-            state.insert_error(kind(global));
-        };
-
     let Some((newtype_file, newtype_id)) = extract_type_constructor(state, newtype_type) else {
-        insert_error(state, context, |type_id| ErrorKind::CannotDeriveForType { type_id });
+        let type_message = state.render_local_type(context, newtype_type);
+        state.insert_error(ErrorKind::CannotDeriveForType { type_message });
         return Ok(());
     };
 
     if newtype_file != context.id {
-        insert_error(state, context, |type_id| ErrorKind::CannotDeriveForType { type_id });
+        let type_message = state.render_local_type(context, newtype_type);
+        state.insert_error(ErrorKind::CannotDeriveForType { type_message });
         return Ok(());
     }
 
     if !is_newtype(context, newtype_file, newtype_id)? {
-        insert_error(state, context, |type_id| ErrorKind::ExpectedNewtype { type_id });
+        let type_message = state.render_local_type(context, newtype_type);
+        state.insert_error(ErrorKind::ExpectedNewtype { type_message });
         return Ok(());
     }
 

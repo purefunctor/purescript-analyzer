@@ -6,7 +6,6 @@ use crate::ExternalQueries;
 use crate::algorithm::derive::variance::{Variance, VarianceConfig, generate_variance_constraints};
 use crate::algorithm::derive::{self, tools};
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::transfer;
 use crate::error::ErrorKind;
 
 /// Checks a derive instance for Traversable.
@@ -29,8 +28,8 @@ where
     };
 
     let Some((data_file, data_id)) = derive::extract_type_constructor(state, derived_type) else {
-        let global_type = transfer::globalize(state, context, derived_type);
-        state.insert_error(ErrorKind::CannotDeriveForType { type_id: global_type });
+        let type_message = state.render_local_type(context, derived_type);
+        state.insert_error(ErrorKind::CannotDeriveForType { type_message });
         return Ok(());
     };
 
@@ -65,8 +64,8 @@ where
     };
 
     let Some((data_file, data_id)) = derive::extract_type_constructor(state, derived_type) else {
-        let global_type = transfer::globalize(state, context, derived_type);
-        state.insert_error(ErrorKind::CannotDeriveForType { type_id: global_type });
+        let type_message = state.render_local_type(context, derived_type);
+        state.insert_error(ErrorKind::CannotDeriveForType { type_message });
         return Ok(());
     };
 

@@ -387,41 +387,84 @@ pub fn report_checked(engine: &QueryEngine, id: FileId) -> String {
     }
     for error in &checked.errors {
         use checking::error::ErrorKind::*;
-        let pp = |t| pretty::print_global(engine, t);
+        let message = |id| &checked.error_messages[id];
         let step = &error.step;
         match error.kind {
             CannotUnify { t1, t2 } => {
-                writeln!(snapshot, "CannotUnify {{ {}, {} }} at {step:?}", pp(t1), pp(t2)).unwrap();
+                writeln!(
+                    snapshot,
+                    "CannotUnify {{ {}, {} }} at {step:?}",
+                    message(t1),
+                    message(t2)
+                )
+                .unwrap();
             }
             NoInstanceFound { constraint } => {
-                writeln!(snapshot, "NoInstanceFound {{ {} }} at {step:?}", pp(constraint)).unwrap();
+                writeln!(snapshot, "NoInstanceFound {{ {} }} at {step:?}", message(constraint))
+                    .unwrap();
             }
             AmbiguousConstraint { constraint } => {
-                writeln!(snapshot, "AmbiguousConstraint {{ {} }} at {step:?}", pp(constraint))
+                writeln!(snapshot, "AmbiguousConstraint {{ {} }} at {step:?}", message(constraint))
                     .unwrap();
             }
             InstanceMemberTypeMismatch { expected, actual } => {
                 writeln!(
                     snapshot,
                     "InstanceMemberTypeMismatch {{ expected: {}, actual: {} }} at {step:?}",
-                    pp(expected),
-                    pp(actual)
+                    message(expected),
+                    message(actual)
                 )
                 .unwrap();
             }
             CustomWarning { message_id } => {
-                let message = &checked.custom_messages[message_id as usize];
+                let message = message(message_id);
                 writeln!(snapshot, "CustomWarning {{ .. }} at {step:?}").unwrap();
                 for line in message.lines() {
                     writeln!(snapshot, "  {line}").unwrap();
                 }
             }
             CustomFailure { message_id } => {
-                let message = &checked.custom_messages[message_id as usize];
+                let message = message(message_id);
                 writeln!(snapshot, "CustomFailure {{ .. }} at {step:?}").unwrap();
                 for line in message.lines() {
                     writeln!(snapshot, "  {line}").unwrap();
                 }
+            }
+            CannotDeriveForType { type_message } => {
+                writeln!(
+                    snapshot,
+                    "CannotDeriveForType {{ {} }} at {step:?}",
+                    message(type_message)
+                )
+                .unwrap();
+            }
+            ExpectedNewtype { type_message } => {
+                writeln!(snapshot, "ExpectedNewtype {{ {} }} at {step:?}", message(type_message))
+                    .unwrap();
+            }
+            CovariantOccurrence { type_message } => {
+                writeln!(
+                    snapshot,
+                    "CovariantOccurrence {{ {} }} at {step:?}",
+                    message(type_message)
+                )
+                .unwrap();
+            }
+            ContravariantOccurrence { type_message } => {
+                writeln!(
+                    snapshot,
+                    "ContravariantOccurrence {{ {} }} at {step:?}",
+                    message(type_message)
+                )
+                .unwrap();
+            }
+            InvalidTypeOperator { kind_message } => {
+                writeln!(
+                    snapshot,
+                    "InvalidTypeOperator {{ {} }} at {step:?}",
+                    message(kind_message)
+                )
+                .unwrap();
             }
             _ => {
                 writeln!(snapshot, "{:?} at {step:?}", error.kind).unwrap();

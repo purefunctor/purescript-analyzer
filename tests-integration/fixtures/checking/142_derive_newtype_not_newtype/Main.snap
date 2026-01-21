@@ -18,4 +18,4 @@ Roles
 Foo = []
 
 Errors
-ExpectedNewtype { type_id: Id<checking::core::Type>(9) } at [TermDeclaration(Idx::<TermItem>(1))]
+ExpectedNewtype { Foo } at [TermDeclaration(Idx::<TermItem>(1))]

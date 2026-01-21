@@ -5,7 +5,7 @@ use building_types::QueryResult;
 use crate::ExternalQueries;
 use crate::algorithm::derive::{self, tools};
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::{transfer, unification};
+use crate::algorithm::unification;
 use crate::error::ErrorKind;
 
 pub fn check_derive_newtype<Q>(
@@ -28,14 +28,14 @@ where
 
     let Some((newtype_file, newtype_id)) = derive::extract_type_constructor(state, newtype_type)
     else {
-        let global_type = transfer::globalize(state, context, newtype_type);
-        state.insert_error(ErrorKind::CannotDeriveForType { type_id: global_type });
+        let type_message = state.render_local_type(context, newtype_type);
+        state.insert_error(ErrorKind::CannotDeriveForType { type_message });
         return Ok(());
     };
 
     if !derive::is_newtype(context, newtype_file, newtype_id)? {
-        let global_type = transfer::globalize(state, context, newtype_type);
-        state.insert_error(ErrorKind::ExpectedNewtype { type_id: global_type });
+        let type_message = state.render_local_type(context, newtype_type);
+        state.insert_error(ErrorKind::ExpectedNewtype { type_message });
         return Ok(());
     }
 
