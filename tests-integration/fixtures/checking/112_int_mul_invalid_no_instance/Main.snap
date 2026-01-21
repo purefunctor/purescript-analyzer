@@ -19,5 +19,5 @@ Proxy
 Roles
 Proxy = [Phantom]
 
-Errors
-NoInstanceFound { Mul 2 3 10 } at [TermDeclaration(Idx::<TermItem>(2))]
+Diagnostics
+error[NoInstanceFound] at 152..178: No instance found for: Mul 2 3 10

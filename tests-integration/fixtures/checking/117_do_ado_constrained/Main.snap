@@ -72,5 +72,5 @@ class Applicative (&0 :: Type -> Type) <= Discard (&0 :: Type -> Type)
 class Applicative (&0 :: Type -> Type) <= Bind (&0 :: Type -> Type)
 class Bind (&0 :: Type -> Type) <= Monad (&0 :: Type -> Type)
 
-Errors
-NoInstanceFound { Discard (&0 :: Type -> Type) } at [TermDeclaration(Idx::<TermItem>(10))]
+Diagnostics
+error[NoInstanceFound] at 833..878: No instance found for: Discard (&0 :: Type -> Type)

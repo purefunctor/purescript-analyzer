@@ -19,6 +19,6 @@ Effect :: Type -> Type
 Roles
 Effect = [Nominal]
 
-Errors
-EmptyAdoBlock at [TermDeclaration(Idx::<TermItem>(3)), InferringExpression(AstId<syntax::cst::Expression>(54))]
-CannotUnify { Type, ??? } at [TermDeclaration(Idx::<TermItem>(3))]
+Diagnostics
+error[EmptyAdoBlock] at 261..265: Empty ado block
+error[CannotUnify] at 252..265: Cannot unify 'Type' with '???'

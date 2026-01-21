@@ -31,6 +31,6 @@ WrapBoth = [Representational, Representational, Nominal, Nominal]
 Derived
 derive Bifunctor (WrapBoth @Type @Type (&0 :: Type -> Type) (&1 :: Type -> Type) :: Type -> Type -> Type)
 
-Errors
-DeriveMissingFunctor at [TermDeclaration(Idx::<TermItem>(1))]
-DeriveMissingFunctor at [TermDeclaration(Idx::<TermItem>(1))]
+Diagnostics
+error[DeriveMissingFunctor] at 104..145: Deriving Functor requires Data.Functor to be in scope
+error[DeriveMissingFunctor] at 104..145: Deriving Functor requires Data.Functor to be in scope

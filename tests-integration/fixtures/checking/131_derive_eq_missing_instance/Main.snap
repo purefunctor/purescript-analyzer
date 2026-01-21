@@ -27,5 +27,5 @@ Box = []
 Derived
 derive Eq (Box :: Type)
 
-Errors
-NoInstanceFound { Eq NoEq } at [TermDeclaration(Idx::<TermItem>(2))]
+Diagnostics
+error[NoInstanceFound] at 87..111: No instance found for: Eq NoEq

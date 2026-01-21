@@ -11,9 +11,9 @@ threeWayConflict :: Int -> Int
 
 Types
 
-Errors
-CannotUnify { Int, String } at [TermDeclaration(Idx::<TermItem>(1)), InferringExpression(AstId<syntax::cst::Expression>(20))]
-CannotUnify { String, Int } at [TermDeclaration(Idx::<TermItem>(1)), InferringExpression(AstId<syntax::cst::Expression>(20))]
-CannotUnify { ?2[:0] -> ?3[:0], ?3[:0] } at [TermDeclaration(Idx::<TermItem>(2)), InferringExpression(AstId<syntax::cst::Expression>(61))]
-CannotUnify { Int, String } at [TermDeclaration(Idx::<TermItem>(3)), InferringExpression(AstId<syntax::cst::Expression>(82)), InferringExpression(AstId<syntax::cst::Expression>(102)), CheckingExpression(AstId<syntax::cst::Expression>(105))]
-CannotUnify { String, Int } at [TermDeclaration(Idx::<TermItem>(4)), InferringExpression(AstId<syntax::cst::Expression>(115)), InferringExpression(AstId<syntax::cst::Expression>(135)), CheckingExpression(AstId<syntax::cst::Expression>(138))]
+Diagnostics
+error[CannotUnify] at 160..248: Cannot unify 'Int' with 'String'
+error[CannotUnify] at 160..248: Cannot unify 'String' with 'Int'
+error[CannotUnify] at 353..376: Cannot unify '?2[:0] -> ?3[:0]' with '?3[:0]'
+error[CannotUnify] at 520..522: Cannot unify 'Int' with 'String'
+error[CannotUnify] at 659..666: Cannot unify 'String' with 'Int'

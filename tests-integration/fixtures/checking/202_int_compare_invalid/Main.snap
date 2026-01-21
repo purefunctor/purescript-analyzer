@@ -1,6 +1,5 @@
 ---
 source: tests-integration/tests/checking/generated.rs
-assertion_line: 12
 expression: report
 ---
 Terms
@@ -12,11 +11,11 @@ invalidEq :: Proxy @(Row Int) ( left :: 1, right :: 5 )
 
 Types
 
-Errors
-NoInstanceFound { Compare 10 5 LT } at [TermDeclaration(Idx::<TermItem>(0))]
-NoInstanceFound { Compare 5 1 LT } at [TermDeclaration(Idx::<TermItem>(0))]
-NoInstanceFound { Compare 1 5 GT } at [TermDeclaration(Idx::<TermItem>(1))]
-NoInstanceFound { Compare 5 10 GT } at [TermDeclaration(Idx::<TermItem>(1))]
-NoInstanceFound { Compare 5 1 LT } at [TermDeclaration(Idx::<TermItem>(2))]
-NoInstanceFound { Compare 1 5 GT } at [TermDeclaration(Idx::<TermItem>(3))]
-NoInstanceFound { Compare 1 5 EQ } at [TermDeclaration(Idx::<TermItem>(4))]
+Diagnostics
+error[NoInstanceFound] at 49..182: No instance found for: Compare 10 5 LT
+error[NoInstanceFound] at 49..182: No instance found for: Compare 5 1 LT
+error[NoInstanceFound] at 226..359: No instance found for: Compare 1 5 GT
+error[NoInstanceFound] at 226..359: No instance found for: Compare 5 10 GT
+error[NoInstanceFound] at 403..488: No instance found for: Compare 5 1 LT
+error[NoInstanceFound] at 513..559: No instance found for: Compare 1 5 GT
+error[NoInstanceFound] at 585..631: No instance found for: Compare 1 5 EQ

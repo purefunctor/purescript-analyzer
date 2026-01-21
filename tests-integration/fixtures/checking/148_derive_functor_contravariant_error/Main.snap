@@ -39,5 +39,5 @@ derive Functor (Predicate :: Type -> Type)
 derive Functor (Reader (&0 :: Type) :: Type -> Type)
 derive Functor (Cont (&0 :: Type) :: Type -> Type)
 
-Errors
-ContravariantOccurrence { (~&0 :: Type) } at [TermDeclaration(Idx::<TermItem>(1))]
+Diagnostics
+error[ContravariantOccurrence] at 99..133: Type variable occurs in contravariant position: (~&0 :: Type)

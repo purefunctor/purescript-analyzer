@@ -1022,11 +1022,8 @@ fn check_roles(
         if is_foreign || declared >= inferred {
             *validated = declared;
         } else {
-            state.insert_error(ErrorKind::InvalidRoleDeclaration {
-                type_id,
-                parameter_index: index,
-                declared,
-                inferred,
+            state.with_error_step(ErrorStep::TypeDeclaration(type_id), |state| {
+                state.insert_error(ErrorKind::InvalidRoleDeclaration { index, declared, inferred });
             });
         }
     }

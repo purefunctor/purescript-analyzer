@@ -28,6 +28,6 @@ Derived
 derive Contravariant (Identity :: Type -> Type)
 derive Contravariant (Producer :: Type -> Type)
 
-Errors
-CovariantOccurrence { (~&0 :: Type) } at [TermDeclaration(Idx::<TermItem>(1))]
-CovariantOccurrence { (~&0 :: Type) } at [TermDeclaration(Idx::<TermItem>(3))]
+Diagnostics
+error[CovariantOccurrence] at 168..207: Type variable occurs in covariant position: (~&0 :: Type)
+error[CovariantOccurrence] at 308..347: Type variable occurs in covariant position: (~&0 :: Type)

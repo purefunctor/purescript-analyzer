@@ -47,5 +47,5 @@ derive Eq (NoOrd :: Type)
 derive Eq (ContainsNoOrd :: Type)
 derive Ord (ContainsNoOrd :: Type)
 
-Errors
-NoInstanceFound { Ord NoOrd } at [TermDeclaration(Idx::<TermItem>(10))]
+Diagnostics
+error[NoInstanceFound] at 350..384: No instance found for: Ord NoOrd

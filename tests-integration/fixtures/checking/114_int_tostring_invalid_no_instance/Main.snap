@@ -19,5 +19,5 @@ Proxy
 Roles
 Proxy = [Phantom]
 
-Errors
-NoInstanceFound { ToString 42 "999" } at [TermDeclaration(Idx::<TermItem>(2))]
+Diagnostics
+error[NoInstanceFound] at 162..188: No instance found for: ToString 42 "999"

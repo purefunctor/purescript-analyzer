@@ -19,5 +19,5 @@ Proxy
 Roles
 Proxy = [Phantom]
 
-Errors
-NoInstanceFound { Lacks @Type "b" ( a :: Int, b :: String ) } at [TermDeclaration(Idx::<TermItem>(2))]
+Diagnostics
+error[NoInstanceFound] at 196..222: No instance found for: Lacks @Type "b" ( a :: Int, b :: String )

@@ -16,5 +16,5 @@ Instances
 instance Eq (Int :: Type)
   chain: 0
 
-Errors
-NoInstanceFound { Eq String } at [TermDeclaration(Idx::<TermItem>(2))]
+Diagnostics
+error[NoInstanceFound] at 101..138: No instance found for: Eq String

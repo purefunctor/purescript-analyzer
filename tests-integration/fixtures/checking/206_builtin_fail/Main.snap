@@ -26,9 +26,7 @@ Proxy
 Roles
 Proxy = [Phantom]
 
-Errors
-CustomFailure { .. } at [TermDeclaration(Idx::<TermItem>(2))]
-  This operation is not allowed
-CustomFailure { .. } at [TermDeclaration(Idx::<TermItem>(4))]
-  Error:
-  Type String
+Diagnostics
+error[CustomFailure] at 231..252: This operation is not allowed
+error[CustomFailure] at 409..441: Error:
+Type String

@@ -47,21 +47,13 @@ Proxy
 Roles
 Proxy = [Phantom]
 
-Errors
-CustomWarning { .. } at [TermDeclaration(Idx::<TermItem>(2))]
-  This function is deprecated
-CustomWarning { .. } at [TermDeclaration(Idx::<TermItem>(4))]
-  Left Right
-CustomWarning { .. } at [TermDeclaration(Idx::<TermItem>(6))]
-  Line 1
-  Line 2
-CustomWarning { .. } at [TermDeclaration(Idx::<TermItem>(8))]
-  Got type: Int
-CustomWarning { .. } at [TermDeclaration(Idx::<TermItem>(10))]
-  Label: myField
-CustomWarning { .. } at [TermDeclaration(Idx::<TermItem>(12))]
-  Label: "h e l l o"
-CustomWarning { .. } at [TermDeclaration(Idx::<TermItem>(14))]
-  Label: "hel\"lo"
-CustomWarning { .. } at [TermDeclaration(Idx::<TermItem>(16))]
-  Label: """raw\nstring"""
+Diagnostics
+warning[CustomWarning] at 241..262: This function is deprecated
+warning[CustomWarning] at 386..408: Left Right
+warning[CustomWarning] at 533..554: Line 1
+Line 2
+warning[CustomWarning] at 688..715: Got type: Int
+warning[CustomWarning] at 860..886: Label: myField
+warning[CustomWarning] at 1052..1084: Label: "h e l l o"
+warning[CustomWarning] at 1258..1289: Label: "hel\"lo"
+warning[CustomWarning] at 1465..1494: Label: """raw\nstring"""

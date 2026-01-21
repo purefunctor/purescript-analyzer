@@ -20,5 +20,5 @@ Identity = [Representational]
 Derived
 derive Show (Identity (&0 :: Type) :: Type)
 
-Errors
-NoInstanceFound { Show (&0 :: Type) } at [TermDeclaration(Idx::<TermItem>(1))]
+Diagnostics
+error[NoInstanceFound] at 81..124: No instance found for: Show (&0 :: Type)

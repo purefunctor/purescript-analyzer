@@ -36,13 +36,13 @@ Valid = Int
   Type = :0
 
 
-Errors
-RecursiveSynonymExpansion { file_id: Idx::<File>(30), item_id: Idx::<TypeItem>(0) } at [TermDeclaration(Idx::<TermItem>(0))]
-RecursiveSynonymExpansion { file_id: Idx::<File>(30), item_id: Idx::<TypeItem>(0) } at [TermDeclaration(Idx::<TermItem>(0))]
-RecursiveSynonymExpansion { file_id: Idx::<File>(30), item_id: Idx::<TypeItem>(0) } at [TermDeclaration(Idx::<TermItem>(0))]
-RecursiveSynonymExpansion { file_id: Idx::<File>(30), item_id: Idx::<TypeItem>(1) } at [TermDeclaration(Idx::<TermItem>(1))]
-RecursiveSynonymExpansion { file_id: Idx::<File>(30), item_id: Idx::<TypeItem>(1) } at [TermDeclaration(Idx::<TermItem>(1))]
-RecursiveSynonymExpansion { file_id: Idx::<File>(30), item_id: Idx::<TypeItem>(1) } at [TermDeclaration(Idx::<TermItem>(1))]
-RecursiveSynonymExpansion { file_id: Idx::<File>(30), item_id: Idx::<TypeItem>(2) } at [TermDeclaration(Idx::<TermItem>(2))]
-RecursiveSynonymExpansion { file_id: Idx::<File>(30), item_id: Idx::<TypeItem>(2) } at [TermDeclaration(Idx::<TermItem>(2))]
-RecursiveSynonymExpansion { file_id: Idx::<File>(30), item_id: Idx::<TypeItem>(2) } at [TermDeclaration(Idx::<TermItem>(2))]
+Diagnostics
+error[RecursiveSynonymExpansion] at 52..69: Recursive type synonym expansion
+error[RecursiveSynonymExpansion] at 52..69: Recursive type synonym expansion
+error[RecursiveSynonymExpansion] at 52..69: Recursive type synonym expansion
+error[RecursiveSynonymExpansion] at 81..98: Recursive type synonym expansion
+error[RecursiveSynonymExpansion] at 81..98: Recursive type synonym expansion
+error[RecursiveSynonymExpansion] at 81..98: Recursive type synonym expansion
+error[RecursiveSynonymExpansion] at 110..127: Recursive type synonym expansion
+error[RecursiveSynonymExpansion] at 110..127: Recursive type synonym expansion
+error[RecursiveSynonymExpansion] at 110..127: Recursive type synonym expansion

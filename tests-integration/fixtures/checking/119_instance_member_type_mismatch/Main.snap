@@ -15,7 +15,7 @@ Instances
 instance Show (Int :: Type)
   chain: 0
 
-Errors
-CannotUnify { Int, String } at [TermDeclaration(Idx::<TermItem>(1))]
-CannotUnify { Int -> Int, Int -> String } at [TermDeclaration(Idx::<TermItem>(1))]
-InstanceMemberTypeMismatch { expected: Int -> String, actual: Int -> Int } at [TermDeclaration(Idx::<TermItem>(1))]
+Diagnostics
+error[CannotUnify] at 59..118: Cannot unify 'Int' with 'String'
+error[CannotUnify] at 59..118: Cannot unify 'Int -> Int' with 'Int -> String'
+error[InstanceMemberTypeMismatch] at 59..118: Instance member type mismatch: expected 'Int -> String', got 'Int -> Int'

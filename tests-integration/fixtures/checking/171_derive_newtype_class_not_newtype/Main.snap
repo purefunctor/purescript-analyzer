@@ -17,5 +17,5 @@ NotANewtype
 Roles
 NotANewtype = []
 
-Errors
-ExpectedNewtype { NotANewtype } at [TermDeclaration(Idx::<TermItem>(1))]
+Diagnostics
+error[ExpectedNewtype] at 90..129: Expected a newtype, got: NotANewtype

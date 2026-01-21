@@ -23,5 +23,5 @@ Foo = []
 Classes
 class Eq (&0 :: Type)
 
-Errors
-NoInstanceFound { Eq Foo } at [TermDeclaration(Idx::<TermItem>(2))]
+Diagnostics
+error[NoInstanceFound] at 77..149: No instance found for: Eq Foo

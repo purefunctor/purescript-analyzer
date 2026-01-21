@@ -20,5 +20,5 @@ F
 Roles
 F = [Representational, Nominal]
 
-Errors
-InvalidRoleDeclaration { type_id: Idx::<TypeItem>(0), parameter_index: 1, declared: Phantom, inferred: Nominal } at []
+Diagnostics
+error[InvalidRoleDeclaration] at 17..39: Invalid role declaration: declared Phantom, inferred Nominal

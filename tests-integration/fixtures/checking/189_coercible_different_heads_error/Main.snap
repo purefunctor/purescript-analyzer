@@ -27,5 +27,5 @@ Roles
 Maybe = [Representational]
 Either = [Representational, Representational]
 
-Errors
-NoInstanceFound { Coercible @Type (Maybe Int) (Either Int String) } at [TermDeclaration(Idx::<TermItem>(4))]
+Diagnostics
+error[NoInstanceFound] at 114..165: No instance found for: Coercible @Type (Maybe Int) (Either Int String)

@@ -29,5 +29,5 @@ Maybe = [Representational]
 List = [Representational]
 Container = [Representational]
 
-Errors
-NoInstanceFound { Coercible (Maybe (~&0 :: Type)) (List (~&0 :: Type)) } at [TermDeclaration(Idx::<TermItem>(4))]
+Diagnostics
+error[NoInstanceFound] at 209..272: No instance found for: Coercible (Maybe (~&0 :: Type)) (List (~&0 :: Type))

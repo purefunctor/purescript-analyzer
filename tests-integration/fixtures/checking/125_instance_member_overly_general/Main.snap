@@ -15,6 +15,6 @@ Instances
 instance Show (Boolean :: Type)
   chain: 0
 
-Errors
-CannotUnify { forall (a :: Type). (a :: Type) -> String, Boolean -> String } at [TermDeclaration(Idx::<TermItem>(1))]
-InstanceMemberTypeMismatch { expected: Boolean -> String, actual: forall (a :: Type). (a :: Type) -> String } at [TermDeclaration(Idx::<TermItem>(1))]
+Diagnostics
+error[CannotUnify] at 59..138: Cannot unify 'forall (a :: Type). (a :: Type) -> String' with 'Boolean -> String'
+error[InstanceMemberTypeMismatch] at 59..138: Instance member type mismatch: expected 'Boolean -> String', got 'forall (a :: Type). (a :: Type) -> String'

@@ -22,5 +22,5 @@ Derived
 derive Eq (&0 :: Type) => Eq (Either Int (&0 :: Type) :: Type)
 derive Eq (Either Int (&0 :: Type) :: Type)
 
-Errors
-NoInstanceFound { Eq (&0 :: Type) } at [TermDeclaration(Idx::<TermItem>(3))]
+Diagnostics
+error[NoInstanceFound] at 123..158: No instance found for: Eq (&0 :: Type)

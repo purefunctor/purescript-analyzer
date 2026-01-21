@@ -34,5 +34,5 @@ Derived
 derive Functor (&0 :: Type -> Type) => Functor (Wrap @Type (&0 :: Type -> Type) :: Type -> Type)
 derive Functor (WrapNoFunctor @Type (&0 :: Type -> Type) :: Type -> Type)
 
-Errors
-NoInstanceFound { Functor (&0 :: Type -> Type) } at [TermDeclaration(Idx::<TermItem>(3))]
+Diagnostics
+error[NoInstanceFound] at 174..216: No instance found for: Functor (&0 :: Type -> Type)

@@ -34,5 +34,5 @@ Derived
 derive Foldable (&0 :: Type -> Type) => Foldable (Wrap @Type (&0 :: Type -> Type) :: Type -> Type)
 derive Foldable (WrapNoFoldable @Type (&0 :: Type -> Type) :: Type -> Type)
 
-Errors
-NoInstanceFound { Foldable (&0 :: Type -> Type) } at [TermDeclaration(Idx::<TermItem>(3))]
+Diagnostics
+error[NoInstanceFound] at 180..224: No instance found for: Foldable (&0 :: Type -> Type)

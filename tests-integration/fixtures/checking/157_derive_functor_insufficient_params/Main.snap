@@ -28,8 +28,8 @@ Derived
 derive Functor (Pair Int String :: Type)
 derive Functor (Unit :: Type)
 
-Errors
-CannotUnify { Type, Type -> Type } at [TermDeclaration(Idx::<TermItem>(1)), CheckingKind(AstId<syntax::cst::Type>(19))]
-CannotDeriveForType { Pair Int String } at [TermDeclaration(Idx::<TermItem>(1))]
-CannotUnify { Type, Type -> Type } at [TermDeclaration(Idx::<TermItem>(3)), CheckingKind(AstId<syntax::cst::Type>(28))]
-CannotDeriveForType { Unit } at [TermDeclaration(Idx::<TermItem>(3))]
+Diagnostics
+error[CannotUnify] at 104..122: Cannot unify 'Type' with 'Type -> Type'
+error[CannotDeriveForType] at 80..122: Cannot derive for type: Pair Int String
+error[CannotUnify] at 164..169: Cannot unify 'Type' with 'Type -> Type'
+error[CannotDeriveForType] at 140..169: Cannot derive for type: Unit

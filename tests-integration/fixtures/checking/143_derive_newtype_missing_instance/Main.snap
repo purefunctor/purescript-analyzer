@@ -20,5 +20,5 @@ Identity = [Representational]
 Derived
 derive Show (Identity String :: Type)
 
-Errors
-NoInstanceFound { Show String } at [TermDeclaration(Idx::<TermItem>(1))]
+Diagnostics
+error[NoInstanceFound] at 81..129: No instance found for: Show String

@@ -2,6 +2,7 @@ use std::fmt::Write;
 
 use analyzer::{QueryEngine, locate};
 use checking::core::pretty;
+use diagnostics::{DiagnosticsContext, ToDiagnostics, format_text};
 use files::FileId;
 use indexing::{ImportKind, TermItem, TypeItem, TypeItemId, TypeItemKind};
 use lowering::{
@@ -382,94 +383,34 @@ pub fn report_checked(engine: &QueryEngine, id: FileId) -> String {
         writeln!(snapshot, "derive {forall_prefix}{head}").unwrap();
     }
 
-    if !checked.errors.is_empty() {
-        writeln!(snapshot, "\nErrors").unwrap();
+    let content = engine.content(id);
+
+    let (parsed, _) = engine.parsed(id).unwrap();
+    let root = parsed.syntax_node();
+
+    let stabilized = engine.stabilized(id).unwrap();
+    let lowered = engine.lowered(id).unwrap();
+    let resolved = engine.resolved(id).unwrap();
+
+    let context = DiagnosticsContext::new(&content, &root, &stabilized, &indexed, &checked);
+
+    let mut all_diagnostics = vec![];
+
+    for error in &lowered.errors {
+        all_diagnostics.extend(error.to_diagnostics(&context));
     }
+
+    for error in &resolved.errors {
+        all_diagnostics.extend(error.to_diagnostics(&context));
+    }
+
     for error in &checked.errors {
-        use checking::error::ErrorKind::*;
-        let message = |id| &checked.error_messages[id];
-        let step = &error.step;
-        match error.kind {
-            CannotUnify { t1, t2 } => {
-                writeln!(
-                    snapshot,
-                    "CannotUnify {{ {}, {} }} at {step:?}",
-                    message(t1),
-                    message(t2)
-                )
-                .unwrap();
-            }
-            NoInstanceFound { constraint } => {
-                writeln!(snapshot, "NoInstanceFound {{ {} }} at {step:?}", message(constraint))
-                    .unwrap();
-            }
-            AmbiguousConstraint { constraint } => {
-                writeln!(snapshot, "AmbiguousConstraint {{ {} }} at {step:?}", message(constraint))
-                    .unwrap();
-            }
-            InstanceMemberTypeMismatch { expected, actual } => {
-                writeln!(
-                    snapshot,
-                    "InstanceMemberTypeMismatch {{ expected: {}, actual: {} }} at {step:?}",
-                    message(expected),
-                    message(actual)
-                )
-                .unwrap();
-            }
-            CustomWarning { message_id } => {
-                let message = message(message_id);
-                writeln!(snapshot, "CustomWarning {{ .. }} at {step:?}").unwrap();
-                for line in message.lines() {
-                    writeln!(snapshot, "  {line}").unwrap();
-                }
-            }
-            CustomFailure { message_id } => {
-                let message = message(message_id);
-                writeln!(snapshot, "CustomFailure {{ .. }} at {step:?}").unwrap();
-                for line in message.lines() {
-                    writeln!(snapshot, "  {line}").unwrap();
-                }
-            }
-            CannotDeriveForType { type_message } => {
-                writeln!(
-                    snapshot,
-                    "CannotDeriveForType {{ {} }} at {step:?}",
-                    message(type_message)
-                )
-                .unwrap();
-            }
-            ExpectedNewtype { type_message } => {
-                writeln!(snapshot, "ExpectedNewtype {{ {} }} at {step:?}", message(type_message))
-                    .unwrap();
-            }
-            CovariantOccurrence { type_message } => {
-                writeln!(
-                    snapshot,
-                    "CovariantOccurrence {{ {} }} at {step:?}",
-                    message(type_message)
-                )
-                .unwrap();
-            }
-            ContravariantOccurrence { type_message } => {
-                writeln!(
-                    snapshot,
-                    "ContravariantOccurrence {{ {} }} at {step:?}",
-                    message(type_message)
-                )
-                .unwrap();
-            }
-            InvalidTypeOperator { kind_message } => {
-                writeln!(
-                    snapshot,
-                    "InvalidTypeOperator {{ {} }} at {step:?}",
-                    message(kind_message)
-                )
-                .unwrap();
-            }
-            _ => {
-                writeln!(snapshot, "{:?} at {step:?}", error.kind).unwrap();
-            }
-        }
+        all_diagnostics.extend(error.to_diagnostics(&context));
+    }
+
+    if !all_diagnostics.is_empty() {
+        writeln!(snapshot, "\nDiagnostics").unwrap();
+        snapshot.push_str(&format_text(&all_diagnostics));
     }
 
     snapshot

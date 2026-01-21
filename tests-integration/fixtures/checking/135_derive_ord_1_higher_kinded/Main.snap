@@ -36,6 +36,6 @@ derive (Ord1 (&0 :: Type -> Type), Ord (&1 :: Type)) => Ord (Wrap @Type (&0 :: T
 derive (Eq1 (&0 :: Type -> Type), Eq (&1 :: Type)) => Eq (WrapNoOrd1 @Type (&0 :: Type -> Type) (&1 :: Type) :: Type)
 derive Ord (&1 :: Type) => Ord (WrapNoOrd1 @Type (&0 :: Type -> Type) (&1 :: Type) :: Type)
 
-Errors
-NoInstanceFound { Ord1 (&0 :: Type -> Type) } at [TermDeclaration(Idx::<TermItem>(5))]
-NoInstanceFound { Eq1 (&0 :: Type -> Type) } at [TermDeclaration(Idx::<TermItem>(5))]
+Diagnostics
+error[NoInstanceFound] at 319..365: No instance found for: Ord1 (&0 :: Type -> Type)
+error[NoInstanceFound] at 319..365: No instance found for: Eq1 (&0 :: Type -> Type)

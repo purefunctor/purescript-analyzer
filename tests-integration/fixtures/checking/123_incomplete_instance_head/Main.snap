@@ -20,5 +20,5 @@ instance Pair (Int :: Type) (String :: Type)
 instance Pair (Int :: Type)
   chain: 0
 
-Errors
-InstanceHeadMismatch { class_file: Idx::<File>(30), class_item: Idx::<TypeItem>(0), expected: 2, actual: 1 } at [TermDeclaration(Idx::<TermItem>(2))]
+Diagnostics
+error[InstanceHeadMismatch] at 138..191: Instance head mismatch: expected 2 arguments, got 1

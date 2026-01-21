@@ -12,5 +12,5 @@ Nominal :: Type -> Type
 Roles
 Nominal = [Nominal]
 
-Errors
-NoInstanceFound { Coercible @Type (Nominal Int) (Nominal String) } at [TermDeclaration(Idx::<TermItem>(1))]
+Diagnostics
+error[NoInstanceFound] at 194..251: No instance found for: Coercible @Type (Nominal Int) (Nominal String)

@@ -22,6 +22,6 @@ Triple = [Representational, Representational, Representational]
 Derived
 derive Bifunctor (Triple Int String :: Type -> Type)
 
-Errors
-CannotUnify { Type, Type -> Type } at [TermDeclaration(Idx::<TermItem>(1)), CheckingKind(AstId<syntax::cst::Type>(21))]
-CannotDeriveForType { Triple Int String } at [TermDeclaration(Idx::<TermItem>(1))]
+Diagnostics
+error[CannotUnify] at 118..138: Cannot unify 'Type' with 'Type -> Type'
+error[CannotDeriveForType] at 92..138: Cannot derive for type: Triple Int String

@@ -96,6 +96,6 @@ derive Eq (&0 :: Type) => Eq (Rec (&0 :: Type) :: Type)
 derive Eq1 (Rec :: Type -> Type)
 derive (Eq1 (&0 :: Type -> Type), Eq (&1 :: Type)) => Eq (Wrap @Type (&0 :: Type -> Type) (&1 :: Type) :: Type)
 
-Errors
-NoInstanceFound { Eq ((&1 :: Type -> Type) (~&2 :: Type)) } at [TermDeclaration(Idx::<TermItem>(17))]
-NoInstanceFound { Eq (NoEq (~&0 :: Type)) } at [TermDeclaration(Idx::<TermItem>(23))]
+Diagnostics
+error[NoInstanceFound] at 635..753: No instance found for: Eq ((&1 :: Type -> Type) (~&2 :: Type))
+error[NoInstanceFound] at 916..942: No instance found for: Eq (NoEq (~&0 :: Type))

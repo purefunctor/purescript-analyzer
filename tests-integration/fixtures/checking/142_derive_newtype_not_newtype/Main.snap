@@ -17,5 +17,5 @@ Foo
 Roles
 Foo = []
 
-Errors
-ExpectedNewtype { Foo } at [TermDeclaration(Idx::<TermItem>(1))]
+Diagnostics
+error[ExpectedNewtype] at 68..102: Expected a newtype, got: Foo

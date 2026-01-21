@@ -92,8 +92,7 @@ pub enum ErrorKind {
         actual: u32,
     },
     InvalidRoleDeclaration {
-        type_id: indexing::TypeItemId,
-        parameter_index: usize,
+        index: usize,
         declared: crate::core::Role,
         inferred: crate::core::Role,
     },

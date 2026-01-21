@@ -34,5 +34,5 @@ Instances
 instance Functor (Box :: Type -> Type)
   chain: 0
 
-Errors
-NoInstanceFound { Show (~&1 :: Type) } at [TermDeclaration(Idx::<TermItem>(3))]
+Diagnostics
+error[NoInstanceFound] at 146..240: No instance found for: Show (~&1 :: Type)
