@@ -21,4 +21,4 @@ Derived
 derive Show (Identity String :: Type)
 
 Diagnostics
-error[NoInstanceFound] at 81..129: No instance found for: Show String
+error[NoInstanceFound] at 83..129: No instance found for: Show String

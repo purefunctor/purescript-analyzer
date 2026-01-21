@@ -28,4 +28,4 @@ Maybe = [Representational]
 Either = [Representational, Representational]
 
 Diagnostics
-error[NoInstanceFound] at 114..165: No instance found for: Coercible @Type (Maybe Int) (Either Int String)
+error[NoInstanceFound] at 116..165: No instance found for: Coercible @Type (Maybe Int) (Either Int String)

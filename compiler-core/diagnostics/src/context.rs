@@ -3,7 +3,7 @@ use checking::error::ErrorStep;
 use indexing::IndexedModule;
 use rowan::ast::{AstNode, AstPtr};
 use stabilizing::StabilizedModule;
-use syntax::{SyntaxNode, SyntaxNodePtr};
+use syntax::{SyntaxKind, SyntaxNode, SyntaxNodePtr};
 
 use crate::Span;
 
@@ -27,16 +27,28 @@ impl<'a> DiagnosticsContext<'a> {
     }
 
     pub fn span_from_syntax_ptr(&self, ptr: &SyntaxNodePtr) -> Option<Span> {
-        let range = ptr.to_node(self.root).text_range();
-        Some(Span::new(range.start().into(), range.end().into()))
+        let node = ptr.try_to_node(self.root)?;
+        self.span_from_syntax_node(&node)
     }
 
     pub fn span_from_ast_ptr<N: AstNode<Language = syntax::PureScript>>(
         &self,
         ptr: &AstPtr<N>,
     ) -> Option<Span> {
-        let ptr = ptr.syntax_node_ptr();
-        self.span_from_syntax_ptr(&ptr)
+        let node = ptr.try_to_node(self.root)?;
+        self.span_from_syntax_node(node.syntax())
+    }
+
+    fn span_from_syntax_node(&self, node: &SyntaxNode) -> Option<Span> {
+        let mut children = node.children_with_tokens().peekable();
+
+        children.next_if(|child| matches!(child.kind(), SyntaxKind::Annotation));
+
+        let start = children.peek().map(|child| child.text_range());
+        let end = children.last().map(|child| child.text_range());
+
+        let range = start.zip(end).map(|(start, end)| start.cover(end))?;
+        Some(Span::new(range.start().into(), range.end().into()))
     }
 
     pub fn text_of(&self, span: Span) -> &'a str {

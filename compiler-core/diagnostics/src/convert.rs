@@ -141,8 +141,7 @@ impl ToDiagnostics for ResolvingError {
                     format!("Cannot import module '{name}'")
                 };
 
-                let ptr = ptr.syntax_node_ptr();
-                let Some(span) = ctx.span_from_syntax_ptr(&ptr) else { return vec![] };
+                let Some(span) = ctx.span_from_ast_ptr(&ptr) else { return vec![] };
 
                 vec![Diagnostic::error("InvalidImportStatement", message, span, "resolving")]
             }

@@ -21,4 +21,4 @@ Roles
 F = [Representational, Nominal]
 
 Diagnostics
-error[InvalidRoleDeclaration] at 17..39: Invalid role declaration: declared Phantom, inferred Nominal
+error[InvalidRoleDeclaration] at 19..39: Invalid role declaration: declared Phantom, inferred Nominal

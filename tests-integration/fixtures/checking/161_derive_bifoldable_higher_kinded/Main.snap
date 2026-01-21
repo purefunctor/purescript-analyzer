@@ -51,5 +51,5 @@ derive (Foldable (&0 :: Type -> Type), Foldable (&1 :: Type -> Type)) => Bifolda
 derive Bifoldable (WrapBothNoConstraint @Type @Type (&0 :: Type -> Type) (&1 :: Type -> Type) :: Type -> Type -> Type)
 
 Diagnostics
-error[NoInstanceFound] at 284..338: No instance found for: Foldable (&0 :: Type -> Type)
-error[NoInstanceFound] at 284..338: No instance found for: Foldable (&1 :: Type -> Type)
+error[NoInstanceFound] at 285..338: No instance found for: Foldable (&0 :: Type -> Type)
+error[NoInstanceFound] at 285..338: No instance found for: Foldable (&1 :: Type -> Type)

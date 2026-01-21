@@ -20,4 +20,4 @@ Roles
 Proxy = [Phantom]
 
 Diagnostics
-error[NoInstanceFound] at 196..222: No instance found for: Lacks @Type "b" ( a :: Int, b :: String )
+error[NoInstanceFound] at 198..222: No instance found for: Lacks @Type "b" ( a :: Int, b :: String )

@@ -18,4 +18,4 @@ Roles
 NotANewtype = []
 
 Diagnostics
-error[ExpectedNewtype] at 90..129: Expected a newtype, got: NotANewtype
+error[ExpectedNewtype] at 92..129: Expected a newtype, got: NotANewtype

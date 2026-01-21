@@ -16,5 +16,5 @@ class Read (&0 :: Type)
 class Show (&0 :: Type)
 
 Diagnostics
-error[AmbiguousConstraint] at 101..257: Ambiguous constraint: Show ?5[:0]
-error[AmbiguousConstraint] at 101..257: Ambiguous constraint: Read ?5[:0]
+error[AmbiguousConstraint] at 235..257: Ambiguous constraint: Show ?5[:0]
+error[AmbiguousConstraint] at 235..257: Ambiguous constraint: Read ?5[:0]

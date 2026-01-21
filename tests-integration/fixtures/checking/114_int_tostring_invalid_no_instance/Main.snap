@@ -20,4 +20,4 @@ Roles
 Proxy = [Phantom]
 
 Diagnostics
-error[NoInstanceFound] at 162..188: No instance found for: ToString 42 "999"
+error[NoInstanceFound] at 164..188: No instance found for: ToString 42 "999"

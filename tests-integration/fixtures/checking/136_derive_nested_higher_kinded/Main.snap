@@ -56,7 +56,7 @@ derive Eq1 (&0 :: Type -> Type) => Eq (U (&0 :: Type -> Type) :: Type)
 derive Ord1 (&0 :: Type -> Type) => Ord (U (&0 :: Type -> Type) :: Type)
 
 Diagnostics
-error[NoInstanceFound] at 123..162: No instance found for: Eq ((&1 :: Type -> Type) Int)
-error[NoInstanceFound] at 162..202: No instance found for: Ord ((&1 :: Type -> Type) Int)
-error[NoInstanceFound] at 444..483: No instance found for: Eq ((&1 :: Int -> Type) 42)
-error[NoInstanceFound] at 483..523: No instance found for: Ord ((&1 :: Int -> Type) 42)
+error[NoInstanceFound] at 125..162: No instance found for: Eq ((&1 :: Type -> Type) Int)
+error[NoInstanceFound] at 163..202: No instance found for: Ord ((&1 :: Type -> Type) Int)
+error[NoInstanceFound] at 446..483: No instance found for: Eq ((&1 :: Int -> Type) 42)
+error[NoInstanceFound] at 484..523: No instance found for: Ord ((&1 :: Int -> Type) 42)

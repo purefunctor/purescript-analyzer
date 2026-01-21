@@ -48,4 +48,4 @@ derive Eq (ContainsNoOrd :: Type)
 derive Ord (ContainsNoOrd :: Type)
 
 Diagnostics
-error[NoInstanceFound] at 350..384: No instance found for: Ord NoOrd
+error[NoInstanceFound] at 351..384: No instance found for: Ord NoOrd

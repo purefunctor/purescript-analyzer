@@ -9,7 +9,7 @@ coerceQualified :: Int -> HiddenAge
 Types
 
 Diagnostics
-error[CoercibleConstructorNotInScope] at 85..119: Constructor not in scope for Coercible
-error[NoInstanceFound] at 85..119: No instance found for: Coercible @Type Int HiddenAge
-error[CoercibleConstructorNotInScope] at 141..180: Constructor not in scope for Coercible
-error[NoInstanceFound] at 141..180: No instance found for: Coercible @Type Int HiddenAge
+error[CoercibleConstructorNotInScope] at 87..119: Constructor not in scope for Coercible
+error[NoInstanceFound] at 87..119: No instance found for: Coercible @Type Int HiddenAge
+error[CoercibleConstructorNotInScope] at 143..180: Constructor not in scope for Coercible
+error[NoInstanceFound] at 143..180: No instance found for: Coercible @Type Int HiddenAge

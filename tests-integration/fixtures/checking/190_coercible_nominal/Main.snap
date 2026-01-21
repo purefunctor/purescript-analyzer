@@ -13,4 +13,4 @@ Roles
 Nominal = [Nominal]
 
 Diagnostics
-error[NoInstanceFound] at 194..251: No instance found for: Coercible @Type (Nominal Int) (Nominal String)
+error[NoInstanceFound] at 196..251: No instance found for: Coercible @Type (Nominal Int) (Nominal String)

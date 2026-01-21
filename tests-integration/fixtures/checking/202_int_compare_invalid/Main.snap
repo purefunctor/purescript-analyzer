@@ -12,10 +12,10 @@ invalidEq :: Proxy @(Row Int) ( left :: 1, right :: 5 )
 Types
 
 Diagnostics
-error[NoInstanceFound] at 49..182: No instance found for: Compare 10 5 LT
-error[NoInstanceFound] at 49..182: No instance found for: Compare 5 1 LT
-error[NoInstanceFound] at 226..359: No instance found for: Compare 1 5 GT
-error[NoInstanceFound] at 226..359: No instance found for: Compare 5 10 GT
-error[NoInstanceFound] at 403..488: No instance found for: Compare 5 1 LT
-error[NoInstanceFound] at 513..559: No instance found for: Compare 1 5 GT
-error[NoInstanceFound] at 585..631: No instance found for: Compare 1 5 EQ
+error[NoInstanceFound] at 132..182: No instance found for: Compare 10 5 LT
+error[NoInstanceFound] at 132..182: No instance found for: Compare 5 1 LT
+error[NoInstanceFound] at 309..359: No instance found for: Compare 1 5 GT
+error[NoInstanceFound] at 309..359: No instance found for: Compare 5 10 GT
+error[NoInstanceFound] at 444..488: No instance found for: Compare 5 1 LT
+error[NoInstanceFound] at 515..559: No instance found for: Compare 1 5 GT
+error[NoInstanceFound] at 587..631: No instance found for: Compare 1 5 EQ

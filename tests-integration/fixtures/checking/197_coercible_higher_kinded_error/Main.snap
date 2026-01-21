@@ -30,4 +30,4 @@ List = [Representational]
 Container = [Representational]
 
 Diagnostics
-error[NoInstanceFound] at 209..272: No instance found for: Coercible (Maybe (~&0 :: Type)) (List (~&0 :: Type))
+error[NoInstanceFound] at 211..272: No instance found for: Coercible (Maybe (~&0 :: Type)) (List (~&0 :: Type))

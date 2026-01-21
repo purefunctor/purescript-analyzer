@@ -1,4 +1,9 @@
 use itertools::Itertools;
+use line_index::{LineCol, LineIndex};
+use lsp_types::{
+    DiagnosticRelatedInformation, DiagnosticSeverity, Location, NumberOrString, Position, Range,
+};
+use rowan::TextSize;
 
 use crate::{Diagnostic, Severity};
 
@@ -27,26 +32,27 @@ pub fn format_text(diagnostics: &[Diagnostic]) -> String {
     output
 }
 
+fn offset_to_position(line_index: &LineIndex, content: &str, offset: TextSize) -> Option<Position> {
+    let LineCol { line, col } = line_index.line_col(offset);
+
+    let line_text_range = line_index.line(line)?;
+    let line_content = &content[line_text_range];
+
+    let until_col = &line_content[..col as usize];
+    let character = until_col.chars().count() as u32;
+
+    Some(Position { line, character })
+}
+
 pub fn to_lsp_diagnostic(
     diagnostic: &Diagnostic,
     content: &str,
     uri: &lsp_types::Url,
 ) -> Option<lsp_types::Diagnostic> {
-    use line_index::{LineCol, LineIndex};
-    use lsp_types::{
-        DiagnosticRelatedInformation, DiagnosticSeverity, Location, NumberOrString, Position, Range,
-    };
-
     let line_index = LineIndex::new(content);
 
-    let to_position = |offset: u32| -> Option<Position> {
-        let LineCol { line, col } = line_index.line_col(offset.into());
-        let line_range = line_index.line(line)?;
-        let line_content = &content[line_range];
-        let until_col = &line_content[..col as usize];
-        let character = until_col.chars().count() as u32;
-        Some(Position { line, character })
-    };
+    let to_position =
+        |offset: u32| offset_to_position(&line_index, content, TextSize::from(offset));
 
     let start = to_position(diagnostic.primary.start)?;
     let end = to_position(diagnostic.primary.end)?;

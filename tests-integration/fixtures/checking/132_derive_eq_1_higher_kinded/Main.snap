@@ -35,4 +35,4 @@ derive (Eq1 (&0 :: Type -> Type), Eq (&1 :: Type)) => Eq (Wrap @Type (&0 :: Type
 derive Eq (&1 :: Type) => Eq (WrapNoEq1 @Type (&0 :: Type -> Type) (&1 :: Type) :: Type)
 
 Diagnostics
-error[NoInstanceFound] at 214..258: No instance found for: Eq1 (&0 :: Type -> Type)
+error[NoInstanceFound] at 216..258: No instance found for: Eq1 (&0 :: Type -> Type)

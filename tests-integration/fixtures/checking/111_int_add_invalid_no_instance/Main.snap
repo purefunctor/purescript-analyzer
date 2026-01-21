@@ -20,4 +20,4 @@ Roles
 Proxy = [Phantom]
 
 Diagnostics
-error[NoInstanceFound] at 152..178: No instance found for: Add 2 3 10
+error[NoInstanceFound] at 154..178: No instance found for: Add 2 3 10

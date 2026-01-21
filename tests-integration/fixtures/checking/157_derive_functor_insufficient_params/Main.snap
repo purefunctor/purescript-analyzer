@@ -29,7 +29,7 @@ derive Functor (Pair Int String :: Type)
 derive Functor (Unit :: Type)
 
 Diagnostics
-error[CannotUnify] at 104..122: Cannot unify 'Type' with 'Type -> Type'
-error[CannotDeriveForType] at 80..122: Cannot derive for type: Pair Int String
-error[CannotUnify] at 164..169: Cannot unify 'Type' with 'Type -> Type'
-error[CannotDeriveForType] at 140..169: Cannot derive for type: Unit
+error[CannotUnify] at 105..122: Cannot unify 'Type' with 'Type -> Type'
+error[CannotDeriveForType] at 81..122: Cannot derive for type: Pair Int String
+error[CannotUnify] at 165..169: Cannot unify 'Type' with 'Type -> Type'
+error[CannotDeriveForType] at 141..169: Cannot derive for type: Unit

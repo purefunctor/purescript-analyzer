@@ -23,5 +23,5 @@ Derived
 derive Bifunctor (Triple Int String :: Type -> Type)
 
 Diagnostics
-error[CannotUnify] at 118..138: Cannot unify 'Type' with 'Type -> Type'
-error[CannotDeriveForType] at 92..138: Cannot derive for type: Triple Int String
+error[CannotUnify] at 119..138: Cannot unify 'Type' with 'Type -> Type'
+error[CannotDeriveForType] at 93..138: Cannot derive for type: Triple Int String

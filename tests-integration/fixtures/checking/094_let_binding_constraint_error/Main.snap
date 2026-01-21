@@ -24,4 +24,4 @@ Classes
 class Eq (&0 :: Type)
 
 Diagnostics
-error[NoInstanceFound] at 77..227: No instance found for: Eq Foo
+error[NoInstanceFound] at 191..227: No instance found for: Eq Foo

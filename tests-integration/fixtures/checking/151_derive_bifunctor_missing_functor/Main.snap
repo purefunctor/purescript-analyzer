@@ -32,5 +32,5 @@ Derived
 derive Bifunctor (WrapBoth @Type @Type (&0 :: Type -> Type) (&1 :: Type -> Type) :: Type -> Type -> Type)
 
 Diagnostics
-error[DeriveMissingFunctor] at 104..145: Deriving Functor requires Data.Functor to be in scope
-error[DeriveMissingFunctor] at 104..145: Deriving Functor requires Data.Functor to be in scope
+error[DeriveMissingFunctor] at 105..145: Deriving Functor requires Data.Functor to be in scope
+error[DeriveMissingFunctor] at 105..145: Deriving Functor requires Data.Functor to be in scope

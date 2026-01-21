@@ -30,5 +30,5 @@ Derived
 derive (Traversable (&0 :: Type -> Type), Traversable (&1 :: Type -> Type)) => Traversable (Compose @Type @Type (&0 :: Type -> Type) (&1 :: Type -> Type) :: Type -> Type)
 
 Diagnostics
-error[NoInstanceFound] at 174..250: No instance found for: Functor (Compose @Type @Type (&0 :: Type -> Type) (&1 :: Type -> Type))
-error[NoInstanceFound] at 174..250: No instance found for: Foldable (Compose @Type @Type (&0 :: Type -> Type) (&1 :: Type -> Type))
+error[NoInstanceFound] at 175..250: No instance found for: Functor (Compose @Type @Type (&0 :: Type -> Type) (&1 :: Type -> Type))
+error[NoInstanceFound] at 175..250: No instance found for: Foldable (Compose @Type @Type (&0 :: Type -> Type) (&1 :: Type -> Type))

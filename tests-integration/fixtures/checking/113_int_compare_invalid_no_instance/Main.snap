@@ -21,4 +21,4 @@ Proxy = [Phantom]
 
 Diagnostics
 error[InvalidImportItem] at 64..68: Cannot import item 'kind'
-error[NoInstanceFound] at 197..223: No instance found for: Compare 5 1 LT
+error[NoInstanceFound] at 199..223: No instance found for: Compare 5 1 LT

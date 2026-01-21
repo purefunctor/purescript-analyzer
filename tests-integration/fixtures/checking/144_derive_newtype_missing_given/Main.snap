@@ -21,4 +21,4 @@ Derived
 derive Show (Identity (&0 :: Type) :: Type)
 
 Diagnostics
-error[NoInstanceFound] at 81..124: No instance found for: Show (&0 :: Type)
+error[NoInstanceFound] at 83..124: No instance found for: Show (&0 :: Type)

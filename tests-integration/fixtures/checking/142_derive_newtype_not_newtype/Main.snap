@@ -18,4 +18,4 @@ Roles
 Foo = []
 
 Diagnostics
-error[ExpectedNewtype] at 68..102: Expected a newtype, got: Foo
+error[ExpectedNewtype] at 70..102: Expected a newtype, got: Foo

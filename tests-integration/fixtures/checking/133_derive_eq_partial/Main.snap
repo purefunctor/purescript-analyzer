@@ -23,4 +23,4 @@ derive Eq (&0 :: Type) => Eq (Either Int (&0 :: Type) :: Type)
 derive Eq (Either Int (&0 :: Type) :: Type)
 
 Diagnostics
-error[NoInstanceFound] at 123..158: No instance found for: Eq (&0 :: Type)
+error[NoInstanceFound] at 125..158: No instance found for: Eq (&0 :: Type)

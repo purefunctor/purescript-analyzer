@@ -48,12 +48,12 @@ Roles
 Proxy = [Phantom]
 
 Diagnostics
-warning[CustomWarning] at 241..262: This function is deprecated
-warning[CustomWarning] at 386..408: Left Right
-warning[CustomWarning] at 533..554: Line 1
+warning[CustomWarning] at 243..262: This function is deprecated
+warning[CustomWarning] at 388..408: Left Right
+warning[CustomWarning] at 535..554: Line 1
 Line 2
-warning[CustomWarning] at 688..715: Got type: Int
-warning[CustomWarning] at 860..886: Label: myField
-warning[CustomWarning] at 1052..1084: Label: "h e l l o"
-warning[CustomWarning] at 1258..1289: Label: "hel\"lo"
-warning[CustomWarning] at 1465..1494: Label: """raw\nstring"""
+warning[CustomWarning] at 690..715: Got type: Int
+warning[CustomWarning] at 862..886: Label: myField
+warning[CustomWarning] at 1054..1084: Label: "h e l l o"
+warning[CustomWarning] at 1260..1289: Label: "hel\"lo"
+warning[CustomWarning] at 1467..1494: Label: """raw\nstring"""

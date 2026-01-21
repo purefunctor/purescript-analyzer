@@ -73,4 +73,4 @@ class Applicative (&0 :: Type -> Type) <= Bind (&0 :: Type -> Type)
 class Bind (&0 :: Type -> Type) <= Monad (&0 :: Type -> Type)
 
 Diagnostics
-error[NoInstanceFound] at 833..878: No instance found for: Discard (&0 :: Type -> Type)
+error[NoInstanceFound] at 835..878: No instance found for: Discard (&0 :: Type -> Type)

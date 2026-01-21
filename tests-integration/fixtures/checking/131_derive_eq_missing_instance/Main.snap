@@ -28,4 +28,4 @@ Derived
 derive Eq (Box :: Type)
 
 Diagnostics
-error[NoInstanceFound] at 87..111: No instance found for: Eq NoEq
+error[NoInstanceFound] at 89..111: No instance found for: Eq NoEq

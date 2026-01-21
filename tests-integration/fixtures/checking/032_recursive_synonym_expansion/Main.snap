@@ -37,12 +37,12 @@ Valid = Int
 
 
 Diagnostics
-error[RecursiveSynonymExpansion] at 52..69: Recursive type synonym expansion
-error[RecursiveSynonymExpansion] at 52..69: Recursive type synonym expansion
-error[RecursiveSynonymExpansion] at 52..69: Recursive type synonym expansion
-error[RecursiveSynonymExpansion] at 81..98: Recursive type synonym expansion
-error[RecursiveSynonymExpansion] at 81..98: Recursive type synonym expansion
-error[RecursiveSynonymExpansion] at 81..98: Recursive type synonym expansion
-error[RecursiveSynonymExpansion] at 110..127: Recursive type synonym expansion
-error[RecursiveSynonymExpansion] at 110..127: Recursive type synonym expansion
-error[RecursiveSynonymExpansion] at 110..127: Recursive type synonym expansion
+error[RecursiveSynonymExpansion] at 54..69: Recursive type synonym expansion
+error[RecursiveSynonymExpansion] at 54..69: Recursive type synonym expansion
+error[RecursiveSynonymExpansion] at 54..69: Recursive type synonym expansion
+error[RecursiveSynonymExpansion] at 83..98: Recursive type synonym expansion
+error[RecursiveSynonymExpansion] at 83..98: Recursive type synonym expansion
+error[RecursiveSynonymExpansion] at 83..98: Recursive type synonym expansion
+error[RecursiveSynonymExpansion] at 112..127: Recursive type synonym expansion
+error[RecursiveSynonymExpansion] at 112..127: Recursive type synonym expansion
+error[RecursiveSynonymExpansion] at 112..127: Recursive type synonym expansion

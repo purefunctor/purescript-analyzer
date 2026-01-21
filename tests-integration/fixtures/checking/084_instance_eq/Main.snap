@@ -17,4 +17,4 @@ instance Eq (Int :: Type)
   chain: 0
 
 Diagnostics
-error[NoInstanceFound] at 101..138: No instance found for: Eq String
+error[NoInstanceFound] at 103..138: No instance found for: Eq String

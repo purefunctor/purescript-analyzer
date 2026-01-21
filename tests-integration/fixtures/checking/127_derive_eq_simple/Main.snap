@@ -36,4 +36,4 @@ derive forall (&0 :: Type). Eq (Proxy @(&0 :: Type) (&1 :: (&0 :: Type)) :: Type
 derive Eq (ContainsNoEq :: Type)
 
 Diagnostics
-error[NoInstanceFound] at 157..190: No instance found for: Eq NoEq
+error[NoInstanceFound] at 159..190: No instance found for: Eq NoEq

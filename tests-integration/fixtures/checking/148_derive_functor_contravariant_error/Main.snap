@@ -40,4 +40,4 @@ derive Functor (Reader (&0 :: Type) :: Type -> Type)
 derive Functor (Cont (&0 :: Type) :: Type -> Type)
 
 Diagnostics
-error[ContravariantOccurrence] at 99..133: Type variable occurs in contravariant position: (~&0 :: Type)
+error[ContravariantOccurrence] at 100..133: Type variable occurs in contravariant position: (~&0 :: Type)

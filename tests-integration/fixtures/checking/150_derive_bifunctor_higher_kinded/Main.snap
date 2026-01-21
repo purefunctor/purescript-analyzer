@@ -51,5 +51,5 @@ derive (Functor (&0 :: Type -> Type), Functor (&1 :: Type -> Type)) => Bifunctor
 derive Bifunctor (WrapBothNoConstraint @Type @Type (&0 :: Type -> Type) (&1 :: Type -> Type) :: Type -> Type -> Type)
 
 Diagnostics
-error[NoInstanceFound] at 277..330: No instance found for: Functor (&0 :: Type -> Type)
-error[NoInstanceFound] at 277..330: No instance found for: Functor (&1 :: Type -> Type)
+error[NoInstanceFound] at 278..330: No instance found for: Functor (&0 :: Type -> Type)
+error[NoInstanceFound] at 278..330: No instance found for: Functor (&1 :: Type -> Type)

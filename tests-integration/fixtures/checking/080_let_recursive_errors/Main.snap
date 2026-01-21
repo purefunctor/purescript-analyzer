@@ -12,8 +12,8 @@ threeWayConflict :: Int -> Int
 Types
 
 Diagnostics
-error[CannotUnify] at 160..248: Cannot unify 'Int' with 'String'
-error[CannotUnify] at 160..248: Cannot unify 'String' with 'Int'
-error[CannotUnify] at 353..376: Cannot unify '?2[:0] -> ?3[:0]' with '?3[:0]'
-error[CannotUnify] at 520..522: Cannot unify 'Int' with 'String'
-error[CannotUnify] at 659..666: Cannot unify 'String' with 'Int'
+error[CannotUnify] at 163..248: Cannot unify 'Int' with 'String'
+error[CannotUnify] at 163..248: Cannot unify 'String' with 'Int'
+error[CannotUnify] at 356..376: Cannot unify '?2[:0] -> ?3[:0]' with '?3[:0]'
+error[CannotUnify] at 521..522: Cannot unify 'Int' with 'String'
+error[CannotUnify] at 660..666: Cannot unify 'String' with 'Int'

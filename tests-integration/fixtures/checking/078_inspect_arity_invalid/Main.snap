@@ -36,6 +36,6 @@ Const = forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type) -> (a :: Type
 
 
 Diagnostics
-error[TooManyBinders] at 92..126: Too many binders: expected 2, got 3
-error[TooManyBinders] at 206..247: Too many binders: expected 2, got 3
-error[TooManyBinders] at 308..329: Too many binders: expected 2, got 3
+error[TooManyBinders] at 94..126: Too many binders: expected 2, got 3
+error[TooManyBinders] at 208..247: Too many binders: expected 2, got 3
+error[TooManyBinders] at 310..329: Too many binders: expected 2, got 3
