@@ -14,6 +14,7 @@ transparency (editor introspection) and compatibility with query-based increment
 - **resolving**: name-indexed interface for module items
 - **stabilizing**: assigns stable IDs to source ranges
 - **checking**: type checking and elaboration
+- **diagnostics**: error collection and rendering for LSP and tests
 
 ### Infrastructure
 
