@@ -455,3 +455,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_213_row_constraint_multiple_main() { run_test("213_row_constraint_multiple", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_214_row_nub_left_bias_main() { run_test("214_row_nub_left_bias", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_215_do_bind_error_main() { run_test("215_do_bind_error", "Main"); }
