@@ -652,50 +652,81 @@ where
         return Ok(context.prim.unknown);
     };
 
-    // With the binders and let-bound names in scope, infer
-    // the type of the last expression as our starting point.
+    // Create a fresh unification variable for the pure_expression.
+    // Inferring pure_expression directly may solve the unification
+    // variables introduced in the first pass. This is undesirable,
+    // because the errors would be attributed incorrectly to the
+    // do statements rather than the pure_expression itself.
     //
-    // main = do
-    //   pure 42
-    //   y <- pure "Hello!"
-    //   pure $ Message y
+    //   main = do
+    //    pure 42
+    //    y <- pure "Hello!"
+    //    pure $ Message y
     //
-    // accumulated_type := Effect Message
-    let mut accumulated_type = infer_expression(state, context, *pure_expression)?;
+    //   pure_expression      :: Effect Message
+    //   pure_expression_type := ?pure_expression
+    let pure_expression_type = state.fresh_unification_type(context);
 
-    // Then, infer do statements in reverse order to emulate
-    // inside-out type inference for desugared do statements.
+    // The desugard form of a do-expression is checked inside out. An
+    // expression like `bind m_a (\a -> m_b)` is checked by inferring
+    // the type of the continuation before the `bind` application can
+    // be checked. In the example we have above, we have the following:
+    //
+    //   bind (pure "Hello!") (\y -> pure $ Message y)
+    //
+    //   discard (pure 42) (\_ -> <expression-above>)
+    //
+    // To emulate this, the infer_do_bind rule applies `bind` to the
+    // inferred expression type and a function type synthesised using
+    // the unification variables we created previously.
+    //
+    // First, the bind statement:
+    //
+    //   expression_type   := Effect String
+    //
+    //   lambda_type       := ?y -> continuation_type
+    //                     := ?y -> ?pure_expression
+    //
+    //   bind_type         := m a -> (a -> m b) -> m b
+    //   apply(expression) := (String -> Effect ?b) -> Effect ?b
+    //   apply(lambda)     := Effect ?b
+    //                     >>
+    //                     >> ?y := String
+    //                     >> ?pure_expression := Effect ?b
+    //
+    //   continuation_type := Effect ?b
+    //
+    // Then, the discard statement:
+    //
+    //   expression_type   := Effect Int
+    //
+    //   discard_type      := m a -> (a -> m b) -> m b
+    //   apply(expression) := (Int -> Effect ?b) -> Effect ?b
+    //   extract(lambda)   := Effect ?b
+    //
+    //   continuation_type := Effect ?b
+    let mut continuation_type = pure_expression_type;
     for (binder, expression) in bind_statements.iter().rev() {
-        accumulated_type = if let Some(binder) = binder {
-            // This applies bind_type to expression_type to get
-            // bind_applied, which is then applied to lambda_type
-            // to get the accumulated_type and to solve ?y.
-            //
-            // bind_type        := m a -> (a -> m b) -> m b
-            // expression_type  := Effect String
-            //
-            // bind_applied     := (String -> Effect b) -> Effect b
-            // lambda_type      := ?y -> Effect Message
-            //
-            // accumulated_type := Effect Message
-            infer_do_bind(state, context, bind_type, accumulated_type, *expression, *binder)?
+        continuation_type = if let Some(binder) = binder {
+            infer_do_bind(state, context, bind_type, continuation_type, *expression, *binder)?
         } else {
-            // This applies discard_type to expression_type to
-            // get discard_applied, which is then deconstructed
-            // to subsume against the `Effect b`.
-            //
-            // discard_type     := m a -> (a -> m b) -> m b
-            // expression_type  := Effect Int
-            //
-            // discard_applied  := (Int -> Effect b) -> Effect b
-            // accumulated_type := Effect Message
-            //
-            // accumulated_type <: Effect b
-            infer_do_discard(state, context, discard_type, accumulated_type, *expression)?
-        }
+            infer_do_discard(state, context, discard_type, continuation_type, *expression)?
+        };
     }
 
-    Ok(accumulated_type)
+    // Finally, check the pure expression against the pure_expression_type.
+    // At this point we're confident that the unification variables created
+    // for the do statement bindings have been solved to concrete types.
+    // By performing a check against a unification variable instead of
+    // performing inference on pure_expression early, we get better errors.
+    //
+    //   pure_expression   :: Effect Message
+    //   continuation_type := Effect ?b
+    //                     >>
+    //                     >> ?b := Message
+    let _ = check_expression(state, context, *pure_expression, pure_expression_type)?;
+
+    Ok(continuation_type)
 }
 
 fn infer_ado<Q>(
@@ -1104,7 +1135,7 @@ fn infer_do_bind<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     bind_type: TypeId,
-    accumulated_type: TypeId,
+    continuation_type: TypeId,
     expression: Option<lowering::ExpressionId>,
     binder_type: TypeId,
 ) -> QueryResult<TypeId>
@@ -1116,7 +1147,7 @@ where
     };
 
     state.with_error_step(ErrorStep::InferringDoBind(expression), |state| {
-        infer_do_bind_core(state, context, bind_type, accumulated_type, expression, binder_type)
+        infer_do_bind_core(state, context, bind_type, continuation_type, expression, binder_type)
     })
 }
 
@@ -1124,7 +1155,7 @@ fn infer_do_bind_core<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     bind_type: TypeId,
-    accumulated_type: TypeId,
+    continuation_type: TypeId,
     expression: lowering::ExpressionId,
     binder_type: TypeId,
 ) -> QueryResult<TypeId>
@@ -1134,7 +1165,7 @@ where
     // expression_type := m a
     let expression_type = infer_expression(state, context, expression)?;
     // lambda_type := a -> m b
-    let lambda_type = state.make_function(&[binder_type], accumulated_type);
+    let lambda_type = state.make_function(&[binder_type], continuation_type);
 
     // bind_type       := m a -> (a -> m b) -> m b
     // expression_type := m a
@@ -1169,7 +1200,7 @@ fn infer_do_discard<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     discard_type: TypeId,
-    accumulated_type: TypeId,
+    continuation_type: TypeId,
     expression: Option<lowering::ExpressionId>,
 ) -> QueryResult<TypeId>
 where
@@ -1180,7 +1211,7 @@ where
     };
 
     state.with_error_step(ErrorStep::InferringDoDiscard(expression), |state| {
-        infer_do_discard_core(state, context, discard_type, accumulated_type, expression)
+        infer_do_discard_core(state, context, discard_type, continuation_type, expression)
     })
 }
 
@@ -1188,7 +1219,7 @@ fn infer_do_discard_core<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     discard_type: TypeId,
-    accumulated_type: TypeId,
+    continuation_type: TypeId,
     expression: lowering::ExpressionId,
 ) -> QueryResult<TypeId>
 where
@@ -1223,9 +1254,9 @@ where
         |_, _, _, continuation_type| Ok(continuation_type),
     )?;
 
-    let _ = unification::subtype(state, context, accumulated_type, result_type)?;
+    let _ = unification::subtype(state, context, continuation_type, result_type)?;
 
-    Ok(accumulated_type)
+    Ok(continuation_type)
 }
 
 /// Looks up the type of a term.
