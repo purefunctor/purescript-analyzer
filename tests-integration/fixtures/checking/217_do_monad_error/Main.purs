@@ -16,3 +16,9 @@ test = do
   c <- pure 123456
   pure { a, b, c }
 
+test' = do
+  a <- pure 123456
+  b <- affPure "life"
+  c <- pure 123456
+  pure { a, b, c }
+

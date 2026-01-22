@@ -15,3 +15,9 @@ test = ado
   b <- affPure "life"
   c <- pure 123456
   in { a, b, c }
+
+test' = ado
+  a <- pure 123456
+  b <- affPure "life"
+  c <- pure 123456
+  in { a, b, c }
