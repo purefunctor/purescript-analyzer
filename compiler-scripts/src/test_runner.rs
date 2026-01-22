@@ -43,6 +43,7 @@ pub fn run_category(category: TestCategory, args: &RunArgs) -> TestOutcome {
         filters: &args.filters,
         tests_passed,
         pending_count: pending_result.count,
+        excluded_count: pending_result.excluded_count,
         total_lines_changed: pending_result.total_lines_changed,
         trace_paths: &trace_paths,
         debug: args.debug,

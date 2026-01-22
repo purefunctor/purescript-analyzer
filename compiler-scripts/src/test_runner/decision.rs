@@ -9,6 +9,7 @@ pub struct DecisionInput {
     pub ran_all: bool,
     pub debug: bool,
     pub trace_count: usize,
+    pub max_count: usize,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -78,15 +79,7 @@ pub fn decide_outcome(input: &DecisionInput) -> Outcome {
 }
 
 pub fn decide_snapshot_limits(input: &DecisionInput) -> SnapshotDisplayLimits {
-    let many_pending = input.ran_all && input.pending_count > 3;
-
-    let max_shown = if input.showed_diffs {
-        usize::MAX
-    } else if many_pending {
-        2
-    } else {
-        5
-    };
+    let max_shown = if input.showed_diffs { usize::MAX } else { input.max_count };
 
     SnapshotDisplayLimits { max_shown }
 }
@@ -104,6 +97,7 @@ mod tests {
             ran_all: true,
             debug: false,
             trace_count: 0,
+            max_count: 3,
         }
     }
 
@@ -187,17 +181,17 @@ mod tests {
     }
 
     #[test]
-    fn snapshot_limits_2_when_many_pending() {
-        let input = DecisionInput { pending_count: 10, ran_all: true, ..base_input() };
+    fn snapshot_limits_uses_max_count() {
+        let input = DecisionInput { max_count: 10, ..base_input() };
         let limits = decide_snapshot_limits(&input);
-        assert_eq!(limits.max_shown, 2);
+        assert_eq!(limits.max_shown, 10);
     }
 
     #[test]
-    fn snapshot_limits_5_default() {
-        let input = DecisionInput { pending_count: 2, ..base_input() };
+    fn snapshot_limits_default_count() {
+        let input = base_input();
         let limits = decide_snapshot_limits(&input);
-        assert_eq!(limits.max_shown, 5);
+        assert_eq!(limits.max_shown, 3);
     }
 
     #[test]

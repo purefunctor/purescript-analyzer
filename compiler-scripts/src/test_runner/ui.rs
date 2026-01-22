@@ -99,6 +99,7 @@ pub struct NextActionsArgs<'a> {
     pub filters: &'a [String],
     pub tests_passed: bool,
     pub pending_count: usize,
+    pub excluded_count: usize,
     pub total_lines_changed: usize,
     pub trace_paths: &'a [PathBuf],
     pub debug: bool,
@@ -111,6 +112,7 @@ pub fn print_next_actions(args: NextActionsArgs<'_>) {
         filters,
         tests_passed,
         pending_count,
+        excluded_count,
         total_lines_changed,
         trace_paths,
         debug,
@@ -128,6 +130,7 @@ pub fn print_next_actions(args: NextActionsArgs<'_>) {
         ran_all,
         debug,
         trace_count: trace_paths.len(),
+        max_count: 3, // not used for outcome decisions
     };
 
     match decision::decide_outcome(&input) {
@@ -143,6 +146,7 @@ pub fn print_next_actions(args: NextActionsArgs<'_>) {
                 category_name,
                 &filters_str,
                 pending_count,
+                excluded_count,
                 total_lines_changed,
             );
         }
@@ -196,6 +200,7 @@ fn render_pending(
     category_name: &str,
     filters_str: &str,
     pending_count: usize,
+    excluded_count: usize,
     total_lines_changed: usize,
 ) {
     println!("{}", style("-".repeat(60)).dim());
@@ -203,6 +208,13 @@ fn render_pending(
 
     let header = if decision.show_lines_changed {
         format!("{} pending snapshot(s), {} lines changed", pending_count, total_lines_changed)
+    } else if excluded_count > 0 {
+        format!(
+            "{} pending snapshot{} ({} excluded)",
+            pending_count,
+            if pending_count == 1 { "" } else { "s" },
+            excluded_count
+        )
     } else {
         format!("{} pending snapshot{}", pending_count, if pending_count == 1 { "" } else { "s" })
     };
@@ -213,12 +225,12 @@ fn render_pending(
         NextAction::AcceptOrReject => {
             let accept_cmd = format_accept_reject_cmd(category_name, filters_str, "accept");
             let reject_cmd = format_accept_reject_cmd(category_name, filters_str, "reject");
-            println!("  Next: {}", style(&accept_cmd).cyan());
-            println!("    Or: {}", style(&reject_cmd).cyan());
+            println!("  Next: {}", style(&accept_cmd).green());
+            println!("    Or: {}", style(&reject_cmd).red());
         }
         NextAction::ReviewSubset => {
             println!("  Next: {}", style(format!("just t {} NNN --diff", category_name)).cyan());
-            println!("  {}", style("Review 1-3 tests at a time").dim());
+            println!("  {}", style("Hint: Review 1-2 tests at a time").dim());
         }
         NextAction::ShowDiff => {
             println!(

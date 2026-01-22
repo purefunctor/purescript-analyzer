@@ -40,4 +40,12 @@ pub struct RunArgs {
     /// Show full diffs (by default only shows summary to reduce output)
     #[arg(long)]
     pub diff: bool,
+
+    /// Maximum number of snapshots to show (default: 3)
+    #[arg(long, default_value = "3")]
+    pub count: usize,
+
+    /// Exclude snapshots matching pattern (substring match, repeatable)
+    #[arg(long)]
+    pub exclude: Vec<String>,
 }

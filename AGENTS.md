@@ -30,4 +30,5 @@ PureScript compiler frontend in Rust using rowan (lossless syntax trees) and que
 
 ## Skills
 
+Load `.claude/skills/compiler-scripts` when running integration tests.
 Load `.claude/skills/type-checker-tests` when implementing type checker tests.

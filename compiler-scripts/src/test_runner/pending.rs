@@ -19,6 +19,7 @@ struct PendingSnapshotJson {
 
 pub struct PendingResult {
     pub count: usize,
+    pub excluded_count: usize,
     pub total_lines_changed: usize,
 }
 
@@ -44,7 +45,7 @@ pub fn collect_pending_snapshots(category: TestCategory, filters: &[String]) -> 
     let pending = pending.trim();
 
     let cwd = env::current_dir().unwrap();
-    let fixtures_fragment = category.fixtures_subdir_fragment();
+    let path_fragments = category.snapshot_path_fragments();
 
     let mut snapshots = Vec::new();
 
@@ -61,7 +62,7 @@ pub fn collect_pending_snapshots(category: TestCategory, filters: &[String]) -> 
             continue;
         };
 
-        if !snapshot_path.contains(&fixtures_fragment) {
+        if !path_fragments.iter().any(|f| snapshot_path.contains(f)) {
             continue;
         }
 
@@ -90,6 +91,36 @@ pub fn collect_pending_snapshots(category: TestCategory, filters: &[String]) -> 
     snapshots
 }
 
+fn collect_exclusion_patterns(args: &RunArgs) -> Vec<String> {
+    let mut patterns = args.exclude.clone();
+
+    if let Ok(env_patterns) = env::var("EXCLUDE_SNAPSHOTS") {
+        for pattern in env_patterns.split(',') {
+            let pattern = pattern.trim();
+            if !pattern.is_empty() {
+                patterns.push(pattern.to_string());
+            }
+        }
+    }
+
+    patterns
+}
+
+fn apply_exclusions(
+    snapshots: Vec<SnapshotInfo>,
+    patterns: &[String],
+) -> (Vec<SnapshotInfo>, usize) {
+    if patterns.is_empty() {
+        return (snapshots, 0);
+    }
+
+    let (excluded, visible): (Vec<_>, Vec<_>) = snapshots
+        .into_iter()
+        .partition(|info| patterns.iter().any(|p| info.short_path.contains(p)));
+
+    (visible, excluded.len())
+}
+
 pub fn process_pending_snapshots(
     category: TestCategory,
     args: &RunArgs,
@@ -102,22 +133,34 @@ pub fn process_pending_snapshots(
         info.trace_path = category.trace_for_snapshot(Path::new(&info.snapshot_path), trace_paths);
     }
 
-    let count = snapshots.len();
+    // Apply exclusion filters
+    let exclusion_patterns = collect_exclusion_patterns(args);
+    let (visible, excluded_count) = apply_exclusions(snapshots, &exclusion_patterns);
+
+    if excluded_count > 0 {
+        println!(
+            "{}",
+            style(format!("info: excluded {} snapshot(s) by pattern", excluded_count)).dim()
+        );
+    }
+
+    let pending_count = visible.len();
     let mut total_lines_changed = 0;
 
     let limits = decision::decide_snapshot_limits(&DecisionInput {
         tests_passed: true, // not relevant for snapshot limits
-        pending_count: count,
+        pending_count,
         total_lines_changed: 0, // not known yet, not relevant for limits
         showed_diffs: args.diff,
         ran_all: args.filters.is_empty(),
         debug: args.debug,
         trace_count: trace_paths.len(),
+        max_count: args.count,
     });
 
     let max_shown = limits.max_shown;
 
-    for info in snapshots.iter().take(max_shown) {
+    for info in visible.iter().take(max_shown) {
         let snap = Path::new(&info.snapshot_path);
         let stats = if info.is_update {
             ui::display_snapshot_diff(
@@ -138,15 +181,15 @@ pub fn process_pending_snapshots(
         total_lines_changed += stats.added + stats.removed;
     }
 
-    if count > max_shown {
-        let hidden = count - max_shown;
+    if pending_count > max_shown {
+        let hidden = pending_count - max_shown;
         println!(
             "{}",
             style(format!("...and {} more pending snapshot(s) not shown", hidden)).dim()
         );
     }
 
-    PendingResult { count, total_lines_changed }
+    PendingResult { count: visible.len(), excluded_count, total_lines_changed }
 }
 
 pub struct AcceptRejectResult {

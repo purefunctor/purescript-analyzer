@@ -23,6 +23,13 @@ impl TestCategory {
         format!("tests-integration/fixtures/{}", self.as_str())
     }
 
+    pub fn snapshot_path_fragments(&self) -> Vec<String> {
+        vec![
+            format!("tests-integration/fixtures/{}", self.as_str()),
+            format!("tests-integration/tests/snapshots/{}__", self.as_str()),
+        ]
+    }
+
     pub fn extra_env(&self, debug: bool) -> Vec<(&'static str, String)> {
         if debug { vec![("TRACE_LEVEL", "debug".to_string())] } else { vec![] }
     }

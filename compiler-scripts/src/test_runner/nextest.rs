@@ -65,6 +65,8 @@ pub fn run_nextest(
                 verbose: true,
                 debug: args.debug,
                 diff: args.diff,
+                count: args.count,
+                exclude: args.exclude.clone(),
             };
             let mut retry = build_nextest_command(category, &verbose_args, fixture_hashes);
             let _ = retry.status();
