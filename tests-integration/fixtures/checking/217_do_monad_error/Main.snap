@@ -1,0 +1,27 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+pure :: forall (a :: Type). (a :: Type) -> Effect (a :: Type)
+affPure :: forall (a :: Type). (a :: Type) -> Aff (a :: Type)
+bind ::
+  forall (a :: Type) (b :: Type).
+    Effect (a :: Type) -> ((a :: Type) -> Effect (b :: Type)) -> Effect (b :: Type)
+discard ::
+  forall (a :: Type) (b :: Type).
+    Effect (a :: Type) -> ((a :: Type) -> Effect (b :: Type)) -> Effect (b :: Type)
+test :: Effect { a :: Int, b :: String, c :: Int }
+
+Types
+Effect :: Type -> Type
+Aff :: Type -> Type
+
+Roles
+Effect = [Nominal]
+Aff = [Nominal]
+
+Diagnostics
+error[CannotUnify] at 439..453: Cannot unify 'Aff' with 'Effect'
+error[CannotUnify] at 439..453: Cannot unify 'Aff String' with 'Effect ?15[:0]'

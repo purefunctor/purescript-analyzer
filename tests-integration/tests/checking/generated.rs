@@ -459,3 +459,7 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_215_do_bind_error_main() { run_test("215_do_bind_error", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_216_ado_bind_error_main() { run_test("216_ado_bind_error", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_217_do_monad_error_main() { run_test("217_do_monad_error", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_218_ado_monad_error_main() { run_test("218_ado_monad_error", "Main"); }
