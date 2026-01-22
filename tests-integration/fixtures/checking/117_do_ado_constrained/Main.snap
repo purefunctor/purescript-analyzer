@@ -45,7 +45,7 @@ testAdo' ::
     Applicative (t87 :: Type -> Type) => (t87 :: Type -> Type) (Tuple Int String)
 testDoDiscard :: forall (m :: Type -> Type). Monad (m :: Type -> Type) => (m :: Type -> Type) Int
 testDoDiscard' ::
-  forall (t103 :: Type -> Type). Discard (t103 :: Type -> Type) => (t103 :: Type -> Type) Int
+  forall (t105 :: Type -> Type). Discard (t105 :: Type -> Type) => (t105 :: Type -> Type) Int
 
 Types
 Tuple :: Type -> Type -> Type

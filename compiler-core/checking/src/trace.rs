@@ -35,6 +35,9 @@ where
         ErrorStep::InferringDoBind(id) | ErrorStep::InferringDoDiscard(id) => {
             context.stabilized.syntax_ptr(*id)?
         }
+        ErrorStep::InferringAdoMap(id) | ErrorStep::InferringAdoApply(id) => {
+            context.stabilized.syntax_ptr(*id)?
+        }
     };
 
     let range = pointer.text_range();

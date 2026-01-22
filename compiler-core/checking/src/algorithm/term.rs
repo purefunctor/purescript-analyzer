@@ -659,9 +659,9 @@ where
     // do statements rather than the pure_expression itself.
     //
     //   main = do
-    //    pure 42
-    //    y <- pure "Hello!"
-    //    pure $ Message y
+    //     pure 42
+    //     y <- pure "Hello!"
+    //     pure $ Message y
     //
     //   pure_expression      :: Effect Message
     //   pure_expression_type := ?pure_expression
@@ -680,8 +680,6 @@ where
     // inferred expression type and a function type synthesised using
     // the unification variables we created previously.
     //
-    // First, the bind statement:
-    //
     //   expression_type   := Effect String
     //
     //   lambda_type       := ?y -> continuation_type
@@ -696,7 +694,8 @@ where
     //
     //   continuation_type := Effect ?b
     //
-    // Then, the discard statement:
+    // Then, the infer_do_discard rule applies `discard` to the
+    // inferred expression type and extracts the result type.
     //
     //   expression_type   := Effect Int
     //
@@ -729,6 +728,7 @@ where
     Ok(continuation_type)
 }
 
+#[tracing::instrument(skip_all, name = "infer_ado")]
 fn infer_ado<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -774,6 +774,10 @@ where
 
     assert_eq!(binder_types.len(), ado_statements.len());
 
+    // For ado blocks with no bindings, we apply pure to the expression.
+    //
+    //   pure_type  := a -> f a
+    //   expression := t
     let [head_statement, tail_statements @ ..] = &ado_statements[..] else {
         return if let Some(expression) = expression {
             check_function_term_application(state, context, pure_type, expression)
@@ -783,57 +787,77 @@ where
         };
     };
 
-    // With the binders and let-bound names in scope, infer
-    // the type of the final expression as our starting point.
     //
-    // main = ado
-    //   pure 1
-    //   y <- pure "Hello!"
-    //   in Message y
+    // Create a fresh unification variable for the in_expression.
+    // Inferring expression directly may solve the unification variables
+    // introduced in the first pass. This is undesirable, because the
+    // errors would be attributed incorrectly to the ado statements
+    // rather than the in-expression itself.
     //
-    // expression_type := Message
-    let expression_type = if let Some(expression) = expression {
-        infer_expression(state, context, expression)?
-    } else {
-        state.fresh_unification_type(context)
-    };
+    //   ado
+    //     a <- pure "Hello!"
+    //     _ <- pure 42
+    //     in Message a
+    //
+    //   in_expression      :: Effect Message
+    //   in_expression_type := ?in_expression
+    //   lambda_type        := ?a -> ?b -> ?in_expression
+    let in_expression_type = state.fresh_unification_type(context);
+    let lambda_type = state.make_function(&binder_types, in_expression_type);
 
-    // Create a function type using the binder types collected
-    // from the forward pass. We made sure to allocate unification
-    // variables for the discard statements too.
+    // The desugared form of an ado-expression is a forward applicative
+    // pipeline, unlike do-notation which works inside-out. The example
+    // above desugars to the following expression:
     //
-    // lambda_type := ?discard -> ?y -> Message
-    let lambda_type = state.make_function(&binder_types, expression_type);
-
-    // This applies map_type to the lambda_type that we just built
-    // and then to the inferred type of the first expression.
+    //   (\a _ -> Message a) <$> (pure "Hello!") <*> (pure 42)
     //
-    // map_type         := (a -> b) -> f a -> f b
-    // lambda_type      := ?discard -> ?y -> Message
+    // To emulate this, the infer_ado_map rule applies `map` to the
+    // inferred expression type and the lambda type we synthesised
+    // using the unification variables we created previously.
     //
-    // map_applied      := f ?discard -> f (?y -> Message)
-    // expression_type  := f Int
+    //   map_type        :: (a -> b) -> f a -> f b
+    //   lambda_type     := ?a -> ?b -> ?in_expression
     //
-    // accumulated_type := f (?y -> Message)
-    let mut accumulated_type =
+    //   expression_type         := Effect String
+    //   map(lambda, expression) := Effect (?b -> ?in_expression)
+    //                           >>
+    //                           >> ?a := String
+    //
+    //   continuation_type := Effect (?b -> ?in_expression)
+    let mut continuation_type =
         infer_ado_map(state, context, map_type, lambda_type, *head_statement)?;
 
-    // This applies apply_type to the accumulated_type, and then to the
-    // inferred type of the expression to update the accumulated_type.
+    // Then, the infer_ado_apply rule applies `apply` to the inferred
+    // expression type and the continuation type that is a function
+    // contained within some container, like Effect.
     //
-    // apply_type       := f (a -> b) -> f a -> f b
-    // accumulated_type := f (?y -> Message)
+    //   apply_type        := f (x -> y) -> f x -> f y
+    //   continuation_type := Effect (?b -> ?in_expression)
     //
-    // accumulated_type := f ?y -> f Message
-    // expression_type  := f String
+    //   expression_type                 := Effect Int
+    //   apply(continuation, expression) := Effect ?in_expression
+    //                                   >>
+    //                                   >> ?b := Int
     //
-    // accumulated_type := f Message
+    //   continuation_type := Effect ?in_expression
     for expression in tail_statements {
-        accumulated_type =
-            infer_ado_apply(state, context, apply_type, accumulated_type, *expression)?;
+        continuation_type =
+            infer_ado_apply(state, context, apply_type, continuation_type, *expression)?;
     }
 
-    Ok(accumulated_type)
+    // Finally, check the in-expression against in_expression.
+    // At this point the binder unification variables have been solved
+    // to concrete types, so errors are attributed to the in-expression.
+    //
+    //   in_expression      :: Effect Message
+    //   in_expression_type := Effect ?in_expression
+    //                      >>
+    //                      >> ?in_expression := Message
+    if let Some(expression) = expression {
+        check_expression(state, context, expression, in_expression_type)?;
+    }
+
+    Ok(continuation_type)
 }
 
 fn infer_array<Q>(
@@ -1040,11 +1064,12 @@ where
     }
 }
 
+#[tracing::instrument(skip_all, name = "infer_ado_map")]
 fn infer_ado_map<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     map_type: TypeId,
-    lambda_type: TypeId,
+    continuation_type: TypeId,
     expression: Option<lowering::ExpressionId>,
 ) -> QueryResult<TypeId>
 where
@@ -1053,7 +1078,21 @@ where
     let Some(expression) = expression else {
         return Ok(context.prim.unknown);
     };
+    state.with_error_step(ErrorStep::InferringAdoMap(expression), |state| {
+        infer_ado_map_core(state, context, map_type, continuation_type, expression)
+    })
+}
 
+fn infer_ado_map_core<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    map_type: TypeId,
+    lambda_type: TypeId,
+    expression: lowering::ExpressionId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
     // expression_type := f a
     let expression_type = infer_expression(state, context, expression)?;
 
@@ -1085,11 +1124,12 @@ where
     )
 }
 
+#[tracing::instrument(skip_all, name = "infer_ado_apply")]
 fn infer_ado_apply<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     apply_type: TypeId,
-    accumulated_type: TypeId,
+    continuation_type: TypeId,
     expression: Option<lowering::ExpressionId>,
 ) -> QueryResult<TypeId>
 where
@@ -1098,20 +1138,34 @@ where
     let Some(expression) = expression else {
         return Ok(context.prim.unknown);
     };
+    state.with_error_step(ErrorStep::InferringAdoApply(expression), |state| {
+        infer_ado_apply_core(state, context, apply_type, continuation_type, expression)
+    })
+}
 
+fn infer_ado_apply_core<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    apply_type: TypeId,
+    continuation_type: TypeId,
+    expression: lowering::ExpressionId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
     // expression_type := ?f ?a
     let expression_type = infer_expression(state, context, expression)?;
 
-    // apply_type       := f (a -> b) -> f a -> f b
-    // accumulated_type := f (a -> b)
+    // apply_type        := f (a -> b) -> f a -> f b
+    // continuation_type := f (a -> b)
     let apply_applied = check_function_application_core(
         state,
         context,
         apply_type,
-        accumulated_type,
-        |state, context, accumulated_type, expected_type| {
-            let _ = unification::subtype(state, context, accumulated_type, expected_type)?;
-            Ok(accumulated_type)
+        continuation_type,
+        |state, context, continuation_type, expected_type| {
+            let _ = unification::subtype(state, context, continuation_type, expected_type)?;
+            Ok(continuation_type)
         },
     )?;
 

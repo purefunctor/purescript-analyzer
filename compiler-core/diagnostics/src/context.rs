@@ -121,6 +121,9 @@ impl<'a> DiagnosticsContext<'a> {
             ErrorStep::InferringDoBind(id) | ErrorStep::InferringDoDiscard(id) => {
                 self.stabilized.syntax_ptr(*id)?
             }
+            ErrorStep::InferringAdoMap(id) | ErrorStep::InferringAdoApply(id) => {
+                self.stabilized.syntax_ptr(*id)?
+            }
         };
         self.span_from_syntax_ptr(&ptr)
     }
