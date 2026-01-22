@@ -32,6 +32,9 @@ where
         ErrorStep::TypeDeclaration(id) => {
             context.indexed.type_item_ptr(&context.stabilized, *id).next()?
         }
+        ErrorStep::InferringDoBind(id) | ErrorStep::InferringDoDiscard(id) => {
+            context.stabilized.syntax_ptr(*id)?
+        }
     };
 
     let range = pointer.text_range();

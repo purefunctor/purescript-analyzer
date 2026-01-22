@@ -606,6 +606,7 @@ where
     Ok(inferred_type)
 }
 
+#[tracing::instrument(skip_all, name = "infer_do")]
 fn infer_do<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -1098,6 +1099,7 @@ where
     )
 }
 
+#[tracing::instrument(skip_all, name = "infer_do_bind")]
 fn infer_do_bind<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -1113,6 +1115,22 @@ where
         return Ok(context.prim.unknown);
     };
 
+    state.with_error_step(ErrorStep::InferringDoBind(expression), |state| {
+        infer_do_bind_core(state, context, bind_type, accumulated_type, expression, binder_type)
+    })
+}
+
+fn infer_do_bind_core<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    bind_type: TypeId,
+    accumulated_type: TypeId,
+    expression: lowering::ExpressionId,
+    binder_type: TypeId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
     // expression_type := m a
     let expression_type = infer_expression(state, context, expression)?;
     // lambda_type := a -> m b
@@ -1146,6 +1164,7 @@ where
     )
 }
 
+#[tracing::instrument(skip_all, name = "infer_do_discard")]
 fn infer_do_discard<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -1160,6 +1179,21 @@ where
         return Ok(context.prim.unknown);
     };
 
+    state.with_error_step(ErrorStep::InferringDoDiscard(expression), |state| {
+        infer_do_discard_core(state, context, discard_type, accumulated_type, expression)
+    })
+}
+
+fn infer_do_discard_core<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    discard_type: TypeId,
+    accumulated_type: TypeId,
+    expression: lowering::ExpressionId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
     // expression_type := m a
     let expression_type = infer_expression(state, context, expression)?;
 

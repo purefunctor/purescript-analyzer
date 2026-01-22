@@ -73,6 +73,9 @@ impl<'a> DiagnosticsContext<'a> {
             ErrorStep::TypeDeclaration(id) => {
                 self.indexed.type_item_ptr(self.stabilized, *id).next()?
             }
+            ErrorStep::InferringDoBind(id) | ErrorStep::InferringDoDiscard(id) => {
+                self.stabilized.syntax_ptr(*id)?
+            }
         };
         self.span_from_syntax_ptr(&ptr)
     }
