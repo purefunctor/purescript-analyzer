@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -16,5 +17,5 @@ instance Show (Boolean :: Type)
   chain: 0
 
 Diagnostics
-error[CannotUnify] at 59..138: Cannot unify 'forall (a :: Type). (a :: Type) -> String' with 'Boolean -> String'
-error[InstanceMemberTypeMismatch] at 59..138: Instance member type mismatch: expected 'Boolean -> String', got 'forall (a :: Type). (a :: Type) -> String'
+error[CannotUnify] at 61..138: Cannot unify 'forall (a :: Type). (a :: Type) -> String' with 'Boolean -> String'
+error[InstanceMemberTypeMismatch] at 61..138: Instance member type mismatch: expected 'Boolean -> String', got 'forall (a :: Type). (a :: Type) -> String'

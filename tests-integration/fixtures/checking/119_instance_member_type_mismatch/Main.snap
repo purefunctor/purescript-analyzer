@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -16,6 +17,6 @@ instance Show (Int :: Type)
   chain: 0
 
 Diagnostics
-error[CannotUnify] at 59..118: Cannot unify 'Int' with 'String'
-error[CannotUnify] at 59..118: Cannot unify 'Int -> Int' with 'Int -> String'
-error[InstanceMemberTypeMismatch] at 59..118: Instance member type mismatch: expected 'Int -> String', got 'Int -> Int'
+error[CannotUnify] at 61..118: Cannot unify 'Int' with 'String'
+error[CannotUnify] at 61..118: Cannot unify 'Int -> Int' with 'Int -> String'
+error[InstanceMemberTypeMismatch] at 61..118: Instance member type mismatch: expected 'Int -> String', got 'Int -> Int'

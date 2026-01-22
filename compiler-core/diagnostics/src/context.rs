@@ -2,10 +2,62 @@ use checking::CheckedModule;
 use checking::error::ErrorStep;
 use indexing::IndexedModule;
 use rowan::ast::{AstNode, AstPtr};
+use rowan::{NodeOrToken, TextRange};
 use stabilizing::StabilizedModule;
-use syntax::{SyntaxKind, SyntaxNode, SyntaxNodePtr};
+use syntax::{SyntaxElement, SyntaxKind, SyntaxNode, SyntaxNodePtr};
 
 use crate::Span;
+
+fn is_trivia(element: &SyntaxElement) -> bool {
+    match element {
+        NodeOrToken::Node(node) => matches!(node.kind(), SyntaxKind::Annotation),
+        NodeOrToken::Token(token) => {
+            token.text_range().is_empty()
+                || matches!(token.kind(), SyntaxKind::LAYOUT_SEPARATOR | SyntaxKind::ELSE)
+        }
+    }
+}
+
+fn first_significant_range(node: &SyntaxNode) -> Option<TextRange> {
+    for child in node.children_with_tokens() {
+        if is_trivia(&child) {
+            continue;
+        }
+        match child {
+            NodeOrToken::Token(token) => return Some(token.text_range()),
+            NodeOrToken::Node(node) => {
+                if let Some(range) = first_significant_range(&node) {
+                    return Some(range);
+                }
+            }
+        }
+    }
+    None
+}
+
+fn last_significant_range(node: &SyntaxNode) -> Option<TextRange> {
+    let mut significant = None;
+    for child in node.children_with_tokens() {
+        if is_trivia(&child) {
+            continue;
+        }
+        match child {
+            NodeOrToken::Token(token) => significant = Some(token.text_range()),
+            NodeOrToken::Node(node) => {
+                if let Some(range) = last_significant_range(&node) {
+                    significant = Some(range);
+                }
+            }
+        }
+    }
+    significant
+}
+
+fn significant_ranges(node: &SyntaxNode) -> Option<TextRange> {
+    let start = first_significant_range(node)?;
+    let end = last_significant_range(node)?;
+    Some(start.cover(end))
+}
 
 pub struct DiagnosticsContext<'a> {
     pub content: &'a str,
@@ -40,14 +92,7 @@ impl<'a> DiagnosticsContext<'a> {
     }
 
     fn span_from_syntax_node(&self, node: &SyntaxNode) -> Option<Span> {
-        let mut children = node.children_with_tokens().peekable();
-
-        children.next_if(|child| matches!(child.kind(), SyntaxKind::Annotation));
-
-        let start = children.peek().map(|child| child.text_range());
-        let end = children.last().map(|child| child.text_range());
-
-        let range = start.zip(end).map(|(start, end)| start.cover(end))?;
+        let range = significant_ranges(node)?;
         Some(Span::new(range.start().into(), range.end().into()))
     }
 

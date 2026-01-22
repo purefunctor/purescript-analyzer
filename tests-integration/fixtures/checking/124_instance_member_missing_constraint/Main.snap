@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -35,4 +36,4 @@ instance Functor (Box :: Type -> Type)
   chain: 0
 
 Diagnostics
-error[NoInstanceFound] at 146..240: No instance found for: Show (~&1 :: Type)
+error[NoInstanceFound] at 148..240: No instance found for: Show (~&1 :: Type)

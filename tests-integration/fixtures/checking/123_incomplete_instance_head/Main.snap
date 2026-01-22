@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -21,4 +22,4 @@ instance Pair (Int :: Type)
   chain: 0
 
 Diagnostics
-error[InstanceHeadMismatch] at 138..191: Instance head mismatch: expected 2 arguments, got 1
+error[InstanceHeadMismatch] at 140..191: Instance head mismatch: expected 2 arguments, got 1
