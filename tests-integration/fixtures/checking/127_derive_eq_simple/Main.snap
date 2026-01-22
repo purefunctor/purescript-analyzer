@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -36,4 +37,8 @@ derive forall (&0 :: Type). Eq (Proxy @(&0 :: Type) (&1 :: (&0 :: Type)) :: Type
 derive Eq (ContainsNoEq :: Type)
 
 Diagnostics
-error[NoInstanceFound] at 159..190: No instance found for: Eq NoEq
+error[NoInstanceFound]: No instance found for: Eq NoEq
+  --> 13:1..13:32
+   |
+13 | derive instance Eq ContainsNoEq
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

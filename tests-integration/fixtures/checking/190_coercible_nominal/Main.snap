@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -13,4 +14,8 @@ Roles
 Nominal = [Nominal]
 
 Diagnostics
-error[NoInstanceFound] at 196..251: No instance found for: Coercible @Type (Nominal Int) (Nominal String)
+error[NoInstanceFound]: No instance found for: Coercible @Type (Nominal Int) (Nominal String)
+  --> 12:1..12:56
+   |
+12 | coerceNominalDifferent :: Nominal Int -> Nominal String
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

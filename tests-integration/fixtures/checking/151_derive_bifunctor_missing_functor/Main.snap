@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -32,5 +33,13 @@ Derived
 derive Bifunctor (WrapBoth @Type @Type (&0 :: Type -> Type) (&1 :: Type -> Type) :: Type -> Type -> Type)
 
 Diagnostics
-error[DeriveMissingFunctor] at 105..145: Deriving Functor requires Data.Functor to be in scope
-error[DeriveMissingFunctor] at 105..145: Deriving Functor requires Data.Functor to be in scope
+error[DeriveMissingFunctor]: Deriving Functor requires Data.Functor to be in scope
+  --> 6:1..6:41
+  |
+6 | derive instance Bifunctor (WrapBoth f g)
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[DeriveMissingFunctor]: Deriving Functor requires Data.Functor to be in scope
+  --> 6:1..6:41
+  |
+6 | derive instance Bifunctor (WrapBoth f g)
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -21,4 +21,8 @@ Roles
 Effect = [Nominal]
 
 Diagnostics
-error[CannotUnify] at 385..386: Cannot unify 'String' with 'Int'
+error[CannotUnify]: Cannot unify 'String' with 'Int'
+  --> 14:15..14:16
+   |
+14 |   pure (add a b)
+   |               ^

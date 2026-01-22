@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -20,4 +21,8 @@ Roles
 Proxy = [Phantom]
 
 Diagnostics
-error[NoInstanceFound] at 154..178: No instance found for: Mul 2 3 10
+error[NoInstanceFound]: No instance found for: Mul 2 3 10
+  --> 11:1..11:25
+   |
+11 | forceSolve = { invalid }
+   | ^~~~~~~~~~~~~~~~~~~~~~~~

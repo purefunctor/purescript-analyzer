@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -12,10 +13,38 @@ invalidEq :: Proxy @(Row Int) ( left :: 1, right :: 5 )
 Types
 
 Diagnostics
-error[NoInstanceFound] at 132..182: No instance found for: Compare 10 5 LT
-error[NoInstanceFound] at 132..182: No instance found for: Compare 5 1 LT
-error[NoInstanceFound] at 309..359: No instance found for: Compare 1 5 GT
-error[NoInstanceFound] at 309..359: No instance found for: Compare 5 10 GT
-error[NoInstanceFound] at 444..488: No instance found for: Compare 5 1 LT
-error[NoInstanceFound] at 515..559: No instance found for: Compare 1 5 GT
-error[NoInstanceFound] at 587..631: No instance found for: Compare 1 5 EQ
+error[NoInstanceFound]: No instance found for: Compare 10 5 LT
+  --> 6:1..6:51
+  |
+6 | invalidTransLt :: Proxy ( left :: 10, right :: 1 )
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[NoInstanceFound]: No instance found for: Compare 5 1 LT
+  --> 6:1..6:51
+  |
+6 | invalidTransLt :: Proxy ( left :: 10, right :: 1 )
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[NoInstanceFound]: No instance found for: Compare 1 5 GT
+  --> 10:1..10:51
+   |
+10 | invalidTransGt :: Proxy ( left :: 1, right :: 10 )
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[NoInstanceFound]: No instance found for: Compare 5 10 GT
+  --> 10:1..10:51
+   |
+10 | invalidTransGt :: Proxy ( left :: 1, right :: 10 )
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[NoInstanceFound]: No instance found for: Compare 5 1 LT
+  --> 14:1..14:45
+   |
+14 | invalidLt :: Proxy ( left :: 5, right :: 1 )
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[NoInstanceFound]: No instance found for: Compare 1 5 GT
+  --> 17:1..17:45
+   |
+17 | invalidGt :: Proxy ( left :: 1, right :: 5 )
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[NoInstanceFound]: No instance found for: Compare 1 5 EQ
+  --> 20:1..20:45
+   |
+20 | invalidEq :: Proxy ( left :: 1, right :: 5 )
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

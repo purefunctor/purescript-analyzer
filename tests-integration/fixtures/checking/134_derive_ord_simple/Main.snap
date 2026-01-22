@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -48,4 +49,8 @@ derive Eq (ContainsNoOrd :: Type)
 derive Ord (ContainsNoOrd :: Type)
 
 Diagnostics
-error[NoInstanceFound] at 351..384: No instance found for: Ord NoOrd
+error[NoInstanceFound]: No instance found for: Ord NoOrd
+  --> 23:1..23:34
+   |
+23 | derive instance Ord ContainsNoOrd
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

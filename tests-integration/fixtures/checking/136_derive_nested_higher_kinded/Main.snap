@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -56,7 +57,23 @@ derive Eq1 (&0 :: Type -> Type) => Eq (U (&0 :: Type -> Type) :: Type)
 derive Ord1 (&0 :: Type -> Type) => Ord (U (&0 :: Type -> Type) :: Type)
 
 Diagnostics
-error[NoInstanceFound] at 125..162: No instance found for: Eq ((&1 :: Type -> Type) Int)
-error[NoInstanceFound] at 163..202: No instance found for: Ord ((&1 :: Type -> Type) Int)
-error[NoInstanceFound] at 446..483: No instance found for: Eq ((&1 :: Int -> Type) 42)
-error[NoInstanceFound] at 484..523: No instance found for: Ord ((&1 :: Int -> Type) 42)
+error[NoInstanceFound]: No instance found for: Eq ((&1 :: Type -> Type) Int)
+  --> 8:1..8:38
+  |
+8 | derive instance (Eq1 f) => Eq (T f g)
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[NoInstanceFound]: No instance found for: Ord ((&1 :: Type -> Type) Int)
+  --> 9:1..9:40
+  |
+9 | derive instance (Ord1 f) => Ord (T f g)
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[NoInstanceFound]: No instance found for: Eq ((&1 :: Int -> Type) 42)
+  --> 23:1..23:38
+   |
+23 | derive instance (Eq1 f) => Eq (V f g)
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[NoInstanceFound]: No instance found for: Ord ((&1 :: Int -> Type) 42)
+  --> 24:1..24:40
+   |
+24 | derive instance (Ord1 f) => Ord (V f g)
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

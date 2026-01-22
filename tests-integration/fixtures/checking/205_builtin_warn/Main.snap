@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -48,12 +49,44 @@ Roles
 Proxy = [Phantom]
 
 Diagnostics
-warning[CustomWarning] at 243..262: This function is deprecated
-warning[CustomWarning] at 388..408: Left Right
-warning[CustomWarning] at 535..554: Line 1
+warning[CustomWarning]: This function is deprecated
+  --> 11:1..11:20
+   |
+11 | useWarnBasic :: Int
+   | ^~~~~~~~~~~~~~~~~~~
+warning[CustomWarning]: Left Right
+  --> 17:1..17:21
+   |
+17 | useWarnBeside :: Int
+   | ^~~~~~~~~~~~~~~~~~~~
+warning[CustomWarning]: Line 1
 Line 2
-warning[CustomWarning] at 690..715: Got type: Int
-warning[CustomWarning] at 862..886: Label: myField
-warning[CustomWarning] at 1054..1084: Label: "h e l l o"
-warning[CustomWarning] at 1260..1289: Label: "hel\"lo"
-warning[CustomWarning] at 1467..1494: Label: """raw\nstring"""
+  --> 23:1..23:20
+   |
+23 | useWarnAbove :: Int
+   | ^~~~~~~~~~~~~~~~~~~
+warning[CustomWarning]: Got type: Int
+  --> 29:1..29:26
+   |
+29 | useWarnQuote :: Proxy Int
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~
+warning[CustomWarning]: Label: myField
+  --> 35:1..35:25
+   |
+35 | useWarnQuoteLabel :: Int
+   | ^~~~~~~~~~~~~~~~~~~~~~~~
+warning[CustomWarning]: Label: "h e l l o"
+  --> 41:1..41:31
+   |
+41 | useWarnQuoteLabelSpaces :: Int
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+warning[CustomWarning]: Label: "hel\"lo"
+  --> 47:1..47:30
+   |
+47 | useWarnQuoteLabelQuote :: Int
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+warning[CustomWarning]: Label: """raw\nstring"""
+  --> 53:1..53:28
+   |
+53 | useWarnQuoteLabelRaw :: Int
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~

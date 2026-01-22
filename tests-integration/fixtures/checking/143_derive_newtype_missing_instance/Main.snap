@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -21,4 +22,8 @@ Derived
 derive Show (Identity String :: Type)
 
 Diagnostics
-error[NoInstanceFound] at 83..129: No instance found for: Show String
+error[NoInstanceFound]: No instance found for: Show String
+  --> 7:1..7:47
+  |
+7 | derive newtype instance Show (Identity String)
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -27,6 +28,14 @@ Roles
 Proxy = [Phantom]
 
 Diagnostics
-error[CustomFailure] at 233..252: This operation is not allowed
-error[CustomFailure] at 411..441: Error:
+error[CustomFailure]: This operation is not allowed
+  --> 11:1..11:20
+   |
+11 | useFailBasic :: Int
+   | ^~~~~~~~~~~~~~~~~~~
+error[CustomFailure]: Error:
 Type String
+  --> 17:1..17:31
+   |
+17 | useFailComplex :: Proxy String
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -24,4 +25,8 @@ Classes
 class Eq (&0 :: Type)
 
 Diagnostics
-error[NoInstanceFound] at 191..227: No instance found for: Eq Foo
+error[NoInstanceFound]: No instance found for: Eq Foo
+  --> 10:1..12:11
+   |
+10 | test =
+   | ^~~~~~

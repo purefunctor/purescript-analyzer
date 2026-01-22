@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -18,4 +19,8 @@ Roles
 NotANewtype = []
 
 Diagnostics
-error[ExpectedNewtype] at 92..129: Expected a newtype, got: NotANewtype
+error[ExpectedNewtype]: Expected a newtype, got: NotANewtype
+  --> 7:1..7:38
+  |
+7 | derive instance Newtype NotANewtype _
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

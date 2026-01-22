@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -36,6 +37,18 @@ Const = forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type) -> (a :: Type
 
 
 Diagnostics
-error[TooManyBinders] at 94..126: Too many binders: expected 2, got 3
-error[TooManyBinders] at 208..247: Too many binders: expected 2, got 3
-error[TooManyBinders] at 310..329: Too many binders: expected 2, got 3
+error[TooManyBinders]: Too many binders: expected 2, got 3
+  --> 7:1..7:33
+  |
+7 | addWrong :: forall a. BinaryOp a
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[TooManyBinders]: Too many binders: expected 2, got 3
+  --> 13:1..13:40
+   |
+13 | composeWrong :: forall a. ReturnUnary a
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[TooManyBinders]: Too many binders: expected 2, got 3
+  --> 18:1..18:20
+   |
+18 | constWrong :: Const
+   | ^~~~~~~~~~~~~~~~~~~

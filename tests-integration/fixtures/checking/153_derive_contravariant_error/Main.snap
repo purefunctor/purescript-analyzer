@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -29,5 +30,13 @@ derive Contravariant (Identity :: Type -> Type)
 derive Contravariant (Producer :: Type -> Type)
 
 Diagnostics
-error[CovariantOccurrence] at 169..207: Type variable occurs in covariant position: (~&0 :: Type)
-error[CovariantOccurrence] at 309..347: Type variable occurs in covariant position: (~&0 :: Type)
+error[CovariantOccurrence]: Type variable occurs in covariant position: (~&0 :: Type)
+  --> 7:1..7:39
+  |
+7 | derive instance Contravariant Identity
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[CovariantOccurrence]: Type variable occurs in covariant position: (~&0 :: Type)
+  --> 11:1..11:39
+   |
+11 | derive instance Contravariant Producer
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

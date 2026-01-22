@@ -23,5 +23,13 @@ Effect = [Nominal]
 Aff = [Nominal]
 
 Diagnostics
-error[CannotUnify] at 439..453: Cannot unify 'Aff' with 'Effect'
-error[CannotUnify] at 439..453: Cannot unify 'Aff String' with 'Effect ?15[:0]'
+error[CannotUnify]: Cannot unify 'Aff' with 'Effect'
+  --> 15:8..15:22
+   |
+15 |   b <- affPure "life"
+   |        ^~~~~~~~~~~~~~
+error[CannotUnify]: Cannot unify 'Aff String' with 'Effect ?15[:0]'
+  --> 15:8..15:22
+   |
+15 |   b <- affPure "life"
+   |        ^~~~~~~~~~~~~~

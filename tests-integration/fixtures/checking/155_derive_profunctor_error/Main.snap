@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -32,6 +33,18 @@ derive Profunctor (WrongFirst :: Type -> Type -> Type)
 derive Profunctor (WrongSecond :: Type -> Type -> Type)
 
 Diagnostics
-error[CovariantOccurrence] at 151..188: Type variable occurs in covariant position: (~&0 :: Type)
-error[ContravariantOccurrence] at 291..329: Type variable occurs in contravariant position: (~&1 :: Type)
-error[CovariantOccurrence] at 291..329: Type variable occurs in covariant position: (~&0 :: Type)
+error[CovariantOccurrence]: Type variable occurs in covariant position: (~&0 :: Type)
+  --> 7:1..7:38
+  |
+7 | derive instance Profunctor WrongFirst
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[ContravariantOccurrence]: Type variable occurs in contravariant position: (~&1 :: Type)
+  --> 11:1..11:39
+   |
+11 | derive instance Profunctor WrongSecond
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[CovariantOccurrence]: Type variable occurs in covariant position: (~&0 :: Type)
+  --> 11:1..11:39
+   |
+11 | derive instance Profunctor WrongSecond
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

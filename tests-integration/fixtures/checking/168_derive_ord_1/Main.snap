@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -68,6 +69,18 @@ derive (Ord1 (&0 :: Type -> Type), Ord (&1 :: Type)) => Ord (Wrap @Type (&0 :: T
 derive Ord1 (&0 :: Type -> Type) => Ord1 (Wrap @Type (&0 :: Type -> Type) :: Type -> Type)
 
 Diagnostics
-error[NoInstanceFound] at 665..707: No instance found for: Eq ((&1 :: Type -> Type) (~&2 :: Type))
-error[NoInstanceFound] at 708..752: No instance found for: Ord ((&1 :: Type -> Type) (~&2 :: Type))
-error[NoInstanceFound] at 878..904: No instance found for: Ord (NoOrd (~&0 :: Type))
+error[NoInstanceFound]: No instance found for: Eq ((&1 :: Type -> Type) (~&2 :: Type))
+  --> 26:1..26:43
+   |
+26 | derive instance Eq1 f => Eq1 (Compose f g)
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[NoInstanceFound]: No instance found for: Ord ((&1 :: Type -> Type) (~&2 :: Type))
+  --> 27:1..27:45
+   |
+27 | derive instance Ord1 f => Ord1 (Compose f g)
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[NoInstanceFound]: No instance found for: Ord (NoOrd (~&0 :: Type))
+  --> 34:1..34:27
+   |
+34 | derive instance Ord1 NoOrd
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~

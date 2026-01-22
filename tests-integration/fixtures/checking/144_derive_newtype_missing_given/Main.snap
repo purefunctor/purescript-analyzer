@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -21,4 +22,8 @@ Derived
 derive Show (Identity (&0 :: Type) :: Type)
 
 Diagnostics
-error[NoInstanceFound] at 83..124: No instance found for: Show (&0 :: Type)
+error[NoInstanceFound]: No instance found for: Show (&0 :: Type)
+  --> 7:1..7:42
+  |
+7 | derive newtype instance Show (Identity a)
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

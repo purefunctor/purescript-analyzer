@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -35,4 +36,8 @@ derive Foldable (&0 :: Type -> Type) => Foldable (Wrap @Type (&0 :: Type -> Type
 derive Foldable (WrapNoFoldable @Type (&0 :: Type -> Type) :: Type -> Type)
 
 Diagnostics
-error[NoInstanceFound] at 181..224: No instance found for: Foldable (&0 :: Type -> Type)
+error[NoInstanceFound]: No instance found for: Foldable (&0 :: Type -> Type)
+  --> 9:1..9:44
+  |
+9 | derive instance Foldable (WrapNoFoldable f)
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

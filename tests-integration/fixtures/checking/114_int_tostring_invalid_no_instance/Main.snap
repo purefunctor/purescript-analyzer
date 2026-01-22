@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -20,4 +21,8 @@ Roles
 Proxy = [Phantom]
 
 Diagnostics
-error[NoInstanceFound] at 164..188: No instance found for: ToString 42 "999"
+error[NoInstanceFound]: No instance found for: ToString 42 "999"
+  --> 11:1..11:25
+   |
+11 | forceSolve = { invalid }
+   | ^~~~~~~~~~~~~~~~~~~~~~~~

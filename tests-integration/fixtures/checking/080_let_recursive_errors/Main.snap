@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -12,8 +13,28 @@ threeWayConflict :: Int -> Int
 Types
 
 Diagnostics
-error[CannotUnify] at 163..248: Cannot unify 'Int' with 'String'
-error[CannotUnify] at 163..248: Cannot unify 'String' with 'Int'
-error[CannotUnify] at 356..376: Cannot unify '?2[:0] -> ?3[:0]' with '?3[:0]'
-error[CannotUnify] at 521..522: Cannot unify 'Int' with 'String'
-error[CannotUnify] at 660..666: Cannot unify 'String' with 'Int'
+error[CannotUnify]: Cannot unify 'Int' with 'String'
+  --> 8:3..12:9
+  |
+8 |   let f :: Int -> Int
+  |   ^~~~~~~~~~~~~~~~~~~
+error[CannotUnify]: Cannot unify 'String' with 'Int'
+  --> 8:3..12:9
+  |
+8 |   let f :: Int -> Int
+  |   ^~~~~~~~~~~~~~~~~~~
+error[CannotUnify]: Cannot unify '?2[:0] -> ?3[:0]' with '?3[:0]'
+  --> 17:3..18:9
+   |
+17 |   let f x = f
+   |   ^~~~~~~~~~~
+error[CannotUnify]: Cannot unify 'Int' with 'String'
+  --> 25:8..25:9
+   |
+25 |   in f n
+   |        ^
+error[CannotUnify]: Cannot unify 'String' with 'Int'
+  --> 32:15..32:21
+   |
+32 |       b x = c "oops"
+   |               ^~~~~~

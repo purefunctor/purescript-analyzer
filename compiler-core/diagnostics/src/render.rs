@@ -5,7 +5,7 @@ use lsp_types::{
 };
 use rowan::TextSize;
 
-use crate::{Diagnostic, Severity};
+use crate::{Diagnostic, Severity, Span};
 
 pub fn format_text(diagnostics: &[Diagnostic]) -> String {
     let mut output = String::new();
@@ -26,6 +26,108 @@ pub fn format_text(diagnostics: &[Diagnostic]) -> String {
                 "  note at {}..{}: {}\n",
                 related.span.start, related.span.end, related.message
             ));
+        }
+    }
+
+    output
+}
+
+fn line_text<'a>(line_index: &LineIndex, content: &'a str, line: u32) -> Option<&'a str> {
+    let range = line_index.line(line)?;
+    let text = &content[range];
+    Some(text.trim_end_matches(['\n', '\r']))
+}
+
+fn caret_marker(line: &str, start_col: u32, end_col: Option<u32>) -> String {
+    let line_len = line.chars().count() as u32;
+    let start = start_col.min(line_len);
+    let end = end_col.unwrap_or(line_len).min(line_len);
+
+    if end <= start {
+        format!("{}^", " ".repeat(start as usize))
+    } else {
+        let tilde_count = (end - start).saturating_sub(1) as usize;
+        format!("{}^{}", " ".repeat(start as usize), "~".repeat(tilde_count))
+    }
+}
+
+fn span_location(
+    line_index: &LineIndex,
+    content: &str,
+    span: Span,
+) -> Option<((u32, u32), (u32, u32))> {
+    let start = offset_to_position(line_index, content, TextSize::from(span.start))?;
+    let end = offset_to_position(line_index, content, TextSize::from(span.end))?;
+    Some(((start.line, start.character), (end.line, end.character)))
+}
+
+pub fn format_rustc(diagnostics: &[Diagnostic], content: &str) -> String {
+    let line_index = LineIndex::new(content);
+    let mut output = String::new();
+
+    for diagnostic in diagnostics {
+        let severity = match diagnostic.severity {
+            Severity::Error => "error",
+            Severity::Warning => "warning",
+        };
+
+        output.push_str(&format!("{severity}[{}]: {}\n", diagnostic.code, diagnostic.message));
+
+        if let Some(((start_line, start_col), (end_line, end_col))) =
+            span_location(&line_index, content, diagnostic.primary)
+        {
+            let display_start_line = start_line + 1;
+            let display_start_col = start_col + 1;
+            let display_end_line = end_line + 1;
+            let display_end_col = end_col + 1;
+
+            output.push_str(&format!(
+                "  --> {}:{}..{}:{}\n",
+                display_start_line, display_start_col, display_end_line, display_end_col
+            ));
+
+            if let Some(line) = line_text(&line_index, content, start_line) {
+                let line_num_width = display_start_line.to_string().len();
+                output.push_str(&format!("{:>width$} |\n", "", width = line_num_width));
+                output.push_str(&format!("{} | {}\n", display_start_line, line));
+
+                let marker_end_col = if start_line == end_line { Some(end_col) } else { None };
+                let marker = caret_marker(line, start_col, marker_end_col);
+                output.push_str(&format!("{:>width$} | {}\n", "", marker, width = line_num_width));
+            }
+        }
+
+        for related in &diagnostic.related {
+            output.push_str(&format!("  note: {}\n", related.message));
+
+            if let Some(((start_line, start_col), (end_line, end_col))) =
+                span_location(&line_index, content, related.span)
+            {
+                let display_start_line = start_line + 1;
+                let display_start_col = start_col + 1;
+                let display_end_line = end_line + 1;
+                let display_end_col = end_col + 1;
+
+                output.push_str(&format!(
+                    "    --> {}:{}..{}:{}\n",
+                    display_start_line, display_start_col, display_end_line, display_end_col
+                ));
+
+                if let Some(line) = line_text(&line_index, content, start_line) {
+                    let line_num_width = display_start_line.to_string().len();
+                    output.push_str(&format!("  {:>width$} |\n", "", width = line_num_width));
+                    output.push_str(&format!("  {} | {}\n", display_start_line, line));
+
+                    let marker_end_col = if start_line == end_line { Some(end_col) } else { None };
+                    let marker = caret_marker(line, start_col, marker_end_col);
+                    output.push_str(&format!(
+                        "  {:>width$} | {}\n",
+                        "",
+                        marker,
+                        width = line_num_width
+                    ));
+                }
+            }
         }
     }
 

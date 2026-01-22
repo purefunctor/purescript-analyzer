@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -28,4 +29,8 @@ Maybe = [Representational]
 Either = [Representational, Representational]
 
 Diagnostics
-error[NoInstanceFound] at 116..165: No instance found for: Coercible @Type (Maybe Int) (Either Int String)
+error[NoInstanceFound]: No instance found for: Coercible @Type (Maybe Int) (Either Int String)
+  --> 8:1..8:50
+  |
+8 | coerceDifferent :: Maybe Int -> Either Int String
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -17,4 +18,8 @@ instance Eq (Int :: Type)
   chain: 0
 
 Diagnostics
-error[NoInstanceFound] at 103..138: No instance found for: Eq String
+error[NoInstanceFound]: No instance found for: Eq String
+  --> 9:1..9:36
+  |
+9 | test = [eq 123 456, eq "123" "456"]
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

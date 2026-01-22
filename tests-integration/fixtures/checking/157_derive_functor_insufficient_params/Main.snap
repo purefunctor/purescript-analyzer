@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -29,7 +30,23 @@ derive Functor (Pair Int String :: Type)
 derive Functor (Unit :: Type)
 
 Diagnostics
-error[CannotUnify] at 105..122: Cannot unify 'Type' with 'Type -> Type'
-error[CannotDeriveForType] at 81..122: Cannot derive for type: Pair Int String
-error[CannotUnify] at 165..169: Cannot unify 'Type' with 'Type -> Type'
-error[CannotDeriveForType] at 141..169: Cannot derive for type: Unit
+error[CannotUnify]: Cannot unify 'Type' with 'Type -> Type'
+  --> 6:25..6:42
+  |
+6 | derive instance Functor (Pair Int String)
+  |                         ^~~~~~~~~~~~~~~~~
+error[CannotDeriveForType]: Cannot derive for type: Pair Int String
+  --> 6:1..6:42
+  |
+6 | derive instance Functor (Pair Int String)
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[CannotUnify]: Cannot unify 'Type' with 'Type -> Type'
+  --> 9:25..9:29
+  |
+9 | derive instance Functor Unit
+  |                         ^~~~
+error[CannotDeriveForType]: Cannot derive for type: Unit
+  --> 9:1..9:29
+  |
+9 | derive instance Functor Unit
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -35,4 +36,8 @@ derive (Eq1 (&0 :: Type -> Type), Eq (&1 :: Type)) => Eq (Wrap @Type (&0 :: Type
 derive Eq (&1 :: Type) => Eq (WrapNoEq1 @Type (&0 :: Type -> Type) (&1 :: Type) :: Type)
 
 Diagnostics
-error[NoInstanceFound] at 216..258: No instance found for: Eq1 (&0 :: Type -> Type)
+error[NoInstanceFound]: No instance found for: Eq1 (&0 :: Type -> Type)
+  --> 12:1..12:43
+   |
+12 | derive instance Eq a => Eq (WrapNoEq1 f a)
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

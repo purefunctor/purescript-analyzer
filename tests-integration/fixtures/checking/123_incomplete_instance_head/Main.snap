@@ -22,4 +22,8 @@ instance Pair (Int :: Type)
   chain: 0
 
 Diagnostics
-error[InstanceHeadMismatch] at 140..191: Instance head mismatch: expected 2 arguments, got 1
+error[InstanceHeadMismatch]: Instance head mismatch: expected 2 arguments, got 1
+  --> 9:1..10:28
+  |
+9 | instance Pair Int where
+  | ^~~~~~~~~~~~~~~~~~~~~~~

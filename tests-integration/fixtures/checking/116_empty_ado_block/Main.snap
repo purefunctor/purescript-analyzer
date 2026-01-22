@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -20,5 +21,13 @@ Roles
 Effect = [Nominal]
 
 Diagnostics
-error[EmptyAdoBlock] at 262..265: Empty ado block
-error[CannotUnify] at 254..265: Cannot unify 'Type' with '???'
+error[EmptyAdoBlock]: Empty ado block
+  --> 9:9..9:12
+  |
+9 | test1 = ado
+  |         ^~~
+error[CannotUnify]: Cannot unify 'Type' with '???'
+  --> 9:1..9:12
+  |
+9 | test1 = ado
+  | ^~~~~~~~~~~

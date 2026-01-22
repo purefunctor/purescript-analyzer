@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -51,5 +52,13 @@ derive (Foldable (&0 :: Type -> Type), Foldable (&1 :: Type -> Type)) => Bifolda
 derive Bifoldable (WrapBothNoConstraint @Type @Type (&0 :: Type -> Type) (&1 :: Type -> Type) :: Type -> Type -> Type)
 
 Diagnostics
-error[NoInstanceFound] at 285..338: No instance found for: Foldable (&0 :: Type -> Type)
-error[NoInstanceFound] at 285..338: No instance found for: Foldable (&1 :: Type -> Type)
+error[NoInstanceFound]: No instance found for: Foldable (&0 :: Type -> Type)
+  --> 10:1..10:54
+   |
+10 | derive instance Bifoldable (WrapBothNoConstraint f g)
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[NoInstanceFound]: No instance found for: Foldable (&1 :: Type -> Type)
+  --> 10:1..10:54
+   |
+10 | derive instance Bifoldable (WrapBothNoConstraint f g)
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

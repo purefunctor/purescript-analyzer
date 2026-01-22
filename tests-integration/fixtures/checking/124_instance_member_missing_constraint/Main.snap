@@ -36,4 +36,8 @@ instance Functor (Box :: Type -> Type)
   chain: 0
 
 Diagnostics
-error[NoInstanceFound] at 148..240: No instance found for: Show (~&1 :: Type)
+error[NoInstanceFound]: No instance found for: Show (~&1 :: Type)
+  --> 11:1..16:16
+   |
+11 | instance Functor Box where
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~

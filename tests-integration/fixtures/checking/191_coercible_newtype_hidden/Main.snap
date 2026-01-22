@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -9,7 +10,23 @@ coerceQualified :: Int -> HiddenAge
 Types
 
 Diagnostics
-error[CoercibleConstructorNotInScope] at 87..119: Constructor not in scope for Coercible
-error[NoInstanceFound] at 87..119: No instance found for: Coercible @Type Int HiddenAge
-error[CoercibleConstructorNotInScope] at 143..180: Constructor not in scope for Coercible
-error[NoInstanceFound] at 143..180: No instance found for: Coercible @Type Int HiddenAge
+error[CoercibleConstructorNotInScope]: Constructor not in scope for Coercible
+  --> 7:1..7:33
+  |
+7 | coerceHidden :: Int -> HiddenAge
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[NoInstanceFound]: No instance found for: Coercible @Type Int HiddenAge
+  --> 7:1..7:33
+  |
+7 | coerceHidden :: Int -> HiddenAge
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[CoercibleConstructorNotInScope]: Constructor not in scope for Coercible
+  --> 10:1..10:38
+   |
+10 | coerceQualified :: Int -> L.HiddenAge
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[NoInstanceFound]: No instance found for: Coercible @Type Int HiddenAge
+  --> 10:1..10:38
+   |
+10 | coerceQualified :: Int -> L.HiddenAge
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

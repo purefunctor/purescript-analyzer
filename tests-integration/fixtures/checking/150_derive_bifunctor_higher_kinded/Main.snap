@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -51,5 +52,13 @@ derive (Functor (&0 :: Type -> Type), Functor (&1 :: Type -> Type)) => Bifunctor
 derive Bifunctor (WrapBothNoConstraint @Type @Type (&0 :: Type -> Type) (&1 :: Type -> Type) :: Type -> Type -> Type)
 
 Diagnostics
-error[NoInstanceFound] at 278..330: No instance found for: Functor (&0 :: Type -> Type)
-error[NoInstanceFound] at 278..330: No instance found for: Functor (&1 :: Type -> Type)
+error[NoInstanceFound]: No instance found for: Functor (&0 :: Type -> Type)
+  --> 10:1..10:53
+   |
+10 | derive instance Bifunctor (WrapBothNoConstraint f g)
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[NoInstanceFound]: No instance found for: Functor (&1 :: Type -> Type)
+  --> 10:1..10:53
+   |
+10 | derive instance Bifunctor (WrapBothNoConstraint f g)
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

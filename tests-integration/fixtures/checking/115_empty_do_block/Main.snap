@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -19,5 +20,13 @@ Roles
 Effect = [Nominal]
 
 Diagnostics
-error[EmptyDoBlock] at 271..273: Empty do block
-error[CannotUnify] at 264..273: Cannot unify 'Type' with '???'
+error[EmptyDoBlock]: Empty do block
+  --> 9:8..9:10
+  |
+9 | test = do
+  |        ^~
+error[CannotUnify]: Cannot unify 'Type' with '???'
+  --> 9:1..9:10
+  |
+9 | test = do
+  | ^~~~~~~~~

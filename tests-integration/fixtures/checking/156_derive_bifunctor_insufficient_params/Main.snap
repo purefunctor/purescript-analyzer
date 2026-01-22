@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -23,5 +24,13 @@ Derived
 derive Bifunctor (Triple Int String :: Type -> Type)
 
 Diagnostics
-error[CannotUnify] at 119..138: Cannot unify 'Type' with 'Type -> Type'
-error[CannotDeriveForType] at 93..138: Cannot derive for type: Triple Int String
+error[CannotUnify]: Cannot unify 'Type' with 'Type -> Type'
+  --> 6:27..6:46
+  |
+6 | derive instance Bifunctor (Triple Int String)
+  |                           ^~~~~~~~~~~~~~~~~~~
+error[CannotDeriveForType]: Cannot derive for type: Triple Int String
+  --> 6:1..6:46
+  |
+6 | derive instance Bifunctor (Triple Int String)
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

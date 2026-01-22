@@ -2,7 +2,7 @@ use std::fmt::Write;
 
 use analyzer::{QueryEngine, locate};
 use checking::core::pretty;
-use diagnostics::{DiagnosticsContext, ToDiagnostics, format_text};
+use diagnostics::{DiagnosticsContext, ToDiagnostics, format_rustc};
 use files::FileId;
 use indexing::{ImportKind, TermItem, TypeItem, TypeItemId, TypeItemKind};
 use lowering::{
@@ -414,7 +414,7 @@ pub fn report_checked(engine: &QueryEngine, id: FileId) -> String {
 
     if !all_diagnostics.is_empty() {
         writeln!(snapshot, "\nDiagnostics").unwrap();
-        snapshot.push_str(&format_text(&all_diagnostics));
+        snapshot.push_str(&format_rustc(&all_diagnostics, &content));
     }
 
     snapshot

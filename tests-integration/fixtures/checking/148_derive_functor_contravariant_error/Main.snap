@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -40,4 +41,8 @@ derive Functor (Reader (&0 :: Type) :: Type -> Type)
 derive Functor (Cont (&0 :: Type) :: Type -> Type)
 
 Diagnostics
-error[ContravariantOccurrence] at 100..133: Type variable occurs in contravariant position: (~&0 :: Type)
+error[ContravariantOccurrence]: Type variable occurs in contravariant position: (~&0 :: Type)
+  --> 6:1..6:34
+  |
+6 | derive instance Functor Predicate
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
