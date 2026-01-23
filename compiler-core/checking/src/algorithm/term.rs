@@ -612,7 +612,7 @@ fn infer_do<Q>(
     context: &CheckContext<Q>,
     bind: lowering::TermVariableResolution,
     discard: lowering::TermVariableResolution,
-    statements: &[lowering::DoStatement],
+    statement_ids: &[lowering::DoStatementId],
 ) -> QueryResult<TypeId>
 where
     Q: ExternalQueries,
@@ -624,7 +624,10 @@ where
     // bound to unification variables and let bindings are checked.
     // This is like inferring the lambda in a desugared representation.
     let mut do_statements = vec![];
-    for statement in statements.iter() {
+    for &statement_id in statement_ids.iter() {
+        let Some(statement) = context.lowered.info.get_do_statement(statement_id) else {
+            continue;
+        };
         match statement {
             lowering::DoStatement::Bind { binder, expression } => {
                 let binder_type = if let Some(binder) = binder {
@@ -632,18 +635,18 @@ where
                 } else {
                     state.fresh_unification_type(context)
                 };
-                do_statements.push((Some(binder_type), *expression));
+                do_statements.push((statement_id, Some(binder_type), *expression));
             }
             lowering::DoStatement::Let { statements } => {
                 check_let_chunks(state, context, statements)?;
             }
             lowering::DoStatement::Discard { expression } => {
-                do_statements.push((None, *expression));
+                do_statements.push((statement_id, None, *expression));
             }
         }
     }
 
-    let [bind_statements @ .., (_, pure_expression)] = &do_statements[..] else {
+    let [bind_statements @ .., (_, _, pure_expression)] = &do_statements[..] else {
         state.insert_error(ErrorKind::EmptyDoBlock);
         return Ok(context.prim.unknown);
     };
@@ -690,7 +693,7 @@ where
     //   Continuation uses S[2], result must match S[1]
     //   But S[1] = Effect ?b0, and result = Aff ?b1
     //   CONFLICT at statement 1 (aff line) - correct attribution!
-    for (i, (binder, expression)) in bind_statements.iter().enumerate() {
+    for (i, (statement, binder, expression)) in bind_statements.iter().enumerate() {
         let current_suffix = suffix_types[i];
         let next_suffix = suffix_types[i + 1];
 
@@ -699,9 +702,9 @@ where
         };
 
         // Wrap both the bind/discard inference and the suffix unification
-        // with an error step so that errors are attributed to the expression.
+        // with an error step so that errors are attributed to the full statement.
         if let Some(binder) = binder {
-            state.with_error_step(ErrorStep::InferringDoBind(expression), |state| {
+            state.with_error_step(ErrorStep::InferringDoBind(*statement), |state| {
                 let statement_type =
                     infer_do_bind(state, context, bind_type, next_suffix, expression, *binder)?;
                 // Unify the statement result with the current suffix type.
@@ -710,7 +713,7 @@ where
                 Ok(())
             })?;
         } else {
-            state.with_error_step(ErrorStep::InferringDoDiscard(expression), |state| {
+            state.with_error_step(ErrorStep::InferringDoDiscard(*statement), |state| {
                 let statement_type =
                     infer_do_discard(state, context, discard_type, next_suffix, expression)?;
                 let _ = unification::subtype(state, context, statement_type, current_suffix)?;
@@ -737,7 +740,7 @@ fn infer_ado<Q>(
     map: lowering::TermVariableResolution,
     apply: lowering::TermVariableResolution,
     pure: lowering::TermVariableResolution,
-    statements: &[lowering::DoStatement],
+    statement_ids: &[lowering::DoStatementId],
     expression: Option<lowering::ExpressionId>,
 ) -> QueryResult<TypeId>
 where
@@ -752,7 +755,10 @@ where
     // This is like inferring the lambda in a desugared representation.
     let mut binder_types = vec![];
     let mut ado_statements = vec![];
-    for statement in statements.iter() {
+    for &statement_id in statement_ids.iter() {
+        let Some(statement) = context.lowered.info.get_do_statement(statement_id) else {
+            continue;
+        };
         match statement {
             lowering::DoStatement::Bind { binder, expression } => {
                 let binder_type = if let Some(binder) = binder {

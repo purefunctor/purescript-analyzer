@@ -725,8 +725,13 @@ pub(crate) fn lower_equation_like<T: AstNode>(
     })
 }
 
-fn lower_do_statement(state: &mut State, context: &Context, cst: &cst::DoStatement) -> DoStatement {
-    match cst {
+fn lower_do_statement(
+    state: &mut State,
+    context: &Context,
+    cst: &cst::DoStatement,
+) -> DoStatementId {
+    let id = context.stabilized.lookup_cst(cst).expect_id();
+    let statement = match cst {
         cst::DoStatement::DoStatementBind(cst) => {
             let expression = cst.expression().map(|cst| lower_expression(state, context, &cst));
             state.push_binder_scope();
@@ -741,7 +746,9 @@ fn lower_do_statement(state: &mut State, context: &Context, cst: &cst::DoStateme
             let expression = cst.expression().map(|cst| lower_expression(state, context, &cst));
             DoStatement::Discard { expression }
         }
-    }
+    };
+    state.associate_do_statement(id, statement);
+    id
 }
 
 fn lower_record_updates(

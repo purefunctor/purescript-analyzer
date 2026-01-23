@@ -23,8 +23,8 @@ pub enum ErrorStep {
     InferringExpression(lowering::ExpressionId),
     CheckingExpression(lowering::ExpressionId),
 
-    InferringDoBind(lowering::ExpressionId),
-    InferringDoDiscard(lowering::ExpressionId),
+    InferringDoBind(lowering::DoStatementId),
+    InferringDoDiscard(lowering::DoStatementId),
 
     InferringAdoMap(lowering::ExpressionId),
     InferringAdoApply(lowering::ExpressionId),

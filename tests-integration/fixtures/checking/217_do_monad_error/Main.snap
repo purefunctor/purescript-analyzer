@@ -25,22 +25,22 @@ Aff = [Nominal]
 
 Diagnostics
 error[CannotUnify]: Cannot unify 'Aff' with 'Effect'
-  --> 15:8..15:22
+  --> 15:3..15:22
    |
 15 |   b <- affPure "life"
-   |        ^~~~~~~~~~~~~~
+   |   ^~~~~~~~~~~~~~~~~~~
 error[CannotUnify]: Cannot unify 'Aff String' with 'Effect ?18[:0]'
-  --> 15:8..15:22
+  --> 15:3..15:22
    |
 15 |   b <- affPure "life"
-   |        ^~~~~~~~~~~~~~
+   |   ^~~~~~~~~~~~~~~~~~~
 error[CannotUnify]: Cannot unify 'Aff' with 'Effect'
-  --> 21:8..21:22
+  --> 21:3..21:22
    |
 21 |   b <- affPure "life"
-   |        ^~~~~~~~~~~~~~
+   |   ^~~~~~~~~~~~~~~~~~~
 error[CannotUnify]: Cannot unify 'Aff String' with 'Effect ?37[:0]'
-  --> 21:8..21:22
+  --> 21:3..21:22
    |
 21 |   b <- affPure "life"
-   |        ^~~~~~~~~~~~~~
+   |   ^~~~~~~~~~~~~~~~~~~
