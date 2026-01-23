@@ -118,12 +118,12 @@ impl<'a> DiagnosticsContext<'a> {
             ErrorStep::TypeDeclaration(id) => {
                 self.indexed.type_item_ptr(self.stabilized, *id).next()?
             }
-            ErrorStep::InferringDoBind(id) | ErrorStep::InferringDoDiscard(id) => {
-                self.stabilized.syntax_ptr(*id)?
-            }
-            ErrorStep::InferringAdoMap(id) | ErrorStep::InferringAdoApply(id) => {
-                self.stabilized.syntax_ptr(*id)?
-            }
+            ErrorStep::InferringDoBind(id)
+            | ErrorStep::InferringDoDiscard(id)
+            | ErrorStep::CheckingDoLet(id) => self.stabilized.syntax_ptr(*id)?,
+            ErrorStep::InferringAdoMap(id)
+            | ErrorStep::InferringAdoApply(id)
+            | ErrorStep::CheckingAdoLet(id) => self.stabilized.syntax_ptr(*id)?,
         };
         self.span_from_syntax_ptr(&ptr)
     }

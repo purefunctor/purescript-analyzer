@@ -1,0 +1,29 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+unit :: Unit
+pure :: forall (a :: Type). (a :: Type) -> Effect (a :: Type)
+bind ::
+  forall (a :: Type) (b :: Type).
+    Effect (a :: Type) -> ((a :: Type) -> Effect (b :: Type)) -> Effect (b :: Type)
+discard :: forall (a :: Type). Effect (a :: Type) -> Effect Unit -> Effect Unit
+thing1 :: Effect String
+test :: Effect Unit
+
+Types
+Effect :: Type -> Type
+Unit :: Type
+
+Roles
+Effect = [Nominal]
+Unit = []
+
+Diagnostics
+error[CannotUnify]: Cannot unify 'String' with 'Int'
+  --> 17:3..19:10
+   |
+17 |   let
+   |   ^~~

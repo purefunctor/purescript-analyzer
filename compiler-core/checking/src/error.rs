@@ -23,11 +23,13 @@ pub enum ErrorStep {
     InferringExpression(lowering::ExpressionId),
     CheckingExpression(lowering::ExpressionId),
 
-    InferringDoBind(lowering::ExpressionId),
-    InferringDoDiscard(lowering::ExpressionId),
+    InferringDoBind(lowering::DoStatementId),
+    InferringDoDiscard(lowering::DoStatementId),
+    CheckingDoLet(lowering::DoStatementId),
 
-    InferringAdoMap(lowering::ExpressionId),
-    InferringAdoApply(lowering::ExpressionId),
+    InferringAdoMap(lowering::DoStatementId),
+    InferringAdoApply(lowering::DoStatementId),
+    CheckingAdoLet(lowering::DoStatementId),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
