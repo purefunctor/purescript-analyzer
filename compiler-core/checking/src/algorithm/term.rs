@@ -645,7 +645,7 @@ where
                 });
             }
             lowering::DoStatement::Let { statements } => {
-                steps.push(DoStep::Let { statement: statement_id, statements: &statements });
+                steps.push(DoStep::Let { statement: statement_id, statements: statements });
             }
             lowering::DoStatement::Discard { expression } => {
                 steps.push(DoStep::Discard { statement: statement_id, expression: *expression });
@@ -815,10 +815,16 @@ enum DoStep<'a> {
     },
 }
 
-struct AdoBindingStatement {
-    statement: lowering::DoStatementId,
-    binder_type: TypeId,
-    expression: lowering::ExpressionId,
+enum AdoStep<'a> {
+    Action {
+        statement: lowering::DoStatementId,
+        binder_type: TypeId,
+        expression: lowering::ExpressionId,
+    },
+    Let {
+        statement: lowering::DoStatementId,
+        statements: &'a [lowering::LetBindingChunk],
+    },
 }
 
 #[tracing::instrument(skip_all, name = "infer_ado")]
@@ -838,10 +844,11 @@ where
     let apply_type = lookup_term_variable(state, context, apply)?;
     let pure_type = lookup_term_variable(state, context, pure)?;
 
-    // First, perform a forward pass where variable bindings are
-    // bound to unification variables and let bindings are checked.
-    // This is like inferring the lambda in a desugared representation.
-    let mut ado_binding_statements = vec![];
+    // First, perform a forward pass where variable bindings are bound
+    // to unification variables. Let bindings are not checked here to
+    // avoid premature solving of unification variables. Instead, they
+    // are checked inline during the statement checking loop.
+    let mut steps = vec![];
     for &statement_id in statement_ids.iter() {
         let Some(statement) = context.lowered.info.get_do_statement(statement_id) else {
             continue;
@@ -854,39 +861,46 @@ where
                     state.fresh_unification_type(context)
                 };
                 let Some(expression) = *expression else { continue };
-                ado_binding_statements.push(AdoBindingStatement {
-                    statement: statement_id,
-                    binder_type,
-                    expression,
-                });
+                steps.push(AdoStep::Action { statement: statement_id, binder_type, expression });
             }
             lowering::DoStatement::Let { statements } => {
-                check_let_chunks(state, context, statements)?;
+                steps.push(AdoStep::Let { statement: statement_id, statements: statements });
             }
             lowering::DoStatement::Discard { expression } => {
                 let binder_type = state.fresh_unification_type(context);
                 let Some(expression) = *expression else { continue };
-                ado_binding_statements.push(AdoBindingStatement {
-                    statement: statement_id,
-                    binder_type,
-                    expression,
-                });
+                steps.push(AdoStep::Action { statement: statement_id, binder_type, expression });
             }
         }
     }
 
-    // For ado blocks with no bindings, we apply pure to the expression.
+    let binder_types = steps.iter().filter_map(|step| match step {
+        AdoStep::Action { binder_type, .. } => Some(*binder_type),
+        AdoStep::Let { .. } => None,
+    });
+
+    let binder_types = binder_types.collect_vec();
+
+    // For ado blocks with no bindings, we check let statements and then
+    // apply pure to the expression.
     //
     //   pure_type  := a -> f a
     //   expression := t
-    let [head_statement, tail_statements @ ..] = &ado_binding_statements[..] else {
+    if binder_types.is_empty() {
+        for step in &steps {
+            if let AdoStep::Let { statement, statements } = step {
+                state.with_error_step(ErrorStep::CheckingAdoLet(*statement), |state| {
+                    check_let_chunks(state, context, statements)
+                })?;
+            }
+        }
         return if let Some(expression) = expression {
             check_function_term_application(state, context, pure_type, expression)
         } else {
             state.insert_error(ErrorKind::EmptyAdoBlock);
             Ok(context.prim.unknown)
         };
-    };
+    }
 
     // Create a fresh unification variable for the in_expression.
     // Inferring expression directly may solve the unification variables
@@ -902,9 +916,6 @@ where
     //   in_expression      :: Effect Message
     //   in_expression_type := ?in_expression
     //   lambda_type        := ?a -> ?b -> ?in_expression
-    let binder_types =
-        ado_binding_statements.iter().map(|statement| statement.binder_type).collect_vec();
-
     let in_expression_type = state.fresh_unification_type(context);
     let lambda_type = state.make_function(&binder_types, in_expression_type);
 
@@ -914,9 +925,9 @@ where
     //
     //   (\a _ -> Message a) <$> (pure "Hello!") <*> (pure 42)
     //
-    // To emulate this, the infer_ado_map rule applies `map` to the
-    // inferred expression type and the lambda type we synthesised
-    // using the unification variables we created previously.
+    // To emulate this, we process steps in source order. Let bindings
+    // are checked inline between map/apply operations. The first action
+    // uses infer_ado_map, and subsequent actions use infer_ado_apply.
     //
     //   map_type        :: (a -> b) -> f a -> f b
     //   lambda_type     := ?a -> ?b -> ?in_expression
@@ -927,29 +938,50 @@ where
     //                           >> ?a := String
     //
     //   continuation_type := Effect (?b -> ?in_expression)
-    let mut continuation_type = {
-        let AdoBindingStatement { statement, expression, .. } = *head_statement;
-        let arguments = InferAdoMap { statement, map_type, lambda_type, expression };
-        infer_ado_map(state, context, arguments)?
-    };
+    let mut continuation_type = None;
 
-    // Then, the infer_ado_apply rule applies `apply` to the inferred
-    // expression type and the continuation type that is a function
-    // contained within some container, like Effect.
-    //
-    //   apply_type        := f (x -> y) -> f x -> f y
-    //   continuation_type := Effect (?b -> ?in_expression)
-    //
-    //   expression_type                 := Effect Int
-    //   apply(continuation, expression) := Effect ?in_expression
-    //                                   >>
-    //                                   >> ?b := Int
-    //
-    //   continuation_type := Effect ?in_expression
-    for tail_statement in tail_statements {
-        let AdoBindingStatement { statement, expression, .. } = *tail_statement;
-        let arguments = InferAdoApply { statement, apply_type, continuation_type, expression };
-        continuation_type = infer_ado_apply(state, context, arguments)?;
+    for step in &steps {
+        match step {
+            AdoStep::Let { statement, statements } => {
+                let error_step = ErrorStep::CheckingAdoLet(*statement);
+                state.with_error_step(error_step, |state| {
+                    check_let_chunks(state, context, statements)
+                })?;
+            }
+            AdoStep::Action { statement, expression, .. } => {
+                let statement_type = if let Some(continuation_type) = continuation_type {
+                    // Then, the infer_ado_apply rule applies `apply` to the inferred
+                    // expression type and the continuation type that is a function
+                    // contained within some container, like Effect.
+                    //
+                    //   apply_type        := f (x -> y) -> f x -> f y
+                    //   continuation_type := Effect (?b -> ?in_expression)
+                    //
+                    //   expression_type                 := Effect Int
+                    //   apply(continuation, expression) := Effect ?in_expression
+                    //                                   >>
+                    //                                   >> ?b := Int
+                    //
+                    //   continuation_type := Effect ?in_expression
+                    let arguments = InferAdoApply {
+                        statement: *statement,
+                        apply_type,
+                        continuation_type,
+                        expression: *expression,
+                    };
+                    infer_ado_apply(state, context, arguments)?
+                } else {
+                    let arguments = InferAdoMap {
+                        statement: *statement,
+                        map_type,
+                        lambda_type,
+                        expression: *expression,
+                    };
+                    infer_ado_map(state, context, arguments)?
+                };
+                continuation_type = Some(statement_type);
+            }
+        }
     }
 
     // Finally, check the in-expression against in_expression.
@@ -963,6 +995,10 @@ where
     if let Some(expression) = expression {
         check_expression(state, context, expression, in_expression_type)?;
     }
+
+    let Some(continuation_type) = continuation_type else {
+        unreachable!("invariant violated: impossible empty steps");
+    };
 
     Ok(continuation_type)
 }

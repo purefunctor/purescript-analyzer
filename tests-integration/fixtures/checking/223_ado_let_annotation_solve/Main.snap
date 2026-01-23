@@ -25,12 +25,7 @@ Unit = []
 
 Diagnostics
 error[CannotUnify]: Cannot unify 'String' with 'Int'
-  --> 16:3..16:14
+  --> 17:3..19:10
    |
-16 |   a <- thing1
-   |   ^~~~~~~~~~~
-error[CannotUnify]: Cannot unify 'Effect String' with 'Effect Int'
-  --> 16:3..16:14
-   |
-16 |   a <- thing1
-   |   ^~~~~~~~~~~
+17 |   let
+   |   ^~~

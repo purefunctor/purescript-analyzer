@@ -35,13 +35,13 @@ instance Semiring (Int :: Type)
   chain: 0
 
 Diagnostics
-error[CannotUnify]: Cannot unify 'String' with 'Int'
-  --> 26:3..26:14
+error[CannotUnify]: Cannot unify 'Int' with 'String'
+  --> 27:15..27:18
    |
-26 |   a <- thing1
-   |   ^~~~~~~~~~~
-error[CannotUnify]: Cannot unify 'Effect String' with 'Effect Int'
-  --> 26:3..26:14
+27 |   let f = a + 123
+   |               ^~~
+error[NoInstanceFound]: No instance found for: Semiring String
+  --> 24:1..24:20
    |
-26 |   a <- thing1
-   |   ^~~~~~~~~~~
+24 | test :: Effect Unit
+   | ^~~~~~~~~~~~~~~~~~~

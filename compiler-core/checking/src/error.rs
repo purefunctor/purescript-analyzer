@@ -29,6 +29,7 @@ pub enum ErrorStep {
 
     InferringAdoMap(lowering::DoStatementId),
     InferringAdoApply(lowering::DoStatementId),
+    CheckingAdoLet(lowering::DoStatementId),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
