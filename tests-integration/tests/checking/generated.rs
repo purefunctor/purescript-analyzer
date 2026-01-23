@@ -463,3 +463,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_217_do_monad_error_main() { run_test("217_do_monad_error", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_218_ado_monad_error_main() { run_test("218_ado_monad_error", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_219_do_mixed_monad_error_main() { run_test("219_do_mixed_monad_error", "Main"); }

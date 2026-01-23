@@ -13,7 +13,7 @@ discard ::
   forall (a :: Type) (b :: Type).
     Effect (a :: Type) -> ((a :: Type) -> Effect (b :: Type)) -> Effect (b :: Type)
 test :: Effect { a :: Int, b :: String, c :: Int }
-test' :: forall (t24 :: Type). Effect { a :: Int, b :: (t24 :: Type), c :: Int }
+test' :: forall (t27 :: Type). Effect { a :: Int, b :: (t27 :: Type), c :: Int }
 
 Types
 Effect :: Type -> Type
@@ -29,7 +29,7 @@ error[CannotUnify]: Cannot unify 'Aff' with 'Effect'
    |
 15 |   b <- affPure "life"
    |        ^~~~~~~~~~~~~~
-error[CannotUnify]: Cannot unify 'Aff String' with 'Effect ?15[:0]'
+error[CannotUnify]: Cannot unify 'Aff String' with 'Effect ?18[:0]'
   --> 15:8..15:22
    |
 15 |   b <- affPure "life"
@@ -39,7 +39,7 @@ error[CannotUnify]: Cannot unify 'Aff' with 'Effect'
    |
 21 |   b <- affPure "life"
    |        ^~~~~~~~~~~~~~
-error[CannotUnify]: Cannot unify 'Aff String' with 'Effect ?31[:0]'
+error[CannotUnify]: Cannot unify 'Aff String' with 'Effect ?37[:0]'
   --> 21:8..21:22
    |
 21 |   b <- affPure "life"

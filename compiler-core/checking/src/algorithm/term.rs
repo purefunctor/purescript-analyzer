@@ -652,80 +652,82 @@ where
         return Ok(context.prim.unknown);
     };
 
-    // Create a fresh unification variable for the pure_expression.
-    // Inferring pure_expression directly may solve the unification
-    // variables introduced in the first pass. This is undesirable,
-    // because the errors would be attributed incorrectly to the
-    // do statements rather than the pure_expression itself.
+    // Create suffix metavariables for each statement boundary. S[i] represents
+    // the type of the do-block suffix starting at statement i.
     //
-    //   main = do
-    //     pure 42
-    //     y <- pure "Hello!"
-    //     pure $ Message y
+    // For a do-block with statements [s0, s1, s2, final]:
+    //   S[0] = type of whole block (starting at s0)
+    //   S[1] = type of suffix starting at s1
+    //   S[2] = type of suffix starting at s2
+    //   S[3] = type of suffix starting at final
     //
-    //   pure_expression      :: Effect Message
-    //   pure_expression_type := ?pure_expression
-    let pure_expression_type = state.fresh_unification_type(context);
+    // Each bind/discard statement constrains its suffix type based on the
+    // next suffix type, allowing errors to be attributed to the first
+    // conflicting statement when processed left-to-right.
+    let suffix_types: Vec<_> =
+        (0..=bind_statements.len()).map(|_| state.fresh_unification_type(context)).collect();
 
-    // The desugard form of a do-expression is checked inside out. An
-    // expression like `bind m_a (\a -> m_b)` is checked by inferring
-    // the type of the continuation before the `bind` application can
-    // be checked. In the example we have above, we have the following:
+    // Process statements left-to-right. Each statement:
+    // 1. Infers the expression type
+    // 2. Applies bind/discard with the next suffix type as continuation
+    // 3. Unifies the result with the current suffix type
     //
-    //   bind (pure "Hello!") (\y -> pure $ Message y)
+    // Example with Effect and Aff mixed:
+    //   do
+    //     a <- effect   -- Effect Int
+    //     b <- aff      -- Aff Int (conflict!)
+    //     pure { a, b }
     //
-    //   discard (pure 42) (\_ -> <expression-above>)
+    // Statement 0 (a <- effect):
+    //   bind :: m a -> (a -> m b) -> m b
+    //   Instantiate: Effect Int -> (Int -> Effect ?b0) -> Effect ?b0
+    //   Continuation uses S[1], so S[1] ~ Effect ?b0
+    //   Result S[0] ~ Effect ?b0
     //
-    // To emulate this, the infer_do_bind rule applies `bind` to the
-    // inferred expression type and a function type synthesised using
-    // the unification variables we created previously.
-    //
-    //   expression_type   := Effect String
-    //
-    //   lambda_type       := ?y -> continuation_type
-    //                     := ?y -> ?pure_expression
-    //
-    //   bind_type         := m a -> (a -> m b) -> m b
-    //   apply(expression) := (String -> Effect ?b) -> Effect ?b
-    //   apply(lambda)     := Effect ?b
-    //                     >>
-    //                     >> ?y := String
-    //                     >> ?pure_expression := Effect ?b
-    //
-    //   continuation_type := Effect ?b
-    //
-    // Then, the infer_do_discard rule applies `discard` to the
-    // inferred expression type and extracts the result type.
-    //
-    //   expression_type   := Effect Int
-    //
-    //   discard_type      := m a -> (a -> m b) -> m b
-    //   apply(expression) := (Int -> Effect ?b) -> Effect ?b
-    //   extract(lambda)   := Effect ?b
-    //
-    //   continuation_type := Effect ?b
-    let mut continuation_type = pure_expression_type;
-    for (binder, expression) in bind_statements.iter().rev() {
-        continuation_type = if let Some(binder) = binder {
-            infer_do_bind(state, context, bind_type, continuation_type, *expression, *binder)?
+    // Statement 1 (b <- aff):
+    //   bind :: m a -> (a -> m b) -> m b
+    //   Instantiate: Aff Int -> (Int -> Aff ?b1) -> Aff ?b1
+    //   Continuation uses S[2], result must match S[1]
+    //   But S[1] = Effect ?b0, and result = Aff ?b1
+    //   CONFLICT at statement 1 (aff line) - correct attribution!
+    for (i, (binder, expression)) in bind_statements.iter().enumerate() {
+        let current_suffix = suffix_types[i];
+        let next_suffix = suffix_types[i + 1];
+
+        let Some(expression) = *expression else {
+            continue;
+        };
+
+        // Wrap both the bind/discard inference and the suffix unification
+        // with an error step so that errors are attributed to the expression.
+        if let Some(binder) = binder {
+            state.with_error_step(ErrorStep::InferringDoBind(expression), |state| {
+                let statement_type =
+                    infer_do_bind(state, context, bind_type, next_suffix, expression, *binder)?;
+                // Unify the statement result with the current suffix type.
+                // This is where conflicts are detected, blamed on current statement.
+                let _ = unification::subtype(state, context, statement_type, current_suffix)?;
+                Ok(())
+            })?;
         } else {
-            infer_do_discard(state, context, discard_type, continuation_type, *expression)?
+            state.with_error_step(ErrorStep::InferringDoDiscard(expression), |state| {
+                let statement_type =
+                    infer_do_discard(state, context, discard_type, next_suffix, expression)?;
+                let _ = unification::subtype(state, context, statement_type, current_suffix)?;
+                Ok(())
+            })?;
         };
     }
 
-    // Finally, check the pure expression against the pure_expression_type.
-    // At this point we're confident that the unification variables created
-    // for the do statement bindings have been solved to concrete types.
-    // By performing a check against a unification variable instead of
-    // performing inference on pure_expression early, we get better errors.
-    //
-    //   pure_expression   :: Effect Message
-    //   continuation_type := Effect ?b
-    //                     >>
-    //                     >> ?b := Message
-    let _ = check_expression(state, context, *pure_expression, pure_expression_type)?;
+    // The final suffix type is the type of the pure expression.
+    let pure_expression_suffix = *suffix_types.last().unwrap();
 
-    Ok(continuation_type)
+    // Check the pure expression against its suffix type.
+    // This constrains the final suffix and propagates back through unification.
+    let _ = check_expression(state, context, *pure_expression, pure_expression_suffix)?;
+
+    // The whole block's type is S[0].
+    Ok(suffix_types[0])
 }
 
 #[tracing::instrument(skip_all, name = "infer_ado")]
@@ -1190,26 +1192,6 @@ fn infer_do_bind<Q>(
     context: &CheckContext<Q>,
     bind_type: TypeId,
     continuation_type: TypeId,
-    expression: Option<lowering::ExpressionId>,
-    binder_type: TypeId,
-) -> QueryResult<TypeId>
-where
-    Q: ExternalQueries,
-{
-    let Some(expression) = expression else {
-        return Ok(context.prim.unknown);
-    };
-
-    state.with_error_step(ErrorStep::InferringDoBind(expression), |state| {
-        infer_do_bind_core(state, context, bind_type, continuation_type, expression, binder_type)
-    })
-}
-
-fn infer_do_bind_core<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    bind_type: TypeId,
-    continuation_type: TypeId,
     expression: lowering::ExpressionId,
     binder_type: TypeId,
 ) -> QueryResult<TypeId>
@@ -1251,25 +1233,6 @@ where
 
 #[tracing::instrument(skip_all, name = "infer_do_discard")]
 fn infer_do_discard<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    discard_type: TypeId,
-    continuation_type: TypeId,
-    expression: Option<lowering::ExpressionId>,
-) -> QueryResult<TypeId>
-where
-    Q: ExternalQueries,
-{
-    let Some(expression) = expression else {
-        return Ok(context.prim.unknown);
-    };
-
-    state.with_error_step(ErrorStep::InferringDoDiscard(expression), |state| {
-        infer_do_discard_core(state, context, discard_type, continuation_type, expression)
-    })
-}
-
-fn infer_do_discard_core<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     discard_type: TypeId,
