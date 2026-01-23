@@ -25,6 +25,7 @@ pub enum ErrorStep {
 
     InferringDoBind(lowering::DoStatementId),
     InferringDoDiscard(lowering::DoStatementId),
+    CheckingDoLet(lowering::DoStatementId),
 
     InferringAdoMap(lowering::DoStatementId),
     InferringAdoApply(lowering::DoStatementId),

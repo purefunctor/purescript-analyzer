@@ -622,10 +622,11 @@ where
     let bind_type = lookup_term_variable(state, context, bind)?;
     let discard_type = lookup_term_variable(state, context, discard)?;
 
-    // First, perform a forward pass where variable bindings are
-    // bound to unification variables and let bindings are checked.
-    // This is like inferring the lambda in a desugared representation.
-    let mut do_statements = vec![];
+    // First, perform a forward pass where variable bindings are bound
+    // to unification variables. Let bindings are not checked here to
+    // avoid premature solving of unification variables. Instead, they
+    // are checked inline during the statement checking loop.
+    let mut steps = vec![];
     for &statement_id in statement_ids.iter() {
         let Some(statement) = context.lowered.info.get_do_statement(statement_id) else {
             continue;
@@ -637,66 +638,46 @@ where
                 } else {
                     state.fresh_unification_type(context)
                 };
-                do_statements.push((statement_id, Some(binder_type), *expression));
+                steps.push(DoStep::Bind {
+                    statement: statement_id,
+                    binder_type,
+                    expression: *expression,
+                });
             }
             lowering::DoStatement::Let { statements } => {
-                check_let_chunks(state, context, statements)?;
+                steps.push(DoStep::Let { statement: statement_id, statements: &statements });
             }
             lowering::DoStatement::Discard { expression } => {
-                do_statements.push((statement_id, None, *expression));
+                steps.push(DoStep::Discard { statement: statement_id, expression: *expression });
             }
         }
     }
 
-    let [binding_statements @ .., (_, _, pure_expression)] = &do_statements[..] else {
-        state.insert_error(ErrorKind::EmptyDoBlock);
-        return Ok(context.prim.unknown);
-    };
+    let action_count = steps
+        .iter()
+        .filter(|step| matches!(step, DoStep::Bind { .. } | DoStep::Discard { .. }))
+        .count();
 
-    let Some(pure_expression) = pure_expression else {
+    let pure_expression = steps.iter().rev().find_map(|step| match step {
+        DoStep::Bind { expression, .. } | DoStep::Discard { expression, .. } => Some(*expression),
+        DoStep::Let { .. } => None,
+    });
+
+    let Some(Some(pure_expression)) = pure_expression else {
+        state.insert_error(ErrorKind::EmptyDoBlock);
         return Ok(context.prim.unknown);
     };
 
     // Create unification variables that each statement in the do expression
     // will unify against. The next section will get into more detail how
     // these are used. These unification variables are used to enable GHC-like
-    // left-to-right checking of ado-expression while maintaining the same
+    // left-to-right checking of do expressions while maintaining the same
     // semantics as rebindable `do` in PureScript.
-    let continuation_count = do_statements.len();
     let continuation_types = iter::repeat_with(|| state.fresh_unification_type(context))
-        .take(continuation_count)
+        .take(action_count)
         .collect_vec();
 
-    // Process statements left-to-right. Each statement:
-    // 1. Infers the expression type
-    // 2. Applies bind/discard with the next suffix type as continuation
-    // 3. Unifies the result with the current suffix type
-    //
-    // Example with Effect and Aff mixed:
-    //   do
-    //     a <- effect   -- Effect Int
-    //     b <- aff      -- Aff Int (conflict!)
-    //     pure { a, b }
-    //
-    // Statement 0 (a <- effect):
-    //   bind :: m a -> (a -> m b) -> m b
-    //   Instantiate: Effect Int -> (Int -> Effect ?b0) -> Effect ?b0
-    //   Continuation uses S[1], so S[1] ~ Effect ?b0
-    //   Result S[0] ~ Effect ?b0
-    //
-    // Statement 1 (b <- aff):
-    //   bind :: m a -> (a -> m b) -> m b
-    //   Instantiate: Aff Int -> (Int -> Aff ?b1) -> Aff ?b1
-    //   Continuation uses S[2], result must match S[1]
-    //   But S[1] = Effect ?b0, and result = Aff ?b1
-    //   CONFLICT at statement 1 (aff line) - correct attribution!
-    //
-
-    let statements = binding_statements.iter().copied();
-    let continuations = continuation_types.iter().tuple_windows::<(_, _)>();
-
-    // Iterate over each of the statements and a tuple window over the
-    // continuation types. Let's trace over the following example:
+    // Let's trace over the following example:
     //
     //   main = do
     //     a <- effect
@@ -758,32 +739,80 @@ where
     // This unification error is expected, but this left-to-right checking
     // approach significantly improves the reported error positions compared
     // to the previous approach that emulated desugared checking.
-    for ((statement, binder, expression), (&now_type, &next_type)) in statements.zip(continuations)
-    {
-        let Some(expression) = expression else {
-            continue;
-        };
-        if let Some(binder_type) = binder {
-            let arguments =
-                InferDoBind { statement, bind_type, now_type, next_type, expression, binder_type };
-            infer_do_bind(state, context, arguments)?;
-        } else {
-            let arguments =
-                InferDoDiscard { statement, discard_type, now_type, next_type, expression };
-            infer_do_discard(state, context, arguments)?;
+
+    let mut continuations = continuation_types.iter().tuple_windows::<(_, _)>();
+
+    for step in &steps {
+        match step {
+            DoStep::Let { statement, statements } => {
+                let error_step = ErrorStep::CheckingDoLet(*statement);
+                state.with_error_step(error_step, |state| {
+                    check_let_chunks(state, context, statements)
+                })?;
+            }
+            DoStep::Bind { statement, binder_type, expression } => {
+                let Some((&now_type, &next_type)) = continuations.next() else {
+                    continue;
+                };
+                let Some(expression) = *expression else {
+                    continue;
+                };
+                let arguments = InferDoBind {
+                    statement: *statement,
+                    bind_type,
+                    now_type,
+                    next_type,
+                    expression,
+                    binder_type: *binder_type,
+                };
+                infer_do_bind(state, context, arguments)?;
+            }
+            DoStep::Discard { statement, expression } => {
+                let Some((&now_type, &next_type)) = continuations.next() else {
+                    continue;
+                };
+                let Some(expression) = *expression else {
+                    continue;
+                };
+                let arguments = InferDoDiscard {
+                    statement: *statement,
+                    discard_type,
+                    now_type,
+                    next_type,
+                    expression,
+                };
+                infer_do_discard(state, context, arguments)?;
+            }
         }
     }
 
-    // The `first_suffix` is the overall type of the do expression, built
-    // iteratively and through solving unification variables. Meanwhile,
-    // the `final_suffix` is the expected type for the final expression.
-    let [first_suffix, .., final_suffix] = continuation_types[..] else {
-        unreachable!("invariant violated: insufficient suffix_types");
+    // The `first_continuation` is the overall type of the do expression,
+    // built iteratively and through solving unification variables. On
+    // the other hand, the `final_continuation` is the expected type for
+    // the final statement in the do expression.
+    let [first_continuation, .., final_continuation] = continuation_types[..] else {
+        unreachable!("invariant violated: insufficient continuation_types");
     };
 
-    check_expression(state, context, *pure_expression, final_suffix)?;
+    check_expression(state, context, pure_expression, final_continuation)?;
 
-    Ok(first_suffix)
+    Ok(first_continuation)
+}
+
+enum DoStep<'a> {
+    Bind {
+        statement: lowering::DoStatementId,
+        binder_type: TypeId,
+        expression: Option<lowering::ExpressionId>,
+    },
+    Discard {
+        statement: lowering::DoStatementId,
+        expression: Option<lowering::ExpressionId>,
+    },
+    Let {
+        statement: lowering::DoStatementId,
+        statements: &'a [lowering::LetBindingChunk],
+    },
 }
 
 struct AdoBindingStatement {

@@ -23,7 +23,7 @@ Unit = []
 
 Diagnostics
 error[CannotUnify]: Cannot unify 'String' with 'Int'
-  --> 18:3..18:14
+  --> 17:3..19:10
    |
-18 |   a <- thing1
-   |   ^~~~~~~~~~~
+17 |   let
+   |   ^~~
