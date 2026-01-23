@@ -26,8 +26,8 @@ pub enum ErrorStep {
     InferringDoBind(lowering::DoStatementId),
     InferringDoDiscard(lowering::DoStatementId),
 
-    InferringAdoMap(lowering::ExpressionId),
-    InferringAdoApply(lowering::ExpressionId),
+    InferringAdoMap(lowering::DoStatementId),
+    InferringAdoApply(lowering::DoStatementId),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
