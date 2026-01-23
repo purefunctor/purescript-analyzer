@@ -1,3 +1,5 @@
+use std::iter;
+
 use building_types::QueryResult;
 use indexing::TermItemId;
 use itertools::Itertools;
@@ -646,7 +648,7 @@ where
         }
     }
 
-    let [bind_statements @ .., (_, _, pure_expression)] = &do_statements[..] else {
+    let [binding_statements @ .., (_, _, pure_expression)] = &do_statements[..] else {
         state.insert_error(ErrorKind::EmptyDoBlock);
         return Ok(context.prim.unknown);
     };
@@ -655,20 +657,15 @@ where
         return Ok(context.prim.unknown);
     };
 
-    // Create suffix metavariables for each statement boundary. S[i] represents
-    // the type of the do-block suffix starting at statement i.
-    //
-    // For a do-block with statements [s0, s1, s2, final]:
-    //   S[0] = type of whole block (starting at s0)
-    //   S[1] = type of suffix starting at s1
-    //   S[2] = type of suffix starting at s2
-    //   S[3] = type of suffix starting at final
-    //
-    // Each bind/discard statement constrains its suffix type based on the
-    // next suffix type, allowing errors to be attributed to the first
-    // conflicting statement when processed left-to-right.
-    let suffix_types: Vec<_> =
-        (0..=bind_statements.len()).map(|_| state.fresh_unification_type(context)).collect();
+    // Create unification variables that each statement in the do expression
+    // will unify against. The next section will get into more detail how
+    // these are used. These unification variables are used to enable GHC-like
+    // left-to-right checking of ado-expression while maintaining the same
+    // semantics as rebindable `do` in PureScript.
+    let continuation_count = do_statements.len();
+    let continuation_types = iter::repeat_with(|| state.fresh_unification_type(context))
+        .take(continuation_count)
+        .collect_vec();
 
     // Process statements left-to-right. Each statement:
     // 1. Infers the expression type
@@ -693,44 +690,104 @@ where
     //   Continuation uses S[2], result must match S[1]
     //   But S[1] = Effect ?b0, and result = Aff ?b1
     //   CONFLICT at statement 1 (aff line) - correct attribution!
-    for (i, (statement, binder, expression)) in bind_statements.iter().enumerate() {
-        let current_suffix = suffix_types[i];
-        let next_suffix = suffix_types[i + 1];
+    //
 
-        let Some(expression) = *expression else {
+    let statements = binding_statements.iter().copied();
+    let continuations = continuation_types.iter().tuple_windows::<(_, _)>();
+
+    // Iterate over each of the statements and a tuple window over the
+    // continuation types. Let's trace over the following example:
+    //
+    //   main = do
+    //     a <- effect
+    //     b <- aff
+    //     pure { a, b }
+    //
+    // For the first statement, we know the following information. We
+    // instantiate the `bind` function to prepare it for application.
+    // The first argument is easy, it's just the expression_type; the
+    // second argument involves synthesising a function type using the
+    // `binder_type` and the `next` continuation. The application of
+    // these arguments creates important unifications, listed below.
+    // Additionally, we also create a unification to unify the `now`
+    // type with the result of the `bind` application.
+    //
+    //   expression_type := Effect Int
+    //   binder_type     := ?a
+    //   now             := ?0
+    //   next            := ?1
+    //   lambda_type     := ?a -> ?1
+    //
+    //   bind_type       := m a -> (a -> m b) -> m b
+    //                   |
+    //                   := apply(expression_type)
+    //                   := (Int -> Effect ?r1) -> Effect ?r1
+    //                   |
+    //                   := apply(lambda_type)
+    //                   := Effect ?r1
+    //                   |
+    //                   >> ?a := Int
+    //                   >> ?1 := Effect ?r1
+    //                   >> ?0 := Effect ?r1
+    //
+    // For the second statement, we know the following information.
+    // The `now` type was already solved by the previous statement,
+    //
+    //   expression_type := Aff Int
+    //   binder_type     := ?b
+    //   now             := ?1 := Effect ?r1
+    //   next            := ?2
+    //   lambda_type     := ?b -> ?2
+    //
+    //   bind_type       := m a -> (a -> m b) -> m b
+    //                   |
+    //                   := apply(expression_type)
+    //                   := (Int -> Aff ?r2) -> Aff ?r2
+    //                   |
+    //                   := apply(lambda_type)
+    //                   := Aff ?r2
+    //                   |
+    //                   >> ?b := Int
+    //                   >> ?2 := Aff ?r2
+    //                   |
+    //                   >> ?1         ~ Aff ?r2
+    //                   >> Effect ?r1 ~ Aff ?r2
+    //                   |
+    //                   >> Oh no!
+    //
+    // This unification error is expected, but this left-to-right checking
+    // approach significantly improves the reported error positions compared
+    // to the previous approach that emulated desugared checking.
+    for ((statement, binder, expression), (&now_type, &next_type)) in statements.zip(continuations)
+    {
+        let Some(expression) = expression else {
             continue;
         };
-
-        // Wrap both the bind/discard inference and the suffix unification
-        // with an error step so that errors are attributed to the full statement.
-        if let Some(binder) = binder {
-            state.with_error_step(ErrorStep::InferringDoBind(*statement), |state| {
-                let statement_type =
-                    infer_do_bind(state, context, bind_type, next_suffix, expression, *binder)?;
-                // Unify the statement result with the current suffix type.
-                // This is where conflicts are detected, blamed on current statement.
-                let _ = unification::subtype(state, context, statement_type, current_suffix)?;
-                Ok(())
-            })?;
+        if let Some(binder_type) = binder {
+            infer_do_bind(
+                state,
+                context,
+                InferDoBind { statement, bind_type, now_type, next_type, expression, binder_type },
+            )?;
         } else {
-            state.with_error_step(ErrorStep::InferringDoDiscard(*statement), |state| {
-                let statement_type =
-                    infer_do_discard(state, context, discard_type, next_suffix, expression)?;
-                let _ = unification::subtype(state, context, statement_type, current_suffix)?;
-                Ok(())
-            })?;
-        };
+            infer_do_discard(
+                state,
+                context,
+                InferDoDiscard { statement, discard_type, now_type, next_type, expression },
+            )?;
+        }
     }
 
-    // The final suffix type is the type of the pure expression.
-    let pure_expression_suffix = *suffix_types.last().unwrap();
+    // The `first_suffix` is the overall type of the do expression, built
+    // iteratively and through solving unification variables. Meanwhile,
+    // the `final_suffix` is the expected type for the final expression.
+    let [first_suffix, .., final_suffix] = continuation_types[..] else {
+        unreachable!("invariant violated: insufficient suffix_types");
+    };
 
-    // Check the pure expression against its suffix type.
-    // This constrains the final suffix and propagates back through unification.
-    let _ = check_expression(state, context, *pure_expression, pure_expression_suffix)?;
+    check_expression(state, context, *pure_expression, final_suffix)?;
 
-    // The whole block's type is S[0].
-    Ok(suffix_types[0])
+    Ok(first_suffix)
 }
 
 #[tracing::instrument(skip_all, name = "infer_ado")]
@@ -795,7 +852,6 @@ where
         };
     };
 
-    //
     // Create a fresh unification variable for the in_expression.
     // Inferring expression directly may solve the unification variables
     // introduced in the first pass. This is undesirable, because the
@@ -1192,8 +1248,35 @@ where
     )
 }
 
+struct InferDoBind {
+    statement: lowering::DoStatementId,
+    bind_type: TypeId,
+    now_type: TypeId,
+    next_type: TypeId,
+    expression: lowering::ExpressionId,
+    binder_type: TypeId,
+}
+
 #[tracing::instrument(skip_all, name = "infer_do_bind")]
 fn infer_do_bind<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    arguments: InferDoBind,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    let InferDoBind { statement, bind_type, now_type, next_type, expression, binder_type } =
+        arguments;
+    state.with_error_step(ErrorStep::InferringDoBind(statement), move |state| {
+        let statement_type =
+            infer_do_bind_core(state, context, bind_type, next_type, expression, binder_type)?;
+        let _ = unification::subtype(state, context, statement_type, now_type)?;
+        Ok(())
+    })
+}
+
+fn infer_do_bind_core<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     bind_type: TypeId,
@@ -1237,8 +1320,33 @@ where
     )
 }
 
+struct InferDoDiscard {
+    statement: lowering::DoStatementId,
+    discard_type: TypeId,
+    now_type: TypeId,
+    next_type: TypeId,
+    expression: lowering::ExpressionId,
+}
+
 #[tracing::instrument(skip_all, name = "infer_do_discard")]
 fn infer_do_discard<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    arguments: InferDoDiscard,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    let InferDoDiscard { statement, discard_type, now_type, next_type, expression } = arguments;
+    state.with_error_step(ErrorStep::InferringDoDiscard(statement), move |state| {
+        let statement_type =
+            infer_do_discard_core(state, context, discard_type, next_type, expression)?;
+        let _ = unification::subtype(state, context, statement_type, now_type)?;
+        Ok(())
+    })
+}
+
+fn infer_do_discard_core<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     discard_type: TypeId,
