@@ -1,0 +1,47 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+unit :: Unit
+pure :: forall (a :: Type). (a :: Type) -> Effect (a :: Type)
+map ::
+  forall (a :: Type) (b :: Type).
+    ((a :: Type) -> (b :: Type)) -> Effect (a :: Type) -> Effect (b :: Type)
+apply ::
+  forall (a :: Type) (b :: Type).
+    Effect ((a :: Type) -> (b :: Type)) -> Effect (a :: Type) -> Effect (b :: Type)
+add :: forall (a :: Type). Semiring (a :: Type) => (a :: Type) -> (a :: Type) -> (a :: Type)
+addImpl :: Int -> Int -> Int
++ :: forall (a :: Type). Semiring (a :: Type) => (a :: Type) -> (a :: Type) -> (a :: Type)
+thing1 :: Effect String
+test :: Effect Unit
+
+Types
+Effect :: Type -> Type
+Unit :: Type
+Semiring :: Type -> Constraint
+
+Roles
+Effect = [Nominal]
+Unit = []
+
+Classes
+class Semiring (&0 :: Type)
+
+Instances
+instance Semiring (Int :: Type)
+  chain: 0
+
+Diagnostics
+error[CannotUnify]: Cannot unify 'String' with 'Int'
+  --> 26:3..26:14
+   |
+26 |   a <- thing1
+   |   ^~~~~~~~~~~
+error[CannotUnify]: Cannot unify 'Effect String' with 'Effect Int'
+  --> 26:3..26:14
+   |
+26 |   a <- thing1
+   |   ^~~~~~~~~~~

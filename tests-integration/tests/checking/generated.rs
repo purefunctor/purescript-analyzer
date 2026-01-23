@@ -469,3 +469,7 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_220_do_let_premature_solve_main() { run_test("220_do_let_premature_solve", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_221_do_let_annotation_solve_main() { run_test("221_do_let_annotation_solve", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_222_ado_let_premature_solve_main() { run_test("222_ado_let_premature_solve", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_223_ado_let_annotation_solve_main() { run_test("223_ado_let_annotation_solve", "Main"); }
