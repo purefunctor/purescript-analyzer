@@ -713,6 +713,8 @@ where
     //
     // For the second statement, we know the following information.
     // The `now` type was already solved by the previous statement,
+    // and an error should surface once we check the inferred type
+    // of the statement against it.
     //
     //   expression_type := Aff Int
     //   binder_type     := ?b
