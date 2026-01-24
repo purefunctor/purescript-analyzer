@@ -14,3 +14,8 @@ error[PropertyIsMissing]: Missing required properties: b
   |
 3 | test :: { a :: Int, b :: Int }
   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[AdditionalProperty]: Additional properties not allowed: c
+  --> 3:1..3:31
+  |
+3 | test :: { a :: Int, b :: Int }
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -380,17 +380,23 @@ where
         return Ok(false);
     }
 
+    let mut failed = false;
+
     if t1_row.tail.is_none() && !right_only.is_empty() {
         let labels = right_only.iter().map(|field| field.label.clone());
         let labels = Arc::from_iter(labels);
         state.insert_error(ErrorKind::PropertyIsMissing { labels });
-        return Ok(false);
+        failed = true;
     }
 
     if t2_row.tail.is_none() && !left_only.is_empty() {
         let labels = left_only.iter().map(|field| field.label.clone());
         let labels = Arc::from_iter(labels);
         state.insert_error(ErrorKind::AdditionalProperty { labels });
+        failed = true;
+    }
+
+    if failed {
         return Ok(false);
     }
 
