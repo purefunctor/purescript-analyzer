@@ -131,6 +131,7 @@ pub fn infer_synonym_constructor<Q: ExternalQueries>(
     }
 
     if is_recursive_synonym(context, file_id, type_id)? {
+        state.insert_error(ErrorKind::RecursiveSynonymExpansion { file_id, item_id: type_id });
         let synonym_type = state.storage.intern(Type::Constructor(file_id, type_id));
         return Ok((synonym_type, kind));
     }

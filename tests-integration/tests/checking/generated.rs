@@ -489,3 +489,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_230_record_expression_missing_and_additional_main() { run_test("230_record_expression_missing_and_additional", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_231_record_expression_nested_additional_main() { run_test("231_record_expression_nested_additional", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_232_instance_head_nil_kind_application_main() { run_test("232_instance_head_nil_kind_application", "Main"); }

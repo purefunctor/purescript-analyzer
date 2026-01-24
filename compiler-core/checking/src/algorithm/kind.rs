@@ -10,6 +10,7 @@ use lowering::TypeVariableBindingId;
 use smol_str::SmolStr;
 
 use crate::ExternalQueries;
+use crate::algorithm::safety::safe_loop;
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::{substitute, transfer, unification};
 use crate::core::{ForallBinder, RowField, RowType, Type, TypeId, Variable};
@@ -522,26 +523,81 @@ where
     Ok(type_id)
 }
 
+/// Instantiates kind-level foralls using [`Type::KindApplication`].
+///
+/// If the inferred kind is polymorphic, and the inferred kind is monomorphic,
+/// this function adds the necessary kind applications to the inferred type.
+/// For example, when checking `RowList.Nil` against `RowList Type`:
+///
+/// ```text
+/// Nil :: forall k. RowList k.
+///
+/// check(Nil, RowList Type)
+///   infer(Nil) -> forall k. RowList k
+///   instantiate(Nil) -> (Nil @?t, RowList ?t)
+///
+/// subtype(RowList ?t, RowList Type)
+///   solve(?t, Type)
+///
+/// t := Nil @Type
+/// k := RowList Type
+/// ```
+fn instantiate_kind_applications(
+    state: &mut CheckState,
+    mut t: TypeId,
+    mut k: TypeId,
+    expected_kind: TypeId,
+) -> (TypeId, TypeId) {
+    let expected_kind = state.normalize_type(expected_kind);
+
+    if matches!(state.storage[expected_kind], Type::Forall(_, _)) {
+        return (t, k);
+    }
+
+    safe_loop! {
+        k = state.normalize_type(k);
+
+        let Type::Forall(ref binder, inner_kind) = state.storage[k] else {
+            break;
+        };
+
+        let binder_level = binder.level;
+        let binder_kind = state.normalize_type(binder.kind);
+
+        let argument_type = state.fresh_unification_kinded(binder_kind);
+        t = state.storage.intern(Type::KindApplication(t, argument_type));
+        k = substitute::SubstituteBound::on(state, binder_level, argument_type, inner_kind);
+    }
+
+    (t, k)
+}
+
 #[tracing::instrument(skip_all, name = "check_surface_kind")]
 pub fn check_surface_kind<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     id: lowering::TypeId,
-    kind: TypeId,
+    expected_kind: TypeId,
 ) -> QueryResult<(TypeId, TypeId)>
 where
     Q: ExternalQueries,
 {
-    crate::trace_fields!(state, context, { expected_kind = kind });
+    crate::trace_fields!(state, context, { expected_kind = expected_kind });
 
     state.with_error_step(ErrorStep::CheckingKind(id), |state| {
         let (inferred_type, inferred_kind) = infer_surface_kind_core(state, context, id)?;
-        let _ = unification::subtype(state, context, inferred_kind, kind)?;
+
+        let (inferred_type, inferred_kind) =
+            instantiate_kind_applications(state, inferred_type, inferred_kind, expected_kind);
+
+        let _ = unification::subtype(state, context, inferred_kind, expected_kind)?;
+
         crate::trace_fields!(state, context, {
             inferred_type = inferred_type,
             inferred_kind = inferred_kind,
-            expected_kind = kind
+            expected_kind = expected_kind
         });
+
         Ok((inferred_type, inferred_kind))
     })
 }

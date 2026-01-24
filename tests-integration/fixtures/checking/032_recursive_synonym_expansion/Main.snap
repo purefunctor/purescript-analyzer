@@ -4,9 +4,9 @@ assertion_line: 28
 expression: report
 ---
 Terms
-testF :: F -> F
-testG :: G -> G
-testH :: H -> H
+testF :: F @Type -> F @Type
+testG :: G @Type -> G @Type
+testH :: H @Type -> H @Type
 testValid :: Int -> Int
 
 Types
@@ -39,47 +39,32 @@ Valid = Int
 
 Diagnostics
 error[RecursiveSynonymExpansion]: Recursive type synonym expansion
-  --> 8:1..8:16
+  --> 8:10..8:11
   |
 8 | testF :: F -> F
-  | ^~~~~~~~~~~~~~~
+  |          ^
 error[RecursiveSynonymExpansion]: Recursive type synonym expansion
-  --> 8:1..8:16
+  --> 8:15..8:16
   |
 8 | testF :: F -> F
-  | ^~~~~~~~~~~~~~~
+  |               ^
 error[RecursiveSynonymExpansion]: Recursive type synonym expansion
-  --> 8:1..8:16
-  |
-8 | testF :: F -> F
-  | ^~~~~~~~~~~~~~~
-error[RecursiveSynonymExpansion]: Recursive type synonym expansion
-  --> 11:1..11:16
+  --> 11:10..11:11
    |
 11 | testG :: G -> G
-   | ^~~~~~~~~~~~~~~
+   |          ^
 error[RecursiveSynonymExpansion]: Recursive type synonym expansion
-  --> 11:1..11:16
+  --> 11:15..11:16
    |
 11 | testG :: G -> G
-   | ^~~~~~~~~~~~~~~
+   |               ^
 error[RecursiveSynonymExpansion]: Recursive type synonym expansion
-  --> 11:1..11:16
-   |
-11 | testG :: G -> G
-   | ^~~~~~~~~~~~~~~
-error[RecursiveSynonymExpansion]: Recursive type synonym expansion
-  --> 14:1..14:16
+  --> 14:10..14:11
    |
 14 | testH :: H -> H
-   | ^~~~~~~~~~~~~~~
+   |          ^
 error[RecursiveSynonymExpansion]: Recursive type synonym expansion
-  --> 14:1..14:16
+  --> 14:15..14:16
    |
 14 | testH :: H -> H
-   | ^~~~~~~~~~~~~~~
-error[RecursiveSynonymExpansion]: Recursive type synonym expansion
-  --> 14:1..14:16
-   |
-14 | testH :: H -> H
-   | ^~~~~~~~~~~~~~~
+   |               ^
