@@ -479,3 +479,13 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_225_record_binder_additional_property_main() { run_test("225_record_binder_additional_property", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_226_record_binder_additional_property_nested_main() { run_test("226_record_binder_additional_property_nested", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_227_record_expression_exact_match_main() { run_test("227_record_expression_exact_match", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_228_record_expression_missing_field_main() { run_test("228_record_expression_missing_field", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_229_record_expression_additional_field_main() { run_test("229_record_expression_additional_field", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_230_record_expression_missing_and_additional_main() { run_test("230_record_expression_missing_and_additional", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_231_record_expression_nested_additional_main() { run_test("231_record_expression_nested_additional", "Main"); }
