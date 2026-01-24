@@ -475,3 +475,7 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_223_ado_let_annotation_solve_main() { run_test("223_ado_let_annotation_solve", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_224_record_shrinking_main() { run_test("224_record_shrinking", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_225_record_binder_additional_property_main() { run_test("225_record_binder_additional_property", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_226_record_binder_additional_property_nested_main() { run_test("226_record_binder_additional_property_nested", "Main"); }

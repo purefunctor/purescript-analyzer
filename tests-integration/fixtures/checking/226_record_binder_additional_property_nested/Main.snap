@@ -1,0 +1,16 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+test :: { outer :: { x :: Int } } -> Int
+
+Types
+
+Diagnostics
+error[AdditionalProperty]: Additional properties not allowed: y
+  --> 4:6..4:25
+  |
+4 | test { outer: { x, y } } = x
+  |      ^~~~~~~~~~~~~~~~~~~

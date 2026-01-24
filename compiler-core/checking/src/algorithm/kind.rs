@@ -234,11 +234,8 @@ where
         }
 
         lowering::TypeKind::Record { items, tail } => {
-            let expected_kind =
-                state.storage.intern(Type::Application(context.prim.row, context.prim.t));
-
             let (row_t, row_k) = infer_row_kind(state, context, items, tail)?;
-            let _ = unification::subtype(state, context, row_k, expected_kind)?;
+            let _ = unification::subtype(state, context, row_k, context.prim.row_type)?;
 
             let t = state.storage.intern(Type::Application(context.prim.record, row_t));
             let k = context.prim.t;

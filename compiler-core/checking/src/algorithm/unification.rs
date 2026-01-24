@@ -92,6 +92,23 @@ where
             subtype(state, context, inner, t2)
         }
 
+        (
+            Type::Application(t1_function, t1_argument),
+            Type::Application(t2_function, t2_argument),
+        ) if t1_function == context.prim.record && t2_function == context.prim.record => {
+            let t1_argument = synonym::normalize_expand_type(state, context, t1_argument)?;
+            let t2_argument = synonym::normalize_expand_type(state, context, t2_argument)?;
+
+            let t1_core = state.storage[t1_argument].clone();
+            let t2_core = state.storage[t2_argument].clone();
+
+            if let (Type::Row(t1_row), Type::Row(t2_row)) = (t1_core, t2_core) {
+                subtype_record_rows(state, context, &t1_row, &t2_row)
+            } else {
+                unify(state, context, t1, t2)
+            }
+        }
+
         (_, _) => unify(state, context, t1, t2),
     }
 }
@@ -333,6 +350,53 @@ pub fn promote_type(
     }
 }
 
+/// Checks that `t1_row` is a subtype of `t2_row`, generated errors for
+/// additional or missing fields. This is used for record subtyping.
+///
+/// * This algorithm partitions row fields into common, t1-only, and t2-only fields.
+/// * If t1_row is closed and t2_row is non-empty, [`ErrorKind::PropertyIsMissing`]
+/// * If t2_row is closed and t1_row is non-empty, [`ErrorKind::AdditionalProperty`]
+#[tracing::instrument(skip_all, name = "subtype_rows")]
+fn subtype_record_rows<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    t1_row: &RowType,
+    t2_row: &RowType,
+) -> QueryResult<bool>
+where
+    Q: ExternalQueries,
+{
+    let (left_only, right_only, ok) = partition_row_fields_with(
+        state,
+        context,
+        t1_row,
+        t2_row,
+        |state, context, left, right| {
+            Ok(subtype(state, context, left, right)? && subtype(state, context, right, left)?)
+        },
+    )?;
+
+    if !ok {
+        return Ok(false);
+    }
+
+    if t1_row.tail.is_none() && !right_only.is_empty() {
+        let labels = right_only.iter().map(|field| field.label.clone());
+        let labels = Arc::from_iter(labels);
+        state.insert_error(ErrorKind::PropertyIsMissing { labels });
+        return Ok(false);
+    }
+
+    if t2_row.tail.is_none() && !left_only.is_empty() {
+        let labels = left_only.iter().map(|field| field.label.clone());
+        let labels = Arc::from_iter(labels);
+        state.insert_error(ErrorKind::AdditionalProperty { labels });
+        return Ok(false);
+    }
+
+    unify_row_tails(state, context, t1_row.tail, t2_row.tail, left_only, right_only)
+}
+
 fn unify_rows<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -342,55 +406,25 @@ fn unify_rows<Q>(
 where
     Q: ExternalQueries,
 {
-    let (extras_left, extras_right, ok) = partition_row_fields(state, context, &t1_row, &t2_row)?;
+    let (left_only, right_only, ok) = partition_row_fields(state, context, &t1_row, &t2_row)?;
 
     if !ok {
         return Ok(false);
     }
 
-    match (t1_row.tail, t2_row.tail) {
-        (None, None) => Ok(extras_left.is_empty() && extras_right.is_empty()),
-
-        (Some(t1_tail), None) => {
-            if !extras_left.is_empty() {
-                return Ok(false);
-            }
-            let row = Type::Row(RowType { fields: Arc::from(extras_right), tail: None });
-            let row_id = state.storage.intern(row);
-            unify(state, context, t1_tail, row_id)
-        }
-
-        (None, Some(t2_tail)) => {
-            if !extras_right.is_empty() {
-                return Ok(false);
-            }
-            let row = Type::Row(RowType { fields: Arc::from(extras_left), tail: None });
-            let row_id = state.storage.intern(row);
-            unify(state, context, t2_tail, row_id)
-        }
-
-        (Some(t1_tail), Some(t2_tail)) => {
-            if extras_left.is_empty() && extras_right.is_empty() {
-                return unify(state, context, t1_tail, t2_tail);
-            }
-
-            let row_type_kind =
-                state.storage.intern(Type::Application(context.prim.row, context.prim.t));
-
-            let unification = state.fresh_unification_kinded(row_type_kind);
-
-            let left_tail_row =
-                Type::Row(RowType { fields: Arc::from(extras_right), tail: Some(unification) });
-            let left_tail_row_id = state.storage.intern(left_tail_row);
-
-            let right_tail_row =
-                Type::Row(RowType { fields: Arc::from(extras_left), tail: Some(unification) });
-            let right_tail_row_id = state.storage.intern(right_tail_row);
-
-            Ok(unify(state, context, t1_tail, left_tail_row_id)?
-                && unify(state, context, t2_tail, right_tail_row_id)?)
-        }
+    if t1_row.tail.is_none() && t2_row.tail.is_none() {
+        return Ok(left_only.is_empty() && right_only.is_empty());
     }
+
+    if t2_row.tail.is_none() && !left_only.is_empty() {
+        return Ok(false);
+    }
+
+    if t1_row.tail.is_none() && !right_only.is_empty() {
+        return Ok(false);
+    }
+
+    unify_row_tails(state, context, t1_row.tail, t2_row.tail, left_only, right_only)
 }
 
 pub fn partition_row_fields<Q>(
@@ -402,6 +436,20 @@ pub fn partition_row_fields<Q>(
 where
     Q: ExternalQueries,
 {
+    partition_row_fields_with(state, context, t1_row, t2_row, unify)
+}
+
+fn partition_row_fields_with<Q, F>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    t1_row: &RowType,
+    t2_row: &RowType,
+    mut field_check: F,
+) -> QueryResult<(Vec<RowField>, Vec<RowField>, bool)>
+where
+    Q: ExternalQueries,
+    F: FnMut(&mut CheckState, &CheckContext<Q>, TypeId, TypeId) -> QueryResult<bool>,
+{
     let mut extras_left = vec![];
     let mut extras_right = vec![];
     let mut ok = true;
@@ -412,7 +460,7 @@ where
     for field in t1_fields.merge_join_by(t2_fields, |left, right| left.label.cmp(&right.label)) {
         match field {
             EitherOrBoth::Both(left, right) => {
-                if !unify(state, context, left.id, right.id)? {
+                if !field_check(state, context, left.id, right.id)? {
                     ok = false;
                 }
             }
@@ -428,4 +476,50 @@ where
     }
 
     Ok((extras_left, extras_right, ok))
+}
+
+fn unify_row_tails<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    t1_tail: Option<TypeId>,
+    t2_tail: Option<TypeId>,
+    extras_left: Vec<RowField>,
+    extras_right: Vec<RowField>,
+) -> QueryResult<bool>
+where
+    Q: ExternalQueries,
+{
+    match (t1_tail, t2_tail) {
+        (None, None) => Ok(true),
+
+        (Some(t1_tail), None) => {
+            let row = Type::Row(RowType { fields: Arc::from(extras_right), tail: None });
+            let row_id = state.storage.intern(row);
+            unify(state, context, t1_tail, row_id)
+        }
+
+        (None, Some(t2_tail)) => {
+            let row = Type::Row(RowType { fields: Arc::from(extras_left), tail: None });
+            let row_id = state.storage.intern(row);
+            unify(state, context, t2_tail, row_id)
+        }
+
+        (Some(t1_tail), Some(t2_tail)) => {
+            if extras_left.is_empty() && extras_right.is_empty() {
+                return unify(state, context, t1_tail, t2_tail);
+            }
+
+            let unification = state.fresh_unification_kinded(context.prim.row_type);
+            let tail = Some(unification);
+
+            let left_tail_row = Type::Row(RowType { fields: Arc::from(extras_right), tail });
+            let left_tail_row_id = state.storage.intern(left_tail_row);
+
+            let right_tail_row = Type::Row(RowType { fields: Arc::from(extras_left), tail });
+            let right_tail_row_id = state.storage.intern(right_tail_row);
+
+            Ok(unify(state, context, t1_tail, left_tail_row_id)?
+                && unify(state, context, t2_tail, right_tail_row_id)?)
+        }
+    }
 }

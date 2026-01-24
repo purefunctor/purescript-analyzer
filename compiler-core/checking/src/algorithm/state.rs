@@ -467,6 +467,7 @@ pub struct PrimCore {
     pub constraint: TypeId,
     pub symbol: TypeId,
     pub row: TypeId,
+    pub row_type: TypeId,
     pub unknown: TypeId,
 }
 
@@ -477,6 +478,8 @@ impl PrimCore {
 
         let t = lookup.type_constructor("Type");
         let type_to_type = lookup.intern(Type::Function(t, t));
+        let row = lookup.type_constructor("Row");
+        let row_type = lookup.intern(Type::Application(row, t));
 
         Ok(PrimCore {
             t,
@@ -492,7 +495,8 @@ impl PrimCore {
             partial: lookup.type_constructor("Partial"),
             constraint: lookup.type_constructor("Constraint"),
             symbol: lookup.type_constructor("Symbol"),
-            row: lookup.type_constructor("Row"),
+            row,
+            row_type,
             unknown: lookup.intern(Type::Unknown),
         })
     }

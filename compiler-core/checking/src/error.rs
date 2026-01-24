@@ -32,7 +32,7 @@ pub enum ErrorStep {
     CheckingAdoLet(lowering::DoStatementId),
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ErrorKind {
     AmbiguousConstraint {
         constraint: TypeErrorMessageId,
@@ -113,6 +113,12 @@ pub enum ErrorKind {
     },
     CustomFailure {
         message_id: TypeErrorMessageId,
+    },
+    PropertyIsMissing {
+        labels: Arc<[SmolStr]>,
+    },
+    AdditionalProperty {
+        labels: Arc<[SmolStr]>,
     },
 }
 

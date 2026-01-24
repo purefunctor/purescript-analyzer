@@ -286,6 +286,22 @@ impl ToDiagnostics for CheckError {
                 let msg = lookup_message(*message_id);
                 (Severity::Error, "CustomFailure", msg.to_string())
             }
+            ErrorKind::PropertyIsMissing { labels } => {
+                let labels_str = labels.join(", ");
+                (
+                    Severity::Error,
+                    "PropertyIsMissing",
+                    format!("Missing required properties: {labels_str}"),
+                )
+            }
+            ErrorKind::AdditionalProperty { labels } => {
+                let labels_str = labels.join(", ");
+                (
+                    Severity::Error,
+                    "AdditionalProperty",
+                    format!("Additional properties not allowed: {labels_str}"),
+                )
+            }
         };
 
         vec![Diagnostic {

@@ -1090,10 +1090,7 @@ where
 
         let field_type = state.fresh_unification_type(context);
 
-        let row_type_kind =
-            state.storage.intern(Type::Application(context.prim.row, context.prim.t));
-
-        let tail_type = state.fresh_unification_kinded(row_type_kind);
+        let tail_type = state.fresh_unification_kinded(context.prim.row_type);
 
         let row_type =
             RowType::from_unsorted(vec![RowField { label, id: field_type }], Some(tail_type));
@@ -1179,8 +1176,7 @@ where
         }
     }
 
-    let row_type_kind = state.storage.intern(Type::Application(context.prim.row, context.prim.t));
-    let tail = state.fresh_unification_kinded(row_type_kind);
+    let tail = state.fresh_unification_kinded(context.prim.row_type);
 
     Ok((input_fields, output_fields, tail))
 }
