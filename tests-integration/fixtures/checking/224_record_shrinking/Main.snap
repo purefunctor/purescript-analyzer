@@ -1,0 +1,21 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+test :: { a :: Int, b :: Int } -> Int
+
+Types
+
+Diagnostics
+error[CannotUnify]: Cannot unify '( a :: Int )' with '( a :: Int, b :: Int )'
+  --> 4:6..4:11
+  |
+4 | test { a } = a
+  |      ^~~~~
+error[CannotUnify]: Cannot unify '{ a :: Int }' with '{ a :: Int, b :: Int }'
+  --> 4:6..4:11
+  |
+4 | test { a } = a
+  |      ^~~~~
