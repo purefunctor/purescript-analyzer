@@ -27,7 +27,7 @@
     "format": "prettier -w src/**/*.ts tsconfig.json package.json esbuild.js"
   },
   "dependencies": {
-    "glob": "^11.0.0",
+    "glob": "^11.1.0",
     "vscode-languageclient": "^9.0.1"
   },
   "devDependencies": {
