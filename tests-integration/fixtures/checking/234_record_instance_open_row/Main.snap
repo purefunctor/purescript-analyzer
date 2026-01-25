@@ -1,0 +1,26 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+clone :: forall (a :: Type) (b :: Type). Clone (a :: Type) (b :: Type) => (a :: Type) -> (b :: Type)
+clonePerson :: { age :: Int, name :: String } -> { age :: Int, name :: String }
+cloneEmpty :: {} -> {}
+cloneSingle :: { x :: Int } -> { x :: Int }
+nest :: forall (a :: Type) (b :: Type). Nest (a :: Type) (b :: Type) => (a :: Type) -> (b :: Type)
+testNest :: { a :: String } -> { inner :: { a :: String }, outer :: Int }
+
+Types
+Clone :: Type -> Type -> Constraint
+Nest :: Type -> Type -> Constraint
+
+Classes
+class Clone (&0 :: Type) (&1 :: Type)
+class Nest (&0 :: Type) (&1 :: Type)
+
+Instances
+instance Clone ({ | (&0 :: Row Type) } :: Type) ({ | (&0 :: Row Type) } :: Type)
+  chain: 0
+instance Nest ({ | (&0 :: Row Type) } :: Type) ({ inner :: { | (&0 :: Row Type) }, outer :: Int } :: Type)
+  chain: 0

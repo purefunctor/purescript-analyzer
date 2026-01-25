@@ -168,6 +168,14 @@ where
 
         quantify::quantify_instance(state, &mut instance);
 
+        constraint::validate_instance_rows(
+            state,
+            context,
+            class_file,
+            class_item,
+            &instance.arguments,
+        )?;
+
         let arguments = instance.arguments.iter().map(|&(t, k)| {
             let t = transfer::globalize(state, context, t);
             let k = transfer::globalize(state, context, k);

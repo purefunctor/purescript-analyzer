@@ -124,6 +124,14 @@ pub fn register_derived_instance<Q>(
 
     quantify::quantify_instance(state, &mut instance);
 
+    let _ = constraint::validate_instance_rows(
+        state,
+        context,
+        class_file,
+        class_id,
+        &instance.arguments,
+    );
+
     for (t, k) in instance.arguments.iter_mut() {
         *t = transfer::globalize(state, context, *t);
         *k = transfer::globalize(state, context, *k);

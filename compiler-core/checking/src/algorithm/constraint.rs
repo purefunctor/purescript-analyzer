@@ -5,7 +5,7 @@ mod compiler_solved;
 mod functional_dependency;
 
 use compiler_solved::*;
-use functional_dependency::Fd;
+use functional_dependency::{Fd, get_all_determined};
 
 use std::collections::{HashSet, VecDeque};
 use std::iter;
@@ -19,9 +19,11 @@ use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::algorithm::fold::{FoldAction, TypeFold, fold_type};
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::visit::{CollectFileReferences, TypeVisitor, VisitAction, visit_type};
+use crate::algorithm::visit::{
+    CollectFileReferences, HasLabeledRole, TypeVisitor, VisitAction, visit_type,
+};
 use crate::algorithm::{toolkit, transfer, unification};
-use crate::core::{Class, Instance, InstanceKind, Variable, debruijn};
+use crate::core::{self, Class, Instance, InstanceKind, Variable, debruijn};
 use crate::{CheckedModule, ExternalQueries, Type, TypeId};
 
 #[tracing::instrument(skip_all, name = "solve_constraints")]
@@ -461,13 +463,17 @@ enum MatchInstance {
 /// We use the [`can_unify`] function to speculate if these two types can be
 /// unified, or if unifying them solves unification variables, encoded by the
 /// [`CanUnify::Unify`] variant.
-fn match_type(
+fn match_type<Q>(
     state: &mut CheckState,
+    context: &CheckContext<Q>,
     bindings: &mut FxHashMap<debruijn::Level, TypeId>,
     equalities: &mut Vec<(TypeId, TypeId)>,
     wanted: TypeId,
     given: TypeId,
-) -> MatchType {
+) -> MatchType
+where
+    Q: ExternalQueries,
+{
     let wanted = state.normalize_type(wanted);
     let given = state.normalize_type(given);
 
@@ -497,30 +503,36 @@ fn match_type(
 
         (Type::Unification(_), _) => MatchType::Stuck,
 
+        (Type::Row(wanted_row), Type::Row(given_row)) => {
+            let wanted_row = wanted_row.clone();
+            let given_row = given_row.clone();
+            match_row_type(state, context, bindings, equalities, wanted_row, given_row)
+        }
+
         (
             &Type::Application(w_function, w_argument),
             &Type::Application(g_function, g_argument),
-        ) => match_type(state, bindings, equalities, w_function, g_function)
-            .and_also(|| match_type(state, bindings, equalities, w_argument, g_argument)),
+        ) => match_type(state, context, bindings, equalities, w_function, g_function)
+            .and_also(|| match_type(state, context, bindings, equalities, w_argument, g_argument)),
 
         (&Type::Function(w_argument, w_result), &Type::Function(g_argument, g_result)) => {
-            match_type(state, bindings, equalities, w_argument, g_argument)
-                .and_also(|| match_type(state, bindings, equalities, w_result, g_result))
+            match_type(state, context, bindings, equalities, w_argument, g_argument)
+                .and_also(|| match_type(state, context, bindings, equalities, w_result, g_result))
         }
 
         (
             &Type::KindApplication(w_function, w_argument),
             &Type::KindApplication(g_function, g_argument),
-        ) => match_type(state, bindings, equalities, w_function, g_function)
-            .and_also(|| match_type(state, bindings, equalities, w_argument, g_argument)),
+        ) => match_type(state, context, bindings, equalities, w_function, g_function)
+            .and_also(|| match_type(state, context, bindings, equalities, w_argument, g_argument)),
 
         (
             &Type::OperatorApplication(f1, t1, l1, r1),
             &Type::OperatorApplication(f2, t2, l2, r2),
         ) => {
             if f1 == f2 && t1 == t2 {
-                match_type(state, bindings, equalities, l1, l2)
-                    .and_also(|| match_type(state, bindings, equalities, r1, r2))
+                match_type(state, context, bindings, equalities, l1, l2)
+                    .and_also(|| match_type(state, context, bindings, equalities, r1, r2))
             } else {
                 MatchType::Apart
             }
@@ -531,7 +543,7 @@ fn match_type(
                 let a1 = Arc::clone(a1);
                 let a2 = Arc::clone(a2);
                 iter::zip(a1.iter(), a2.iter()).fold(MatchType::Match, |result, (&a1, &a2)| {
-                    result.and_also(|| match_type(state, bindings, equalities, a1, a2))
+                    result.and_also(|| match_type(state, context, bindings, equalities, a1, a2))
                 })
             } else {
                 MatchType::Apart
@@ -539,6 +551,105 @@ fn match_type(
         }
 
         _ => MatchType::Apart,
+    }
+}
+
+/// Matches row types in instance heads.
+///
+/// This function handles structural row matching for both the tail variable
+/// form `( | r )` in determiner positions and labeled rows in determined
+/// positions `( x :: T | r )`. This function partitions the two row types,
+/// matches the shared fields, and handles the row tail.
+fn match_row_type<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    bindings: &mut FxHashMap<debruijn::Level, TypeId>,
+    equalities: &mut Vec<(TypeId, TypeId)>,
+    wanted_row: core::RowType,
+    given_row: core::RowType,
+) -> MatchType
+where
+    Q: ExternalQueries,
+{
+    let mut wanted_only = vec![];
+    let mut given_only = vec![];
+    let mut result = MatchType::Match;
+
+    let wanted_fields = wanted_row.fields.iter();
+    let given_fields = given_row.fields.iter();
+
+    for field in itertools::merge_join_by(wanted_fields, given_fields, |wanted, given| {
+        wanted.label.cmp(&given.label)
+    }) {
+        match field {
+            itertools::EitherOrBoth::Both(wanted, given) => {
+                result = result.and_also(|| {
+                    match_type(state, context, bindings, equalities, wanted.id, given.id)
+                });
+                if matches!(result, MatchType::Apart) {
+                    return MatchType::Apart;
+                }
+            }
+            itertools::EitherOrBoth::Left(wanted) => wanted_only.push(wanted),
+            itertools::EitherOrBoth::Right(given) => given_only.push(given),
+        }
+    }
+
+    enum RowRest {
+        /// `( a :: Int )` and `( a :: Int | r )`
+        Additional,
+        /// `( | r )`
+        Open(TypeId),
+        /// `( )`
+        Closed,
+    }
+
+    impl RowRest {
+        fn new(only: &[&core::RowField], tail: Option<TypeId>) -> RowRest {
+            if !only.is_empty() {
+                RowRest::Additional
+            } else if let Some(tail) = tail {
+                RowRest::Open(tail)
+            } else {
+                RowRest::Closed
+            }
+        }
+    }
+
+    let given_rest = RowRest::new(&given_only, given_row.tail);
+    let wanted_rest = RowRest::new(&wanted_only, wanted_row.tail);
+
+    use RowRest::*;
+
+    match given_rest {
+        // If there are additional given fields
+        Additional => match wanted_rest {
+            // we cannot match it against a tail-less wanted,
+            // nor against the additional wanted fields.
+            Closed | Additional => MatchType::Apart,
+            // we could potentially make progress by having the
+            // wanted tail absorb the additional given fields
+            Open(_) => MatchType::Stuck,
+        },
+
+        // If the given row has a tail, match it against the
+        // additional fields and tail from the wanted row
+        Open(given_tail) => {
+            let fields = Arc::from_iter(wanted_only.into_iter().cloned());
+            let row = core::RowType { fields, tail: wanted_row.tail };
+            let row_id = state.storage.intern(Type::Row(row));
+            result.and_also(|| match_type(state, context, bindings, equalities, row_id, given_tail))
+        }
+
+        // If we have a closed given row
+        Closed => match wanted_rest {
+            // we cannot match it against fields in the wanted row
+            Additional => MatchType::Apart,
+            // we could make progress with an open wanted row
+            Open(_) => MatchType::Stuck,
+            // we can match it directly with a closed wanted row
+            Closed => result,
+        },
     }
 }
 
@@ -758,13 +869,13 @@ where
 
     let mut bindings = FxHashMap::default();
     let mut equalities = vec![];
-
     let mut match_results = vec![];
     let mut stuck_positions = vec![];
 
     for (index, (wanted, (given, _))) in arguments.iter().zip(&instance.arguments).enumerate() {
         let given = transfer::localize(state, context, *given);
-        let match_result = match_type(state, &mut bindings, &mut equalities, *wanted, given);
+        let match_result =
+            match_type(state, context, &mut bindings, &mut equalities, *wanted, given);
 
         if matches!(match_result, MatchType::Apart) {
             crate::trace_fields!(state, context, { ?wanted = wanted, ?given = given }, "apart");
@@ -1029,4 +1140,41 @@ impl TypeVisitor for CollectBoundVariables<'_> {
         }
         VisitAction::Continue
     }
+}
+
+/// Validates that all rows in instance declaration arguments
+/// do not have labels in non-determined positions.
+///
+/// In PureScript, instance declarations can only contain rows with labels
+/// in positions that are determined by functional dependencies. In the
+/// determiner position, only row variables such as `( | r )` are valid.
+pub fn validate_instance_rows<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    class_file: FileId,
+    class_item: TypeItemId,
+    arguments: &[(TypeId, TypeId)],
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    let functional_dependencies = get_functional_dependencies(context, class_file, class_item)?;
+    let all_determined = get_all_determined(&functional_dependencies);
+
+    for (position, &(argument_type, _)) in arguments.iter().enumerate() {
+        if all_determined.contains(&position) {
+            continue;
+        }
+        if HasLabeledRole::on(state, argument_type) {
+            let type_message = state.render_local_type(context, argument_type);
+            state.insert_error(crate::error::ErrorKind::InstanceHeadLabeledRow {
+                class_file,
+                class_item,
+                position,
+                type_message,
+            });
+        }
+    }
+
+    Ok(())
 }

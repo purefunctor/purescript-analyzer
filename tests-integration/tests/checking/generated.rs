@@ -491,3 +491,9 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_231_record_expression_nested_additional_main() { run_test("231_record_expression_nested_additional", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_232_instance_head_nil_kind_application_main() { run_test("232_instance_head_nil_kind_application", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_233_record_instance_matching_main() { run_test("233_record_instance_matching", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_234_record_instance_open_row_main() { run_test("234_record_instance_open_row", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_235_instance_head_invalid_row_main() { run_test("235_instance_head_invalid_row", "Main"); }

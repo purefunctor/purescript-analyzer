@@ -1,0 +1,55 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Proxy :: forall (k :: Type) (a :: (k :: Type)). Proxy @(k :: Type) (a :: (k :: Type))
+
+Types
+Proxy :: forall (k :: Type). (k :: Type) -> Type
+T :: forall (k :: Type). (k :: Type) -> Type
+
+Data
+Proxy
+  Quantified = :0
+  Kind = :1
+
+
+Roles
+Proxy = [Phantom]
+
+Classes
+class T (&1 :: (&0 :: Type))
+
+Instances
+instance T (( a :: Int ) :: Row Type)
+  chain: 0
+instance T ({ a :: Int } :: Type)
+  chain: 0
+instance T (Proxy @(Row Type) ( a :: Int ) :: Type)
+  chain: 0
+instance T (Proxy @Type { a :: Int } :: Type)
+  chain: 0
+
+Diagnostics
+error[InstanceHeadLabeledRow]: Instance argument at position 0 contains a labeled row, but this position is not determined by any functional dependency. Only the `( | r )` form is allowed. Got '( a :: Int )' instead.
+  --> 9:1..9:24
+  |
+9 | instance T ( a :: Int )
+  | ^~~~~~~~~~~~~~~~~~~~~~~
+error[InstanceHeadLabeledRow]: Instance argument at position 0 contains a labeled row, but this position is not determined by any functional dependency. Only the `( | r )` form is allowed. Got '{ a :: Int }' instead.
+  --> 10:1..10:24
+   |
+10 | instance T { a :: Int }
+   | ^~~~~~~~~~~~~~~~~~~~~~~
+error[InstanceHeadLabeledRow]: Instance argument at position 0 contains a labeled row, but this position is not determined by any functional dependency. Only the `( | r )` form is allowed. Got 'Proxy @(Row Type) ( a :: Int )' instead.
+  --> 11:1..11:32
+   |
+11 | instance T (Proxy ( a :: Int ))
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[InstanceHeadLabeledRow]: Instance argument at position 0 contains a labeled row, but this position is not determined by any functional dependency. Only the `( | r )` form is allowed. Got 'Proxy @Type { a :: Int }' instead.
+  --> 12:1..12:32
+   |
+12 | instance T (Proxy { a :: Int })
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
