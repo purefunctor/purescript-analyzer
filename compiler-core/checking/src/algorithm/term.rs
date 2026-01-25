@@ -645,7 +645,7 @@ where
                 });
             }
             lowering::DoStatement::Let { statements } => {
-                steps.push(DoStep::Let { statement: statement_id, statements: statements });
+                steps.push(DoStep::Let { statement: statement_id, statements });
             }
             lowering::DoStatement::Discard { expression } => {
                 steps.push(DoStep::Discard { statement: statement_id, expression: *expression });
@@ -866,7 +866,7 @@ where
                 steps.push(AdoStep::Action { statement: statement_id, binder_type, expression });
             }
             lowering::DoStatement::Let { statements } => {
-                steps.push(AdoStep::Let { statement: statement_id, statements: statements });
+                steps.push(AdoStep::Let { statement: statement_id, statements });
             }
             lowering::DoStatement::Discard { expression } => {
                 let binder_type = state.fresh_unification_type(context);
