@@ -221,6 +221,18 @@ impl ToDiagnostics for CheckError {
                 "InstanceHeadMismatch",
                 format!("Instance head mismatch: expected {expected} arguments, got {actual}"),
             ),
+            ErrorKind::InstanceHeadLabeledRow { position, type_message, .. } => {
+                let type_msg = lookup_message(*type_message);
+                (
+                    Severity::Error,
+                    "InstanceHeadLabeledRow",
+                    format!(
+                        "Instance argument at position {position} contains a labeled row, \
+                         but this position is not determined by any functional dependency. \
+                         Only the `( | r )` form is allowed. Got '{type_msg}' instead."
+                    ),
+                )
+            }
             ErrorKind::InstanceMemberTypeMismatch { expected, actual } => {
                 let expected = lookup_message(*expected);
                 let actual = lookup_message(*actual);

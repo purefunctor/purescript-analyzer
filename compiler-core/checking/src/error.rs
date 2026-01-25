@@ -69,6 +69,12 @@ pub enum ErrorKind {
         expected: usize,
         actual: usize,
     },
+    InstanceHeadLabeledRow {
+        class_file: files::FileId,
+        class_item: indexing::TypeItemId,
+        position: usize,
+        type_message: TypeErrorMessageId,
+    },
     InstanceMemberTypeMismatch {
         expected: TypeErrorMessageId,
         actual: TypeErrorMessageId,
