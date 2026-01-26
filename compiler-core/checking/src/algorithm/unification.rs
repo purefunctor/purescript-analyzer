@@ -200,6 +200,28 @@ where
 
         (Type::Row(t1_row), Type::Row(t2_row)) => unify_rows(state, context, t1_row, t2_row)?,
 
+        (
+            Type::Variable(Variable::Bound(t1_level, t1_kind)),
+            Type::Variable(Variable::Bound(t2_level, t2_kind)),
+        ) => {
+            if t1_level == t2_level {
+                unify(state, context, t1_kind, t2_kind)?
+            } else {
+                false
+            }
+        }
+
+        (
+            Type::Variable(Variable::Skolem(t1_level, t1_kind)),
+            Type::Variable(Variable::Skolem(t2_level, t2_kind)),
+        ) => {
+            if t1_level == t2_level {
+                unify(state, context, t1_kind, t2_kind)?
+            } else {
+                false
+            }
+        }
+
         (Type::Unification(unification_id), _) => {
             solve(state, context, unification_id, t2)?.is_some()
         }
