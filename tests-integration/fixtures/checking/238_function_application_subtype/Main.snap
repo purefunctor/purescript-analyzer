@@ -1,0 +1,22 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+identity ::
+  forall (k :: Type) (a :: (k :: Type) -> (k :: Type) -> Type) (t :: (k :: Type)).
+    Category (a :: (k :: Type) -> (k :: Type) -> Type) =>
+    (a :: (k :: Type) -> (k :: Type) -> Type) (t :: (k :: Type)) (t :: (k :: Type))
+testFnApp :: Function Int Int
+testAppFn :: Int -> Int
+
+Types
+Category :: forall (k :: Type). ((k :: Type) -> (k :: Type) -> Type) -> Constraint
+
+Classes
+class Category (&1 :: (&0 :: Type) -> (&0 :: Type) -> Type)
+
+Instances
+instance Category (Function :: Type -> Type -> Type)
+  chain: 0

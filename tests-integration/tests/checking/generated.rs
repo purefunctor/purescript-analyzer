@@ -501,3 +501,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_236_category_function_instance_main() { run_test("236_category_function_instance", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_237_bound_variable_unification_main() { run_test("237_bound_variable_unification", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_238_function_application_subtype_main() { run_test("238_function_application_subtype", "Main"); }

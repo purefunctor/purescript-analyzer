@@ -71,6 +71,28 @@ where
                 && subtype(state, context, t1_result, t2_result)?)
         }
 
+        (Type::Application(t1_partial, t1_result), Type::Function(t2_argument, t2_result)) => {
+            let t1_partial = state.normalize_type(t1_partial);
+            if let Type::Application(t1_constructor, t1_argument) = state.storage[t1_partial] {
+                Ok(unify(state, context, t1_constructor, context.prim.function)?
+                    && subtype(state, context, t2_argument, t1_argument)?
+                    && subtype(state, context, t1_result, t2_result)?)
+            } else {
+                unify(state, context, t1, t2)
+            }
+        }
+
+        (Type::Function(t1_argument, t1_result), Type::Application(t2_partial, t2_result)) => {
+            let t2_partial = state.normalize_type(t2_partial);
+            if let Type::Application(t2_constructor, t2_argument) = state.storage[t2_partial] {
+                Ok(unify(state, context, t2_constructor, context.prim.function)?
+                    && subtype(state, context, t2_argument, t1_argument)?
+                    && subtype(state, context, t1_result, t2_result)?)
+            } else {
+                unify(state, context, t1, t2)
+            }
+        }
+
         (_, Type::Forall(ref binder, inner)) => {
             let v = Variable::Skolem(binder.level, binder.kind);
             let t = state.storage.intern(Type::Variable(v));
