@@ -165,6 +165,39 @@ where
                 && unify(state, context, t1_result, t2_result)?
         }
 
+        // Unify Application(Application(f, a), b) with Function(a', b').
+        //
+        // This handles the case where `f` is a unification variable that should
+        // be solved to `Function`. For example, when checking:
+        //
+        //   identity :: forall t. Category a => a t t
+        //
+        //   monomorphic :: forall a. a -> a
+        //   monomorphic = identity
+        //
+        // Unifying `?a ?t ?t` and `a -> a` solves `?a := Function`.
+        (Type::Application(t1_partial, t1_result), Type::Function(t2_argument, t2_result)) => {
+            let t1_partial = state.normalize_type(t1_partial);
+            if let Type::Application(t1_constructor, t1_argument) = state.storage[t1_partial] {
+                unify(state, context, t1_constructor, context.prim.function)?
+                    && unify(state, context, t1_argument, t2_argument)?
+                    && unify(state, context, t1_result, t2_result)?
+            } else {
+                false
+            }
+        }
+
+        (Type::Function(t1_argument, t1_result), Type::Application(t2_partial, t2_result)) => {
+            let t2_partial = state.normalize_type(t2_partial);
+            if let Type::Application(t2_constructor, t2_argument) = state.storage[t2_partial] {
+                unify(state, context, t2_constructor, context.prim.function)?
+                    && unify(state, context, t1_argument, t2_argument)?
+                    && unify(state, context, t1_result, t2_result)?
+            } else {
+                false
+            }
+        }
+
         (Type::Row(t1_row), Type::Row(t2_row)) => unify_rows(state, context, t1_row, t2_row)?,
 
         (Type::Unification(unification_id), _) => {

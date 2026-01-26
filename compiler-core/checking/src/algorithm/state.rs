@@ -453,9 +453,11 @@ impl<'r, 's> PrimLookup<'r, 's> {
 }
 
 pub struct PrimCore {
+    pub prim_id: FileId,
     pub t: TypeId,
     pub type_to_type: TypeId,
     pub function: TypeId,
+    pub function_item: TypeItemId,
     pub array: TypeId,
     pub record: TypeId,
     pub number: TypeId,
@@ -473,18 +475,25 @@ pub struct PrimCore {
 
 impl PrimCore {
     fn collect(queries: &impl ExternalQueries, state: &mut CheckState) -> QueryResult<PrimCore> {
-        let resolved = queries.resolved(queries.prim_id())?;
+        let prim_id = queries.prim_id();
+        let resolved = queries.resolved(prim_id)?;
         let mut lookup = PrimLookup::new(&resolved, &mut state.storage, "Prim");
 
         let t = lookup.type_constructor("Type");
         let type_to_type = lookup.intern(Type::Function(t, t));
+
         let row = lookup.type_constructor("Row");
         let row_type = lookup.intern(Type::Application(row, t));
 
+        let function = lookup.type_constructor("Function");
+        let function_item = lookup.type_item("Function");
+
         Ok(PrimCore {
+            prim_id,
             t,
             type_to_type,
-            function: lookup.type_constructor("Function"),
+            function,
+            function_item,
             array: lookup.type_constructor("Array"),
             record: lookup.type_constructor("Record"),
             number: lookup.type_constructor("Number"),
