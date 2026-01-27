@@ -13,7 +13,7 @@ discard ::
   forall (a :: Type) (b :: Type).
     Effect (a :: Type) -> ((a :: Type) -> Effect (b :: Type)) -> Effect (b :: Type)
 test :: Effect { a :: Int, b :: String, c :: Int }
-test' :: forall (t33 :: Type). Effect { a :: Int, b :: (t33 :: Type), c :: Int }
+test' :: forall (t30 :: Type). Effect { a :: Int, b :: (t30 :: Type), c :: Int }
 
 Types
 Effect :: Type -> Type

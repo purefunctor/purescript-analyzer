@@ -278,16 +278,23 @@ fn lower_expression_kind(
                 Some(SmolStr::from(text))
             });
 
-            let has_discard = cst.statements().is_some_and(|statements| {
+            // Scan statements to determine which rebindable functions are needed:
+            // - `bind` is needed if there's at least one `<-` statement
+            // - `discard` is needed if there's a non-final discard statement
+            let (has_bind, has_discard) = cst.statements().map_or((false, false), |statements| {
                 let mut statements = statements.children().peekable();
+                let mut has_bind = false;
+                let mut has_discard = false;
                 while let Some(statement) = statements.next() {
-                    if matches!(statement, cst::DoStatement::DoStatementDiscard(_))
-                        && statements.peek().is_some()
-                    {
-                        return true;
+                    match statement {
+                        cst::DoStatement::DoStatementBind(_) => has_bind = true,
+                        cst::DoStatement::DoStatementDiscard(_) if statements.peek().is_some() => {
+                            has_discard = true
+                        }
+                        _ => {}
                     }
                 }
-                false
+                (has_bind, has_discard)
             });
 
             let mut resolve_do_fn = |kind: DoFn| {
@@ -303,7 +310,7 @@ fn lower_expression_kind(
                 resolution
             };
 
-            let bind = resolve_do_fn(DoFn::Bind);
+            let bind = if has_bind { resolve_do_fn(DoFn::Bind) } else { None };
             let discard = if has_discard { resolve_do_fn(DoFn::Discard) } else { None };
 
             let statements = recover! {
@@ -322,30 +329,47 @@ fn lower_expression_kind(
                 Some(SmolStr::from(text))
             });
 
-            let map = state.resolve_term_full(context, qualifier.as_deref(), "map");
-            let apply = state.resolve_term_full(context, qualifier.as_deref(), "apply");
-            let pure = state.resolve_term_full(context, qualifier.as_deref(), "pure");
+            // Count action statements (Bind/Discard, ignoring Let) to determine
+            // which rebindable functions are needed:
+            // - 0 actions: only `pure` needed
+            // - 1 action: only `map` needed
+            // - 2+ actions: `map` and `apply` needed
+            let action_count = cst.statements().map_or(0, |statements| {
+                statements
+                    .children()
+                    .filter(|s| {
+                        matches!(
+                            s,
+                            cst::DoStatement::DoStatementBind(_)
+                                | cst::DoStatement::DoStatementDiscard(_)
+                        )
+                    })
+                    .count()
+            });
 
-            if map.is_none() {
-                let id = context.stabilized.lookup_cst(cst).expect_id();
-                state
-                    .errors
-                    .push(LoweringError::NotInScope(NotInScope::AdoFn { kind: AdoFn::Map, id }));
-            }
+            let (needs_pure, needs_map, needs_apply) = match action_count {
+                0 => (true, false, false),
+                1 => (false, true, false),
+                _ => (false, true, true),
+            };
 
-            if apply.is_none() {
-                let id = context.stabilized.lookup_cst(cst).expect_id();
-                state
-                    .errors
-                    .push(LoweringError::NotInScope(NotInScope::AdoFn { kind: AdoFn::Apply, id }));
-            }
+            let mut resolve_ado_fn = |kind: AdoFn| {
+                let name = match kind {
+                    AdoFn::Map => "map",
+                    AdoFn::Apply => "apply",
+                    AdoFn::Pure => "pure",
+                };
+                let resolution = state.resolve_term_full(context, qualifier.as_deref(), name);
+                if resolution.is_none() {
+                    let id = context.stabilized.lookup_cst(cst).expect_id();
+                    state.errors.push(LoweringError::NotInScope(NotInScope::AdoFn { kind, id }));
+                }
+                resolution
+            };
 
-            if pure.is_none() {
-                let id = context.stabilized.lookup_cst(cst).expect_id();
-                state
-                    .errors
-                    .push(LoweringError::NotInScope(NotInScope::AdoFn { kind: AdoFn::Pure, id }));
-            }
+            let map = if needs_map { resolve_ado_fn(AdoFn::Map) } else { None };
+            let apply = if needs_apply { resolve_ado_fn(AdoFn::Apply) } else { None };
+            let pure = if needs_pure { resolve_ado_fn(AdoFn::Pure) } else { None };
 
             let statements = recover! {
                 cst.statements()?

@@ -422,14 +422,10 @@ where
         }
 
         lowering::ExpressionKind::Do { bind, discard, statements } => {
-            let Some(bind) = bind else { return Ok(unknown) };
             infer_do(state, context, *bind, *discard, statements)
         }
 
         lowering::ExpressionKind::Ado { map, apply, pure, statements, expression } => {
-            let Some(map) = map else { return Ok(unknown) };
-            let Some(apply) = apply else { return Ok(unknown) };
-            let Some(pure) = pure else { return Ok(unknown) };
             infer_ado(state, context, *map, *apply, *pure, statements, *expression)
         }
 
@@ -607,43 +603,80 @@ where
     Ok(inferred_type)
 }
 
+/// Synthesize a constraint-free type for `bind`: `?m ?a -> (?a -> ?m ?b) -> ?m ?b`
+fn synth_bind_type<Q>(state: &mut CheckState, context: &CheckContext<Q>) -> TypeId
+where
+    Q: ExternalQueries,
+{
+    let m = state.fresh_unification_kinded(context.prim.type_to_type);
+    let a = state.fresh_unification_type(context);
+    let b = state.fresh_unification_type(context);
+    let m_a = state.storage.intern(Type::Application(m, a));
+    let m_b = state.storage.intern(Type::Application(m, b));
+    let a_to_m_b = state.storage.intern(Type::Function(a, m_b));
+    state.make_function(&[m_a, a_to_m_b], m_b)
+}
+
+/// Synthesize a constraint-free type for `discard`: `?m ?a -> (?a -> ?m ?b) -> ?m ?b`
+fn synth_discard_type<Q>(state: &mut CheckState, context: &CheckContext<Q>) -> TypeId
+where
+    Q: ExternalQueries,
+{
+    // Same shape as bind
+    synth_bind_type(state, context)
+}
+
+/// Synthesize a constraint-free type for `map`: `(?a -> ?b) -> ?f ?a -> ?f ?b`
+fn synth_map_type<Q>(state: &mut CheckState, context: &CheckContext<Q>) -> TypeId
+where
+    Q: ExternalQueries,
+{
+    let f = state.fresh_unification_kinded(context.prim.type_to_type);
+    let a = state.fresh_unification_type(context);
+    let b = state.fresh_unification_type(context);
+    let f_a = state.storage.intern(Type::Application(f, a));
+    let f_b = state.storage.intern(Type::Application(f, b));
+    let a_to_b = state.storage.intern(Type::Function(a, b));
+    state.make_function(&[a_to_b, f_a], f_b)
+}
+
+/// Synthesize a constraint-free type for `apply`: `?f (?a -> ?b) -> ?f ?a -> ?f ?b`
+fn synth_apply_type<Q>(state: &mut CheckState, context: &CheckContext<Q>) -> TypeId
+where
+    Q: ExternalQueries,
+{
+    let f = state.fresh_unification_kinded(context.prim.type_to_type);
+    let a = state.fresh_unification_type(context);
+    let b = state.fresh_unification_type(context);
+    let a_to_b = state.storage.intern(Type::Function(a, b));
+    let f_a_to_b = state.storage.intern(Type::Application(f, a_to_b));
+    let f_a = state.storage.intern(Type::Application(f, a));
+    let f_b = state.storage.intern(Type::Application(f, b));
+    state.make_function(&[f_a_to_b, f_a], f_b)
+}
+
+/// Synthesize a constraint-free type for `pure`: `?a -> ?f ?a`
+fn synth_pure_type<Q>(state: &mut CheckState, context: &CheckContext<Q>) -> TypeId
+where
+    Q: ExternalQueries,
+{
+    let f = state.fresh_unification_kinded(context.prim.type_to_type);
+    let a = state.fresh_unification_type(context);
+    let f_a = state.storage.intern(Type::Application(f, a));
+    state.storage.intern(Type::Function(a, f_a))
+}
+
 #[tracing::instrument(skip_all, name = "infer_do")]
 fn infer_do<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    bind: lowering::TermVariableResolution,
+    bind: Option<lowering::TermVariableResolution>,
     discard: Option<lowering::TermVariableResolution>,
     statement_ids: &[lowering::DoStatementId],
 ) -> QueryResult<TypeId>
 where
     Q: ExternalQueries,
 {
-    let bind_type = lookup_term_variable(state, context, bind)?;
-
-    let discard_type = if let Some(discard) = discard {
-        lookup_term_variable(state, context, discard)?
-    } else {
-        // TODO: Consider reporting this synthetic discard type once these
-        // unification variables have been solved to concrete types. This
-        // would be a nice addition to the default 'discard' is not in scope
-        // errors where we can show the inferred type for this specific do
-        // expression. This would not happen often, but it's nice UX
-        //
-        // TODO: Consider doing the same for `bind`, `map`, `pure`, and `apply`
-        //
-        // This default assumes that `discard` is defined in a shape that
-        // would unify against `?m ?a -> (?a -> ?m ?b) -> ?m ?b`. This could
-        // mean that places that expect non-monadic versions of `discard`
-        // would suffer, but for now this is a good default for the error path.
-        let m = state.fresh_unification_kinded(context.prim.type_to_type);
-        let a = state.fresh_unification_type(context);
-        let b = state.fresh_unification_type(context);
-        let m_a = state.storage.intern(Type::Application(m, a));
-        let m_b = state.storage.intern(Type::Application(m, b));
-        let a_to_m_b = state.storage.intern(Type::Function(a, m_b));
-        state.make_function(&[m_a, a_to_m_b], m_b)
-    };
-
     // First, perform a forward pass where variable bindings are bound
     // to unification variables. Let bindings are not checked here to
     // avoid premature solving of unification variables. Instead, they
@@ -679,6 +712,33 @@ where
         .iter()
         .filter(|step| matches!(step, DoStep::Bind { .. } | DoStep::Discard { .. }))
         .count();
+
+    // Lazily compute bind_type and discard_type only when needed.
+    // This avoids creating unused unification variables.
+    let has_bind_step = steps.iter().any(|s| matches!(s, DoStep::Bind { .. }));
+    let has_discard_step = steps.iter().any(|s| matches!(s, DoStep::Discard { .. }));
+
+    let bind_type = if has_bind_step {
+        if let Some(bind) = bind {
+            lookup_term_variable(state, context, bind)?
+        } else {
+            synth_bind_type(state, context)
+        }
+    } else {
+        // Not needed, use a dummy that won't be accessed
+        context.prim.unknown
+    };
+
+    let discard_type = if has_discard_step {
+        if let Some(discard) = discard {
+            lookup_term_variable(state, context, discard)?
+        } else {
+            synth_discard_type(state, context)
+        }
+    } else {
+        // Not needed, use a dummy that won't be accessed
+        context.prim.unknown
+    };
 
     let pure_expression = steps.iter().rev().find_map(|step| match step {
         DoStep::Bind { expression, .. } | DoStep::Discard { expression, .. } => Some(*expression),
@@ -857,19 +917,15 @@ enum AdoStep<'a> {
 fn infer_ado<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    map: lowering::TermVariableResolution,
-    apply: lowering::TermVariableResolution,
-    pure: lowering::TermVariableResolution,
+    map: Option<lowering::TermVariableResolution>,
+    apply: Option<lowering::TermVariableResolution>,
+    pure: Option<lowering::TermVariableResolution>,
     statement_ids: &[lowering::DoStatementId],
     expression: Option<lowering::ExpressionId>,
 ) -> QueryResult<TypeId>
 where
     Q: ExternalQueries,
 {
-    let map_type = lookup_term_variable(state, context, map)?;
-    let apply_type = lookup_term_variable(state, context, apply)?;
-    let pure_type = lookup_term_variable(state, context, pure)?;
-
     // First, perform a forward pass where variable bindings are bound
     // to unification variables. Let bindings are not checked here to
     // avoid premature solving of unification variables. Instead, they
@@ -921,6 +977,12 @@ where
             }
         }
         return if let Some(expression) = expression {
+            // Lazily compute pure_type only when needed (0 actions case)
+            let pure_type = if let Some(pure) = pure {
+                lookup_term_variable(state, context, pure)?
+            } else {
+                synth_pure_type(state, context)
+            };
             check_function_term_application(state, context, pure_type, expression)
         } else {
             state.insert_error(ErrorKind::EmptyAdoBlock);
@@ -964,6 +1026,29 @@ where
     //                           >> ?a := String
     //
     //   continuation_type := Effect (?b -> ?in_expression)
+
+    // Lazily compute map_type and apply_type only when needed.
+    // - 1 action: only map is needed
+    // - 2+ actions: map and apply are needed
+    let action_count = binder_types.len();
+
+    let map_type = if let Some(map) = map {
+        lookup_term_variable(state, context, map)?
+    } else {
+        synth_map_type(state, context)
+    };
+
+    let apply_type = if action_count > 1 {
+        if let Some(apply) = apply {
+            lookup_term_variable(state, context, apply)?
+        } else {
+            synth_apply_type(state, context)
+        }
+    } else {
+        // Not needed for single action, use a dummy
+        context.prim.unknown
+    };
+
     let mut continuation_type = None;
 
     for step in &steps {
