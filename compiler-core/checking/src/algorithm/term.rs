@@ -791,10 +791,12 @@ where
     // The `first_continuation` is the overall type of the do expression,
     // built iteratively and through solving unification variables. On
     // the other hand, the `final_continuation` is the expected type for
-    // the final statement in the do expression.
-    let [first_continuation, .., final_continuation] = continuation_types[..] else {
-        unreachable!("invariant violated: insufficient continuation_types");
-    };
+    // the final statement in the do expression. If there is only a single
+    // statement in the do expression, then these two bindings are equivalent.
+    let first_continuation =
+        *continuation_types.first().expect("invariant violated: empty continuation_types");
+    let final_continuation =
+        *continuation_types.last().expect("invariant violated: empty continuation_types");
 
     check_expression(state, context, pure_expression, final_continuation)?;
 
