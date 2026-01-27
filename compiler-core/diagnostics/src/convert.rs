@@ -252,6 +252,19 @@ impl ToDiagnostics for CheckError {
                     format!("Instance member type mismatch: expected '{expected}', got '{actual}'"),
                 )
             }
+            ErrorKind::InvalidTypeApplication { function_type, function_kind, argument_type } => {
+                let function_type = lookup_message(*function_type);
+                let function_kind = lookup_message(*function_kind);
+                let argument_type = lookup_message(*argument_type);
+                (
+                    Severity::Error,
+                    "InvalidTypeApplication",
+                    format!(
+                        "Cannot apply type '{function_type}' to '{argument_type}'. \
+                         '{function_type}' has kind '{function_kind}', which is not a function kind."
+                    ),
+                )
+            }
             ErrorKind::InvalidTypeOperator { kind_message } => {
                 let msg = lookup_message(*kind_message);
                 (

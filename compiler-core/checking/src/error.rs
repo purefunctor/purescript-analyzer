@@ -81,6 +81,11 @@ pub enum ErrorKind {
         expected: TypeErrorMessageId,
         actual: TypeErrorMessageId,
     },
+    InvalidTypeApplication {
+        function_type: TypeErrorMessageId,
+        function_kind: TypeErrorMessageId,
+        argument_type: TypeErrorMessageId,
+    },
     InvalidTypeOperator {
         kind_message: TypeErrorMessageId,
     },

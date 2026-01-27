@@ -517,3 +517,7 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_250_do_final_let_main() { run_test("250_do_final_let", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_251_lookup_implicit_panic_main() { run_test("251_lookup_implicit_panic", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_252_invalid_type_application_basic_main() { run_test("252_invalid_type_application_basic", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_253_invalid_type_application_too_many_main() { run_test("253_invalid_type_application_too_many", "Main"); }
