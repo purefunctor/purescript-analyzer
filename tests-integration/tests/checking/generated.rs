@@ -515,3 +515,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_249_do_final_bind_main() { run_test("249_do_final_bind", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_250_do_final_let_main() { run_test("250_do_final_let", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_251_lookup_implicit_panic_main() { run_test("251_lookup_implicit_panic", "Main"); }

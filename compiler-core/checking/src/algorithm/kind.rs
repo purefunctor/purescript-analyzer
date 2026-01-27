@@ -400,7 +400,15 @@ where
             infer_surface_app_kind(state, context, (function_t, function_k), argument)
         }
 
-        _ => Ok((context.prim.unknown, context.prim.unknown)),
+        _ => {
+            // TODO: Consider adding an error here for invalid type application.
+            // Even if the function type cannot be applied, the argument must
+            // still be inferred. For invalid applications on instance heads,
+            // this ensures that implicit variables are bound.
+            let (argument_t, _) = infer_surface_kind(state, context, argument)?;
+            let t = state.storage.intern(Type::Application(function_t, argument_t));
+            Ok((t, context.prim.unknown))
+        }
     }
 }
 
