@@ -192,6 +192,12 @@ where
 
         instance.constraints = constraints.collect();
 
+        let kind_variables = instance.kind_variables.iter().map(|&k| {
+            transfer::globalize(state, context, k)
+        });
+
+        instance.kind_variables = kind_variables.collect();
+
         state.checked.instances.insert(instance_id, instance);
 
         // Capture implicit variables from the instance head before unbinding.
