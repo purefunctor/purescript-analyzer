@@ -6,7 +6,7 @@ expression: report
 Terms
 test :: Effect Int
 test' ::
-  forall (t23 :: Type -> Type).
-    Bind (t23 :: Type -> Type) => Applicative (t23 :: Type -> Type) => (t23 :: Type -> Type) Int
+  forall (t17 :: Type -> Type).
+    Bind (t17 :: Type -> Type) => Applicative (t17 :: Type -> Type) => (t17 :: Type -> Type) Int
 
 Types

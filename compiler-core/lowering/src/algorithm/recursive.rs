@@ -1,7 +1,7 @@
 use std::mem;
 use std::sync::Arc;
 
-use itertools::Itertools;
+use itertools::{Itertools, Position};
 use petgraph::algo::tarjan_scc;
 use rowan::ast::AstNode;
 use rustc_hash::FxHashMap;
@@ -282,18 +282,18 @@ fn lower_expression_kind(
             // - `bind` is needed if there's at least one `<-` statement
             // - `discard` is needed if there's a non-final discard statement
             let (has_bind, has_discard) = cst.statements().map_or((false, false), |statements| {
-                let mut statements = statements.children().peekable();
                 let mut has_bind = false;
                 let mut has_discard = false;
-                while let Some(statement) = statements.next() {
+
+                for (position, statement) in statements.children().with_position() {
+                    let is_final = matches!(position, Position::Last | Position::Only);
                     match statement {
                         cst::DoStatement::DoStatementBind(_) => has_bind = true,
-                        cst::DoStatement::DoStatementDiscard(_) if statements.peek().is_some() => {
-                            has_discard = true
-                        }
+                        cst::DoStatement::DoStatementDiscard(_) if !is_final => has_discard = true,
                         _ => {}
                     }
                 }
+
                 (has_bind, has_discard)
             });
 

@@ -2,7 +2,7 @@ use std::iter;
 
 use building_types::QueryResult;
 use indexing::TermItemId;
-use itertools::Itertools;
+use itertools::{Itertools, Position};
 use smol_str::SmolStr;
 
 use crate::ExternalQueries;
@@ -603,67 +603,103 @@ where
     Ok(inferred_type)
 }
 
-/// Synthesize a constraint-free type for `bind`: `?m ?a -> (?a -> ?m ?b) -> ?m ?b`
-fn synth_bind_type<Q>(state: &mut CheckState, context: &CheckContext<Q>) -> TypeId
+/// Lookup `bind` from resolution, or synthesize `?m ?a -> (?a -> ?m ?b) -> ?m ?b`.
+fn lookup_or_synthesise_bind<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    resolution: Option<lowering::TermVariableResolution>,
+) -> QueryResult<TypeId>
 where
     Q: ExternalQueries,
 {
-    let m = state.fresh_unification_kinded(context.prim.type_to_type);
-    let a = state.fresh_unification_type(context);
-    let b = state.fresh_unification_type(context);
-    let m_a = state.storage.intern(Type::Application(m, a));
-    let m_b = state.storage.intern(Type::Application(m, b));
-    let a_to_m_b = state.storage.intern(Type::Function(a, m_b));
-    state.make_function(&[m_a, a_to_m_b], m_b)
+    if let Some(resolution) = resolution {
+        lookup_term_variable(state, context, resolution)
+    } else {
+        let m = state.fresh_unification_kinded(context.prim.type_to_type);
+        let a = state.fresh_unification_type(context);
+        let b = state.fresh_unification_type(context);
+        let m_a = state.storage.intern(Type::Application(m, a));
+        let m_b = state.storage.intern(Type::Application(m, b));
+        let a_to_m_b = state.storage.intern(Type::Function(a, m_b));
+        Ok(state.make_function(&[m_a, a_to_m_b], m_b))
+    }
 }
 
-/// Synthesize a constraint-free type for `discard`: `?m ?a -> (?a -> ?m ?b) -> ?m ?b`
-fn synth_discard_type<Q>(state: &mut CheckState, context: &CheckContext<Q>) -> TypeId
+/// Lookup `discard` from resolution, or synthesize `?m ?a -> (?a -> ?m ?b) -> ?m ?b`.
+fn lookup_or_synthesise_discard<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    resolution: Option<lowering::TermVariableResolution>,
+) -> QueryResult<TypeId>
 where
     Q: ExternalQueries,
 {
     // Same shape as bind
-    synth_bind_type(state, context)
+    lookup_or_synthesise_bind(state, context, resolution)
 }
 
-/// Synthesize a constraint-free type for `map`: `(?a -> ?b) -> ?f ?a -> ?f ?b`
-fn synth_map_type<Q>(state: &mut CheckState, context: &CheckContext<Q>) -> TypeId
+/// Lookup `map` from resolution, or synthesize `(?a -> ?b) -> ?f ?a -> ?f ?b`.
+fn lookup_or_synthesise_map<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    resolution: Option<lowering::TermVariableResolution>,
+) -> QueryResult<TypeId>
 where
     Q: ExternalQueries,
 {
-    let f = state.fresh_unification_kinded(context.prim.type_to_type);
-    let a = state.fresh_unification_type(context);
-    let b = state.fresh_unification_type(context);
-    let f_a = state.storage.intern(Type::Application(f, a));
-    let f_b = state.storage.intern(Type::Application(f, b));
-    let a_to_b = state.storage.intern(Type::Function(a, b));
-    state.make_function(&[a_to_b, f_a], f_b)
+    if let Some(resolution) = resolution {
+        lookup_term_variable(state, context, resolution)
+    } else {
+        let f = state.fresh_unification_kinded(context.prim.type_to_type);
+        let a = state.fresh_unification_type(context);
+        let b = state.fresh_unification_type(context);
+        let f_a = state.storage.intern(Type::Application(f, a));
+        let f_b = state.storage.intern(Type::Application(f, b));
+        let a_to_b = state.storage.intern(Type::Function(a, b));
+        Ok(state.make_function(&[a_to_b, f_a], f_b))
+    }
 }
 
-/// Synthesize a constraint-free type for `apply`: `?f (?a -> ?b) -> ?f ?a -> ?f ?b`
-fn synth_apply_type<Q>(state: &mut CheckState, context: &CheckContext<Q>) -> TypeId
+/// Lookup `apply` from resolution, or synthesize `?f (?a -> ?b) -> ?f ?a -> ?f ?b`.
+fn lookup_or_synthesise_apply<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    resolution: Option<lowering::TermVariableResolution>,
+) -> QueryResult<TypeId>
 where
     Q: ExternalQueries,
 {
-    let f = state.fresh_unification_kinded(context.prim.type_to_type);
-    let a = state.fresh_unification_type(context);
-    let b = state.fresh_unification_type(context);
-    let a_to_b = state.storage.intern(Type::Function(a, b));
-    let f_a_to_b = state.storage.intern(Type::Application(f, a_to_b));
-    let f_a = state.storage.intern(Type::Application(f, a));
-    let f_b = state.storage.intern(Type::Application(f, b));
-    state.make_function(&[f_a_to_b, f_a], f_b)
+    if let Some(resolution) = resolution {
+        lookup_term_variable(state, context, resolution)
+    } else {
+        let f = state.fresh_unification_kinded(context.prim.type_to_type);
+        let a = state.fresh_unification_type(context);
+        let b = state.fresh_unification_type(context);
+        let a_to_b = state.storage.intern(Type::Function(a, b));
+        let f_a_to_b = state.storage.intern(Type::Application(f, a_to_b));
+        let f_a = state.storage.intern(Type::Application(f, a));
+        let f_b = state.storage.intern(Type::Application(f, b));
+        Ok(state.make_function(&[f_a_to_b, f_a], f_b))
+    }
 }
 
-/// Synthesize a constraint-free type for `pure`: `?a -> ?f ?a`
-fn synth_pure_type<Q>(state: &mut CheckState, context: &CheckContext<Q>) -> TypeId
+/// Lookup `pure` from resolution, or synthesize `?a -> ?f ?a`.
+fn lookup_or_synthesise_pure<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    resolution: Option<lowering::TermVariableResolution>,
+) -> QueryResult<TypeId>
 where
     Q: ExternalQueries,
 {
-    let f = state.fresh_unification_kinded(context.prim.type_to_type);
-    let a = state.fresh_unification_type(context);
-    let f_a = state.storage.intern(Type::Application(f, a));
-    state.storage.intern(Type::Function(a, f_a))
+    if let Some(resolution) = resolution {
+        lookup_term_variable(state, context, resolution)
+    } else {
+        let f = state.fresh_unification_kinded(context.prim.type_to_type);
+        let a = state.fresh_unification_type(context);
+        let f_a = state.storage.intern(Type::Application(f, a));
+        Ok(state.storage.intern(Type::Function(a, f_a)))
+    }
 }
 
 #[tracing::instrument(skip_all, name = "infer_do")]
@@ -713,30 +749,29 @@ where
         .filter(|step| matches!(step, DoStep::Bind { .. } | DoStep::Discard { .. }))
         .count();
 
-    // Lazily compute bind_type and discard_type only when needed.
-    // This avoids creating unused unification variables.
-    let has_bind_step = steps.iter().any(|s| matches!(s, DoStep::Bind { .. }));
-    let has_discard_step = steps.iter().any(|s| matches!(s, DoStep::Discard { .. }));
+    let (has_bind_step, has_discard_step) = {
+        let mut has_bind = false;
+        let mut has_discard = false;
+        for (position, statement) in steps.iter().with_position() {
+            let is_final = matches!(position, Position::Last | Position::Only);
+            match statement {
+                DoStep::Bind { .. } => has_bind = true,
+                DoStep::Discard { .. } if !is_final => has_discard = true,
+                _ => (),
+            }
+        }
+        (has_bind, has_discard)
+    };
 
     let bind_type = if has_bind_step {
-        if let Some(bind) = bind {
-            lookup_term_variable(state, context, bind)?
-        } else {
-            synth_bind_type(state, context)
-        }
+        lookup_or_synthesise_bind(state, context, bind)?
     } else {
-        // Not needed, use a dummy that won't be accessed
         context.prim.unknown
     };
 
     let discard_type = if has_discard_step {
-        if let Some(discard) = discard {
-            lookup_term_variable(state, context, discard)?
-        } else {
-            synth_discard_type(state, context)
-        }
+        lookup_or_synthesise_discard(state, context, discard)?
     } else {
-        // Not needed, use a dummy that won't be accessed
         context.prim.unknown
     };
 
@@ -977,12 +1012,7 @@ where
             }
         }
         return if let Some(expression) = expression {
-            // Lazily compute pure_type only when needed (0 actions case)
-            let pure_type = if let Some(pure) = pure {
-                lookup_term_variable(state, context, pure)?
-            } else {
-                synth_pure_type(state, context)
-            };
+            let pure_type = lookup_or_synthesise_pure(state, context, pure)?;
             check_function_term_application(state, context, pure_type, expression)
         } else {
             state.insert_error(ErrorKind::EmptyAdoBlock);
@@ -1032,20 +1062,11 @@ where
     // - 2+ actions: map and apply are needed
     let action_count = binder_types.len();
 
-    let map_type = if let Some(map) = map {
-        lookup_term_variable(state, context, map)?
-    } else {
-        synth_map_type(state, context)
-    };
+    let map_type = lookup_or_synthesise_map(state, context, map)?;
 
     let apply_type = if action_count > 1 {
-        if let Some(apply) = apply {
-            lookup_term_variable(state, context, apply)?
-        } else {
-            synth_apply_type(state, context)
-        }
+        lookup_or_synthesise_apply(state, context, apply)?
     } else {
-        // Not needed for single action, use a dummy
         context.prim.unknown
     };
 
