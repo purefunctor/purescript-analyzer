@@ -509,3 +509,9 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_246_do_bind_only_main() { run_test("246_do_bind_only", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_247_do_discard_not_in_scope_main() { run_test("247_do_discard_not_in_scope", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_248_do_empty_block_main() { run_test("248_do_empty_block", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_249_do_final_bind_main() { run_test("249_do_final_bind", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_250_do_final_let_main() { run_test("250_do_final_let", "Main"); }

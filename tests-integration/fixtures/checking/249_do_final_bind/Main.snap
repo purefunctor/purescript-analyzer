@@ -1,0 +1,22 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+test :: Effect Int
+test' :: forall (t8 :: Type -> Type). Applicative (t8 :: Type -> Type) => (t8 :: Type -> Type) Int
+
+Types
+
+Diagnostics
+warning[InvalidFinalBind]: Invalid final bind statement in do expression
+  --> 9:3..9:14
+  |
+9 |   x <- pure 1
+  |   ^~~~~~~~~~~
+warning[InvalidFinalBind]: Invalid final bind statement in do expression
+  --> 12:3..12:14
+   |
+12 |   x <- pure 1
+   |   ^~~~~~~~~~~

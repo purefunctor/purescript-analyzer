@@ -63,6 +63,8 @@ pub enum ErrorKind {
     DeriveMissingFunctor,
     EmptyAdoBlock,
     EmptyDoBlock,
+    InvalidFinalBind,
+    InvalidFinalLet,
     InstanceHeadMismatch {
         class_file: files::FileId,
         class_item: indexing::TypeItemId,

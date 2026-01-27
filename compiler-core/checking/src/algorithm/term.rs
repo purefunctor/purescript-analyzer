@@ -775,12 +775,33 @@ where
         context.prim.unknown
     };
 
-    let pure_expression = steps.iter().rev().find_map(|step| match step {
-        DoStep::Bind { expression, .. } | DoStep::Discard { expression, .. } => Some(*expression),
-        DoStep::Let { .. } => None,
-    });
+    let pure_expression = match steps.iter().last() {
+        Some(statement) => match statement {
+            // Technically valid, syntactically disallowed. This allows
+            // partially-written do expressions to infer, with a friendly
+            // warning to nudge the user that `bind` is prohibited.
+            DoStep::Bind { statement, expression, .. } => {
+                state.with_error_step(ErrorStep::InferringDoBind(*statement), |state| {
+                    state.insert_error(ErrorKind::InvalidFinalBind);
+                });
+                expression
+            }
+            DoStep::Discard { expression, .. } => expression,
+            DoStep::Let { statement, .. } => {
+                state.with_error_step(ErrorStep::CheckingDoLet(*statement), |state| {
+                    state.insert_error(ErrorKind::InvalidFinalLet);
+                });
+                return Ok(context.prim.unknown);
+            }
+        },
+        None => {
+            state.insert_error(ErrorKind::EmptyDoBlock);
+            return Ok(context.prim.unknown);
+        }
+    };
 
-    let Some(Some(pure_expression)) = pure_expression else {
+    // If either don't actually have expressions, it's empty!
+    let Some(pure_expression) = *pure_expression else {
         state.insert_error(ErrorKind::EmptyDoBlock);
         return Ok(context.prim.unknown);
     };

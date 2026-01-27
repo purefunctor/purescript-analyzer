@@ -216,6 +216,16 @@ impl ToDiagnostics for CheckError {
             ErrorKind::EmptyDoBlock => {
                 (Severity::Error, "EmptyDoBlock", "Empty do block".to_string())
             }
+            ErrorKind::InvalidFinalBind => (
+                Severity::Warning,
+                "InvalidFinalBind",
+                "Invalid final bind statement in do expression".to_string(),
+            ),
+            ErrorKind::InvalidFinalLet => (
+                Severity::Error,
+                "InvalidFinalLet",
+                "Invalid final let statement in do expression".to_string(),
+            ),
             ErrorKind::InstanceHeadMismatch { expected, actual, .. } => (
                 Severity::Error,
                 "InstanceHeadMismatch",
