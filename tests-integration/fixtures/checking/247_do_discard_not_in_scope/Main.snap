@@ -1,0 +1,24 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+test :: Effect Int
+test' ::
+  forall (t18 :: Type -> Type).
+    Applicative (t18 :: Type -> Type) => Bind (t18 :: Type -> Type) => (t18 :: Type -> Type) Int
+
+Types
+
+Diagnostics
+error[NotInScope]: 'discard' is not in scope
+  --> 8:8..11:9
+  |
+8 | test = do
+  |        ^~
+error[NotInScope]: 'discard' is not in scope
+  --> 13:9..16:9
+   |
+13 | test' = do
+   |         ^~

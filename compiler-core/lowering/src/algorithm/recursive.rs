@@ -278,22 +278,33 @@ fn lower_expression_kind(
                 Some(SmolStr::from(text))
             });
 
-            let bind = state.resolve_term_full(context, qualifier.as_deref(), "bind");
-            let discard = state.resolve_term_full(context, qualifier.as_deref(), "discard");
+            let has_discard = cst.statements().is_some_and(|statements| {
+                let mut statements = statements.children().peekable();
+                while let Some(statement) = statements.next() {
+                    if matches!(statement, cst::DoStatement::DoStatementDiscard(_))
+                        && statements.peek().is_some()
+                    {
+                        return true;
+                    }
+                }
+                false
+            });
 
-            if bind.is_none() {
-                let id = context.stabilized.lookup_cst(cst).expect_id();
-                state
-                    .errors
-                    .push(LoweringError::NotInScope(NotInScope::DoFn { kind: DoFn::Bind, id }));
-            }
+            let mut resolve_do_fn = |kind: DoFn| {
+                let name = match kind {
+                    DoFn::Bind => "bind",
+                    DoFn::Discard => "discard",
+                };
+                let resolution = state.resolve_term_full(context, qualifier.as_deref(), name);
+                if resolution.is_none() {
+                    let id = context.stabilized.lookup_cst(cst).expect_id();
+                    state.errors.push(LoweringError::NotInScope(NotInScope::DoFn { kind, id }));
+                }
+                resolution
+            };
 
-            if discard.is_none() {
-                let id = context.stabilized.lookup_cst(cst).expect_id();
-                state
-                    .errors
-                    .push(LoweringError::NotInScope(NotInScope::DoFn { kind: DoFn::Discard, id }));
-            }
+            let bind = resolve_do_fn(DoFn::Bind);
+            let discard = if has_discard { resolve_do_fn(DoFn::Discard) } else { None };
 
             let statements = recover! {
                 cst.statements()?

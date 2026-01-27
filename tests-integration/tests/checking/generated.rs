@@ -505,3 +505,7 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_238_function_application_subtype_main() { run_test("238_function_application_subtype", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_245_do_notation_panic_main() { run_test("245_do_notation_panic", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_246_do_bind_only_main() { run_test("246_do_bind_only", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_247_do_discard_not_in_scope_main() { run_test("247_do_discard_not_in_scope", "Main"); }

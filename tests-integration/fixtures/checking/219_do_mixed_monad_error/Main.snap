@@ -7,7 +7,7 @@ Terms
 effect :: Effect Int
 aff :: Aff String
 test :: Effect { a :: Int, b :: String }
-test' :: forall (t23 :: Type). Effect (t23 :: Type)
+test' :: forall (t29 :: Type). Effect (t29 :: Type)
 
 Types
 
@@ -17,7 +17,7 @@ error[CannotUnify]: Cannot unify 'Aff' with 'Effect'
    |
 16 |   b <- aff
    |   ^~~~~~~~
-error[CannotUnify]: Cannot unify 'Aff ?11[:0]' with 'Effect ?8[:0]'
+error[CannotUnify]: Cannot unify 'Aff ?14[:0]' with 'Effect ?11[:0]'
   --> 16:3..16:11
    |
 16 |   b <- aff
@@ -27,7 +27,7 @@ error[CannotUnify]: Cannot unify 'Aff' with 'Effect'
    |
 22 |   b <- aff
    |   ^~~~~~~~
-error[CannotUnify]: Cannot unify 'Aff ?26[:0]' with 'Effect ?23[:0]'
+error[CannotUnify]: Cannot unify 'Aff ?32[:0]' with 'Effect ?29[:0]'
   --> 22:3..22:11
    |
 22 |   b <- aff

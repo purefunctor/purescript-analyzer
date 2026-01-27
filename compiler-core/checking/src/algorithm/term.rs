@@ -423,7 +423,6 @@ where
 
         lowering::ExpressionKind::Do { bind, discard, statements } => {
             let Some(bind) = bind else { return Ok(unknown) };
-            let Some(discard) = discard else { return Ok(unknown) };
             infer_do(state, context, *bind, *discard, statements)
         }
 
@@ -613,14 +612,37 @@ fn infer_do<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     bind: lowering::TermVariableResolution,
-    discard: lowering::TermVariableResolution,
+    discard: Option<lowering::TermVariableResolution>,
     statement_ids: &[lowering::DoStatementId],
 ) -> QueryResult<TypeId>
 where
     Q: ExternalQueries,
 {
     let bind_type = lookup_term_variable(state, context, bind)?;
-    let discard_type = lookup_term_variable(state, context, discard)?;
+
+    let discard_type = if let Some(discard) = discard {
+        lookup_term_variable(state, context, discard)?
+    } else {
+        // TODO: Consider reporting this synthetic discard type once these
+        // unification variables have been solved to concrete types. This
+        // would be a nice addition to the default 'discard' is not in scope
+        // errors where we can show the inferred type for this specific do
+        // expression. This would not happen often, but it's nice UX
+        //
+        // TODO: Consider doing the same for `bind`, `map`, `pure`, and `apply`
+        //
+        // This default assumes that `discard` is defined in a shape that
+        // would unify against `?m ?a -> (?a -> ?m ?b) -> ?m ?b`. This could
+        // mean that places that expect non-monadic versions of `discard`
+        // would suffer, but for now this is a good default for the error path.
+        let m = state.fresh_unification_kinded(context.prim.type_to_type);
+        let a = state.fresh_unification_type(context);
+        let b = state.fresh_unification_type(context);
+        let m_a = state.storage.intern(Type::Application(m, a));
+        let m_b = state.storage.intern(Type::Application(m, b));
+        let a_to_m_b = state.storage.intern(Type::Function(a, m_b));
+        state.make_function(&[m_a, a_to_m_b], m_b)
+    };
 
     // First, perform a forward pass where variable bindings are bound
     // to unification variables. Let bindings are not checked here to
