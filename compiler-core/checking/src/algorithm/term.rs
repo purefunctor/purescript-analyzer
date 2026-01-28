@@ -7,6 +7,7 @@ use smol_str::SmolStr;
 
 use crate::ExternalQueries;
 use crate::algorithm::state::{CheckContext, CheckState};
+use crate::algorithm::unification::ElaborationMode;
 use crate::algorithm::{
     binder, inspect, kind, operator, substitute, toolkit, transfer, unification,
 };
@@ -129,7 +130,7 @@ where
         }
 
         for (&binder_id, &argument_type) in equation.binders.iter().zip(&signature.arguments) {
-            let _ = binder::check_binder(state, context, binder_id, argument_type)?;
+            let _ = binder::check_argument_binder(state, context, binder_id, argument_type)?;
         }
 
         if equation_arity > expected_arity {
@@ -288,6 +289,29 @@ where
     state.with_error_step(ErrorStep::CheckingExpression(expr_id), |state| {
         let inferred = infer_expression_quiet(state, context, expr_id)?;
         let _ = unification::subtype(state, context, inferred, expected)?;
+        crate::trace_fields!(state, context, { inferred = inferred, expected = expected });
+        Ok(inferred)
+    })
+}
+
+fn check_expression_argument<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    expr_id: lowering::ExpressionId,
+    expected: TypeId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    state.with_error_step(ErrorStep::CheckingExpression(expr_id), |state| {
+        let inferred = infer_expression_quiet(state, context, expr_id)?;
+        unification::subtype_with_mode(
+            state,
+            context,
+            inferred,
+            expected,
+            ElaborationMode::No,
+        )?;
         crate::trace_fields!(state, context, { inferred = inferred, expected = expected });
         Ok(inferred)
     })
@@ -1796,7 +1820,7 @@ pub fn check_function_term_application<Q>(
 where
     Q: ExternalQueries,
 {
-    check_function_application_core(state, context, function_t, expression_id, check_expression)
+    check_function_application_core(state, context, function_t, expression_id, check_expression_argument)
 }
 
 fn check_let_chunks<Q>(

@@ -521,3 +521,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_252_invalid_type_application_basic_main() { run_test("252_invalid_type_application_basic", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_253_invalid_type_application_too_many_main() { run_test("253_invalid_type_application_too_many", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_254_higher_rank_elaboration_main() { run_test("254_higher_rank_elaboration", "Main"); }

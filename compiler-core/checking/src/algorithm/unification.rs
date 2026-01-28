@@ -10,6 +10,30 @@ use crate::algorithm::{kind, substitute};
 use crate::core::{RowField, RowType, Type, TypeId, Variable, debruijn};
 use crate::error::ErrorKind;
 
+/// Determines if constraints are elaborated during [`subtype`].
+///
+/// Elaboration means pushing constraints as "wanted" and inserting dictionary
+/// placeholders. This is only valid in **covariant** positions where the type
+/// checker controls what value is passed.
+///
+/// In **contravariant** positions (e.g., function arguments), the caller provides
+/// values—we cannot insert dictionaries there. When both sides have matching
+/// constraint structure, structural unification handles them correctly:
+///
+/// ```text
+/// (IsSymbol ?sym => Proxy ?sym -> r) <= (IsSymbol ~sym => Proxy ~sym -> r)
+///   IsSymbol ?sym ~ IsSymbol ~sym  → solves ?sym := ~sym
+/// ```
+///
+/// [`Type::Function`] in the [`subtype`] rule disables this for the argument
+/// and result positions. Syntax-driven rules like checking for binders and
+/// expressions that appear in the argument position also disable elaboration.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ElaborationMode {
+    Yes,
+    No,
+}
+
 /// Check that `t1` is a subtype of `t2`
 ///
 /// In the type system, we define that polymorphic types are subtypes of
@@ -42,7 +66,6 @@ use crate::error::ErrorKind;
 ///   subtype (?a -> ?a) (~a -> ~a)
 ///     subtype ?a ~a
 /// ```
-#[tracing::instrument(skip_all, name = "subtype")]
 pub fn subtype<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -52,10 +75,24 @@ pub fn subtype<Q>(
 where
     Q: ExternalQueries,
 {
+    subtype_with_mode(state, context, t1, t2, ElaborationMode::Yes)
+}
+
+#[tracing::instrument(skip_all, name = "subtype_with_mode")]
+pub fn subtype_with_mode<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    t1: TypeId,
+    t2: TypeId,
+    mode: ElaborationMode,
+) -> QueryResult<bool>
+where
+    Q: ExternalQueries,
+{
     let t1 = synonym::normalize_expand_type(state, context, t1)?;
     let t2 = synonym::normalize_expand_type(state, context, t2)?;
 
-    crate::debug_fields!(state, context, { t1 = t1, t2 = t2 });
+    crate::debug_fields!(state, context, { t1 = t1, t2 = t2, ?mode = mode });
 
     if t1 == t2 {
         crate::trace_fields!(state, context, { t1 = t1, t2 = t2 }, "identical");
@@ -67,16 +104,28 @@ where
 
     match (t1_core, t2_core) {
         (Type::Function(t1_argument, t1_result), Type::Function(t2_argument, t2_result)) => {
-            Ok(subtype(state, context, t2_argument, t1_argument)?
-                && subtype(state, context, t1_result, t2_result)?)
+            Ok(subtype_with_mode(state, context, t2_argument, t1_argument, ElaborationMode::No)?
+                && subtype_with_mode(state, context, t1_result, t2_result, ElaborationMode::No)?)
         }
 
         (Type::Application(t1_partial, t1_result), Type::Function(t2_argument, t2_result)) => {
             let t1_partial = state.normalize_type(t1_partial);
             if let Type::Application(t1_constructor, t1_argument) = state.storage[t1_partial] {
                 Ok(unify(state, context, t1_constructor, context.prim.function)?
-                    && subtype(state, context, t2_argument, t1_argument)?
-                    && subtype(state, context, t1_result, t2_result)?)
+                    && subtype_with_mode(
+                        state,
+                        context,
+                        t2_argument,
+                        t1_argument,
+                        ElaborationMode::No,
+                    )?
+                    && subtype_with_mode(
+                        state,
+                        context,
+                        t1_result,
+                        t2_result,
+                        ElaborationMode::No,
+                    )?)
             } else {
                 unify(state, context, t1, t2)
             }
@@ -86,8 +135,20 @@ where
             let t2_partial = state.normalize_type(t2_partial);
             if let Type::Application(t2_constructor, t2_argument) = state.storage[t2_partial] {
                 Ok(unify(state, context, t2_constructor, context.prim.function)?
-                    && subtype(state, context, t2_argument, t1_argument)?
-                    && subtype(state, context, t1_result, t2_result)?)
+                    && subtype_with_mode(
+                        state,
+                        context,
+                        t2_argument,
+                        t1_argument,
+                        ElaborationMode::No,
+                    )?
+                    && subtype_with_mode(
+                        state,
+                        context,
+                        t1_result,
+                        t2_result,
+                        ElaborationMode::No,
+                    )?)
             } else {
                 unify(state, context, t1, t2)
             }
@@ -98,7 +159,7 @@ where
             let t = state.storage.intern(Type::Variable(v));
 
             let inner = substitute::SubstituteBound::on(state, binder.level, t, inner);
-            subtype(state, context, t1, inner)
+            subtype_with_mode(state, context, t1, inner, mode)
         }
 
         (Type::Forall(ref binder, inner), _) => {
@@ -106,12 +167,12 @@ where
             let t = state.fresh_unification_kinded(k);
 
             let inner = substitute::SubstituteBound::on(state, binder.level, t, inner);
-            subtype(state, context, inner, t2)
+            subtype_with_mode(state, context, inner, t2, mode)
         }
 
-        (Type::Constrained(constraint, inner), _) => {
+        (Type::Constrained(constraint, inner), _) if mode == ElaborationMode::Yes => {
             state.constraints.push_wanted(constraint);
-            subtype(state, context, inner, t2)
+            subtype_with_mode(state, context, inner, t2, mode)
         }
 
         (
@@ -125,7 +186,7 @@ where
             let t2_core = state.storage[t2_argument].clone();
 
             if let (Type::Row(t1_row), Type::Row(t2_row)) = (t1_core, t2_core) {
-                subtype_record_rows(state, context, &t1_row, &t2_row)
+                subtype_record_rows(state, context, &t1_row, &t2_row, mode)
             } else {
                 unify(state, context, t1, t2)
             }
@@ -439,6 +500,7 @@ fn subtype_record_rows<Q>(
     context: &CheckContext<Q>,
     t1_row: &RowType,
     t2_row: &RowType,
+    mode: ElaborationMode,
 ) -> QueryResult<bool>
 where
     Q: ExternalQueries,
@@ -449,7 +511,8 @@ where
         t1_row,
         t2_row,
         |state, context, left, right| {
-            Ok(subtype(state, context, left, right)? && subtype(state, context, right, left)?)
+            Ok(subtype_with_mode(state, context, left, right, mode)?
+                && subtype_with_mode(state, context, right, left, mode)?)
         },
     )?;
 
