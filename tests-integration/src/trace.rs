@@ -51,9 +51,8 @@ where
         .with_span_events(FmtSpan::CLOSE)
         .json();
 
-    let subscriber = tracing_subscriber::registry()
-        .with(formatter)
-        .with(EnvFilter::default().add_directive(level.into()));
+    let filter = EnvFilter::default().add_directive(level.into());
+    let subscriber = tracing_subscriber::registry().with(formatter).with(filter);
 
     let result = tracing::subscriber::with_default(subscriber, f);
     file_writer.0.lock().unwrap().flush().expect("failed to flush trace file");

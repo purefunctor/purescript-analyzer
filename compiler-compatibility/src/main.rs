@@ -1,9 +1,11 @@
 mod compat;
 mod error;
 mod layout;
+mod loader;
 mod registry;
 mod resolver;
 mod storage;
+mod trace;
 mod types;
 mod unpacker;
 
@@ -11,6 +13,7 @@ use std::path::PathBuf;
 
 use clap::Parser;
 use purescript_registry::RegistryReader;
+use tracing::level_filters::LevelFilter;
 
 #[derive(Parser, Debug)]
 #[command(name = "compiler-compatibility")]
@@ -31,18 +34,29 @@ struct Cli {
     #[arg(long, default_value = "target/compiler-compatibility", help = "Output directory")]
     output: PathBuf,
 
+    #[arg(long, default_value = "target/compiler-tracing", help = "Trace output directory")]
+    trace_output: PathBuf,
+
     #[arg(long, help = "Disable tarball caching")]
     no_cache: bool,
 
     #[arg(short, long, help = "Verbose output")]
     verbose: bool,
+
+    #[arg(
+        long,
+        value_name = "LevelFilter",
+        default_value = "debug",
+        help = "Log level for checking crate traces"
+    )]
+    log_level: LevelFilter,
 }
 
 fn main() -> error::Result<()> {
     let cli = Cli::parse();
 
-    let filter = if cli.verbose { "debug" } else { "info" };
-    tracing_subscriber::fmt().with_env_filter(filter).init();
+    let stdout_level = if cli.verbose { LevelFilter::DEBUG } else { LevelFilter::INFO };
+    let tracing_handle = trace::init_tracing(stdout_level, cli.log_level, cli.trace_output);
 
     let layout = layout::Layout::new(&cli.output);
     let registry = registry::Registry::new(layout.clone());
@@ -63,10 +77,10 @@ fn main() -> error::Result<()> {
     }
 
     let package_set = registry.reader().read_package_set(cli.package_set.as_deref())?;
-    tracing::info!(version = %package_set.version, "Using package set");
+    tracing::info!(target: "compiler_compatibility", version = %package_set.version, "Using package set");
 
     let resolved = resolver::resolve(&cli.packages, &package_set, registry.reader())?;
-    tracing::info!(count = resolved.packages.len(), "Resolved packages");
+    tracing::info!(target: "compiler_compatibility", count = resolved.packages.len(), "Resolved packages");
 
     for (name, version) in &resolved.packages {
         let metadata = registry.reader().read_metadata(name)?;
@@ -76,11 +90,45 @@ fn main() -> error::Result<()> {
 
         let tarball = storage::fetch_tarball(name, version, &layout, cli.no_cache)?;
         storage::verify_tarball(&tarball, &published.hash, name, version)?;
-        unpacker::unpack_tarball(&tarball, &layout.package_dir(name, version))?;
+        unpacker::unpack_tarball(&tarball, &layout.packages_dir)?;
 
-        tracing::info!(name, version, "Unpacked");
+        tracing::info!(target: "compiler_compatibility", name, version, "Unpacked");
     }
 
-    tracing::info!(dir = %layout.packages_dir.display(), "Done");
+    tracing::info!(target: "compiler_compatibility", directory = %layout.packages_dir.display(), "Finished unpacking");
+
+    for package in &cli.packages {
+        let _span = tracing::info_span!(target: "compiler_compatibility", "for_each_package", package).entered();
+
+        let guard =
+            tracing_handle.begin_package(package).expect("failed to start package trace capture");
+        let log_file = guard.path().to_path_buf();
+
+        let result = compat::check_package(&layout.packages_dir, package);
+
+        drop(guard);
+
+        for file_result in &result.files {
+            if !file_result.output.is_empty() {
+                print!("{}", file_result.output);
+            }
+        }
+
+        let summary = format!(
+            "{}: {} errors, {} warnings",
+            package, result.total_errors, result.total_warnings
+        );
+
+        if result.total_errors > 0 {
+            tracing::error!(target: "compiler_compatibility", "{}", summary);
+        } else if result.total_warnings > 0 {
+            tracing::warn!(target: "compiler_compatibility", "{}", summary);
+        } else {
+            tracing::info!(target: "compiler_compatibility", "{}", summary);
+        }
+
+        tracing::debug!(target: "compiler_compatibility", path = %log_file.display(), "Trace written");
+    }
+
     Ok(())
 }

@@ -5,6 +5,9 @@ edition = "2024"
 
 [dependencies]
 purescript-registry = { path = "../purescript-registry" }
+analyzer = { path = "../compiler-lsp/analyzer" }
+files = { path = "../compiler-core/files" }
+diagnostics = { path = "../compiler-core/diagnostics" }
 clap = { version = "4", features = ["derive"] }
 git2 = "0.20"
 reqwest = { version = "0.12", features = ["blocking"] }
@@ -15,5 +18,9 @@ sha2 = "0.10"
 hex = "0.4"
 thiserror = "2"
 tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 base64 = "0.22.1"
+glob = "0.3"
+url = "2"
+line-index = "0.1"
+rowan = "0.16"
