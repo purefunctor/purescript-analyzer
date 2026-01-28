@@ -6,6 +6,7 @@ members = [
   "compiler-lsp/*",
   "compiler-scripts",
   "docs/src/wasm",
+  "purescript-registry",
   "tests-integration",
   "tests-package-set",
 ]

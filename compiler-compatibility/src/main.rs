@@ -7,9 +7,10 @@ mod storage;
 mod types;
 mod unpacker;
 
-use clap::Parser;
-use registry::RegistryReader;
 use std::path::PathBuf;
+
+use clap::Parser;
+use purescript_registry::RegistryReader;
 
 #[derive(Parser, Debug)]
 #[command(name = "compiler-compatibility")]
@@ -49,7 +50,7 @@ fn main() -> error::Result<()> {
     registry.ensure_repos(cli.update)?;
 
     if cli.list_sets {
-        let sets = registry.list_package_sets()?;
+        let sets = registry.reader().list_package_sets()?;
         for set in sets {
             println!("{}", set);
         }
@@ -61,14 +62,14 @@ fn main() -> error::Result<()> {
         return Ok(());
     }
 
-    let package_set = registry.read_package_set(cli.package_set.as_deref())?;
+    let package_set = registry.reader().read_package_set(cli.package_set.as_deref())?;
     tracing::info!(version = %package_set.version, "Using package set");
 
-    let resolved = resolver::resolve(&cli.packages, &package_set, &registry)?;
+    let resolved = resolver::resolve(&cli.packages, &package_set, registry.reader())?;
     tracing::info!(count = resolved.packages.len(), "Resolved packages");
 
     for (name, version) in &resolved.packages {
-        let metadata = registry.read_metadata(name)?;
+        let metadata = registry.reader().read_metadata(name)?;
         let published = metadata.published.get(version).ok_or_else(|| {
             error::CompatError::ManifestNotFound { name: name.clone(), version: version.clone() }
         })?;

@@ -1,11 +1,11 @@
 use std::collections::{BTreeMap, HashSet};
 
+use purescript_registry::{PackageSet, RegistryReader};
 use semver::Version;
 
 use crate::{
     error::{CompatError, Result},
-    registry::RegistryReader,
-    types::{PackageSet, ResolvedSet},
+    types::ResolvedSet,
 };
 
 pub fn resolve(

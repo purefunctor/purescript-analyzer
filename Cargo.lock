@@ -391,10 +391,9 @@ dependencies = [
  "flate2",
  "git2",
  "hex",
+ "purescript-registry",
  "reqwest",
  "semver",
- "serde",
- "serde_json",
  "sha2",
  "tar",
  "thiserror",
@@ -1876,6 +1875,16 @@ dependencies = [
  "tracing-subscriber",
  "url",
  "walkdir",
+]
+
+[[package]]
+name = "purescript-registry"
+version = "0.1.0"
+dependencies = [
+ "semver",
+ "serde",
+ "serde_json",
+ "thiserror",
 ]
 
 [[package]]
