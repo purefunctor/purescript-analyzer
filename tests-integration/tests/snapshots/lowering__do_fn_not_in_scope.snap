@@ -1,20 +1,9 @@
 ---
 source: tests-integration/tests/lowering.rs
+assertion_line: 161
 expression: lowered.errors
 ---
 [
-    NotInScope(
-        DoFn {
-            kind: Bind,
-            id: AstId<syntax::cst::ExpressionDo>(8),
-        },
-    ),
-    NotInScope(
-        DoFn {
-            kind: Discard,
-            id: AstId<syntax::cst::ExpressionDo>(8),
-        },
-    ),
     NotInScope(
         ExprVariable {
             id: AstId<syntax::cst::ExpressionVariable>(12),

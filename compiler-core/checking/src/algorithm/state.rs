@@ -15,13 +15,14 @@ use lowering::{
 };
 use resolving::ResolvedModule;
 use rustc_hash::FxHashMap;
+use smol_str::ToSmolStr;
 use stabilizing::StabilizedModule;
 use sugar::{Bracketed, Sectioned};
 
 use crate::algorithm::{constraint, transfer};
-use crate::core::{Type, TypeId, TypeInterner, Variable, debruijn};
+use crate::core::{Type, TypeId, TypeInterner, Variable, debruijn, pretty};
 use crate::error::{CheckError, ErrorKind, ErrorStep};
-use crate::{CheckedModule, ExternalQueries};
+use crate::{CheckedModule, ExternalQueries, TypeErrorMessageId};
 
 /// Manually-managed scope for type-level bindings.
 #[derive(Default)]
@@ -452,9 +453,11 @@ impl<'r, 's> PrimLookup<'r, 's> {
 }
 
 pub struct PrimCore {
+    pub prim_id: FileId,
     pub t: TypeId,
     pub type_to_type: TypeId,
     pub function: TypeId,
+    pub function_item: TypeItemId,
     pub array: TypeId,
     pub record: TypeId,
     pub number: TypeId,
@@ -466,21 +469,31 @@ pub struct PrimCore {
     pub constraint: TypeId,
     pub symbol: TypeId,
     pub row: TypeId,
+    pub row_type: TypeId,
     pub unknown: TypeId,
 }
 
 impl PrimCore {
     fn collect(queries: &impl ExternalQueries, state: &mut CheckState) -> QueryResult<PrimCore> {
-        let resolved = queries.resolved(queries.prim_id())?;
+        let prim_id = queries.prim_id();
+        let resolved = queries.resolved(prim_id)?;
         let mut lookup = PrimLookup::new(&resolved, &mut state.storage, "Prim");
 
         let t = lookup.type_constructor("Type");
         let type_to_type = lookup.intern(Type::Function(t, t));
 
+        let row = lookup.type_constructor("Row");
+        let row_type = lookup.intern(Type::Application(row, t));
+
+        let function = lookup.type_constructor("Function");
+        let function_item = lookup.type_item("Function");
+
         Ok(PrimCore {
+            prim_id,
             t,
             type_to_type,
-            function: lookup.type_constructor("Function"),
+            function,
+            function_item,
             array: lookup.type_constructor("Array"),
             record: lookup.type_constructor("Record"),
             number: lookup.type_constructor("Number"),
@@ -491,7 +504,8 @@ impl PrimCore {
             partial: lookup.type_constructor("Partial"),
             constraint: lookup.type_constructor("Constraint"),
             symbol: lookup.type_constructor("Symbol"),
-            row: lookup.type_constructor("Row"),
+            row,
+            row_type,
             unknown: lookup.intern(Type::Unknown),
         })
     }
@@ -977,6 +991,24 @@ impl CheckState {
         let step = self.check_steps.iter().copied().collect();
         let error = CheckError { kind, step };
         self.checked.errors.push(error);
+    }
+
+    /// Interns an error message in [`CheckedModule::error_messages`].
+    pub fn intern_error_message(&mut self, message: impl ToSmolStr) -> TypeErrorMessageId {
+        self.checked.error_messages.intern(message.to_smolstr())
+    }
+
+    /// Renders a local type and interns it in [`CheckedModule::error_messages`].
+    pub fn render_local_type<Q>(
+        &mut self,
+        context: &CheckContext<Q>,
+        t: TypeId,
+    ) -> TypeErrorMessageId
+    where
+        Q: ExternalQueries,
+    {
+        let t = pretty::print_local(self, context, t);
+        self.intern_error_message(t)
     }
 }
 

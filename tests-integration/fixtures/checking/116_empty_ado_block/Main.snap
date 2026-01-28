@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -19,6 +20,14 @@ Effect :: Type -> Type
 Roles
 Effect = [Nominal]
 
-Errors
-EmptyAdoBlock at [TermDeclaration(Idx::<TermItem>(3)), InferringExpression(AstId<syntax::cst::Expression>(54))]
-CannotUnify { Type, ??? } at [TermDeclaration(Idx::<TermItem>(3))]
+Diagnostics
+error[EmptyAdoBlock]: Empty ado block
+  --> 9:9..9:12
+  |
+9 | test1 = ado
+  |         ^~~
+error[CannotUnify]: Cannot unify 'Type' with '???'
+  --> 9:1..9:12
+  |
+9 | test1 = ado
+  | ^~~~~~~~~~~

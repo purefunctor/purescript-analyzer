@@ -1,20 +1,25 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
 test1 :: { x :: Int, y :: Int } -> Int
 test1' ::
-  forall (t10 :: Type) (t11 :: Type). { x :: (t11 :: Type), y :: (t10 :: Type) } -> (t11 :: Type)
+  forall (t12 :: Type) (t13 :: Row Type) (t14 :: Type).
+    { x :: (t14 :: Type), y :: (t12 :: Type) | (t13 :: Row Type) } -> (t14 :: Type)
 test2 :: { x :: Int, y :: String } -> { x :: Int, y :: String }
 test2' ::
-  forall (t15 :: Type) (t16 :: Type).
-    { x :: (t15 :: Type), y :: (t16 :: Type) } -> { x :: (t15 :: Type), y :: (t16 :: Type) }
+  forall (t20 :: Type) (t21 :: Type) (t22 :: Row Type).
+    { x :: (t20 :: Type), y :: (t21 :: Type) | (t22 :: Row Type) } ->
+    { x :: (t20 :: Type), y :: (t21 :: Type) }
 test3 :: { age :: Int, name :: String } -> String
 test3' ::
-  forall (t22 :: Type) (t23 :: Type).
-    { age :: (t22 :: Type), name :: (t23 :: Type) } -> (t23 :: Type)
+  forall (t30 :: Type) (t31 :: Row Type) (t32 :: Type).
+    { age :: (t30 :: Type), name :: (t32 :: Type) | (t31 :: Row Type) } -> (t32 :: Type)
 nested :: { inner :: { x :: Int } } -> Int
-nested' :: forall (t27 :: Type). { inner :: { x :: (t27 :: Type) } } -> (t27 :: Type)
+nested' ::
+  forall (t40 :: Row Type) (t41 :: Row Type) (t42 :: Type).
+    { inner :: { x :: (t42 :: Type) | (t40 :: Row Type) } | (t41 :: Row Type) } -> (t42 :: Type)
 
 Types

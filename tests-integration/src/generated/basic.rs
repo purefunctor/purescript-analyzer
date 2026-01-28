@@ -2,6 +2,7 @@ use std::fmt::Write;
 
 use analyzer::{QueryEngine, locate};
 use checking::core::pretty;
+use diagnostics::{DiagnosticsContext, ToDiagnostics, format_rustc};
 use files::FileId;
 use indexing::{ImportKind, TermItem, TypeItem, TypeItemId, TypeItemKind};
 use lowering::{
@@ -160,7 +161,9 @@ pub fn report_lowered(engine: &QueryEngine, id: FileId, name: &str) -> String {
     macro_rules! pos {
         ($id:expr) => {{
             let cst = stabilized.ast_ptr($id).unwrap();
-            locate::offset_to_position(&content, cst.syntax_node_ptr().text_range().start())
+            let range = cst.syntax_node_ptr().text_range();
+            let p = locate::offset_to_position(&content, range.start()).unwrap();
+            format!("{}:{}", p.line, p.character)
         }};
     }
 
@@ -173,10 +176,10 @@ pub fn report_lowered(engine: &QueryEngine, id: FileId, name: &str) -> String {
         let node = cst.syntax_node_ptr().to_node(module.syntax());
         let text = node.text().to_string();
 
-        writeln!(buffer, "{}@{:?}", text.trim(), pos!(type_id)).unwrap();
+        writeln!(buffer, "{}@{}", text.trim(), pos!(type_id)).unwrap();
         match resolution {
             Some(TypeVariableResolution::Forall(id)) => {
-                writeln!(buffer, "  resolves to forall {:?}", pos!(*id)).unwrap();
+                writeln!(buffer, "  -> forall@{}", pos!(*id)).unwrap();
             }
             Some(TypeVariableResolution::Implicit(ImplicitTypeVariable { binding, node, id })) => {
                 let GraphNode::Implicit { bindings, .. } = &graph[*node] else {
@@ -188,14 +191,14 @@ pub fn report_lowered(engine: &QueryEngine, id: FileId, name: &str) -> String {
                 if *binding {
                     writeln!(buffer, "  introduces a constraint variable {name:?}").unwrap();
                 } else {
-                    writeln!(buffer, "  resolves to a constraint variable {name:?}").unwrap();
+                    writeln!(buffer, "  -> constraint variable {name:?}").unwrap();
                     for &tid in type_ids {
-                        writeln!(buffer, "    {:?}", pos!(tid)).unwrap();
+                        writeln!(buffer, "    {}", pos!(tid)).unwrap();
                     }
                 }
             }
             None => {
-                writeln!(buffer, "  resolves to nothing").unwrap();
+                writeln!(buffer, "  -> nothing").unwrap();
             }
         }
     }
@@ -215,38 +218,40 @@ fn report_on_term(
     let cst = stabilized.ast_ptr(expression_id).unwrap();
     let node = cst.syntax_node_ptr().to_node(module.syntax());
     let text = node.text().to_string();
-    let position = locate::offset_to_position(content, node.text_range().start());
+    let position = locate::offset_to_position(content, node.text_range().start()).unwrap();
 
-    writeln!(buffer, "{}@{:?}", text.trim(), position).unwrap();
+    writeln!(buffer, "{}@{}:{}", text.trim(), position.line, position.character).unwrap();
 
     macro_rules! pos {
         ($id:expr) => {{
             let cst = stabilized.ast_ptr($id).unwrap();
-            locate::offset_to_position(content, cst.syntax_node_ptr().text_range().start())
+            let range = cst.syntax_node_ptr().text_range();
+            let p = locate::offset_to_position(content, range.start()).unwrap();
+            format!("{}:{}", p.line, p.character)
         }};
     }
 
     match resolution {
         Some(TermVariableResolution::Binder(id)) => {
-            writeln!(buffer, "  resolves to binder {:?}", pos!(*id)).unwrap();
+            writeln!(buffer, "  -> binder@{}", pos!(*id)).unwrap();
         }
         Some(TermVariableResolution::Let(let_binding_id)) => {
             let let_binding = info.get_let_binding_group(*let_binding_id);
             if let Some(sig) = let_binding.signature {
-                writeln!(buffer, "  resolves to signature {:?}", pos!(sig)).unwrap();
+                writeln!(buffer, "  -> signature@{}", pos!(sig)).unwrap();
             }
             for eq in let_binding.equations.iter() {
-                writeln!(buffer, "  resolves to equation {:?}", pos!(*eq)).unwrap();
+                writeln!(buffer, "  -> equation@{}", pos!(*eq)).unwrap();
             }
         }
         Some(TermVariableResolution::RecordPun(id)) => {
-            writeln!(buffer, "  resolves to record pun {:?}", pos!(*id)).unwrap();
+            writeln!(buffer, "  -> record pun@{}", pos!(*id)).unwrap();
         }
         Some(TermVariableResolution::Reference(..)) => {
-            writeln!(buffer, "  resolves to top-level name").unwrap();
+            writeln!(buffer, "  -> top-level").unwrap();
         }
         None => {
-            writeln!(buffer, "  resolves to nothing").unwrap();
+            writeln!(buffer, "  -> nothing").unwrap();
         }
     }
 }
@@ -382,51 +387,34 @@ pub fn report_checked(engine: &QueryEngine, id: FileId) -> String {
         writeln!(snapshot, "derive {forall_prefix}{head}").unwrap();
     }
 
-    if !checked.errors.is_empty() {
-        writeln!(snapshot, "\nErrors").unwrap();
+    let content = engine.content(id);
+
+    let (parsed, _) = engine.parsed(id).unwrap();
+    let root = parsed.syntax_node();
+
+    let stabilized = engine.stabilized(id).unwrap();
+    let lowered = engine.lowered(id).unwrap();
+    let resolved = engine.resolved(id).unwrap();
+
+    let context = DiagnosticsContext::new(&content, &root, &stabilized, &indexed, &checked);
+
+    let mut all_diagnostics = vec![];
+
+    for error in &lowered.errors {
+        all_diagnostics.extend(error.to_diagnostics(&context));
     }
+
+    for error in &resolved.errors {
+        all_diagnostics.extend(error.to_diagnostics(&context));
+    }
+
     for error in &checked.errors {
-        use checking::error::ErrorKind::*;
-        let pp = |t| pretty::print_global(engine, t);
-        let step = &error.step;
-        match error.kind {
-            CannotUnify { t1, t2 } => {
-                writeln!(snapshot, "CannotUnify {{ {}, {} }} at {step:?}", pp(t1), pp(t2)).unwrap();
-            }
-            NoInstanceFound { constraint } => {
-                writeln!(snapshot, "NoInstanceFound {{ {} }} at {step:?}", pp(constraint)).unwrap();
-            }
-            AmbiguousConstraint { constraint } => {
-                writeln!(snapshot, "AmbiguousConstraint {{ {} }} at {step:?}", pp(constraint))
-                    .unwrap();
-            }
-            InstanceMemberTypeMismatch { expected, actual } => {
-                writeln!(
-                    snapshot,
-                    "InstanceMemberTypeMismatch {{ expected: {}, actual: {} }} at {step:?}",
-                    pp(expected),
-                    pp(actual)
-                )
-                .unwrap();
-            }
-            CustomWarning { message_id } => {
-                let message = &checked.custom_messages[message_id as usize];
-                writeln!(snapshot, "CustomWarning {{ .. }} at {step:?}").unwrap();
-                for line in message.lines() {
-                    writeln!(snapshot, "  {line}").unwrap();
-                }
-            }
-            CustomFailure { message_id } => {
-                let message = &checked.custom_messages[message_id as usize];
-                writeln!(snapshot, "CustomFailure {{ .. }} at {step:?}").unwrap();
-                for line in message.lines() {
-                    writeln!(snapshot, "  {line}").unwrap();
-                }
-            }
-            _ => {
-                writeln!(snapshot, "{:?} at {step:?}", error.kind).unwrap();
-            }
-        }
+        all_diagnostics.extend(error.to_diagnostics(&context));
+    }
+
+    if !all_diagnostics.is_empty() {
+        writeln!(snapshot, "\nDiagnostics").unwrap();
+        snapshot.push_str(&format_rustc(&all_diagnostics, &content));
     }
 
     snapshot

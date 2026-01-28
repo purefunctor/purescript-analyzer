@@ -17,7 +17,7 @@ use smol_str::SmolStr;
 use crate::ExternalQueries;
 use crate::algorithm::derive::{self, tools};
 use crate::algorithm::state::{CheckContext, CheckState, KnownGeneric};
-use crate::algorithm::{toolkit, transfer, unification};
+use crate::algorithm::{toolkit, unification};
 use crate::core::{Type, TypeId};
 use crate::error::ErrorKind;
 
@@ -40,8 +40,8 @@ where
     };
 
     let Some((data_file, data_id)) = derive::extract_type_constructor(state, derived_type) else {
-        let global_type = transfer::globalize(state, context, derived_type);
-        state.insert_error(ErrorKind::CannotDeriveForType { type_id: global_type });
+        let type_message = state.render_local_type(context, derived_type);
+        state.insert_error(ErrorKind::CannotDeriveForType { type_message });
         return Ok(());
     };
 

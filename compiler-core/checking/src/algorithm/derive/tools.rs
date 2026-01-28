@@ -9,9 +9,13 @@ use rustc_hash::FxHashMap;
 
 use crate::ExternalQueries;
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::{constraint, quantify, substitute, transfer};
+use crate::algorithm::{constraint, quantify, transfer};
 use crate::core::{Instance, InstanceKind, Type, TypeId, debruijn};
 use crate::error::ErrorKind;
+
+mod substitute {
+    pub use crate::algorithm::substitute::SubstituteBindings;
+}
 
 /// Elaborated derive instance after kind inference.
 pub struct ElaboratedDerive {
@@ -91,7 +95,7 @@ where
 {
     let residual = state.solve_constraints(context)?;
     for constraint in residual {
-        let constraint = transfer::globalize(state, context, constraint);
+        let constraint = state.render_local_type(context, constraint);
         state.insert_error(ErrorKind::NoInstanceFound { constraint });
     }
     Ok(())
@@ -119,6 +123,14 @@ pub fn register_derived_instance<Q>(
     };
 
     quantify::quantify_instance(state, &mut instance);
+
+    let _ = constraint::validate_instance_rows(
+        state,
+        context,
+        class_file,
+        class_id,
+        &instance.arguments,
+    );
 
     for (t, k) in instance.arguments.iter_mut() {
         *t = transfer::globalize(state, context, *t);

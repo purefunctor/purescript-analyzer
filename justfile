@@ -24,9 +24,13 @@ coverage-html:
 @integration *args="":
   cargo nextest run -p tests-integration "$@" --status-level=fail --final-status-level=fail --failure-output=final
 
-[doc("Run checking tests with snapshot diffing. Use --help for options.")]
+[doc("Run integration tests with snapshot diffing: checking|lowering|resolving|lsp")]
+@t *args="":
+  cargo run -q -p compiler-scripts -- {{args}}
+
+[doc("Shorthand for 'just t checking'")]
 @tc *args="":
-  cargo run -q -p compiler-scripts --bin test-checking -- {{args}}
+  cargo run -q -p compiler-scripts -- checking {{args}}
 
 [doc("Apply clippy fixes and format")]
 fix:

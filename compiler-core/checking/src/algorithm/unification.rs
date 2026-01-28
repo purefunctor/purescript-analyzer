@@ -6,7 +6,7 @@ use itertools::{EitherOrBoth, Itertools};
 use crate::ExternalQueries;
 use crate::algorithm::kind::synonym;
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::{kind, substitute, transfer};
+use crate::algorithm::{kind, substitute};
 use crate::core::{RowField, RowType, Type, TypeId, Variable, debruijn};
 use crate::error::ErrorKind;
 
@@ -71,6 +71,28 @@ where
                 && subtype(state, context, t1_result, t2_result)?)
         }
 
+        (Type::Application(t1_partial, t1_result), Type::Function(t2_argument, t2_result)) => {
+            let t1_partial = state.normalize_type(t1_partial);
+            if let Type::Application(t1_constructor, t1_argument) = state.storage[t1_partial] {
+                Ok(unify(state, context, t1_constructor, context.prim.function)?
+                    && subtype(state, context, t2_argument, t1_argument)?
+                    && subtype(state, context, t1_result, t2_result)?)
+            } else {
+                unify(state, context, t1, t2)
+            }
+        }
+
+        (Type::Function(t1_argument, t1_result), Type::Application(t2_partial, t2_result)) => {
+            let t2_partial = state.normalize_type(t2_partial);
+            if let Type::Application(t2_constructor, t2_argument) = state.storage[t2_partial] {
+                Ok(unify(state, context, t2_constructor, context.prim.function)?
+                    && subtype(state, context, t2_argument, t1_argument)?
+                    && subtype(state, context, t1_result, t2_result)?)
+            } else {
+                unify(state, context, t1, t2)
+            }
+        }
+
         (_, Type::Forall(ref binder, inner)) => {
             let v = Variable::Skolem(binder.level, binder.kind);
             let t = state.storage.intern(Type::Variable(v));
@@ -90,6 +112,23 @@ where
         (Type::Constrained(constraint, inner), _) => {
             state.constraints.push_wanted(constraint);
             subtype(state, context, inner, t2)
+        }
+
+        (
+            Type::Application(t1_function, t1_argument),
+            Type::Application(t2_function, t2_argument),
+        ) if t1_function == context.prim.record && t2_function == context.prim.record => {
+            let t1_argument = synonym::normalize_expand_type(state, context, t1_argument)?;
+            let t2_argument = synonym::normalize_expand_type(state, context, t2_argument)?;
+
+            let t1_core = state.storage[t1_argument].clone();
+            let t2_core = state.storage[t2_argument].clone();
+
+            if let (Type::Row(t1_row), Type::Row(t2_row)) = (t1_core, t2_core) {
+                subtype_record_rows(state, context, &t1_row, &t2_row)
+            } else {
+                unify(state, context, t1, t2)
+            }
         }
 
         (_, _) => unify(state, context, t1, t2),
@@ -148,7 +187,62 @@ where
                 && unify(state, context, t1_result, t2_result)?
         }
 
+        // Unify Application(Application(f, a), b) with Function(a', b').
+        //
+        // This handles the case where `f` is a unification variable that should
+        // be solved to `Function`. For example, when checking:
+        //
+        //   identity :: forall t. Category a => a t t
+        //
+        //   monomorphic :: forall a. a -> a
+        //   monomorphic = identity
+        //
+        // Unifying `?a ?t ?t` and `a -> a` solves `?a := Function`.
+        (Type::Application(t1_partial, t1_result), Type::Function(t2_argument, t2_result)) => {
+            let t1_partial = state.normalize_type(t1_partial);
+            if let Type::Application(t1_constructor, t1_argument) = state.storage[t1_partial] {
+                unify(state, context, t1_constructor, context.prim.function)?
+                    && unify(state, context, t1_argument, t2_argument)?
+                    && unify(state, context, t1_result, t2_result)?
+            } else {
+                false
+            }
+        }
+
+        (Type::Function(t1_argument, t1_result), Type::Application(t2_partial, t2_result)) => {
+            let t2_partial = state.normalize_type(t2_partial);
+            if let Type::Application(t2_constructor, t2_argument) = state.storage[t2_partial] {
+                unify(state, context, t2_constructor, context.prim.function)?
+                    && unify(state, context, t1_argument, t2_argument)?
+                    && unify(state, context, t1_result, t2_result)?
+            } else {
+                false
+            }
+        }
+
         (Type::Row(t1_row), Type::Row(t2_row)) => unify_rows(state, context, t1_row, t2_row)?,
+
+        (
+            Type::Variable(Variable::Bound(t1_level, t1_kind)),
+            Type::Variable(Variable::Bound(t2_level, t2_kind)),
+        ) => {
+            if t1_level == t2_level {
+                unify(state, context, t1_kind, t2_kind)?
+            } else {
+                false
+            }
+        }
+
+        (
+            Type::Variable(Variable::Skolem(t1_level, t1_kind)),
+            Type::Variable(Variable::Skolem(t2_level, t2_kind)),
+        ) => {
+            if t1_level == t2_level {
+                unify(state, context, t1_kind, t2_kind)?
+            } else {
+                false
+            }
+        }
 
         (Type::Unification(unification_id), _) => {
             solve(state, context, unification_id, t2)?.is_some()
@@ -172,8 +266,8 @@ where
     if !unifies {
         // at this point, it should be impossible to have
         // unsolved unification variables within t1 and t2
-        let t1 = transfer::globalize(state, context, t1);
-        let t2 = transfer::globalize(state, context, t2);
+        let t1 = state.render_local_type(context, t1);
+        let t2 = state.render_local_type(context, t2);
         state.insert_error(ErrorKind::CannotUnify { t1, t2 });
     }
 
@@ -333,6 +427,59 @@ pub fn promote_type(
     }
 }
 
+/// Checks that `t1_row` is a subtype of `t2_row`, generated errors for
+/// additional or missing fields. This is used for record subtyping.
+///
+/// * This algorithm partitions row fields into common, t1-only, and t2-only fields.
+/// * If t1_row is closed and t2_row is non-empty, [`ErrorKind::PropertyIsMissing`]
+/// * If t2_row is closed and t1_row is non-empty, [`ErrorKind::AdditionalProperty`]
+#[tracing::instrument(skip_all, name = "subtype_rows")]
+fn subtype_record_rows<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    t1_row: &RowType,
+    t2_row: &RowType,
+) -> QueryResult<bool>
+where
+    Q: ExternalQueries,
+{
+    let (left_only, right_only, ok) = partition_row_fields_with(
+        state,
+        context,
+        t1_row,
+        t2_row,
+        |state, context, left, right| {
+            Ok(subtype(state, context, left, right)? && subtype(state, context, right, left)?)
+        },
+    )?;
+
+    if !ok {
+        return Ok(false);
+    }
+
+    let mut failed = false;
+
+    if t1_row.tail.is_none() && !right_only.is_empty() {
+        let labels = right_only.iter().map(|field| field.label.clone());
+        let labels = Arc::from_iter(labels);
+        state.insert_error(ErrorKind::PropertyIsMissing { labels });
+        failed = true;
+    }
+
+    if t2_row.tail.is_none() && !left_only.is_empty() {
+        let labels = left_only.iter().map(|field| field.label.clone());
+        let labels = Arc::from_iter(labels);
+        state.insert_error(ErrorKind::AdditionalProperty { labels });
+        failed = true;
+    }
+
+    if failed {
+        return Ok(false);
+    }
+
+    unify_row_tails(state, context, t1_row.tail, t2_row.tail, left_only, right_only)
+}
+
 fn unify_rows<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -342,55 +489,25 @@ fn unify_rows<Q>(
 where
     Q: ExternalQueries,
 {
-    let (extras_left, extras_right, ok) = partition_row_fields(state, context, &t1_row, &t2_row)?;
+    let (left_only, right_only, ok) = partition_row_fields(state, context, &t1_row, &t2_row)?;
 
     if !ok {
         return Ok(false);
     }
 
-    match (t1_row.tail, t2_row.tail) {
-        (None, None) => Ok(extras_left.is_empty() && extras_right.is_empty()),
-
-        (Some(t1_tail), None) => {
-            if !extras_left.is_empty() {
-                return Ok(false);
-            }
-            let row = Type::Row(RowType { fields: Arc::from(extras_right), tail: None });
-            let row_id = state.storage.intern(row);
-            unify(state, context, t1_tail, row_id)
-        }
-
-        (None, Some(t2_tail)) => {
-            if !extras_right.is_empty() {
-                return Ok(false);
-            }
-            let row = Type::Row(RowType { fields: Arc::from(extras_left), tail: None });
-            let row_id = state.storage.intern(row);
-            unify(state, context, t2_tail, row_id)
-        }
-
-        (Some(t1_tail), Some(t2_tail)) => {
-            if extras_left.is_empty() && extras_right.is_empty() {
-                return unify(state, context, t1_tail, t2_tail);
-            }
-
-            let row_type_kind =
-                state.storage.intern(Type::Application(context.prim.row, context.prim.t));
-
-            let unification = state.fresh_unification_kinded(row_type_kind);
-
-            let left_tail_row =
-                Type::Row(RowType { fields: Arc::from(extras_right), tail: Some(unification) });
-            let left_tail_row_id = state.storage.intern(left_tail_row);
-
-            let right_tail_row =
-                Type::Row(RowType { fields: Arc::from(extras_left), tail: Some(unification) });
-            let right_tail_row_id = state.storage.intern(right_tail_row);
-
-            Ok(unify(state, context, t1_tail, left_tail_row_id)?
-                && unify(state, context, t2_tail, right_tail_row_id)?)
-        }
+    if t1_row.tail.is_none() && t2_row.tail.is_none() {
+        return Ok(left_only.is_empty() && right_only.is_empty());
     }
+
+    if t2_row.tail.is_none() && !left_only.is_empty() {
+        return Ok(false);
+    }
+
+    if t1_row.tail.is_none() && !right_only.is_empty() {
+        return Ok(false);
+    }
+
+    unify_row_tails(state, context, t1_row.tail, t2_row.tail, left_only, right_only)
 }
 
 pub fn partition_row_fields<Q>(
@@ -402,6 +519,20 @@ pub fn partition_row_fields<Q>(
 where
     Q: ExternalQueries,
 {
+    partition_row_fields_with(state, context, t1_row, t2_row, unify)
+}
+
+fn partition_row_fields_with<Q, F>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    t1_row: &RowType,
+    t2_row: &RowType,
+    mut field_check: F,
+) -> QueryResult<(Vec<RowField>, Vec<RowField>, bool)>
+where
+    Q: ExternalQueries,
+    F: FnMut(&mut CheckState, &CheckContext<Q>, TypeId, TypeId) -> QueryResult<bool>,
+{
     let mut extras_left = vec![];
     let mut extras_right = vec![];
     let mut ok = true;
@@ -412,7 +543,7 @@ where
     for field in t1_fields.merge_join_by(t2_fields, |left, right| left.label.cmp(&right.label)) {
         match field {
             EitherOrBoth::Both(left, right) => {
-                if !unify(state, context, left.id, right.id)? {
+                if !field_check(state, context, left.id, right.id)? {
                     ok = false;
                 }
             }
@@ -428,4 +559,50 @@ where
     }
 
     Ok((extras_left, extras_right, ok))
+}
+
+fn unify_row_tails<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    t1_tail: Option<TypeId>,
+    t2_tail: Option<TypeId>,
+    extras_left: Vec<RowField>,
+    extras_right: Vec<RowField>,
+) -> QueryResult<bool>
+where
+    Q: ExternalQueries,
+{
+    match (t1_tail, t2_tail) {
+        (None, None) => Ok(true),
+
+        (Some(t1_tail), None) => {
+            let row = Type::Row(RowType { fields: Arc::from(extras_right), tail: None });
+            let row_id = state.storage.intern(row);
+            unify(state, context, t1_tail, row_id)
+        }
+
+        (None, Some(t2_tail)) => {
+            let row = Type::Row(RowType { fields: Arc::from(extras_left), tail: None });
+            let row_id = state.storage.intern(row);
+            unify(state, context, t2_tail, row_id)
+        }
+
+        (Some(t1_tail), Some(t2_tail)) => {
+            if extras_left.is_empty() && extras_right.is_empty() {
+                return unify(state, context, t1_tail, t2_tail);
+            }
+
+            let unification = state.fresh_unification_kinded(context.prim.row_type);
+            let tail = Some(unification);
+
+            let left_tail_row = Type::Row(RowType { fields: Arc::from(extras_right), tail });
+            let left_tail_row_id = state.storage.intern(left_tail_row);
+
+            let right_tail_row = Type::Row(RowType { fields: Arc::from(extras_left), tail });
+            let right_tail_row_id = state.storage.intern(right_tail_row);
+
+            Ok(unify(state, context, t1_tail, left_tail_row_id)?
+                && unify(state, context, t2_tail, right_tail_row_id)?)
+        }
+    }
 }

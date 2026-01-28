@@ -19,6 +19,11 @@ impl Fd {
     }
 }
 
+/// Computes the set of positions that are determined by any functional dependency.
+pub fn get_all_determined(functional_dependencies: &[Fd]) -> HashSet<usize> {
+    functional_dependencies.iter().flat_map(|fd| fd.determined.iter().copied()).collect()
+}
+
 /// Compute the closure of positions determined by functional dependencies.
 ///
 /// Starting from `initial` positions, iteratively applies fundeps:
@@ -121,6 +126,44 @@ mod tests {
         let fundeps = vec![Fd::new([], [0])];
         let initial: HashSet<usize> = HashSet::new();
         let result = compute_closure(&fundeps, &initial);
+        assert_eq!(result, [0].into_iter().collect());
+    }
+
+    #[test]
+    fn test_all_determined_no_fundeps() {
+        let result = get_all_determined(&[]);
+        assert_eq!(result, HashSet::new());
+    }
+
+    #[test]
+    fn test_all_determined_single_fundep() {
+        // a -> b (position 0 determines position 1)
+        let fundeps = vec![Fd::new([0], [1])];
+        let result = get_all_determined(&fundeps);
+        assert_eq!(result, [1].into_iter().collect());
+    }
+
+    #[test]
+    fn test_all_determined_multiple_fundeps() {
+        // a -> b, b -> c
+        let fundeps = vec![Fd::new([0], [1]), Fd::new([1], [2])];
+        let result = get_all_determined(&fundeps);
+        assert_eq!(result, [1, 2].into_iter().collect());
+    }
+
+    #[test]
+    fn test_all_determined_overlapping() {
+        // a -> b c, d -> b
+        let fundeps = vec![Fd::new([0], [1, 2]), Fd::new([3], [1])];
+        let result = get_all_determined(&fundeps);
+        assert_eq!(result, [1, 2].into_iter().collect());
+    }
+
+    #[test]
+    fn test_all_determined_empty_determiners() {
+        // -> a (empty determiners, determines position 0)
+        let fundeps = vec![Fd::new([], [0])];
+        let result = get_all_determined(&fundeps);
         assert_eq!(result, [0].into_iter().collect());
     }
 }

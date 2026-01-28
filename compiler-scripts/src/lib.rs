@@ -1,5 +1,7 @@
 pub use console;
 
+pub mod test_runner;
+
 pub mod fixtures {
     use md5::{Digest, Md5};
     use std::collections::HashMap;

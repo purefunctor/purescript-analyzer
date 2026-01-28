@@ -114,6 +114,10 @@ impl State {
         self.nodes.type_node.insert(id, node);
     }
 
+    fn associate_do_statement(&mut self, id: DoStatementId, statement: DoStatement) {
+        self.info.do_statement.insert(id, statement);
+    }
+
     fn associate_let_binding_name(&mut self, id: LetBindingNameGroupId, info: LetBindingName) {
         self.info.let_binding_name.insert(id, info);
         let Some(node) = self.graph_scope else { return };

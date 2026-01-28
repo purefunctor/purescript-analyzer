@@ -1,0 +1,32 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+test :: Effect Int
+test' :: ???
+
+Types
+
+Diagnostics
+error[InvalidFinalLet]: Invalid final let statement in do expression
+  --> 7:3..7:12
+  |
+7 |   let x = 1
+  |   ^~~~~~~~~
+error[CannotUnify]: Cannot unify '???' with 'Effect Int'
+  --> 5:1..5:19
+  |
+5 | test :: Effect Int
+  | ^~~~~~~~~~~~~~~~~~
+error[InvalidFinalLet]: Invalid final let statement in do expression
+  --> 10:3..10:12
+   |
+10 |   let x = 1
+   |   ^~~~~~~~~
+error[CannotUnify]: Cannot unify 'Type' with '???'
+  --> 9:1..10:12
+  |
+9 | test' = do
+  | ^~~~~~~~~~

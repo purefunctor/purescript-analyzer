@@ -130,8 +130,7 @@ where
         return Some(MatchInstance::Stuck);
     };
 
-    let message_id = state.checked.custom_messages.len() as u32;
-    state.checked.custom_messages.push(message);
+    let message_id = state.intern_error_message(message);
     state.insert_error(ErrorKind::CustomWarning { message_id });
 
     Some(MatchInstance::Match { constraints: vec![], equalities: vec![] })
@@ -154,8 +153,7 @@ where
         return Some(MatchInstance::Stuck);
     };
 
-    let message_id = state.checked.custom_messages.len() as u32;
-    state.checked.custom_messages.push(message);
+    let message_id = state.intern_error_message(message);
     state.insert_error(ErrorKind::CustomFailure { message_id });
 
     Some(MatchInstance::Match { constraints: vec![], equalities: vec![] })

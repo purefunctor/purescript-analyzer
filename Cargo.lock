@@ -488,6 +488,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "diagnostics"
+version = "0.1.0"
+dependencies = [
+ "checking",
+ "files",
+ "indexing",
+ "itertools 0.14.0",
+ "line-index",
+ "lowering",
+ "lsp-types",
+ "resolving",
+ "rowan",
+ "stabilizing",
+ "syntax",
+]
+
+[[package]]
 name = "digest"
 version = "0.10.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1387,9 +1404,11 @@ dependencies = [
  "async-lsp",
  "checking",
  "clap",
+ "diagnostics",
  "files",
  "globset",
  "indexing",
+ "itertools 0.14.0",
  "lowering",
  "parking_lot",
  "path-absolutize",
@@ -1857,6 +1876,7 @@ dependencies = [
  "async-lsp",
  "checking",
  "convert_case",
+ "diagnostics",
  "files",
  "glob",
  "indexing",

@@ -113,13 +113,13 @@ pub enum ExpressionKind {
     Do {
         bind: Option<TermVariableResolution>,
         discard: Option<TermVariableResolution>,
-        statements: Arc<[DoStatement]>,
+        statements: Arc<[DoStatementId]>,
     },
     Ado {
         map: Option<TermVariableResolution>,
         apply: Option<TermVariableResolution>,
         pure: Option<TermVariableResolution>,
-        statements: Arc<[DoStatement]>,
+        statements: Arc<[DoStatementId]>,
         expression: Option<ExpressionId>,
     },
     Constructor {
@@ -418,6 +418,7 @@ pub struct LoweringInfo {
     pub(crate) term_item: FxHashMap<TermItemId, TermItemIr>,
     pub(crate) type_item: FxHashMap<TypeItemId, TypeItemIr>,
 
+    pub(crate) do_statement: FxHashMap<DoStatementId, DoStatement>,
     pub(crate) let_binding: Arena<LetBindingNameGroup>,
     pub(crate) let_binding_name: ArenaMap<LetBindingNameGroupId, LetBindingName>,
 
@@ -438,6 +439,10 @@ impl LoweringInfo {
         self.type_kind.iter().map(|(k, v)| (*k, v))
     }
 
+    pub fn iter_do_statement(&self) -> impl Iterator<Item = (DoStatementId, &DoStatement)> {
+        self.do_statement.iter().map(|(k, v)| (*k, v))
+    }
+
     pub fn iter_term_operator(&self) -> impl Iterator<Item = (TermOperatorId, FileId, TermItemId)> {
         self.term_operator.iter().map(|(o_id, (f_id, t_id))| (*o_id, *f_id, *t_id))
     }
@@ -456,6 +461,10 @@ impl LoweringInfo {
 
     pub fn get_type_kind(&self, id: TypeId) -> Option<&TypeKind> {
         self.type_kind.get(&id)
+    }
+
+    pub fn get_do_statement(&self, id: DoStatementId) -> Option<&DoStatement> {
+        self.do_statement.get(&id)
     }
 
     pub fn get_term_item(&self, id: TermItemId) -> Option<&TermItemIr> {

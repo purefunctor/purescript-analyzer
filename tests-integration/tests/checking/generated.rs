@@ -455,3 +455,69 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_213_row_constraint_multiple_main() { run_test("213_row_constraint_multiple", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_214_row_nub_left_bias_main() { run_test("214_row_nub_left_bias", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_215_do_bind_error_main() { run_test("215_do_bind_error", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_216_ado_bind_error_main() { run_test("216_ado_bind_error", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_217_do_monad_error_main() { run_test("217_do_monad_error", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_218_ado_monad_error_main() { run_test("218_ado_monad_error", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_219_do_mixed_monad_error_main() { run_test("219_do_mixed_monad_error", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_220_do_let_premature_solve_main() { run_test("220_do_let_premature_solve", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_221_do_let_annotation_solve_main() { run_test("221_do_let_annotation_solve", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_222_ado_let_premature_solve_main() { run_test("222_ado_let_premature_solve", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_223_ado_let_annotation_solve_main() { run_test("223_ado_let_annotation_solve", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_224_record_shrinking_main() { run_test("224_record_shrinking", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_225_record_binder_additional_property_main() { run_test("225_record_binder_additional_property", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_226_record_binder_additional_property_nested_main() { run_test("226_record_binder_additional_property_nested", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_227_record_expression_exact_match_main() { run_test("227_record_expression_exact_match", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_228_record_expression_missing_field_main() { run_test("228_record_expression_missing_field", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_229_record_expression_additional_field_main() { run_test("229_record_expression_additional_field", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_230_record_expression_missing_and_additional_main() { run_test("230_record_expression_missing_and_additional", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_231_record_expression_nested_additional_main() { run_test("231_record_expression_nested_additional", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_232_instance_head_nil_kind_application_main() { run_test("232_instance_head_nil_kind_application", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_233_record_instance_matching_main() { run_test("233_record_instance_matching", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_234_record_instance_open_row_main() { run_test("234_record_instance_open_row", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_235_instance_head_invalid_row_main() { run_test("235_instance_head_invalid_row", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_236_category_function_instance_main() { run_test("236_category_function_instance", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_237_bound_variable_unification_main() { run_test("237_bound_variable_unification", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_238_function_application_subtype_main() { run_test("238_function_application_subtype", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_245_do_notation_panic_main() { run_test("245_do_notation_panic", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_246_do_bind_only_main() { run_test("246_do_bind_only", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_247_do_discard_not_in_scope_main() { run_test("247_do_discard_not_in_scope", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_248_do_empty_block_main() { run_test("248_do_empty_block", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_249_do_final_bind_main() { run_test("249_do_final_bind", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_250_do_final_let_main() { run_test("250_do_final_let", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_251_lookup_implicit_panic_main() { run_test("251_lookup_implicit_panic", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_252_invalid_type_application_basic_main() { run_test("252_invalid_type_application_basic", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_253_invalid_type_application_too_many_main() { run_test("253_invalid_type_application_too_many", "Main"); }

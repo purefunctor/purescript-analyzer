@@ -217,7 +217,6 @@ where
 
                         let label = SmolStr::clone(name);
                         let id = infer_binder(state, context, *value)?;
-
                         fields.push(RowField { label, id });
                     }
                     lowering::BinderRecordItem::RecordPun { id, name } => {
@@ -225,14 +224,16 @@ where
 
                         let label = SmolStr::clone(name);
                         let field_type = state.fresh_unification_type(context);
-                        state.term_scope.bind_pun(*id, field_type);
 
+                        state.term_scope.bind_pun(*id, field_type);
                         fields.push(RowField { label, id: field_type });
                     }
                 }
             }
 
-            let row_type = RowType::from_unsorted(fields, None);
+            let row_tail = state.fresh_unification_kinded(context.prim.row_type);
+
+            let row_type = RowType::from_unsorted(fields, Some(row_tail));
             let row_type = state.storage.intern(Type::Row(row_type));
 
             let record_type =
@@ -240,9 +241,10 @@ where
 
             if let BinderMode::Check { expected_type } = mode {
                 unification::subtype(state, context, record_type, expected_type)?;
+                Ok(expected_type)
+            } else {
+                Ok(record_type)
             }
-
-            Ok(record_type)
         }
 
         lowering::BinderKind::Parenthesized { parenthesized } => {

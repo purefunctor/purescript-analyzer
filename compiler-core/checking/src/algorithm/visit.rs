@@ -39,6 +39,31 @@ impl TypeVisitor for CollectFileReferences<'_> {
     }
 }
 
+/// Checks if a type contains any rows with labels.
+pub struct HasLabeledRole {
+    contains: bool,
+}
+
+impl HasLabeledRole {
+    pub fn on(state: &mut CheckState, id: TypeId) -> bool {
+        let mut visitor = HasLabeledRole { contains: false };
+        visit_type(state, id, &mut visitor);
+        visitor.contains
+    }
+}
+
+impl TypeVisitor for HasLabeledRole {
+    fn visit(&mut self, _state: &mut CheckState, _id: TypeId, t: &Type) -> VisitAction {
+        if let Type::Row(RowType { fields, .. }) = t
+            && !fields.is_empty()
+        {
+            self.contains = true;
+            return VisitAction::Stop;
+        }
+        VisitAction::Continue
+    }
+}
+
 /// Recursively visit a type without transforming it.
 pub fn visit_type<V: TypeVisitor>(state: &mut CheckState, id: TypeId, visitor: &mut V) {
     let id = state.normalize_type(id);

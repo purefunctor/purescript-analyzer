@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -8,7 +9,7 @@ Types
 Test :: RowList Type
 
 Synonyms
-Test = Cons @Type "T" Int Nil
+Test = Cons @Type "T" Int (Nil @Type)
   Quantified = :0
   Kind = :0
   Type = :0

@@ -17,12 +17,14 @@ no-tracing = ["checking/no-tracing"]
 
 [dependencies]
 checking = { version = "0.1.0", path = "../compiler-core/checking" }
+diagnostics = { version = "0.1.0", path = "../compiler-core/diagnostics" }
 analyzer = { version = "0.1.0", path = "../compiler-lsp/analyzer" }
 async-lsp = "0.2.2"
 clap = { version = "4.5.53", features = ["derive"] }
 files = { version = "0.1.0", path = "../compiler-core/files" }
 globset = "0.4.18"
 indexing = { version = "0.1.0", path = "../compiler-core/indexing" }
+itertools = "0.14.0"
 lowering = { version = "0.1.0", path = "../compiler-core/lowering" }
 parking_lot = "0.12.5"
 path-absolutize = "3.1.1"

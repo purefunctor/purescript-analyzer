@@ -608,7 +608,8 @@ where
 
     // Now that all items in the SCC are processed, the kind should be fully resolved
     if !is_binary_operator_type(state, kind) {
-        state.insert_error(ErrorKind::InvalidTypeOperator { id: kind });
+        let kind_message = state.render_local_type(context, kind);
+        state.insert_error(ErrorKind::InvalidTypeOperator { kind_message });
     }
 
     // Generalize and store the kind
@@ -1021,11 +1022,8 @@ fn check_roles(
         if is_foreign || declared >= inferred {
             *validated = declared;
         } else {
-            state.insert_error(ErrorKind::InvalidRoleDeclaration {
-                type_id,
-                parameter_index: index,
-                declared,
-                inferred,
+            state.with_error_step(ErrorStep::TypeDeclaration(type_id), |state| {
+                state.insert_error(ErrorKind::InvalidRoleDeclaration { index, declared, inferred });
             });
         }
     }

@@ -1,0 +1,20 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+
+Types
+ListToRow :: RowList Type -> Constraint
+ListToRow2 :: RowList Type -> RowList Type -> Constraint
+
+Classes
+class ListToRow (&0 :: RowList Type)
+class ListToRow2 (&0 :: RowList Type) (&1 :: RowList Type)
+
+Instances
+instance ListToRow (Nil @Type :: RowList Type)
+  chain: 0
+instance ListToRow2 (Nil @Type :: RowList Type) (Nil @Type :: RowList Type)
+  chain: 0

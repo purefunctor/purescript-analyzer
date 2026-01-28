@@ -1,9 +1,11 @@
 pub mod algorithm;
-pub mod error;
 pub mod trace;
 
 pub mod core;
 pub use core::{Type, TypeId, TypeInterner};
+
+pub mod error;
+pub use error::{TypeErrorMessageId, TypeErrorMessageInterner};
 
 use std::sync::Arc;
 
@@ -49,7 +51,7 @@ pub struct CheckedModule {
     pub roles: FxHashMap<TypeItemId, Arc<[core::Role]>>,
 
     pub errors: Vec<CheckError>,
-    pub custom_messages: Vec<String>,
+    pub error_messages: TypeErrorMessageInterner,
 }
 
 impl CheckedModule {
