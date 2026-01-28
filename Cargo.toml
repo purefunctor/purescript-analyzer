@@ -1,6 +1,7 @@
 [workspace]
 members = [
   "compiler-bin",
+  "compiler-compatibility",
   "compiler-core/*",
   "compiler-lsp/*",
   "compiler-scripts",
@@ -9,7 +10,7 @@ members = [
   "tests-package-set",
 ]
 default-members = [
-  "compiler-core/*", 
+  "compiler-core/*",
   "compiler-lsp/*",
 ]
 resolver = "3"
