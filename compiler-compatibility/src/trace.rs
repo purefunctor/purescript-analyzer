@@ -57,20 +57,12 @@ impl CheckingLogsRouter {
 impl Write for CheckingLogsWriter {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         let mut state = self.state.lock().unwrap();
-        if let Some(w) = state.writer.as_mut() {
-            w.write(buf)
-        } else {
-            Ok(buf.len())
-        }
+        if let Some(w) = state.writer.as_mut() { w.write(buf) } else { Ok(buf.len()) }
     }
 
     fn flush(&mut self) -> io::Result<()> {
         let mut state = self.state.lock().unwrap();
-        if let Some(w) = state.writer.as_mut() {
-            w.flush()
-        } else {
-            Ok(())
-        }
+        if let Some(w) = state.writer.as_mut() { w.flush() } else { Ok(()) }
     }
 }
 
@@ -98,8 +90,10 @@ impl TracingHandle {
         let timestamp =
             SystemTime::now().duration_since(UNIX_EPOCH).expect("time before epoch").as_millis();
 
-        let sanitized: String =
-            package.chars().map(|c| if c.is_ascii_alphanumeric() || c == '-' { c } else { '_' }).collect();
+        let sanitized: String = package
+            .chars()
+            .map(|c| if c.is_ascii_alphanumeric() || c == '-' { c } else { '_' })
+            .collect();
 
         let path = self.trace_dir.join(format!("{}_{}.jsonl", timestamp, sanitized));
         let file = File::create(&path)?;
@@ -141,8 +135,9 @@ pub fn init_tracing(
 ) -> TracingHandle {
     let router = CheckingLogsRouter::new();
 
-    let stdout_filter =
-        Targets::new().with_target("compiler_compatibility", stdout_level).with_default(LevelFilter::OFF);
+    let stdout_filter = Targets::new()
+        .with_target("compiler_compatibility", stdout_level)
+        .with_default(LevelFilter::OFF);
     let stdout_layer = tracing_subscriber::fmt::layer().with_filter(stdout_filter);
 
     let file_filter =

@@ -98,7 +98,9 @@ fn main() -> error::Result<()> {
     tracing::info!(target: "compiler_compatibility", directory = %layout.packages_dir.display(), "Finished unpacking");
 
     for package in &cli.packages {
-        let _span = tracing::info_span!(target: "compiler_compatibility", "for_each_package", package).entered();
+        let _span =
+            tracing::info_span!(target: "compiler_compatibility", "for_each_package", package)
+                .entered();
 
         let guard =
             tracing_handle.begin_package(package).expect("failed to start package trace capture");
