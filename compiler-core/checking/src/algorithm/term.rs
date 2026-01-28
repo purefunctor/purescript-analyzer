@@ -2,7 +2,7 @@ use std::iter;
 
 use building_types::QueryResult;
 use indexing::TermItemId;
-use itertools::Itertools;
+use itertools::{Itertools, Position};
 use smol_str::SmolStr;
 
 use crate::ExternalQueries;
@@ -422,15 +422,10 @@ where
         }
 
         lowering::ExpressionKind::Do { bind, discard, statements } => {
-            let Some(bind) = bind else { return Ok(unknown) };
-            let Some(discard) = discard else { return Ok(unknown) };
             infer_do(state, context, *bind, *discard, statements)
         }
 
         lowering::ExpressionKind::Ado { map, apply, pure, statements, expression } => {
-            let Some(map) = map else { return Ok(unknown) };
-            let Some(apply) = apply else { return Ok(unknown) };
-            let Some(pure) = pure else { return Ok(unknown) };
             infer_ado(state, context, *map, *apply, *pure, statements, *expression)
         }
 
@@ -608,20 +603,116 @@ where
     Ok(inferred_type)
 }
 
+/// Lookup `bind` from resolution, or synthesize `?m ?a -> (?a -> ?m ?b) -> ?m ?b`.
+fn lookup_or_synthesise_bind<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    resolution: Option<lowering::TermVariableResolution>,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    if let Some(resolution) = resolution {
+        lookup_term_variable(state, context, resolution)
+    } else {
+        let m = state.fresh_unification_kinded(context.prim.type_to_type);
+        let a = state.fresh_unification_type(context);
+        let b = state.fresh_unification_type(context);
+        let m_a = state.storage.intern(Type::Application(m, a));
+        let m_b = state.storage.intern(Type::Application(m, b));
+        let a_to_m_b = state.storage.intern(Type::Function(a, m_b));
+        Ok(state.make_function(&[m_a, a_to_m_b], m_b))
+    }
+}
+
+/// Lookup `discard` from resolution, or synthesize `?m ?a -> (?a -> ?m ?b) -> ?m ?b`.
+fn lookup_or_synthesise_discard<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    resolution: Option<lowering::TermVariableResolution>,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    // Same shape as bind
+    lookup_or_synthesise_bind(state, context, resolution)
+}
+
+/// Lookup `map` from resolution, or synthesize `(?a -> ?b) -> ?f ?a -> ?f ?b`.
+fn lookup_or_synthesise_map<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    resolution: Option<lowering::TermVariableResolution>,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    if let Some(resolution) = resolution {
+        lookup_term_variable(state, context, resolution)
+    } else {
+        let f = state.fresh_unification_kinded(context.prim.type_to_type);
+        let a = state.fresh_unification_type(context);
+        let b = state.fresh_unification_type(context);
+        let f_a = state.storage.intern(Type::Application(f, a));
+        let f_b = state.storage.intern(Type::Application(f, b));
+        let a_to_b = state.storage.intern(Type::Function(a, b));
+        Ok(state.make_function(&[a_to_b, f_a], f_b))
+    }
+}
+
+/// Lookup `apply` from resolution, or synthesize `?f (?a -> ?b) -> ?f ?a -> ?f ?b`.
+fn lookup_or_synthesise_apply<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    resolution: Option<lowering::TermVariableResolution>,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    if let Some(resolution) = resolution {
+        lookup_term_variable(state, context, resolution)
+    } else {
+        let f = state.fresh_unification_kinded(context.prim.type_to_type);
+        let a = state.fresh_unification_type(context);
+        let b = state.fresh_unification_type(context);
+        let a_to_b = state.storage.intern(Type::Function(a, b));
+        let f_a_to_b = state.storage.intern(Type::Application(f, a_to_b));
+        let f_a = state.storage.intern(Type::Application(f, a));
+        let f_b = state.storage.intern(Type::Application(f, b));
+        Ok(state.make_function(&[f_a_to_b, f_a], f_b))
+    }
+}
+
+/// Lookup `pure` from resolution, or synthesize `?a -> ?f ?a`.
+fn lookup_or_synthesise_pure<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    resolution: Option<lowering::TermVariableResolution>,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    if let Some(resolution) = resolution {
+        lookup_term_variable(state, context, resolution)
+    } else {
+        let f = state.fresh_unification_kinded(context.prim.type_to_type);
+        let a = state.fresh_unification_type(context);
+        let f_a = state.storage.intern(Type::Application(f, a));
+        Ok(state.storage.intern(Type::Function(a, f_a)))
+    }
+}
+
 #[tracing::instrument(skip_all, name = "infer_do")]
 fn infer_do<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    bind: lowering::TermVariableResolution,
-    discard: lowering::TermVariableResolution,
+    bind: Option<lowering::TermVariableResolution>,
+    discard: Option<lowering::TermVariableResolution>,
     statement_ids: &[lowering::DoStatementId],
 ) -> QueryResult<TypeId>
 where
     Q: ExternalQueries,
 {
-    let bind_type = lookup_term_variable(state, context, bind)?;
-    let discard_type = lookup_term_variable(state, context, discard)?;
-
     // First, perform a forward pass where variable bindings are bound
     // to unification variables. Let bindings are not checked here to
     // avoid premature solving of unification variables. Instead, they
@@ -658,12 +749,59 @@ where
         .filter(|step| matches!(step, DoStep::Bind { .. } | DoStep::Discard { .. }))
         .count();
 
-    let pure_expression = steps.iter().rev().find_map(|step| match step {
-        DoStep::Bind { expression, .. } | DoStep::Discard { expression, .. } => Some(*expression),
-        DoStep::Let { .. } => None,
-    });
+    let (has_bind_step, has_discard_step) = {
+        let mut has_bind = false;
+        let mut has_discard = false;
+        for (position, statement) in steps.iter().with_position() {
+            let is_final = matches!(position, Position::Last | Position::Only);
+            match statement {
+                DoStep::Bind { .. } => has_bind = true,
+                DoStep::Discard { .. } if !is_final => has_discard = true,
+                _ => (),
+            }
+        }
+        (has_bind, has_discard)
+    };
 
-    let Some(Some(pure_expression)) = pure_expression else {
+    let bind_type = if has_bind_step {
+        lookup_or_synthesise_bind(state, context, bind)?
+    } else {
+        context.prim.unknown
+    };
+
+    let discard_type = if has_discard_step {
+        lookup_or_synthesise_discard(state, context, discard)?
+    } else {
+        context.prim.unknown
+    };
+
+    let pure_expression = match steps.iter().last() {
+        Some(statement) => match statement {
+            // Technically valid, syntactically disallowed. This allows
+            // partially-written do expressions to infer, with a friendly
+            // warning to nudge the user that `bind` is prohibited.
+            DoStep::Bind { statement, expression, .. } => {
+                state.with_error_step(ErrorStep::InferringDoBind(*statement), |state| {
+                    state.insert_error(ErrorKind::InvalidFinalBind);
+                });
+                expression
+            }
+            DoStep::Discard { expression, .. } => expression,
+            DoStep::Let { statement, .. } => {
+                state.with_error_step(ErrorStep::CheckingDoLet(*statement), |state| {
+                    state.insert_error(ErrorKind::InvalidFinalLet);
+                });
+                return Ok(context.prim.unknown);
+            }
+        },
+        None => {
+            state.insert_error(ErrorKind::EmptyDoBlock);
+            return Ok(context.prim.unknown);
+        }
+    };
+
+    // If either don't actually have expressions, it's empty!
+    let Some(pure_expression) = *pure_expression else {
         state.insert_error(ErrorKind::EmptyDoBlock);
         return Ok(context.prim.unknown);
     };
@@ -791,10 +929,12 @@ where
     // The `first_continuation` is the overall type of the do expression,
     // built iteratively and through solving unification variables. On
     // the other hand, the `final_continuation` is the expected type for
-    // the final statement in the do expression.
-    let [first_continuation, .., final_continuation] = continuation_types[..] else {
-        unreachable!("invariant violated: insufficient continuation_types");
-    };
+    // the final statement in the do expression. If there is only a single
+    // statement in the do expression, then these two bindings are equivalent.
+    let first_continuation =
+        *continuation_types.first().expect("invariant violated: empty continuation_types");
+    let final_continuation =
+        *continuation_types.last().expect("invariant violated: empty continuation_types");
 
     check_expression(state, context, pure_expression, final_continuation)?;
 
@@ -833,19 +973,15 @@ enum AdoStep<'a> {
 fn infer_ado<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    map: lowering::TermVariableResolution,
-    apply: lowering::TermVariableResolution,
-    pure: lowering::TermVariableResolution,
+    map: Option<lowering::TermVariableResolution>,
+    apply: Option<lowering::TermVariableResolution>,
+    pure: Option<lowering::TermVariableResolution>,
     statement_ids: &[lowering::DoStatementId],
     expression: Option<lowering::ExpressionId>,
 ) -> QueryResult<TypeId>
 where
     Q: ExternalQueries,
 {
-    let map_type = lookup_term_variable(state, context, map)?;
-    let apply_type = lookup_term_variable(state, context, apply)?;
-    let pure_type = lookup_term_variable(state, context, pure)?;
-
     // First, perform a forward pass where variable bindings are bound
     // to unification variables. Let bindings are not checked here to
     // avoid premature solving of unification variables. Instead, they
@@ -897,6 +1033,7 @@ where
             }
         }
         return if let Some(expression) = expression {
+            let pure_type = lookup_or_synthesise_pure(state, context, pure)?;
             check_function_term_application(state, context, pure_type, expression)
         } else {
             state.insert_error(ErrorKind::EmptyAdoBlock);
@@ -940,6 +1077,20 @@ where
     //                           >> ?a := String
     //
     //   continuation_type := Effect (?b -> ?in_expression)
+
+    // Lazily compute map_type and apply_type only when needed.
+    // - 1 action: only map is needed
+    // - 2+ actions: map and apply are needed
+    let action_count = binder_types.len();
+
+    let map_type = lookup_or_synthesise_map(state, context, map)?;
+
+    let apply_type = if action_count > 1 {
+        lookup_or_synthesise_apply(state, context, apply)?
+    } else {
+        context.prim.unknown
+    };
+
     let mut continuation_type = None;
 
     for step in &steps {

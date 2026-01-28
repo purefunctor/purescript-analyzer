@@ -14,7 +14,7 @@ use crate::algorithm::safety::safe_loop;
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::{substitute, transfer, unification};
 use crate::core::{ForallBinder, RowField, RowType, Type, TypeId, Variable};
-use crate::error::ErrorStep;
+use crate::error::{ErrorKind, ErrorStep};
 
 const MISSING_NAME: SmolStr = SmolStr::new_static("<MissingName>");
 
@@ -400,7 +400,24 @@ where
             infer_surface_app_kind(state, context, (function_t, function_k), argument)
         }
 
-        _ => Ok((context.prim.unknown, context.prim.unknown)),
+        _ => {
+            // Even if the function type cannot be applied, the argument must
+            // still be inferred. For invalid applications on instance heads,
+            // this ensures that implicit variables are bound.
+            let (argument_t, _) = infer_surface_kind(state, context, argument)?;
+
+            let function_type = state.render_local_type(context, function_t);
+            let function_kind = state.render_local_type(context, function_k);
+            let argument_type = state.render_local_type(context, argument_t);
+            state.insert_error(ErrorKind::InvalidTypeApplication {
+                function_type,
+                function_kind,
+                argument_type,
+            });
+
+            let t = state.storage.intern(Type::Application(function_t, argument_t));
+            Ok((t, context.prim.unknown))
+        }
     }
 }
 

@@ -63,6 +63,8 @@ pub enum ErrorKind {
     DeriveMissingFunctor,
     EmptyAdoBlock,
     EmptyDoBlock,
+    InvalidFinalBind,
+    InvalidFinalLet,
     InstanceHeadMismatch {
         class_file: files::FileId,
         class_item: indexing::TypeItemId,
@@ -78,6 +80,11 @@ pub enum ErrorKind {
     InstanceMemberTypeMismatch {
         expected: TypeErrorMessageId,
         actual: TypeErrorMessageId,
+    },
+    InvalidTypeApplication {
+        function_type: TypeErrorMessageId,
+        function_kind: TypeErrorMessageId,
+        argument_type: TypeErrorMessageId,
     },
     InvalidTypeOperator {
         kind_message: TypeErrorMessageId,
