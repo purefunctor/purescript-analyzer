@@ -12,7 +12,10 @@ pub struct RegistryLayout {
 
 impl RegistryLayout {
     pub fn new(registry_dir: impl AsRef<Path>, index_dir: impl AsRef<Path>) -> RegistryLayout {
-        RegistryLayout { registry_dir: registry_dir.as_ref().to_path_buf(), index_dir: index_dir.as_ref().to_path_buf() }
+        RegistryLayout {
+            registry_dir: registry_dir.as_ref().to_path_buf(),
+            index_dir: index_dir.as_ref().to_path_buf(),
+        }
     }
 
     pub fn package_sets_dir(&self) -> PathBuf {

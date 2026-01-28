@@ -36,12 +36,11 @@ impl RegistryReader for FsRegistry {
             let entry = entry?;
             let path = entry.path();
 
-            if path.extension().is_some_and(|ext| ext == "json") {
-                if let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {
-                    if let Ok(version) = stem.parse::<semver::Version>() {
-                        versions.push(version);
-                    }
-                }
+            if path.extension().is_some_and(|ext| ext == "json")
+                && let Some(stem) = path.file_stem().and_then(|s| s.to_str())
+                && let Ok(version) = stem.parse::<semver::Version>()
+            {
+                versions.push(version);
             }
         }
 
@@ -57,7 +56,9 @@ impl RegistryReader for FsRegistry {
     fn read_package_set(&self, version: Option<&str>) -> Result<PackageSet> {
         let version = match version {
             Some(v) => v.to_string(),
-            None => self.list_package_sets()?.into_iter().next().ok_or(RegistryError::NoPackageSets)?,
+            None => {
+                self.list_package_sets()?.into_iter().next().ok_or(RegistryError::NoPackageSets)?
+            }
         };
 
         let path = self.layout.package_sets_dir().join(format!("{}.json", version));

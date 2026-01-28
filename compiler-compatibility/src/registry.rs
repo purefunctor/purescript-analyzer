@@ -1,6 +1,6 @@
 use std::fs;
 
-use git2::{build::RepoBuilder, FetchOptions, Repository};
+use git2::{FetchOptions, Repository, build::RepoBuilder};
 use purescript_registry::FsRegistry;
 
 use crate::{error::Result, layout::Layout};

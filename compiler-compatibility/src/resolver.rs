@@ -44,13 +44,9 @@ fn resolve_recursive(
 
     let manifests = registry.read_manifest_versions(name)?;
     let parsed_version: Version = version.parse()?;
-    let manifest = manifests
-        .iter()
-        .find(|m| m.version == parsed_version)
-        .ok_or_else(|| CompatError::ManifestNotFound {
-            name: name.to_string(),
-            version: version.to_string(),
-        })?;
+    let manifest = manifests.iter().find(|m| m.version == parsed_version).ok_or_else(|| {
+        CompatError::ManifestNotFound { name: name.to_string(), version: version.to_string() }
+    })?;
 
     for (dep_name, range) in &manifest.dependencies {
         let dep_version = package_set

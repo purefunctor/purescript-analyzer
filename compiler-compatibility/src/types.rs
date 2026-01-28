@@ -20,8 +20,8 @@ pub struct CompatConfig {
 }
 
 impl Default for CompatConfig {
-    fn default() -> Self {
-        Self {
+    fn default() -> CompatConfig {
+        CompatConfig {
             root: PathBuf::from("target/compiler-compatibility"),
             no_cache: false,
             update_repos: false,

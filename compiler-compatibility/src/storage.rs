@@ -11,7 +11,12 @@ pub fn tarball_url(name: &str, version: &str) -> String {
     format!("https://packages.registry.purescript.org/{}/{}.tar.gz", name, version)
 }
 
-pub fn fetch_tarball(name: &str, version: &str, layout: &Layout, no_cache: bool) -> Result<PathBuf> {
+pub fn fetch_tarball(
+    name: &str,
+    version: &str,
+    layout: &Layout,
+    no_cache: bool,
+) -> Result<PathBuf> {
     let tarball_path = layout.tarball_cache_path(name, version);
 
     if !no_cache && tarball_path.exists() {
@@ -31,8 +36,13 @@ pub fn fetch_tarball(name: &str, version: &str, layout: &Layout, no_cache: bool)
     Ok(tarball_path)
 }
 
-pub fn verify_tarball(path: &PathBuf, expected_sha256: &str, name: &str, version: &str) -> Result<()> {
-    use base64::{engine::general_purpose::STANDARD, Engine};
+pub fn verify_tarball(
+    path: &PathBuf,
+    expected_sha256: &str,
+    name: &str,
+    version: &str,
+) -> Result<()> {
+    use base64::{Engine, engine::general_purpose::STANDARD};
 
     let mut file = fs::File::open(path)?;
     let mut hasher = Sha256::new();
@@ -45,7 +55,10 @@ pub fn verify_tarball(path: &PathBuf, expected_sha256: &str, name: &str, version
     let expected_b64 = expected_sha256.strip_prefix("sha256-").unwrap_or(expected_sha256);
 
     if hash_b64 != expected_b64 {
-        return Err(CompatError::HashMismatch { name: name.to_string(), version: version.to_string() });
+        return Err(CompatError::HashMismatch {
+            name: name.to_string(),
+            version: version.to_string(),
+        });
     }
 
     Ok(())

@@ -24,7 +24,10 @@ pub fn unpack_tarball(tarball: &Path, dest_dir: &Path) -> Result<PathBuf> {
         }
 
         if path.is_absolute() {
-            return Err(CompatError::Other(format!("absolute path in archive: {}", path.display())));
+            return Err(CompatError::Other(format!(
+                "absolute path in archive: {}",
+                path.display()
+            )));
         }
 
         entry.unpack_in(dest_dir)?;
