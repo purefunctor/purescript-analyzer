@@ -305,13 +305,7 @@ where
 {
     state.with_error_step(ErrorStep::CheckingExpression(expr_id), |state| {
         let inferred = infer_expression_quiet(state, context, expr_id)?;
-        unification::subtype_with_mode(
-            state,
-            context,
-            inferred,
-            expected,
-            ElaborationMode::No,
-        )?;
+        unification::subtype_with_mode(state, context, inferred, expected, ElaborationMode::No)?;
         crate::trace_fields!(state, context, { inferred = inferred, expected = expected });
         Ok(inferred)
     })
@@ -1820,7 +1814,13 @@ pub fn check_function_term_application<Q>(
 where
     Q: ExternalQueries,
 {
-    check_function_application_core(state, context, function_t, expression_id, check_expression_argument)
+    check_function_application_core(
+        state,
+        context,
+        function_t,
+        expression_id,
+        check_expression_argument,
+    )
 }
 
 fn check_let_chunks<Q>(

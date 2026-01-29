@@ -181,9 +181,7 @@ where
             let type_id = match mode {
                 BinderMode::Infer => infer_binder(state, context, *binder)?,
                 BinderMode::Check { expected_type, elaboration } => match elaboration {
-                    ElaborationMode::Yes => {
-                        check_binder(state, context, *binder, expected_type)?
-                    }
+                    ElaborationMode::Yes => check_binder(state, context, *binder, expected_type)?,
                     ElaborationMode::No => {
                         check_argument_binder(state, context, *binder, expected_type)?
                     }
