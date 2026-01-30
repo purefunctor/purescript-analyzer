@@ -1,3 +1,5 @@
+#![allow(dead_code, unused_variables)]
+
 use std::sync::Arc;
 
 use files::FileId;
@@ -272,4 +274,75 @@ where
             exhaustiveness_state.allocate(pattern, t)
         }
     }
+}
+
+fn algorithm_u<Q>(
+    check_state: &mut CheckState,
+    exhaustiveness_state: &mut ExhaustivenessState,
+    context: &CheckContext<Q>,
+    matrix: &PatternMatrix,
+    vector: &PatternVector,
+) -> bool
+where
+    Q: ExternalQueries,
+{
+    todo!()
+}
+
+fn algorithm_m<Q>(
+    check_state: &mut CheckState,
+    exhaustiveness_state: &mut ExhaustivenessState,
+    context: &CheckContext<Q>,
+    matrix: &PatternMatrix,
+    vector: &PatternVector,
+) -> Option<Vec<WitnessVector>>
+where
+    Q: ExternalQueries,
+{
+    todo!()
+}
+
+fn specialise_matrix<Q>(
+    check_state: &mut CheckState,
+    exhaustiveness_state: &mut ExhaustivenessState,
+    context: &CheckContext<Q>,
+    (file_id, term_id): (FileId, TermItemId),
+    arity: usize,
+    matrix: &PatternMatrix,
+) -> PatternMatrix
+where
+    Q: ExternalQueries,
+{
+    todo!()
+}
+
+fn specialise_vector<Q>(
+    check_state: &mut CheckState,
+    exhaustiveness_state: &mut ExhaustivenessState,
+    context: &CheckContext<Q>,
+    (file_id, term_id): (FileId, TermItemId),
+    arity: usize,
+    matrix: &PatternVector,
+) -> PatternVector
+where
+    Q: ExternalQueries,
+{
+    todo!()
+}
+
+fn default_matrix(
+    exhaustiveness_state: &ExhaustivenessState,
+    matrix: &PatternMatrix,
+) -> PatternMatrix {
+    let filter_map = matrix.iter().filter_map(|row| {
+        let [first_column, ref default_columns @ ..] = row[..] else {
+            return None;
+        };
+        if let Pattern::Wildcard = &exhaustiveness_state.interner[first_column] {
+            Some(default_columns.to_vec())
+        } else {
+            None
+        }
+    });
+    filter_map.collect()
 }
