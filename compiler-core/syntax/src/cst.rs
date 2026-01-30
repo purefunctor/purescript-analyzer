@@ -1169,3 +1169,26 @@ has_token!(
     | string() -> STRING
     | raw_string() -> RAW_STRING
 );
+
+has_token!(
+    BinderInteger
+    | minus_token() -> MINUS
+    | integer_token() -> INTEGER
+);
+
+has_token!(
+    BinderNumber
+    | minus_token() -> MINUS
+    | number_token() -> NUMBER
+);
+
+has_token!(
+    BinderString
+    | string() -> STRING
+    | raw_string() -> RAW_STRING
+);
+
+has_token!(
+    BinderChar
+    | char_token() -> CHAR
+);

@@ -45,8 +45,25 @@ fn lower_binder_kind(
                 .collect();
             BinderKind::OperatorChain { head, tail }
         }
-        cst::Binder::BinderInteger(_) => BinderKind::Integer,
-        cst::Binder::BinderNumber(_) => BinderKind::Number,
+        cst::Binder::BinderInteger(cst) => {
+            let value = cst.integer_token().and_then(|token| {
+                let text = token.text();
+                let integer = if let Some(hex) = text.strip_prefix("0x") {
+                    let clean = hex.replace_smolstr("_", "");
+                    i32::from_str_radix(&clean, 16).ok()?
+                } else {
+                    let clean = text.replace_smolstr("_", "");
+                    clean.parse().ok()?
+                };
+                if cst.minus_token().is_some() { Some(-integer) } else { Some(integer) }
+            });
+            BinderKind::Integer { value }
+        }
+        cst::Binder::BinderNumber(cst) => {
+            let negative = cst.minus_token().is_some();
+            let value = cst.number_token().map(|token| SmolStr::from(token.text()));
+            BinderKind::Number { negative, value }
+        }
         cst::Binder::BinderConstructor(cst) => {
             let resolution = cst.name().and_then(|cst| {
                 let (qualifier, name) = lower_qualified_name(&cst, cst::QualifiedName::upper)?;
@@ -77,8 +94,50 @@ fn lower_binder_kind(
             BinderKind::Named { named, binder }
         }
         cst::Binder::BinderWildcard(_) => BinderKind::Wildcard,
-        cst::Binder::BinderString(_) => BinderKind::String,
-        cst::Binder::BinderChar(_) => BinderKind::Char,
+        cst::Binder::BinderString(cst) => {
+            let (kind, value) = if let Some(token) = cst.string() {
+                let text = token.text();
+                let value = text
+                    .strip_prefix('"')
+                    .and_then(|text| text.strip_suffix('"'))
+                    .map(SmolStr::from);
+                (StringKind::String, value)
+            } else if let Some(token) = cst.raw_string() {
+                let text = token.text();
+                let value = text
+                    .strip_prefix("\"\"\"")
+                    .and_then(|text| text.strip_suffix("\"\"\""))
+                    .map(SmolStr::from);
+                (StringKind::RawString, value)
+            } else {
+                (StringKind::String, None)
+            };
+            BinderKind::String { kind, value }
+        }
+        cst::Binder::BinderChar(cst) => {
+            let value = cst.char_token().and_then(|token| {
+                let text = token.text();
+                let inner = text.strip_prefix('\'')?.strip_suffix('\'')?;
+                if let Some(escaped) = inner.strip_prefix('\\') {
+                    match escaped.chars().next()? {
+                        'n' => Some('\n'),
+                        'r' => Some('\r'),
+                        't' => Some('\t'),
+                        '\\' => Some('\\'),
+                        '\'' => Some('\''),
+                        '0' => Some('\0'),
+                        'x' if escaped.len() >= 3 => {
+                            let hex = &escaped[1..3];
+                            u8::from_str_radix(hex, 16).ok().map(|b| b as char)
+                        }
+                        _ => None,
+                    }
+                } else {
+                    inner.chars().next()
+                }
+            });
+            BinderKind::Char { value }
+        }
         cst::Binder::BinderTrue(_) => BinderKind::Boolean { boolean: true },
         cst::Binder::BinderFalse(_) => BinderKind::Boolean { boolean: false },
         cst::Binder::BinderArray(cst) => {

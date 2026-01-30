@@ -20,7 +20,7 @@ pub enum Pattern {
     Char(char),
     String(SmolStr),
     Integer(i32),
-    Number(SmolStr),
+    Number(bool, SmolStr),
     Array { elements: Vec<PatternId> },
     Record { elements: Vec<RecordElement> },
     Constructor { file_id: FileId, item_id: TermItemId, fields: Vec<PatternId> },
@@ -55,23 +55,6 @@ impl ExhaustivenessState {
     }
 }
 
-fn lower_binder_default<Q>(
-    check_state: &mut CheckState,
-    exhaustiveness_state: &mut ExhaustivenessState,
-    context: &CheckContext<Q>,
-    id: Option<BinderId>,
-    t: TypeId,
-) -> PatternId
-where
-    Q: ExternalQueries,
-{
-    if let Some(id) = id {
-        lower_binder(check_state, exhaustiveness_state, context, id)
-    } else {
-        exhaustiveness_state.allocate_wildcard(t)
-    }
-}
-
 fn lower_binder<Q>(
     check_state: &mut CheckState,
     exhaustiveness_state: &mut ExhaustivenessState,
@@ -88,32 +71,51 @@ where
     };
 
     match kind {
-        lowering::BinderKind::Typed { binder, .. } => {
-            lower_binder_default(check_state, exhaustiveness_state, context, *binder, t)
-        }
+        lowering::BinderKind::Typed { binder, .. } => match binder {
+            Some(id) => lower_binder(check_state, exhaustiveness_state, context, *id),
+            None => exhaustiveness_state.allocate_wildcard(t),
+        },
         lowering::BinderKind::OperatorChain { .. } => {
             lower_operator_chain_binder(check_state, exhaustiveness_state, context, id, t)
         }
-        lowering::BinderKind::Integer => exhaustiveness_state.allocate(Pattern::Integer(42), t),
-        lowering::BinderKind::Number => {
-            exhaustiveness_state.allocate(Pattern::Number(SmolStr::new_inline("42.0")), t)
+        lowering::BinderKind::Integer { value } => match value {
+            Some(v) => exhaustiveness_state.allocate(Pattern::Integer(*v), t),
+            None => exhaustiveness_state.allocate_wildcard(t),
+        },
+        lowering::BinderKind::Number { negative, value } => {
+            if let Some(value) = value {
+                let pattern = Pattern::Number(*negative, SmolStr::clone(value));
+                exhaustiveness_state.allocate(pattern, t)
+            } else {
+                exhaustiveness_state.allocate_wildcard(t)
+            }
         }
-        lowering::BinderKind::Constructor { resolution, arguments } => {
-            lower_constructor_binder(check_state, exhaustiveness_state, context, resolution, arguments, t)
-        }
+        lowering::BinderKind::Constructor { resolution, arguments } => lower_constructor_binder(
+            check_state,
+            exhaustiveness_state,
+            context,
+            resolution,
+            arguments,
+            t,
+        ),
         lowering::BinderKind::Variable { .. } => exhaustiveness_state.allocate_wildcard(t),
-        lowering::BinderKind::Named { binder, .. } => {
-            lower_binder_default(check_state, exhaustiveness_state, context, *binder, t)
-        }
+        lowering::BinderKind::Named { binder, .. } => match binder {
+            Some(id) => lower_binder(check_state, exhaustiveness_state, context, *id),
+            None => exhaustiveness_state.allocate_wildcard(t),
+        },
         lowering::BinderKind::Wildcard => exhaustiveness_state.allocate_wildcard(t),
-        lowering::BinderKind::String => {
-            let pattern = Pattern::String(SmolStr::new_static("<todo>"));
-            exhaustiveness_state.allocate(pattern, t)
+        lowering::BinderKind::String { value, .. } => {
+            if let Some(value) = value {
+                let pattern = Pattern::String(SmolStr::clone(value));
+                exhaustiveness_state.allocate(pattern, t)
+            } else {
+                exhaustiveness_state.allocate_wildcard(t)
+            }
         }
-        lowering::BinderKind::Char => {
-            let pattern = Pattern::Char('\0');
-            exhaustiveness_state.allocate(pattern, t)
-        }
+        lowering::BinderKind::Char { value } => match value {
+            Some(v) => exhaustiveness_state.allocate(Pattern::Char(*v), t),
+            None => exhaustiveness_state.allocate_wildcard(t),
+        },
         lowering::BinderKind::Boolean { boolean } => {
             exhaustiveness_state.allocate(Pattern::Boolean(*boolean), t)
         }
@@ -123,9 +125,10 @@ where
         lowering::BinderKind::Record { record } => {
             lower_record_binder(check_state, exhaustiveness_state, context, record, t)
         }
-        lowering::BinderKind::Parenthesized { parenthesized } => {
-            lower_binder_default(check_state, exhaustiveness_state, context, *parenthesized, t)
-        }
+        lowering::BinderKind::Parenthesized { parenthesized } => match parenthesized {
+            Some(id) => lower_binder(check_state, exhaustiveness_state, context, *id),
+            None => exhaustiveness_state.allocate_wildcard(t),
+        },
     }
 }
 
@@ -192,7 +195,7 @@ where
 fn lower_constructor_binder<Q>(
     _check_state: &mut CheckState,
     exhaustiveness_state: &mut ExhaustivenessState,
-    context: &CheckContext<Q>,
+    _context: &CheckContext<Q>,
     _resolution: &Option<(FileId, TermItemId)>,
     _arguments: &Arc<[BinderId]>,
     t: TypeId,
@@ -207,7 +210,7 @@ where
 fn lower_operator_chain_binder<Q>(
     _check_state: &mut CheckState,
     exhaustiveness_state: &mut ExhaustivenessState,
-    context: &CheckContext<Q>,
+    _context: &CheckContext<Q>,
     _id: BinderId,
     t: TypeId,
 ) -> PatternId

@@ -110,7 +110,7 @@ where
             Ok(inferred_type)
         }
 
-        lowering::BinderKind::Integer => {
+        lowering::BinderKind::Integer { .. } => {
             let inferred_type = context.prim.int;
 
             if let BinderMode::Check { expected_type, .. } = mode {
@@ -120,7 +120,7 @@ where
             Ok(inferred_type)
         }
 
-        lowering::BinderKind::Number => {
+        lowering::BinderKind::Number { .. } => {
             let inferred_type = context.prim.number;
 
             if let BinderMode::Check { expected_type, .. } = mode {
@@ -197,7 +197,7 @@ where
             BinderMode::Check { expected_type, .. } => Ok(expected_type),
         },
 
-        lowering::BinderKind::String => {
+        lowering::BinderKind::String { .. } => {
             let inferred_type = context.prim.string;
 
             if let BinderMode::Check { expected_type, .. } = mode {
@@ -207,7 +207,7 @@ where
             Ok(inferred_type)
         }
 
-        lowering::BinderKind::Char => {
+        lowering::BinderKind::Char { .. } => {
             let inferred_type = context.prim.char;
 
             if let BinderMode::Check { expected_type, .. } = mode {
