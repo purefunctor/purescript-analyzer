@@ -8,7 +8,6 @@ use files::{FileId, Files};
 use line_index::LineIndex;
 use rowan::TextSize;
 
-use tracing::field;
 use url::Url;
 
 use crate::loader;

@@ -20,10 +20,10 @@ fn load_file(engine: &mut QueryEngine, files: &mut Files, path: &Path) -> Option
     let content = files.content(id);
 
     engine.set_content(id, content);
-    if let Ok((parsed, _)) = engine.parsed(id) {
-        if let Some(name) = parsed.module_name() {
-            engine.set_module_file(&name, id);
-        }
+    if let Ok((parsed, _)) = engine.parsed(id)
+        && let Some(name) = parsed.module_name()
+    {
+        engine.set_module_file(&name, id);
     }
 
     Some(id)
