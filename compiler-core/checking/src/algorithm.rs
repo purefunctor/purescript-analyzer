@@ -15,6 +15,8 @@ pub mod constraint;
 /// Implements type class deriving.
 pub mod derive;
 
+pub mod exhaustiveness;
+
 /// Implements type folding for traversals that modify.
 pub mod fold;
 
