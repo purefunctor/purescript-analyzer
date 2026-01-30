@@ -6,7 +6,7 @@ use sugar::OperatorTree;
 use sugar::bracketing::BracketingResult;
 
 use crate::ExternalQueries;
-use crate::algorithm::state::{CheckContext, CheckState};
+use crate::algorithm::state::{CheckContext, CheckState, OperatorBranchTypes};
 use crate::algorithm::{binder, kind, term, toolkit, unification};
 use crate::core::{Type, TypeId};
 
@@ -78,6 +78,7 @@ where
             traverse_operator_branch(
                 state,
                 context,
+                *operator_id,
                 (file_id, item_id),
                 operator_type,
                 children,
@@ -90,6 +91,7 @@ where
 fn traverse_operator_branch<Q, E>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
+    operator_id: E::OperatorId,
     operator: (FileId, E::ItemId),
     operator_type: TypeId,
     children: &[OperatorTree<E>; 2],
@@ -116,6 +118,8 @@ where
     let Type::Function(right_type, result_type) = state.storage[operator_type] else {
         return Ok(unknown);
     };
+
+    E::record_branch_types(state, operator_id, left_type, right_type, result_type);
 
     if let OperatorKindMode::Check { expected_type } = mode {
         let _ = unification::subtype(state, context, result_type, expected_type)?;
@@ -183,6 +187,14 @@ pub trait IsOperator<Q: ExternalQueries>: IsElement {
         result_tree: (Self::Elaborated, Self::Elaborated),
         result_type: TypeId,
     ) -> (Self::Elaborated, TypeId);
+
+    fn record_branch_types(
+        state: &mut CheckState,
+        operator_id: Self::OperatorId,
+        left: TypeId,
+        right: TypeId,
+        result: TypeId,
+    );
 }
 
 impl<Q: ExternalQueries> IsOperator<Q> for lowering::TypeId {
@@ -247,6 +259,18 @@ impl<Q: ExternalQueries> IsOperator<Q> for lowering::TypeId {
 
         (elaborated_type, result_kind)
     }
+
+    fn record_branch_types(
+        state: &mut CheckState,
+        operator_id: Self::OperatorId,
+        left: TypeId,
+        right: TypeId,
+        result: TypeId,
+    ) {
+        state
+            .type_scope
+            .bind_operator_node(operator_id, OperatorBranchTypes { left, right, result });
+    }
 }
 
 impl<Q: ExternalQueries> IsOperator<Q> for lowering::ExpressionId {
@@ -306,6 +330,18 @@ impl<Q: ExternalQueries> IsOperator<Q> for lowering::ExpressionId {
     ) -> (Self::Elaborated, TypeId) {
         ((), result_type)
     }
+
+    fn record_branch_types(
+        state: &mut CheckState,
+        operator_id: Self::OperatorId,
+        left: TypeId,
+        right: TypeId,
+        result: TypeId,
+    ) {
+        state
+            .term_scope
+            .bind_operator_node(operator_id, OperatorBranchTypes { left, right, result });
+    }
 }
 
 impl<Q: ExternalQueries> IsOperator<Q> for lowering::BinderId {
@@ -364,5 +400,17 @@ impl<Q: ExternalQueries> IsOperator<Q> for lowering::BinderId {
         result_type: TypeId,
     ) -> (Self::Elaborated, TypeId) {
         ((), result_type)
+    }
+
+    fn record_branch_types(
+        state: &mut CheckState,
+        operator_id: Self::OperatorId,
+        left: TypeId,
+        right: TypeId,
+        result: TypeId,
+    ) {
+        state
+            .term_scope
+            .bind_operator_node(operator_id, OperatorBranchTypes { left, right, result });
     }
 }

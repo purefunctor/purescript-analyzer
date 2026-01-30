@@ -11,7 +11,7 @@ use files::FileId;
 use indexing::{IndexedModule, TermItemId, TypeItemId};
 use lowering::{
     BinderId, GraphNodeId, GroupedModule, ImplicitBindingId, LetBindingNameGroupId, LoweredModule,
-    RecordPunId, TypeItemIr, TypeVariableBindingId,
+    RecordPunId, TermOperatorId, TypeItemIr, TypeOperatorId, TypeVariableBindingId,
 };
 use resolving::ResolvedModule;
 use rustc_hash::FxHashMap;
@@ -24,11 +24,19 @@ use crate::core::{Type, TypeId, TypeInterner, Variable, debruijn, pretty};
 use crate::error::{CheckError, ErrorKind, ErrorStep};
 use crate::{CheckedModule, ExternalQueries, TypeErrorMessageId};
 
+#[derive(Copy, Clone, Debug)]
+pub struct OperatorBranchTypes {
+    pub left: TypeId,
+    pub right: TypeId,
+    pub result: TypeId,
+}
+
 /// Manually-managed scope for type-level bindings.
 #[derive(Default)]
 pub struct TypeScope {
     pub bound: debruijn::Bound,
     pub kinds: debruijn::BoundMap<TypeId>,
+    pub operator_node: FxHashMap<TypeOperatorId, OperatorBranchTypes>,
 }
 
 impl TypeScope {
@@ -112,6 +120,14 @@ impl TypeScope {
     pub fn size(&self) -> debruijn::Size {
         self.bound.size()
     }
+
+    pub fn bind_operator_node(&mut self, id: TypeOperatorId, types: OperatorBranchTypes) {
+        self.operator_node.insert(id, types);
+    }
+
+    pub fn lookup_operator_node(&self, id: TypeOperatorId) -> Option<OperatorBranchTypes> {
+        self.operator_node.get(&id).copied()
+    }
 }
 
 /// Manually-managed scope for term-level bindings.
@@ -121,6 +137,7 @@ pub struct TermScope {
     pub let_binding: FxHashMap<LetBindingNameGroupId, TypeId>,
     pub record_pun: FxHashMap<RecordPunId, TypeId>,
     pub section: FxHashMap<lowering::ExpressionId, TypeId>,
+    pub operator_node: FxHashMap<TermOperatorId, OperatorBranchTypes>,
 }
 
 impl TermScope {
@@ -154,6 +171,14 @@ impl TermScope {
 
     pub fn lookup_section(&self, id: lowering::ExpressionId) -> Option<TypeId> {
         self.section.get(&id).copied()
+    }
+
+    pub fn bind_operator_node(&mut self, id: TermOperatorId, types: OperatorBranchTypes) {
+        self.operator_node.insert(id, types);
+    }
+
+    pub fn lookup_operator_node(&self, id: TermOperatorId) -> Option<OperatorBranchTypes> {
+        self.operator_node.get(&id).copied()
     }
 }
 
