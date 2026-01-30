@@ -5,12 +5,12 @@ use std::sync::Arc;
 use files::FileId;
 use indexing::TermItemId;
 use itertools::Itertools;
-use lowering::BinderId;
+use lowering::{BinderId, TermOperatorId};
 use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
 use sugar::OperatorTree;
 
-use crate::algorithm::state::{CheckContext, CheckState};
+use crate::algorithm::state::{CheckContext, CheckState, OperatorBranchTypes};
 use crate::{ExternalQueries, TypeId};
 
 const MISSING_NAME: SmolStr = SmolStr::new_inline("<MissingName>");
@@ -250,38 +250,62 @@ where
     Q: ExternalQueries,
 {
     match tree {
-        OperatorTree::Leaf(None) => exhaustiveness_state.allocate_wildcard(context.prim.unknown),
+        OperatorTree::Leaf(None) => exhaustiveness_state.allocate_wildcard(t),
         OperatorTree::Leaf(Some(binder_id)) => {
             lower_binder(check_state, exhaustiveness_state, context, *binder_id)
         }
-        OperatorTree::Branch(operator_id, children) => {
-            let Some((file_id, item_id)) = context.lowered.info.get_term_operator(*operator_id)
-            else {
-                return exhaustiveness_state.allocate_wildcard(t);
-            };
-
-            let [left_tree, right_tree] = &**children;
-
-            let left_tree =
-                lower_operator_tree(check_state, exhaustiveness_state, context, left_tree, t);
-
-            let right_tree =
-                lower_operator_tree(check_state, exhaustiveness_state, context, right_tree, t);
-
-            let pattern =
-                Pattern::Constructor { file_id, item_id, fields: vec![left_tree, right_tree] };
-
-            exhaustiveness_state.allocate(pattern, t)
-        }
+        OperatorTree::Branch(operator_id, children) => lower_operator_branch(
+            check_state,
+            exhaustiveness_state,
+            context,
+            *operator_id,
+            children,
+            t,
+        ),
     }
 }
 
-fn algorithm_u<Q>(
+fn lower_operator_branch<Q>(
     check_state: &mut CheckState,
     exhaustiveness_state: &mut ExhaustivenessState,
     context: &CheckContext<Q>,
-    matrix: &PatternMatrix,
-    vector: &PatternVector,
+    operator_id: TermOperatorId,
+    children: &[OperatorTree<BinderId>; 2],
+    t: TypeId,
+) -> PatternId
+where
+    Q: ExternalQueries,
+{
+    let Some((file_id, item_id)) = context.lowered.info.get_term_operator(operator_id) else {
+        return exhaustiveness_state.allocate_wildcard(t);
+    };
+
+    let Some(OperatorBranchTypes { left, right, result }) =
+        check_state.term_scope.lookup_operator_node(operator_id)
+    else {
+        return exhaustiveness_state.allocate_wildcard(t);
+    };
+
+    let [left_tree, right_tree] = children;
+
+    let left_pattern =
+        lower_operator_tree(check_state, exhaustiveness_state, context, left_tree, left);
+
+    let right_pattern =
+        lower_operator_tree(check_state, exhaustiveness_state, context, right_tree, right);
+
+    let pattern =
+        Pattern::Constructor { file_id, item_id, fields: vec![left_pattern, right_pattern] };
+
+    exhaustiveness_state.allocate(pattern, result)
+}
+
+fn algorithm_u<Q>(
+    _check_state: &mut CheckState,
+    _exhaustiveness_state: &mut ExhaustivenessState,
+    _context: &CheckContext<Q>,
+    _matrix: &PatternMatrix,
+    _vector: &PatternVector,
 ) -> bool
 where
     Q: ExternalQueries,
@@ -290,11 +314,11 @@ where
 }
 
 fn algorithm_m<Q>(
-    check_state: &mut CheckState,
-    exhaustiveness_state: &mut ExhaustivenessState,
-    context: &CheckContext<Q>,
-    matrix: &PatternMatrix,
-    vector: &PatternVector,
+    _check_state: &mut CheckState,
+    _exhaustiveness_state: &mut ExhaustivenessState,
+    _context: &CheckContext<Q>,
+    _matrix: &PatternMatrix,
+    _vector: &PatternVector,
 ) -> Option<Vec<WitnessVector>>
 where
     Q: ExternalQueries,
@@ -303,12 +327,12 @@ where
 }
 
 fn specialise_matrix<Q>(
-    check_state: &mut CheckState,
-    exhaustiveness_state: &mut ExhaustivenessState,
-    context: &CheckContext<Q>,
-    (file_id, term_id): (FileId, TermItemId),
-    arity: usize,
-    matrix: &PatternMatrix,
+    _check_state: &mut CheckState,
+    _exhaustiveness_state: &mut ExhaustivenessState,
+    _context: &CheckContext<Q>,
+    (_file_id, _term_id): (FileId, TermItemId),
+    _arity: usize,
+    _matrix: &PatternMatrix,
 ) -> PatternMatrix
 where
     Q: ExternalQueries,
@@ -317,12 +341,12 @@ where
 }
 
 fn specialise_vector<Q>(
-    check_state: &mut CheckState,
-    exhaustiveness_state: &mut ExhaustivenessState,
-    context: &CheckContext<Q>,
-    (file_id, term_id): (FileId, TermItemId),
-    arity: usize,
-    matrix: &PatternVector,
+    _check_state: &mut CheckState,
+    _exhaustiveness_state: &mut ExhaustivenessState,
+    _context: &CheckContext<Q>,
+    (_file_id, _term_id): (FileId, TermItemId),
+    _arity: usize,
+    _matrix: &PatternVector,
 ) -> PatternVector
 where
     Q: ExternalQueries,
