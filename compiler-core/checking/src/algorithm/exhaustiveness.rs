@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use files::FileId;
 use indexing::TermItemId;
+use itertools::Itertools;
 use lowering::BinderId;
 use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
@@ -193,18 +194,27 @@ where
 }
 
 fn lower_constructor_binder<Q>(
-    _check_state: &mut CheckState,
+    check_state: &mut CheckState,
     exhaustiveness_state: &mut ExhaustivenessState,
-    _context: &CheckContext<Q>,
-    _resolution: &Option<(FileId, TermItemId)>,
-    _arguments: &Arc<[BinderId]>,
+    context: &CheckContext<Q>,
+    resolution: &Option<(FileId, TermItemId)>,
+    arguments: &Arc<[BinderId]>,
     t: TypeId,
 ) -> PatternId
 where
     Q: ExternalQueries,
 {
-    // TODO: Build Pattern::Constructor with resolved file_id, item_id, and lowered argument patterns
-    exhaustiveness_state.allocate_wildcard(t)
+    let Some((file_id, item_id)) = resolution else {
+        return exhaustiveness_state.allocate_wildcard(t);
+    };
+
+    let fields = arguments
+        .iter()
+        .map(|argument| lower_binder(check_state, exhaustiveness_state, context, *argument))
+        .collect_vec();
+
+    let pattern = Pattern::Constructor { file_id: *file_id, item_id: *item_id, fields };
+    exhaustiveness_state.allocate(pattern, t)
 }
 
 fn lower_operator_chain_binder<Q>(
