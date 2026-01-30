@@ -1,5 +1,6 @@
 #![allow(dead_code, unused_variables)]
 
+use std::iter;
 use std::sync::Arc;
 
 use files::FileId;
@@ -25,7 +26,14 @@ pub enum Pattern {
     Number(bool, SmolStr),
     Array { elements: Vec<PatternId> },
     Record { elements: Vec<RecordElement> },
-    Constructor { file_id: FileId, item_id: TermItemId, fields: Vec<PatternId> },
+    Constructor { constructor: Constructor },
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub struct Constructor {
+    file_id: FileId,
+    item_id: TermItemId,
+    fields: Vec<PatternId>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -214,7 +222,9 @@ where
         .map(|argument| lower_binder(check_state, exhaustiveness_state, context, *argument))
         .collect_vec();
 
-    let pattern = Pattern::Constructor { file_id: *file_id, item_id: *item_id, fields };
+    let constructor = Constructor { file_id: *file_id, item_id: *item_id, fields };
+    let pattern = Pattern::Constructor { constructor };
+
     exhaustiveness_state.allocate(pattern, t)
 }
 
@@ -294,8 +304,8 @@ where
     let right_pattern =
         lower_operator_tree(check_state, exhaustiveness_state, context, right_tree, right);
 
-    let pattern =
-        Pattern::Constructor { file_id, item_id, fields: vec![left_pattern, right_pattern] };
+    let constructor = Constructor { file_id, item_id, fields: vec![left_pattern, right_pattern] };
+    let pattern = Pattern::Constructor { constructor };
 
     exhaustiveness_state.allocate(pattern, result)
 }
@@ -327,31 +337,56 @@ where
 }
 
 fn specialise_matrix<Q>(
-    _check_state: &mut CheckState,
-    _exhaustiveness_state: &mut ExhaustivenessState,
-    _context: &CheckContext<Q>,
-    (_file_id, _term_id): (FileId, TermItemId),
-    _arity: usize,
-    _matrix: &PatternMatrix,
+    check_state: &mut CheckState,
+    exhaustiveness_state: &mut ExhaustivenessState,
+    context: &CheckContext<Q>,
+    expected: Constructor,
+    matrix: &PatternMatrix,
 ) -> PatternMatrix
 where
     Q: ExternalQueries,
 {
-    todo!()
+    let matrix = matrix.iter().filter_map(|row| {
+        specialise_vector(check_state, exhaustiveness_state, context, &expected, row)
+    });
+    matrix.collect()
 }
 
 fn specialise_vector<Q>(
     _check_state: &mut CheckState,
-    _exhaustiveness_state: &mut ExhaustivenessState,
-    _context: &CheckContext<Q>,
-    (_file_id, _term_id): (FileId, TermItemId),
-    _arity: usize,
-    _matrix: &PatternVector,
-) -> PatternVector
+    exhaustiveness_state: &mut ExhaustivenessState,
+    context: &CheckContext<Q>,
+    expected: &Constructor,
+    vector: &PatternVector,
+) -> Option<PatternVector>
 where
     Q: ExternalQueries,
 {
-    todo!()
+    let [first_column, ref tail_columns @ ..] = vector[..] else {
+        unreachable!("invariant violated: specialise_vector processed empty row");
+    };
+
+    let first_column = &exhaustiveness_state.interner[first_column];
+
+    if let Pattern::Wildcard = first_column {
+        let wildcards = expected.fields.iter().map(|&field_pat| {
+            let t = exhaustiveness_state.types.get(&field_pat);
+            let t = t.copied().unwrap_or(context.prim.unknown);
+            exhaustiveness_state.allocate_wildcard(t)
+        });
+        let tail_columns = tail_columns.iter().copied();
+        return Some(iter::chain(wildcards, tail_columns).collect());
+    }
+
+    let Pattern::Constructor { constructor } = first_column else {
+        return Some(tail_columns.to_vec());
+    };
+
+    if (constructor.file_id, constructor.item_id) != (expected.file_id, expected.item_id) {
+        return None;
+    }
+
+    Some(iter::chain(&constructor.fields, tail_columns).copied().collect())
 }
 
 fn default_matrix(
@@ -360,7 +395,7 @@ fn default_matrix(
 ) -> PatternMatrix {
     let filter_map = matrix.iter().filter_map(|row| {
         let [first_column, ref default_columns @ ..] = row[..] else {
-            return None;
+            unreachable!("invariant violated: default_matrix processed empty row");
         };
         if let Pattern::Wildcard = &exhaustiveness_state.interner[first_column] {
             Some(default_columns.to_vec())
