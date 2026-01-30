@@ -1,16 +1,14 @@
-use std::env;
-use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
+use std::{env, fs};
 
 use console::style;
 use serde::Deserialize;
 
 use crate::test_runner::category::TestCategory;
 use crate::test_runner::cli::RunArgs;
-use crate::test_runner::decision;
 use crate::test_runner::decision::DecisionInput;
-use crate::test_runner::ui;
+use crate::test_runner::{decision, ui};
 
 #[derive(Deserialize)]
 struct PendingSnapshotJson {

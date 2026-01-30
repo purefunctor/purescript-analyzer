@@ -1,9 +1,11 @@
 use std::fs;
 
-use git2::{FetchOptions, Repository, build::RepoBuilder};
+use git2::build::RepoBuilder;
+use git2::{FetchOptions, Repository};
 use purescript_registry::FsRegistry;
 
-use crate::{error::Result, layout::Layout};
+use crate::error::Result;
+use crate::layout::Layout;
 
 const REGISTRY_URL: &str = "https://github.com/purescript/registry";
 const REGISTRY_INDEX_URL: &str = "https://github.com/purescript/registry-index";

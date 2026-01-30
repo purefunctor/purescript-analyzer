@@ -1,11 +1,11 @@
-use std::{fs, io::Read, path::PathBuf};
+use std::fs;
+use std::io::Read;
+use std::path::PathBuf;
 
 use sha2::{Digest, Sha256};
 
-use crate::{
-    error::{CompatError, Result},
-    layout::Layout,
-};
+use crate::error::{CompatError, Result};
+use crate::layout::Layout;
 
 pub fn tarball_url(name: &str, version: &str) -> String {
     format!("https://packages.registry.purescript.org/{}/{}.tar.gz", name, version)
@@ -42,7 +42,8 @@ pub fn verify_tarball(
     name: &str,
     version: &str,
 ) -> Result<()> {
-    use base64::{Engine, engine::general_purpose::STANDARD};
+    use base64::Engine;
+    use base64::engine::general_purpose::STANDARD;
 
     let mut file = fs::File::open(path)?;
     let mut hasher = Sha256::new();

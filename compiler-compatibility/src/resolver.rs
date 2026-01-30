@@ -3,10 +3,8 @@ use std::collections::{BTreeMap, HashSet};
 use purescript_registry::{PackageSet, RegistryReader};
 use semver::Version;
 
-use crate::{
-    error::{CompatError, Result},
-    types::ResolvedSet,
-};
+use crate::error::{CompatError, Result};
+use crate::types::ResolvedSet;
 
 pub fn resolve(
     root_packages: &[String],
