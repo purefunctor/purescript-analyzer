@@ -6,11 +6,10 @@ use itertools::Itertools;
 use lowering::BinderId;
 use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
+use sugar::OperatorTree;
 
-use crate::{
-    ExternalQueries, TypeId,
-    algorithm::state::{CheckContext, CheckState},
-};
+use crate::algorithm::state::{CheckContext, CheckState};
+use crate::{ExternalQueries, TypeId};
 
 const MISSING_NAME: SmolStr = SmolStr::new_inline("<MissingName>");
 
@@ -218,15 +217,59 @@ where
 }
 
 fn lower_operator_chain_binder<Q>(
-    _check_state: &mut CheckState,
+    check_state: &mut CheckState,
     exhaustiveness_state: &mut ExhaustivenessState,
-    _context: &CheckContext<Q>,
-    _id: BinderId,
+    context: &CheckContext<Q>,
+    id: BinderId,
     t: TypeId,
 ) -> PatternId
 where
     Q: ExternalQueries,
 {
-    // TODO: Lookup context.bracketed.binders.get(&id) and traverse tree to build Pattern::Constructor
-    exhaustiveness_state.allocate_wildcard(t)
+    let Some(tree) = context.bracketed.binders.get(&id) else {
+        return exhaustiveness_state.allocate_wildcard(t);
+    };
+
+    let Ok(tree) = tree else {
+        return exhaustiveness_state.allocate_wildcard(t);
+    };
+
+    lower_operator_tree(check_state, exhaustiveness_state, context, tree, t)
+}
+
+fn lower_operator_tree<Q>(
+    check_state: &mut CheckState,
+    exhaustiveness_state: &mut ExhaustivenessState,
+    context: &CheckContext<Q>,
+    tree: &OperatorTree<BinderId>,
+    t: TypeId,
+) -> PatternId
+where
+    Q: ExternalQueries,
+{
+    match tree {
+        OperatorTree::Leaf(None) => exhaustiveness_state.allocate_wildcard(context.prim.unknown),
+        OperatorTree::Leaf(Some(binder_id)) => {
+            lower_binder(check_state, exhaustiveness_state, context, *binder_id)
+        }
+        OperatorTree::Branch(operator_id, children) => {
+            let Some((file_id, item_id)) = context.lowered.info.get_term_operator(*operator_id)
+            else {
+                return exhaustiveness_state.allocate_wildcard(t);
+            };
+
+            let [left_tree, right_tree] = &**children;
+
+            let left_tree =
+                lower_operator_tree(check_state, exhaustiveness_state, context, left_tree, t);
+
+            let right_tree =
+                lower_operator_tree(check_state, exhaustiveness_state, context, right_tree, t);
+
+            let pattern =
+                Pattern::Constructor { file_id, item_id, fields: vec![left_tree, right_tree] };
+
+            exhaustiveness_state.allocate(pattern, t)
+        }
+    }
 }
