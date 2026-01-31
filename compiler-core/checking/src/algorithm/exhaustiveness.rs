@@ -331,23 +331,49 @@ where
     let complete = sigma_is_complete(context, &sigma)?;
 
     if complete {
-        // If sigma is complete, check if useful for any constructor
-        for constructor in sigma.constructors {
-            let specialized_matrix = specialise_matrix(state, context, &constructor, matrix);
-            let specialized_vector = specialise_vector(state, context, &constructor, vector)
-                .expect("specialising wildcard head must succeed");
-
-            if algorithm_u(state, context, &specialized_matrix, &specialized_vector)? {
-                return Ok(true);
-            }
-        }
-        Ok(false)
+        algorithm_u_complete(state, context, matrix, vector, sigma)
     } else {
-        // If sigma is incomplete, use default matrix
-        let default = default_matrix(state, matrix);
-        let tail = vector[1..].to_vec();
-        algorithm_u(state, context, &default, &tail)
+        algorithm_u_wildcard_incomplete(state, context, matrix, vector)
     }
+}
+
+fn algorithm_u_complete<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    matrix: &PatternMatrix,
+    vector: &PatternVector,
+    sigma: Sigma,
+) -> QueryResult<bool>
+where
+    Q: ExternalQueries,
+{
+    for constructor in sigma.constructors {
+        let specialized_matrix = specialise_matrix(state, context, &constructor, matrix);
+
+        let Some(specialized_vector) = specialise_vector(state, context, &constructor, vector)
+        else {
+            unreachable!("invariant violated: vector contains constructor");
+        };
+
+        if algorithm_u(state, context, &specialized_matrix, &specialized_vector)? {
+            return Ok(true);
+        }
+    }
+    Ok(false)
+}
+
+fn algorithm_u_wildcard_incomplete<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    matrix: &PatternMatrix,
+    vector: &PatternVector,
+) -> QueryResult<bool>
+where
+    Q: ExternalQueries,
+{
+    let default = default_matrix(state, matrix);
+    let tail_columns = vector[1..].to_vec();
+    algorithm_u(state, context, &default, &tail_columns)
 }
 
 fn algorithm_u_other<Q>(
@@ -361,8 +387,8 @@ where
 {
     // For literals and other patterns, treat as incomplete sigma (conservative)
     let default = default_matrix(state, matrix);
-    let tail = vector[1..].to_vec();
-    algorithm_u(state, context, &default, &tail)
+    let tail_columns = vector[1..].to_vec();
+    algorithm_u(state, context, &default, &tail_columns)
 }
 
 /// Determines the matching [`WitnessVector`] given a [`PatternMatrix`]
@@ -508,13 +534,10 @@ where
 {
     let sigma = collect_sigma(state, context, matrix, first_type)?;
     let complete = sigma_is_complete(context, &sigma)?;
-
-    let Sigma { constructors, missing } = sigma;
-
     if complete {
-        algorithm_m_wildcard_complete(state, context, matrix, vector, first_type, constructors)
+        algorithm_m_wildcard_complete(state, context, matrix, vector, first_type, &sigma)
     } else {
-        algorithm_m_wildcard_incomplete(state, context, matrix, vector, first_type, &missing)
+        algorithm_m_wildcard_incomplete(state, context, matrix, vector, first_type, &sigma)
     }
 }
 
@@ -524,14 +547,14 @@ fn algorithm_m_wildcard_complete<Q>(
     matrix: &PatternMatrix,
     vector: &PatternVector,
     first_type: TypeId,
-    sigma: Vec<Constructor>,
+    sigma: &Sigma,
 ) -> QueryResult<Option<Vec<WitnessVector>>>
 where
     Q: ExternalQueries,
 {
     let mut all_witnesses = vec![];
 
-    for constructor in sigma {
+    for constructor in &sigma.constructors {
         let arity = constructor.fields.len();
 
         let specialized_matrix = specialise_matrix(state, context, &constructor, matrix);
@@ -573,7 +596,7 @@ fn algorithm_m_wildcard_incomplete<Q>(
     matrix: &PatternMatrix,
     vector: &PatternVector,
     first_type: TypeId,
-    missing: &[MissingConstructor],
+    sigma: &Sigma,
 ) -> QueryResult<Option<Vec<WitnessVector>>>
 where
     Q: ExternalQueries,
@@ -587,26 +610,28 @@ where
         return Ok(None);
     };
 
-    let head = if let Some(missing_constructor) = missing.first() {
-        // Use constructor field types when available; fall back to `prim.unknown`.
-        let fields =
-            missing_constructor.fields.iter().map(|&t| state.allocate_wildcard(t)).collect_vec();
+    let first_column = if let Some(constructor) = sigma.missing.first() {
+        let fields = constructor.fields.iter().map(|&t| state.allocate_wildcard(t)).collect_vec();
 
-        let constructor = Constructor {
-            file_id: missing_constructor.file_id,
-            item_id: missing_constructor.item_id,
-            fields,
+        let pattern = PatternKind::Constructor {
+            constructor: Constructor {
+                file_id: constructor.file_id,
+                item_id: constructor.item_id,
+                fields,
+            },
         };
-        let pattern = PatternKind::Constructor { constructor };
 
         state.allocate_pattern(pattern, first_type)
     } else {
         state.allocate_wildcard(first_type)
     };
 
-    Ok(Some(
-        witnesses.into_iter().map(|witness| iter::once(head).chain(witness).collect()).collect(),
-    ))
+    let witness = witnesses
+        .into_iter()
+        .map(|witness| iter::once(first_column).chain(witness).collect())
+        .collect();
+
+    Ok(Some(witness))
 }
 
 fn algorithm_m_other<Q>(
