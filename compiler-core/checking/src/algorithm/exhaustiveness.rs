@@ -11,6 +11,7 @@ use smol_str::SmolStr;
 use sugar::OperatorTree;
 
 use crate::algorithm::state::{CheckContext, CheckState, OperatorBranchTypes};
+use crate::algorithm::{derive, toolkit};
 use crate::{ExternalQueries, TypeId};
 
 const MISSING_NAME: SmolStr = SmolStr::new_inline("<MissingName>");
@@ -345,9 +346,14 @@ where
             vector,
             constructor,
         ),
-        PatternKind::Wildcard => {
-            algorithm_u_wildcard(check_state, exhaustiveness_state, context, matrix, vector)
-        }
+        PatternKind::Wildcard => algorithm_u_wildcard(
+            check_state,
+            exhaustiveness_state,
+            context,
+            matrix,
+            vector,
+            first_pattern.t,
+        ),
         _ => algorithm_u_other(check_state, exhaustiveness_state, context, matrix, vector),
     }
 }
@@ -387,16 +393,17 @@ fn algorithm_u_wildcard<Q>(
     context: &CheckContext<Q>,
     matrix: &PatternMatrix,
     vector: &PatternVector,
+    first_type: TypeId,
 ) -> QueryResult<bool>
 where
     Q: ExternalQueries,
 {
-    let sigma = extract_sigma(exhaustiveness_state, matrix);
+    let sigma = collect_sigma(check_state, exhaustiveness_state, context, matrix, first_type)?;
     let complete = sigma_is_complete(context, &sigma)?;
 
     if complete {
         // If sigma is complete, check if useful for any constructor
-        for constructor in sigma {
+        for constructor in sigma.constructors {
             let specialized_matrix =
                 specialise_matrix(check_state, exhaustiveness_state, context, &constructor, matrix);
             let specialized_vector =
@@ -609,8 +616,10 @@ fn algorithm_m_wildcard<Q>(
 where
     Q: ExternalQueries,
 {
-    let sigma = extract_sigma(exhaustiveness_state, matrix);
+    let sigma = collect_sigma(check_state, exhaustiveness_state, context, matrix, first_type)?;
     let complete = sigma_is_complete(context, &sigma)?;
+
+    let Sigma { constructors, missing } = sigma;
 
     if complete {
         algorithm_m_wildcard_complete(
@@ -620,7 +629,7 @@ where
             matrix,
             vector,
             first_type,
-            sigma,
+            constructors,
         )
     } else {
         algorithm_m_wildcard_incomplete(
@@ -630,7 +639,7 @@ where
             matrix,
             vector,
             first_type,
-            &sigma,
+            &missing,
         )
     }
 }
@@ -698,7 +707,7 @@ fn algorithm_m_wildcard_incomplete<Q>(
     matrix: &PatternMatrix,
     vector: &PatternVector,
     first_type: TypeId,
-    sigma: &[Constructor],
+    missing: &[MissingConstructor],
 ) -> QueryResult<Option<Vec<WitnessVector>>>
 where
     Q: ExternalQueries,
@@ -713,15 +722,19 @@ where
         return Ok(None);
     };
 
-    let head = if let Some((file_id, item_id, arity)) = pick_missing_constructor(context, sigma)? {
-        // FIXME: Use unification variables or constructor argument types for these wildcards,
-        // rather than `prim.unknown`. Also consider returning multiple missing constructors
-        // where possible to improve witness quality.
-        let fields = (0..arity)
-            .map(|_| exhaustiveness_state.allocate_wildcard(context.prim.unknown))
+    let head = if let Some(missing_constructor) = missing.first() {
+        // Use constructor field types when available; fall back to `prim.unknown`.
+        let fields = missing_constructor
+            .fields
+            .iter()
+            .map(|&t| exhaustiveness_state.allocate_wildcard(t))
             .collect_vec();
 
-        let constructor = Constructor { file_id, item_id, fields };
+        let constructor = Constructor {
+            file_id: missing_constructor.file_id,
+            item_id: missing_constructor.item_id,
+            fields,
+        };
         let pattern = PatternKind::Constructor { constructor };
 
         exhaustiveness_state.allocate(pattern, first_type)
@@ -781,7 +794,7 @@ where
 fn specialise_vector<Q>(
     _check_state: &mut CheckState,
     exhaustiveness_state: &mut ExhaustivenessState,
-    context: &CheckContext<Q>,
+    _context: &CheckContext<Q>,
     expected: &Constructor,
     vector: &PatternVector,
 ) -> Option<PatternVector>
@@ -835,17 +848,36 @@ fn default_matrix(
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 struct ConstructorKey(FileId, TermItemId);
 
+#[derive(Clone, Debug)]
+struct Sigma {
+    constructors: Vec<Constructor>,
+    missing: Vec<MissingConstructor>,
+}
+
+#[derive(Clone, Debug)]
+struct MissingConstructor {
+    file_id: FileId,
+    item_id: TermItemId,
+    fields: Vec<TypeId>,
+}
+
 /// Extracts the set of constructors (sigma) from the first column of the matrix.
 ///
 /// Returns a list of unique constructors seen in the first column, keeping one
 /// representative `Constructor` per distinct constructor id. Non-constructor
 /// patterns (wildcards, literals, etc.) are ignored.
-fn extract_sigma(
+fn collect_sigma<Q>(
+    check_state: &mut CheckState,
     exhaustiveness_state: &ExhaustivenessState,
+    context: &CheckContext<Q>,
     matrix: &PatternMatrix,
-) -> Vec<Constructor> {
+    scrutinee_type: TypeId,
+) -> QueryResult<Sigma>
+where
+    Q: ExternalQueries,
+{
     let mut seen = FxHashSet::default();
-    let mut sigma = vec![];
+    let mut constructors = vec![];
 
     for row in matrix {
         let [first_column, ..] = row[..] else {
@@ -855,24 +887,26 @@ fn extract_sigma(
         if let PatternKind::Constructor { constructor } = &pattern.kind {
             let key = ConstructorKey(constructor.file_id, constructor.item_id);
             if seen.insert(key) {
-                sigma.push(Constructor::clone(constructor));
+                constructors.push(Constructor::clone(constructor));
             }
         }
     }
 
-    sigma
+    let missing =
+        collect_missing_constructors(check_state, context, scrutinee_type, &constructors)?;
+    Ok(Sigma { constructors, missing })
 }
 
 /// Checks whether the set of constructors (sigma) is complete for the scrutinee type.
 ///
 /// A sigma is complete if it contains all constructors of the data type. If we can't
 /// determine the type or its constructors, we conservatively return false (incomplete).
-fn sigma_is_complete<Q>(context: &CheckContext<Q>, sigma: &[Constructor]) -> QueryResult<bool>
+fn sigma_is_complete<Q>(context: &CheckContext<Q>, sigma: &Sigma) -> QueryResult<bool>
 where
     Q: ExternalQueries,
 {
     // Empty sigma is never complete (we need at least one constructor to determine the type)
-    let Some(first) = sigma.first() else {
+    let Some(first) = sigma.constructors.first() else {
         return Ok(false);
     };
 
@@ -889,42 +923,74 @@ where
         indexed.pairs.data_constructors(type_item_id).collect();
 
     // Check if sigma covers all constructors
-    let sigma_terms: FxHashSet<TermItemId> = sigma.iter().map(|c| c.item_id).collect();
+    let sigma_terms: FxHashSet<TermItemId> = sigma.constructors.iter().map(|c| c.item_id).collect();
 
     Ok(all_constructors.iter().all(|term_id| sigma_terms.contains(term_id)))
 }
 
-/// Picks a missing constructor not in sigma, for witness generation.
-///
-/// Returns the term item id of a constructor not present in sigma, if one exists.
-fn pick_missing_constructor<Q>(
+fn collect_missing_constructors<Q>(
+    check_state: &mut CheckState,
     context: &CheckContext<Q>,
-    sigma: &[Constructor],
-) -> QueryResult<Option<(FileId, TermItemId, usize)>>
+    scrutinee_type: TypeId,
+    constructors: &[Constructor],
+) -> QueryResult<Vec<MissingConstructor>>
 where
     Q: ExternalQueries,
 {
-    let Some(first) = sigma.first() else {
-        return Ok(None);
+    let Some(first_constructor) = constructors.first() else {
+        return Ok(vec![]);
     };
 
-    let indexed = context.queries.indexed(first.file_id)?;
+    let indexed = context.queries.indexed(first_constructor.file_id)?;
 
-    let Some(type_item_id) = indexed.pairs.constructor_type(first.item_id) else {
-        return Ok(None);
+    let Some(type_item_id) = indexed.pairs.constructor_type(first_constructor.item_id) else {
+        return Ok(vec![]);
     };
 
-    let sigma_terms: FxHashSet<TermItemId> = sigma.iter().map(|c| c.item_id).collect();
+    let sigma: FxHashSet<TermItemId> = constructors.iter().map(|c| c.item_id).collect();
+    let type_arguments = toolkit::extract_all_applications(check_state, scrutinee_type);
 
+    let mut missing = vec![];
     for term_id in indexed.pairs.data_constructors(type_item_id) {
-        if !sigma_terms.contains(&term_id) {
-            // Get the arity of this constructor from its item info
-            let arity = get_constructor_arity(context, first.file_id, term_id)?;
-            return Ok(Some((first.file_id, term_id, arity)));
+        if !sigma.contains(&term_id) {
+            let fields = constructor_field_types(
+                check_state,
+                context,
+                first_constructor.file_id,
+                term_id,
+                &type_arguments,
+            )?;
+            missing.push(MissingConstructor {
+                file_id: first_constructor.file_id,
+                item_id: term_id,
+                fields,
+            });
         }
     }
 
-    Ok(None)
+    Ok(missing)
+}
+
+fn constructor_field_types<Q>(
+    check_state: &mut CheckState,
+    context: &CheckContext<Q>,
+    file_id: FileId,
+    term_id: TermItemId,
+    type_arguments: &[TypeId],
+) -> QueryResult<Vec<TypeId>>
+where
+    Q: ExternalQueries,
+{
+    let constructor_type = derive::lookup_local_term_type(check_state, context, file_id, term_id)?;
+    if let Some(constructor_type) = constructor_type {
+        let constructor =
+            toolkit::instantiate_with_arguments(check_state, constructor_type, type_arguments);
+        let (fields, _) = toolkit::extract_function_arguments(check_state, constructor);
+        Ok(fields)
+    } else {
+        let arity = get_constructor_arity(context, file_id, term_id)?;
+        Ok(iter::repeat(context.prim.unknown).take(arity).collect())
+    }
 }
 
 /// Gets the arity (number of fields) of a constructor.
