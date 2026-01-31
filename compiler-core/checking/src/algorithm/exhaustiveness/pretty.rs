@@ -6,30 +6,26 @@ use itertools::Itertools;
 
 use crate::ExternalQueries;
 use crate::algorithm::exhaustiveness::{
-    Constructor, ExhaustivenessState, PatternId, PatternKind, RecordElement, WitnessVector,
+    Constructor, PatternId, PatternKind, RecordElement, WitnessVector,
 };
-use crate::algorithm::state::CheckContext;
+use crate::algorithm::state::{CheckContext, CheckState};
 
-pub fn render_witness<Q>(
+pub fn pretty_witness<Q>(
     context: &CheckContext<Q>,
-    state: &ExhaustivenessState,
+    state: &CheckState,
     witness: &WitnessVector,
 ) -> String
 where
     Q: ExternalQueries,
 {
-    witness.iter().map(|&id| render_pattern(context, state, id)).join(", ")
+    witness.iter().map(|&id| pretty_pattern(context, state, id)).join(", ")
 }
 
-fn render_pattern<Q>(
-    context: &CheckContext<Q>,
-    state: &ExhaustivenessState,
-    id: PatternId,
-) -> String
+fn pretty_pattern<Q>(context: &CheckContext<Q>, state: &CheckState, id: PatternId) -> String
 where
     Q: ExternalQueries,
 {
-    let pattern = &state.interner[id];
+    let pattern = &state.patterns[id];
     match &pattern.kind {
         PatternKind::Wildcard => "_".to_string(),
         PatternKind::Boolean(b) => b.to_string(),
@@ -44,26 +40,26 @@ where
             }
         }
         PatternKind::Array { elements } => {
-            let mut elements = elements.iter().map(|&e| render_pattern(context, state, e));
+            let mut elements = elements.iter().map(|&e| pretty_pattern(context, state, e));
             format!("[{}]", elements.join(", "))
         }
         PatternKind::Record { elements } => {
             let mut elements = elements.iter().map(|e| match e {
                 RecordElement::Named(name, pattern) => {
-                    let pattern = render_pattern(context, state, *pattern);
+                    let pattern = pretty_pattern(context, state, *pattern);
                     format!("{name}: {pattern}")
                 }
                 RecordElement::Pun(name) => name.to_string(),
             });
             format!("{{ {} }}", elements.join(", "))
         }
-        PatternKind::Constructor { constructor } => render_constructor(context, state, constructor),
+        PatternKind::Constructor { constructor } => pretty_constructor(context, state, constructor),
     }
 }
 
-fn render_constructor<Q>(
+fn pretty_constructor<Q>(
     context: &CheckContext<Q>,
-    exhaustiveness_state: &ExhaustivenessState,
+    state: &CheckState,
     constructor: &Constructor,
 ) -> String
 where
@@ -77,8 +73,8 @@ where
     }
 
     let mut fields = constructor.fields.iter().map(|&id| {
-        let rendered = render_pattern(context, exhaustiveness_state, id);
-        let pattern = &exhaustiveness_state.interner[id];
+        let rendered = pretty_pattern(context, state, id);
+        let pattern = &state.patterns[id];
         if let PatternKind::Constructor { constructor } = &pattern.kind
             && !constructor.fields.is_empty()
         {

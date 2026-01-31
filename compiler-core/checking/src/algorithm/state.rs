@@ -19,6 +19,7 @@ use smol_str::ToSmolStr;
 use stabilizing::StabilizedModule;
 use sugar::{Bracketed, Sectioned};
 
+use crate::algorithm::exhaustiveness::{Pattern, PatternId, PatternKind, PatternStorage};
 use crate::algorithm::{constraint, transfer};
 use crate::core::{Type, TypeId, TypeInterner, Variable, debruijn, pretty};
 use crate::error::{CheckError, ErrorKind, ErrorStep};
@@ -316,6 +317,9 @@ pub struct CheckState {
 
     /// Flag that determines when it's appropriate to expand synonyms.
     pub defer_synonym_expansion: bool,
+
+    /// Interns patterns for exhaustiveness checking.
+    pub patterns: PatternStorage,
 }
 
 #[derive(Clone)]
@@ -1115,5 +1119,16 @@ impl CheckState {
             let function = Type::Function(argument, result);
             self.storage.intern(function)
         })
+    }
+}
+
+impl CheckState {
+    pub fn allocate_pattern(&mut self, kind: PatternKind, t: TypeId) -> PatternId {
+        let pattern = Pattern { kind, t };
+        self.patterns.intern(pattern)
+    }
+
+    pub fn allocate_wildcard(&mut self, t: TypeId) -> PatternId {
+        self.allocate_pattern(PatternKind::Wildcard, t)
     }
 }

@@ -1,4 +1,4 @@
-mod render;
+mod pretty;
 
 use std::iter;
 use std::sync::Arc;
@@ -20,8 +20,8 @@ const MISSING_NAME: SmolStr = SmolStr::new_inline("<MissingName>");
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Pattern {
-    kind: PatternKind,
-    t: TypeId,
+    pub kind: PatternKind,
+    pub t: TypeId,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -39,9 +39,9 @@ pub enum PatternKind {
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Constructor {
-    file_id: FileId,
-    item_id: TermItemId,
-    fields: Vec<PatternId>,
+    pub file_id: FileId,
+    pub item_id: TermItemId,
+    pub fields: Vec<PatternId>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -51,107 +51,77 @@ pub enum RecordElement {
 }
 
 pub type PatternId = interner::Id<Pattern>;
+pub type PatternStorage = interner::Interner<Pattern>;
 
 type PatternVector = Vec<PatternId>;
 type PatternMatrix = Vec<PatternVector>;
-type WitnessVector = Vec<PatternId>;
+pub type WitnessVector = Vec<PatternId>;
 
-#[derive(Default)]
-struct ExhaustivenessState {
-    interner: interner::Interner<Pattern>,
-}
-
-impl ExhaustivenessState {
-    fn allocate(&mut self, kind: PatternKind, t: TypeId) -> PatternId {
-        let pattern = Pattern { kind, t };
-        self.interner.intern(pattern)
-    }
-
-    fn allocate_wildcard(&mut self, t: TypeId) -> PatternId {
-        self.allocate(PatternKind::Wildcard, t)
-    }
-}
-
-fn lower_binder<Q>(
-    check_state: &mut CheckState,
-    exhaustiveness_state: &mut ExhaustivenessState,
-    context: &CheckContext<Q>,
-    id: BinderId,
-) -> PatternId
+fn lower_binder<Q>(state: &mut CheckState, context: &CheckContext<Q>, id: BinderId) -> PatternId
 where
     Q: ExternalQueries,
 {
-    let t = check_state.term_scope.lookup_binder(id).unwrap_or(context.prim.unknown);
+    let t = state.term_scope.lookup_binder(id).unwrap_or(context.prim.unknown);
 
     let Some(kind) = context.lowered.info.get_binder_kind(id) else {
-        return exhaustiveness_state.allocate_wildcard(t);
+        return state.allocate_wildcard(t);
     };
 
     match kind {
         lowering::BinderKind::Typed { binder, .. } => match binder {
-            Some(id) => lower_binder(check_state, exhaustiveness_state, context, *id),
-            None => exhaustiveness_state.allocate_wildcard(t),
+            Some(id) => lower_binder(state, context, *id),
+            None => state.allocate_wildcard(t),
         },
         lowering::BinderKind::OperatorChain { .. } => {
-            lower_operator_chain_binder(check_state, exhaustiveness_state, context, id, t)
+            lower_operator_chain_binder(state, context, id, t)
         }
         lowering::BinderKind::Integer { value } => match value {
-            Some(v) => exhaustiveness_state.allocate(PatternKind::Integer(*v), t),
-            None => exhaustiveness_state.allocate_wildcard(t),
+            Some(v) => state.allocate_pattern(PatternKind::Integer(*v), t),
+            None => state.allocate_wildcard(t),
         },
         lowering::BinderKind::Number { negative, value } => {
             if let Some(value) = value {
                 let kind = PatternKind::Number(*negative, SmolStr::clone(value));
-                exhaustiveness_state.allocate(kind, t)
+                state.allocate_pattern(kind, t)
             } else {
-                exhaustiveness_state.allocate_wildcard(t)
+                state.allocate_wildcard(t)
             }
         }
-        lowering::BinderKind::Constructor { resolution, arguments } => lower_constructor_binder(
-            check_state,
-            exhaustiveness_state,
-            context,
-            resolution,
-            arguments,
-            t,
-        ),
-        lowering::BinderKind::Variable { .. } => exhaustiveness_state.allocate_wildcard(t),
+        lowering::BinderKind::Constructor { resolution, arguments } => {
+            lower_constructor_binder(state, context, resolution, arguments, t)
+        }
+        lowering::BinderKind::Variable { .. } => state.allocate_wildcard(t),
         lowering::BinderKind::Named { binder, .. } => match binder {
-            Some(id) => lower_binder(check_state, exhaustiveness_state, context, *id),
-            None => exhaustiveness_state.allocate_wildcard(t),
+            Some(id) => lower_binder(state, context, *id),
+            None => state.allocate_wildcard(t),
         },
-        lowering::BinderKind::Wildcard => exhaustiveness_state.allocate_wildcard(t),
+        lowering::BinderKind::Wildcard => state.allocate_wildcard(t),
         lowering::BinderKind::String { value, .. } => {
             if let Some(value) = value {
                 let kind = PatternKind::String(SmolStr::clone(value));
-                exhaustiveness_state.allocate(kind, t)
+                state.allocate_pattern(kind, t)
             } else {
-                exhaustiveness_state.allocate_wildcard(t)
+                state.allocate_wildcard(t)
             }
         }
         lowering::BinderKind::Char { value } => match value {
-            Some(v) => exhaustiveness_state.allocate(PatternKind::Char(*v), t),
-            None => exhaustiveness_state.allocate_wildcard(t),
+            Some(v) => state.allocate_pattern(PatternKind::Char(*v), t),
+            None => state.allocate_wildcard(t),
         },
         lowering::BinderKind::Boolean { boolean } => {
-            exhaustiveness_state.allocate(PatternKind::Boolean(*boolean), t)
+            state.allocate_pattern(PatternKind::Boolean(*boolean), t)
         }
-        lowering::BinderKind::Array { array } => {
-            lower_array_binder(check_state, exhaustiveness_state, context, array, t)
-        }
-        lowering::BinderKind::Record { record } => {
-            lower_record_binder(check_state, exhaustiveness_state, context, record, t)
-        }
+        lowering::BinderKind::Array { array } => lower_array_binder(state, context, array, t),
+        lowering::BinderKind::Record { record } => lower_record_binder(state, context, record, t),
         lowering::BinderKind::Parenthesized { parenthesized } => match parenthesized {
-            Some(id) => lower_binder(check_state, exhaustiveness_state, context, *id),
-            None => exhaustiveness_state.allocate_wildcard(t),
+            Some(id) => lower_binder(state, context, *id),
+            None => state.allocate_wildcard(t),
         },
     }
 }
 
 fn lower_array_binder<Q>(
-    check_state: &mut CheckState,
-    exhaustiveness_state: &mut ExhaustivenessState,
+    state: &mut CheckState,
     context: &CheckContext<Q>,
     array: &[BinderId],
     t: TypeId,
@@ -159,16 +129,12 @@ fn lower_array_binder<Q>(
 where
     Q: ExternalQueries,
 {
-    let elements = array
-        .iter()
-        .map(|element| lower_binder(check_state, exhaustiveness_state, context, *element))
-        .collect();
-    exhaustiveness_state.allocate(PatternKind::Array { elements }, t)
+    let elements = array.iter().map(|element| lower_binder(state, context, *element)).collect();
+    state.allocate_pattern(PatternKind::Array { elements }, t)
 }
 
 fn lower_record_binder<Q>(
-    check_state: &mut CheckState,
-    exhaustiveness_state: &mut ExhaustivenessState,
+    state: &mut CheckState,
     context: &CheckContext<Q>,
     record: &[lowering::BinderRecordItem],
     t: TypeId,
@@ -176,16 +142,13 @@ fn lower_record_binder<Q>(
 where
     Q: ExternalQueries,
 {
-    let elements = record
-        .iter()
-        .map(|element| lower_record_element(check_state, exhaustiveness_state, context, element))
-        .collect();
-    exhaustiveness_state.allocate(PatternKind::Record { elements }, t)
+    let elements =
+        record.iter().map(|element| lower_record_element(state, context, element)).collect();
+    state.allocate_pattern(PatternKind::Record { elements }, t)
 }
 
 fn lower_record_element<Q>(
-    check_state: &mut CheckState,
-    exhaustiveness_state: &mut ExhaustivenessState,
+    state: &mut CheckState,
     context: &CheckContext<Q>,
     element: &lowering::BinderRecordItem,
 ) -> RecordElement
@@ -196,9 +159,9 @@ where
         lowering::BinderRecordItem::RecordField { name, value } => {
             let name = name.clone().unwrap_or(MISSING_NAME);
             let value = if let Some(value) = value {
-                lower_binder(check_state, exhaustiveness_state, context, *value)
+                lower_binder(state, context, *value)
             } else {
-                exhaustiveness_state.allocate_wildcard(context.prim.unknown)
+                state.allocate_wildcard(context.prim.unknown)
             };
             RecordElement::Named(name, value)
         }
@@ -210,8 +173,7 @@ where
 }
 
 fn lower_constructor_binder<Q>(
-    check_state: &mut CheckState,
-    exhaustiveness_state: &mut ExhaustivenessState,
+    state: &mut CheckState,
     context: &CheckContext<Q>,
     resolution: &Option<(FileId, TermItemId)>,
     arguments: &Arc<[BinderId]>,
@@ -221,21 +183,18 @@ where
     Q: ExternalQueries,
 {
     let Some((file_id, item_id)) = resolution else {
-        return exhaustiveness_state.allocate_wildcard(t);
+        return state.allocate_wildcard(t);
     };
 
-    let fields = arguments
-        .iter()
-        .map(|argument| lower_binder(check_state, exhaustiveness_state, context, *argument))
-        .collect_vec();
+    let fields =
+        arguments.iter().map(|argument| lower_binder(state, context, *argument)).collect_vec();
 
     let constructor = Constructor { file_id: *file_id, item_id: *item_id, fields };
-    exhaustiveness_state.allocate(PatternKind::Constructor { constructor }, t)
+    state.allocate_pattern(PatternKind::Constructor { constructor }, t)
 }
 
 fn lower_operator_chain_binder<Q>(
-    check_state: &mut CheckState,
-    exhaustiveness_state: &mut ExhaustivenessState,
+    state: &mut CheckState,
     context: &CheckContext<Q>,
     id: BinderId,
     t: TypeId,
@@ -244,19 +203,18 @@ where
     Q: ExternalQueries,
 {
     let Some(tree) = context.bracketed.binders.get(&id) else {
-        return exhaustiveness_state.allocate_wildcard(t);
+        return state.allocate_wildcard(t);
     };
 
     let Ok(tree) = tree else {
-        return exhaustiveness_state.allocate_wildcard(t);
+        return state.allocate_wildcard(t);
     };
 
-    lower_operator_tree(check_state, exhaustiveness_state, context, tree, t)
+    lower_operator_tree(state, context, tree, t)
 }
 
 fn lower_operator_tree<Q>(
-    check_state: &mut CheckState,
-    exhaustiveness_state: &mut ExhaustivenessState,
+    state: &mut CheckState,
     context: &CheckContext<Q>,
     tree: &OperatorTree<BinderId>,
     t: TypeId,
@@ -265,24 +223,16 @@ where
     Q: ExternalQueries,
 {
     match tree {
-        OperatorTree::Leaf(None) => exhaustiveness_state.allocate_wildcard(t),
-        OperatorTree::Leaf(Some(binder_id)) => {
-            lower_binder(check_state, exhaustiveness_state, context, *binder_id)
+        OperatorTree::Leaf(None) => state.allocate_wildcard(t),
+        OperatorTree::Leaf(Some(binder_id)) => lower_binder(state, context, *binder_id),
+        OperatorTree::Branch(operator_id, children) => {
+            lower_operator_branch(state, context, *operator_id, children, t)
         }
-        OperatorTree::Branch(operator_id, children) => lower_operator_branch(
-            check_state,
-            exhaustiveness_state,
-            context,
-            *operator_id,
-            children,
-            t,
-        ),
     }
 }
 
 fn lower_operator_branch<Q>(
-    check_state: &mut CheckState,
-    exhaustiveness_state: &mut ExhaustivenessState,
+    state: &mut CheckState,
     context: &CheckContext<Q>,
     operator_id: TermOperatorId,
     children: &[OperatorTree<BinderId>; 2],
@@ -292,25 +242,23 @@ where
     Q: ExternalQueries,
 {
     let Some((file_id, item_id)) = context.lowered.info.get_term_operator(operator_id) else {
-        return exhaustiveness_state.allocate_wildcard(t);
+        return state.allocate_wildcard(t);
     };
 
     let Some(OperatorBranchTypes { left, right, result }) =
-        check_state.term_scope.lookup_operator_node(operator_id)
+        state.term_scope.lookup_operator_node(operator_id)
     else {
-        return exhaustiveness_state.allocate_wildcard(t);
+        return state.allocate_wildcard(t);
     };
 
     let [left_tree, right_tree] = children;
 
-    let left_pattern =
-        lower_operator_tree(check_state, exhaustiveness_state, context, left_tree, left);
+    let left_pattern = lower_operator_tree(state, context, left_tree, left);
 
-    let right_pattern =
-        lower_operator_tree(check_state, exhaustiveness_state, context, right_tree, right);
+    let right_pattern = lower_operator_tree(state, context, right_tree, right);
 
     let constructor = Constructor { file_id, item_id, fields: vec![left_pattern, right_pattern] };
-    exhaustiveness_state.allocate(PatternKind::Constructor { constructor }, result)
+    state.allocate_pattern(PatternKind::Constructor { constructor }, result)
 }
 
 /// Determines if a [`PatternVector`] is useful with respect to a [`PatternMatrix`].
@@ -319,8 +267,7 @@ where
 /// any pattern vector in the matrix. This is the core algorithm from Maranget's
 /// "Warnings for pattern matching" paper.
 fn algorithm_u<Q>(
-    check_state: &mut CheckState,
-    exhaustiveness_state: &mut ExhaustivenessState,
+    state: &mut CheckState,
     context: &CheckContext<Q>,
     matrix: &PatternMatrix,
     vector: &PatternVector,
@@ -338,32 +285,21 @@ where
         return Ok(false);
     };
 
-    let first_pattern = exhaustiveness_state.interner[first_pattern].clone();
+    let first_pattern = state.patterns[first_pattern].clone();
 
     match first_pattern.kind {
-        PatternKind::Constructor { constructor } => algorithm_u_constructor(
-            check_state,
-            exhaustiveness_state,
-            context,
-            matrix,
-            vector,
-            constructor,
-        ),
-        PatternKind::Wildcard => algorithm_u_wildcard(
-            check_state,
-            exhaustiveness_state,
-            context,
-            matrix,
-            vector,
-            first_pattern.t,
-        ),
-        _ => algorithm_u_other(check_state, exhaustiveness_state, context, matrix, vector),
+        PatternKind::Constructor { constructor } => {
+            algorithm_u_constructor(state, context, matrix, vector, constructor)
+        }
+        PatternKind::Wildcard => {
+            algorithm_u_wildcard(state, context, matrix, vector, first_pattern.t)
+        }
+        _ => algorithm_u_other(state, context, matrix, vector),
     }
 }
 
 fn algorithm_u_constructor<Q>(
-    check_state: &mut CheckState,
-    exhaustiveness_state: &mut ExhaustivenessState,
+    state: &mut CheckState,
     context: &CheckContext<Q>,
     matrix: &PatternMatrix,
     vector: &PatternVector,
@@ -372,27 +308,17 @@ fn algorithm_u_constructor<Q>(
 where
     Q: ExternalQueries,
 {
-    let specialized_matrix =
-        specialise_matrix(check_state, exhaustiveness_state, context, &constructor, matrix);
+    let specialized_matrix = specialise_matrix(state, context, &constructor, matrix);
 
-    let Some(specialized_vector) =
-        specialise_vector(check_state, exhaustiveness_state, context, &constructor, vector)
-    else {
+    let Some(specialized_vector) = specialise_vector(state, context, &constructor, vector) else {
         unreachable!("invariant violated: vector contains constructor");
     };
 
-    algorithm_u(
-        check_state,
-        exhaustiveness_state,
-        context,
-        &specialized_matrix,
-        &specialized_vector,
-    )
+    algorithm_u(state, context, &specialized_matrix, &specialized_vector)
 }
 
 fn algorithm_u_wildcard<Q>(
-    check_state: &mut CheckState,
-    exhaustiveness_state: &mut ExhaustivenessState,
+    state: &mut CheckState,
     context: &CheckContext<Q>,
     matrix: &PatternMatrix,
     vector: &PatternVector,
@@ -401,40 +327,31 @@ fn algorithm_u_wildcard<Q>(
 where
     Q: ExternalQueries,
 {
-    let sigma = collect_sigma(check_state, exhaustiveness_state, context, matrix, first_type)?;
+    let sigma = collect_sigma(state, context, matrix, first_type)?;
     let complete = sigma_is_complete(context, &sigma)?;
 
     if complete {
         // If sigma is complete, check if useful for any constructor
         for constructor in sigma.constructors {
-            let specialized_matrix =
-                specialise_matrix(check_state, exhaustiveness_state, context, &constructor, matrix);
-            let specialized_vector =
-                specialise_vector(check_state, exhaustiveness_state, context, &constructor, vector)
-                    .expect("specialising wildcard head must succeed");
+            let specialized_matrix = specialise_matrix(state, context, &constructor, matrix);
+            let specialized_vector = specialise_vector(state, context, &constructor, vector)
+                .expect("specialising wildcard head must succeed");
 
-            if algorithm_u(
-                check_state,
-                exhaustiveness_state,
-                context,
-                &specialized_matrix,
-                &specialized_vector,
-            )? {
+            if algorithm_u(state, context, &specialized_matrix, &specialized_vector)? {
                 return Ok(true);
             }
         }
         Ok(false)
     } else {
         // If sigma is incomplete, use default matrix
-        let default = default_matrix(exhaustiveness_state, matrix);
+        let default = default_matrix(state, matrix);
         let tail = vector[1..].to_vec();
-        algorithm_u(check_state, exhaustiveness_state, context, &default, &tail)
+        algorithm_u(state, context, &default, &tail)
     }
 }
 
 fn algorithm_u_other<Q>(
-    check_state: &mut CheckState,
-    exhaustiveness_state: &mut ExhaustivenessState,
+    state: &mut CheckState,
     context: &CheckContext<Q>,
     matrix: &PatternMatrix,
     vector: &PatternVector,
@@ -443,9 +360,9 @@ where
     Q: ExternalQueries,
 {
     // For literals and other patterns, treat as incomplete sigma (conservative)
-    let default = default_matrix(exhaustiveness_state, matrix);
+    let default = default_matrix(state, matrix);
     let tail = vector[1..].to_vec();
-    algorithm_u(check_state, exhaustiveness_state, context, &default, &tail)
+    algorithm_u(state, context, &default, &tail)
 }
 
 /// Determines the matching [`WitnessVector`] given a [`PatternMatrix`]
@@ -466,8 +383,7 @@ where
 /// these witnesses as it compares the constructors that appear in the
 /// matrix against the constructors available in the checking environment.
 fn algorithm_m<Q>(
-    check_state: &mut CheckState,
-    exhaustiveness_state: &mut ExhaustivenessState,
+    state: &mut CheckState,
     context: &CheckContext<Q>,
     matrix: &PatternMatrix,
     vector: &PatternVector,
@@ -486,34 +402,16 @@ where
         return Ok(None);
     };
 
-    let first_pattern = exhaustiveness_state.interner[first_pattern].clone();
+    let first_pattern = state.patterns[first_pattern].clone();
 
     match first_pattern.kind {
-        PatternKind::Constructor { constructor } => algorithm_m_constructor(
-            check_state,
-            exhaustiveness_state,
-            context,
-            matrix,
-            vector,
-            constructor,
-            first_pattern.t,
-        ),
-        PatternKind::Wildcard => algorithm_m_wildcard(
-            check_state,
-            exhaustiveness_state,
-            context,
-            matrix,
-            vector,
-            first_pattern.t,
-        ),
-        _ => algorithm_m_other(
-            check_state,
-            exhaustiveness_state,
-            context,
-            matrix,
-            vector,
-            first_pattern.t,
-        ),
+        PatternKind::Constructor { constructor } => {
+            algorithm_m_constructor(state, context, matrix, vector, constructor, first_pattern.t)
+        }
+        PatternKind::Wildcard => {
+            algorithm_m_wildcard(state, context, matrix, vector, first_pattern.t)
+        }
+        _ => algorithm_m_other(state, context, matrix, vector, first_pattern.t),
     }
 }
 
@@ -529,8 +427,7 @@ where
 /// See documentation for [`specialise_matrix`] and [`specialise_vector`] for
 /// more information on what specialisation entails given a constructor.
 fn algorithm_m_constructor<Q>(
-    check_state: &mut CheckState,
-    exhaustiveness_state: &mut ExhaustivenessState,
+    state: &mut CheckState,
     context: &CheckContext<Q>,
     matrix: &PatternMatrix,
     vector: &PatternVector,
@@ -542,22 +439,13 @@ where
 {
     let arity = constructor.fields.len();
 
-    let specialized_matrix =
-        specialise_matrix(check_state, exhaustiveness_state, context, &constructor, matrix);
+    let specialized_matrix = specialise_matrix(state, context, &constructor, matrix);
 
-    let Some(specialized_vector) =
-        specialise_vector(check_state, exhaustiveness_state, context, &constructor, vector)
-    else {
+    let Some(specialized_vector) = specialise_vector(state, context, &constructor, vector) else {
         unreachable!("invariant violated: vector contains constructor");
     };
 
-    let witnesses = algorithm_m(
-        check_state,
-        exhaustiveness_state,
-        context,
-        &specialized_matrix,
-        &specialized_vector,
-    )?;
+    let witnesses = algorithm_m(state, context, &specialized_matrix, &specialized_vector)?;
 
     let Some(witnesses) = witnesses else {
         return Ok(None);
@@ -574,7 +462,7 @@ where
             },
         };
 
-        let constructor = exhaustiveness_state.allocate(pattern, first_type);
+        let constructor = state.allocate_pattern(pattern, first_type);
         let tail_columns = tail_columns.iter().copied();
 
         iter::once(constructor).chain(tail_columns).collect()
@@ -609,8 +497,7 @@ where
 /// reporting pattern warnings. Otherwise, if the sigma is empty, we
 /// simply produce a wildcard pattern.
 fn algorithm_m_wildcard<Q>(
-    check_state: &mut CheckState,
-    exhaustiveness_state: &mut ExhaustivenessState,
+    state: &mut CheckState,
     context: &CheckContext<Q>,
     matrix: &PatternMatrix,
     vector: &PatternVector,
@@ -619,37 +506,20 @@ fn algorithm_m_wildcard<Q>(
 where
     Q: ExternalQueries,
 {
-    let sigma = collect_sigma(check_state, exhaustiveness_state, context, matrix, first_type)?;
+    let sigma = collect_sigma(state, context, matrix, first_type)?;
     let complete = sigma_is_complete(context, &sigma)?;
 
     let Sigma { constructors, missing } = sigma;
 
     if complete {
-        algorithm_m_wildcard_complete(
-            check_state,
-            exhaustiveness_state,
-            context,
-            matrix,
-            vector,
-            first_type,
-            constructors,
-        )
+        algorithm_m_wildcard_complete(state, context, matrix, vector, first_type, constructors)
     } else {
-        algorithm_m_wildcard_incomplete(
-            check_state,
-            exhaustiveness_state,
-            context,
-            matrix,
-            vector,
-            first_type,
-            &missing,
-        )
+        algorithm_m_wildcard_incomplete(state, context, matrix, vector, first_type, &missing)
     }
 }
 
 fn algorithm_m_wildcard_complete<Q>(
-    check_state: &mut CheckState,
-    exhaustiveness_state: &mut ExhaustivenessState,
+    state: &mut CheckState,
     context: &CheckContext<Q>,
     matrix: &PatternMatrix,
     vector: &PatternVector,
@@ -664,22 +534,16 @@ where
     for constructor in sigma {
         let arity = constructor.fields.len();
 
-        let specialized_matrix =
-            specialise_matrix(check_state, exhaustiveness_state, context, &constructor, matrix);
+        let specialized_matrix = specialise_matrix(state, context, &constructor, matrix);
 
-        let Some(specialized_vector) =
-            specialise_vector(check_state, exhaustiveness_state, context, &constructor, vector)
+        let Some(specialized_vector) = specialise_vector(state, context, &constructor, vector)
         else {
             unreachable!("invariant violated: vector contains constructor");
         };
 
-        if let Some(witnesses) = algorithm_m(
-            check_state,
-            exhaustiveness_state,
-            context,
-            &specialized_matrix,
-            &specialized_vector,
-        )? {
+        if let Some(witnesses) =
+            algorithm_m(state, context, &specialized_matrix, &specialized_vector)?
+        {
             for witness in witnesses {
                 let (argument_columns, tail_columns) = witness.split_at(arity);
 
@@ -691,7 +555,7 @@ where
                     },
                 };
 
-                let constructor = exhaustiveness_state.allocate(pattern, first_type);
+                let constructor = state.allocate_pattern(pattern, first_type);
                 let tail_columns = tail_columns.iter().copied();
 
                 let witnesses = iter::once(constructor).chain(tail_columns).collect();
@@ -704,8 +568,7 @@ where
 }
 
 fn algorithm_m_wildcard_incomplete<Q>(
-    check_state: &mut CheckState,
-    exhaustiveness_state: &mut ExhaustivenessState,
+    state: &mut CheckState,
     context: &CheckContext<Q>,
     matrix: &PatternMatrix,
     vector: &PatternVector,
@@ -715,11 +578,10 @@ fn algorithm_m_wildcard_incomplete<Q>(
 where
     Q: ExternalQueries,
 {
-    let default = default_matrix(exhaustiveness_state, matrix);
+    let default = default_matrix(state, matrix);
     let tail_columns = vector[1..].to_vec();
 
-    let witnesses =
-        algorithm_m(check_state, exhaustiveness_state, context, &default, &tail_columns)?;
+    let witnesses = algorithm_m(state, context, &default, &tail_columns)?;
 
     let Some(witnesses) = witnesses else {
         return Ok(None);
@@ -727,11 +589,8 @@ where
 
     let head = if let Some(missing_constructor) = missing.first() {
         // Use constructor field types when available; fall back to `prim.unknown`.
-        let fields = missing_constructor
-            .fields
-            .iter()
-            .map(|&t| exhaustiveness_state.allocate_wildcard(t))
-            .collect_vec();
+        let fields =
+            missing_constructor.fields.iter().map(|&t| state.allocate_wildcard(t)).collect_vec();
 
         let constructor = Constructor {
             file_id: missing_constructor.file_id,
@@ -740,9 +599,9 @@ where
         };
         let pattern = PatternKind::Constructor { constructor };
 
-        exhaustiveness_state.allocate(pattern, first_type)
+        state.allocate_pattern(pattern, first_type)
     } else {
-        exhaustiveness_state.allocate_wildcard(first_type)
+        state.allocate_wildcard(first_type)
     };
 
     Ok(Some(
@@ -751,8 +610,7 @@ where
 }
 
 fn algorithm_m_other<Q>(
-    check_state: &mut CheckState,
-    exhaustiveness_state: &mut ExhaustivenessState,
+    state: &mut CheckState,
     context: &CheckContext<Q>,
     matrix: &PatternMatrix,
     vector: &PatternVector,
@@ -762,24 +620,23 @@ where
     Q: ExternalQueries,
 {
     // For literals and other patterns, treat as incomplete sigma (conservative)
-    let default = default_matrix(exhaustiveness_state, matrix);
+    let default = default_matrix(state, matrix);
     let tail = vector[1..].to_vec();
 
-    let witnesses = algorithm_m(check_state, exhaustiveness_state, context, &default, &tail)?;
+    let witnesses = algorithm_m(state, context, &default, &tail)?;
 
     let Some(witnesses) = witnesses else {
         return Ok(None);
     };
 
     // Prefix with wildcard
-    let head = exhaustiveness_state.allocate_wildcard(first_type);
+    let head = state.allocate_wildcard(first_type);
     Ok(Some(witnesses.into_iter().map(|w| iter::once(head).chain(w).collect()).collect()))
 }
 
 /// Specialises a [`PatternMatrix`] given a [`Constructor`].
 fn specialise_matrix<Q>(
-    check_state: &mut CheckState,
-    exhaustiveness_state: &mut ExhaustivenessState,
+    state: &mut CheckState,
     context: &CheckContext<Q>,
     expected: &Constructor,
     matrix: &PatternMatrix,
@@ -787,33 +644,32 @@ fn specialise_matrix<Q>(
 where
     Q: ExternalQueries,
 {
-    let matrix = matrix.iter().filter_map(|row| {
-        specialise_vector(check_state, exhaustiveness_state, context, expected, row)
-    });
+    let matrix = matrix.iter().filter_map(|row| specialise_vector(state, context, expected, row));
     matrix.collect()
 }
 
 /// Specialises a [`PatternVector`] given a [`Constructor`].
 fn specialise_vector<Q>(
-    _check_state: &mut CheckState,
-    exhaustiveness_state: &mut ExhaustivenessState,
-    _context: &CheckContext<Q>,
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
     expected: &Constructor,
     vector: &PatternVector,
 ) -> Option<PatternVector>
 where
     Q: ExternalQueries,
 {
+    let _ = context;
+
     let [first_column, ref tail_columns @ ..] = vector[..] else {
         unreachable!("invariant violated: specialise_vector processed empty row");
     };
 
-    let first_column = &exhaustiveness_state.interner[first_column];
+    let first_column = &state.patterns[first_column];
 
     if let PatternKind::Wildcard = first_column.kind {
         let wildcards = expected.fields.iter().map(|&pattern| {
-            let t = exhaustiveness_state.interner[pattern].t;
-            exhaustiveness_state.allocate_wildcard(t)
+            let t = state.patterns[pattern].t;
+            state.allocate_wildcard(t)
         });
         let tail_columns = tail_columns.iter().copied();
         return Some(iter::chain(wildcards, tail_columns).collect());
@@ -830,15 +686,12 @@ where
     Some(iter::chain(&constructor.fields, tail_columns).copied().collect())
 }
 
-fn default_matrix(
-    exhaustiveness_state: &ExhaustivenessState,
-    matrix: &PatternMatrix,
-) -> PatternMatrix {
+fn default_matrix(state: &CheckState, matrix: &PatternMatrix) -> PatternMatrix {
     let filter_map = matrix.iter().filter_map(|row| {
         let [first_column, ref default_columns @ ..] = row[..] else {
             unreachable!("invariant violated: default_matrix processed empty row");
         };
-        if let PatternKind::Wildcard = exhaustiveness_state.interner[first_column].kind {
+        if let PatternKind::Wildcard = state.patterns[first_column].kind {
             Some(default_columns.to_vec())
         } else {
             None
@@ -870,8 +723,7 @@ struct MissingConstructor {
 /// representative `Constructor` per distinct constructor id. Non-constructor
 /// patterns (wildcards, literals, etc.) are ignored.
 fn collect_sigma<Q>(
-    check_state: &mut CheckState,
-    exhaustiveness_state: &ExhaustivenessState,
+    state: &mut CheckState,
     context: &CheckContext<Q>,
     matrix: &PatternMatrix,
     scrutinee_type: TypeId,
@@ -886,7 +738,7 @@ where
         let [first_column, ..] = row[..] else {
             continue;
         };
-        let pattern = &exhaustiveness_state.interner[first_column];
+        let pattern = &state.patterns[first_column];
         if let PatternKind::Constructor { constructor } = &pattern.kind {
             let key = ConstructorKey(constructor.file_id, constructor.item_id);
             if seen.insert(key) {
@@ -895,8 +747,7 @@ where
         }
     }
 
-    let missing =
-        collect_missing_constructors(check_state, context, scrutinee_type, &constructors)?;
+    let missing = collect_missing_constructors(state, context, scrutinee_type, &constructors)?;
     Ok(Sigma { constructors, missing })
 }
 
@@ -932,7 +783,7 @@ where
 }
 
 fn collect_missing_constructors<Q>(
-    check_state: &mut CheckState,
+    state: &mut CheckState,
     context: &CheckContext<Q>,
     scrutinee_type: TypeId,
     constructors: &[Constructor],
@@ -951,14 +802,13 @@ where
     };
 
     let sigma: FxHashSet<TermItemId> = constructors.iter().map(|c| c.item_id).collect();
-    let arguments = toolkit::extract_all_applications(check_state, scrutinee_type);
+    let arguments = toolkit::extract_all_applications(state, scrutinee_type);
 
     let mut missing = vec![];
     for item_id in indexed.pairs.data_constructors(type_item_id) {
         let file_id = constructor.file_id;
         if !sigma.contains(&item_id) {
-            let fields =
-                constructor_field_types(check_state, context, file_id, item_id, &arguments)?;
+            let fields = constructor_field_types(state, context, file_id, item_id, &arguments)?;
             missing.push(MissingConstructor { file_id, item_id, fields });
         }
     }
@@ -967,7 +817,7 @@ where
 }
 
 fn constructor_field_types<Q>(
-    check_state: &mut CheckState,
+    state: &mut CheckState,
     context: &CheckContext<Q>,
     file_id: FileId,
     term_id: TermItemId,
@@ -976,15 +826,14 @@ fn constructor_field_types<Q>(
 where
     Q: ExternalQueries,
 {
-    let constructor_type = derive::lookup_local_term_type(check_state, context, file_id, term_id)?;
+    let constructor_type = derive::lookup_local_term_type(state, context, file_id, term_id)?;
     if let Some(constructor_type) = constructor_type {
-        let constructor =
-            toolkit::instantiate_with_arguments(check_state, constructor_type, arguments);
-        let (fields, _) = toolkit::extract_function_arguments(check_state, constructor);
+        let constructor = toolkit::instantiate_with_arguments(state, constructor_type, arguments);
+        let (fields, _) = toolkit::extract_function_arguments(state, constructor);
         Ok(fields)
     } else {
         let arity = get_constructor_arity(context, file_id, term_id)?;
-        Ok(iter::repeat(context.prim.unknown).take(arity).collect())
+        Ok(iter::repeat_n(context.prim.unknown, arity).collect())
     }
 }
 
@@ -1026,7 +875,7 @@ pub struct CasePatternReport {
 /// Only unconditional branches are counted toward these checks, as pattern
 /// guards do not guarantee coverage.
 pub fn check_case_patterns<Q>(
-    check_state: &mut CheckState,
+    state: &mut CheckState,
     context: &CheckContext<Q>,
     trunk_types: &[TypeId],
     branches: &[lowering::CaseBranch],
@@ -1037,8 +886,6 @@ where
     if trunk_types.is_empty() {
         return Ok(CasePatternReport { missing: None, redundant: vec![] });
     }
-
-    let mut exhaustiveness_state = ExhaustivenessState::default();
 
     // Build pattern matrix from unconditional branches only.
     let mut rows: Vec<PatternVector> = vec![];
@@ -1053,12 +900,12 @@ where
 
         let mut row: PatternVector = vec![];
         for &binder_id in branch.binders.iter() {
-            let pattern = lower_binder(check_state, &mut exhaustiveness_state, context, binder_id);
+            let pattern = lower_binder(state, context, binder_id);
             row.push(pattern);
         }
 
         while row.len() < trunk_types.len() {
-            let wildcard = exhaustiveness_state.allocate_wildcard(trunk_types[row.len()]);
+            let wildcard = state.allocate_wildcard(trunk_types[row.len()]);
             row.push(wildcard);
         }
 
@@ -1070,23 +917,22 @@ where
     let mut redundant = vec![];
     let mut matrix: PatternMatrix = vec![];
     for row in &rows {
-        let useful = algorithm_u(check_state, &mut exhaustiveness_state, context, &matrix, row)?;
+        let useful = algorithm_u(state, context, &matrix, row)?;
         if useful {
             matrix.push(row.clone());
         } else {
-            redundant.push(render::render_witness(context, &exhaustiveness_state, row));
+            redundant.push(pretty::pretty_witness(context, state, row));
         }
     }
 
-    let query: PatternVector =
-        trunk_types.iter().map(|&t| exhaustiveness_state.allocate_wildcard(t)).collect();
+    let query: PatternVector = trunk_types.iter().map(|&t| state.allocate_wildcard(t)).collect();
 
-    let witnesses = algorithm_m(check_state, &mut exhaustiveness_state, context, &rows, &query)?;
+    let witnesses = algorithm_m(state, context, &rows, &query)?;
     let missing = witnesses.map(|witnesses| {
         witnesses
             .iter()
             .take(5)
-            .map(|witness| render::render_witness(context, &exhaustiveness_state, witness))
+            .map(|witness| pretty::pretty_witness(context, state, witness))
             .collect()
     });
 
