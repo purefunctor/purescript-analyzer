@@ -1013,29 +1013,33 @@ where
     }
 }
 
-/// Checks exhaustiveness of case branches against scrutinee types.
+pub struct CasePatternReport {
+    pub missing: Option<Vec<String>>,
+    pub redundant: Vec<String>,
+}
+
+/// Checks case branch usefulness and exhaustiveness against scrutinee types.
 ///
-/// Returns [`None`] if the case expression is exhaustive, otherwise returns
-/// [`Some`] witnesses with the rendered missing patterns if there are uncovered
-/// cases. Only unconditional branches are counted towards exhaustiveness, as
-/// pattern guards do not guarantee coverage.
-pub fn check_case_exhaustiveness<Q>(
+/// Returns a report of missing patterns (if any) and redundant branches.
+/// Only unconditional branches are counted toward these checks, as pattern
+/// guards do not guarantee coverage.
+pub fn check_case_patterns<Q>(
     check_state: &mut CheckState,
     context: &CheckContext<Q>,
     trunk_types: &[TypeId],
     branches: &[lowering::CaseBranch],
-) -> QueryResult<Option<Vec<String>>>
+) -> QueryResult<CasePatternReport>
 where
     Q: ExternalQueries,
 {
     if trunk_types.is_empty() {
-        return Ok(None);
+        return Ok(CasePatternReport { missing: None, redundant: vec![] });
     }
 
     let mut exhaustiveness_state = ExhaustivenessState::default();
 
     // Build pattern matrix from unconditional branches only.
-    let mut matrix: PatternMatrix = vec![];
+    let mut rows: Vec<PatternVector> = vec![];
     for branch in branches {
         let is_unconditional = matches!(
             &branch.guarded_expression,
@@ -1057,25 +1061,53 @@ where
         }
 
         if !row.is_empty() {
-            matrix.push(row);
+            rows.push(row);
+        }
+    }
+
+    let mut redundant = vec![];
+    let mut matrix: PatternMatrix = vec![];
+    for row in &rows {
+        let useful = algorithm_u(check_state, &mut exhaustiveness_state, context, &matrix, row)?;
+        if useful {
+            matrix.push(row.clone());
+        } else {
+            redundant.push(render_witness(context, &exhaustiveness_state, row));
         }
     }
 
     let query: PatternVector =
         trunk_types.iter().map(|&t| exhaustiveness_state.allocate_wildcard(t)).collect();
 
-    let witnesses = algorithm_m(check_state, &mut exhaustiveness_state, context, &matrix, &query)?;
-    let Some(witnesses) = witnesses else {
-        return Ok(None);
-    };
+    let witnesses = algorithm_m(check_state, &mut exhaustiveness_state, context, &rows, &query)?;
+    let missing = witnesses.map(|witnesses| {
+        witnesses
+            .iter()
+            .take(5)
+            .map(|witness| render_witness(context, &exhaustiveness_state, witness))
+            .collect()
+    });
 
-    let rendered = witnesses
-        .iter()
-        .take(5)
-        .map(|witness| render_witness(context, &exhaustiveness_state, witness))
-        .collect();
+    Ok(CasePatternReport { missing, redundant })
+}
 
-    Ok(Some(rendered))
+/// Checks exhaustiveness of case branches against scrutinee types.
+///
+/// Returns [`None`] if the case expression is exhaustive, otherwise returns
+/// [`Some`] witnesses with the rendered missing patterns if there are uncovered
+/// cases. Only unconditional branches are counted towards exhaustiveness, as
+/// pattern guards do not guarantee coverage.
+pub fn check_case_exhaustiveness<Q>(
+    check_state: &mut CheckState,
+    context: &CheckContext<Q>,
+    trunk_types: &[TypeId],
+    branches: &[lowering::CaseBranch],
+) -> QueryResult<Option<Vec<String>>>
+where
+    Q: ExternalQueries,
+{
+    let report = check_case_patterns(check_state, context, trunk_types, branches)?;
+    Ok(report.missing)
 }
 
 fn render_witness<Q>(

@@ -618,12 +618,18 @@ where
         }
     }
 
-    // Check exhaustiveness after binders have been checked (so types are known)
-    if let Some(missing) =
-        exhaustiveness::check_case_exhaustiveness(state, context, &trunk_types, branches)?
-    {
+    // Check exhaustiveness/usefulness after binders have been checked (so types are known)
+    let report = exhaustiveness::check_case_patterns(state, context, &trunk_types, branches)?;
+
+    if let Some(missing) = report.missing {
         let patterns = missing.join(", ");
         let msg = format!("Pattern match is not exhaustive. Missing: {patterns}");
+        let message_id = state.intern_error_message(msg);
+        state.insert_error(ErrorKind::CustomWarning { message_id });
+    }
+
+    for redundant in report.redundant {
+        let msg = format!("Pattern match has redundant branch: {redundant}");
         let message_id = state.intern_error_message(msg);
         state.insert_error(ErrorKind::CustomWarning { message_id });
     }

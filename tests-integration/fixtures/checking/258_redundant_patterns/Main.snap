@@ -1,0 +1,58 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Unit :: Unit
+unit :: Unit -> Int
+Yes :: YesNo
+No :: YesNo
+yes :: YesNo -> Int
+no :: YesNo -> Int
+yesNo :: YesNo -> Int
+
+Types
+Unit :: Type
+YesNo :: Type
+
+Data
+Unit
+  Quantified = :0
+  Kind = :0
+
+YesNo
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+Unit = []
+YesNo = []
+
+Diagnostics
+warning[CustomWarning]: Pattern match has redundant branch: _
+  --> 5:8..8:12
+  |
+5 | unit = case _ of
+  |        ^~~~~~~~~
+warning[CustomWarning]: Pattern match has redundant branch: Unit
+  --> 5:8..8:12
+  |
+5 | unit = case _ of
+  |        ^~~~~~~~~
+warning[CustomWarning]: Pattern match has redundant branch: Yes
+  --> 12:7..15:11
+   |
+12 | yes = case _ of
+   |       ^~~~~~~~~
+warning[CustomWarning]: Pattern match has redundant branch: No
+  --> 17:6..20:10
+   |
+17 | no = case _ of
+   |      ^~~~~~~~~
+warning[CustomWarning]: Pattern match has redundant branch: _
+  --> 22:9..25:9
+   |
+22 | yesNo = case _ of
+   |         ^~~~~~~~~

@@ -529,3 +529,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_256_exhaustive_multiple_main() { run_test("256_exhaustive_multiple", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_257_exhaustive_tuple_main() { run_test("257_exhaustive_tuple", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_258_redundant_patterns_main() { run_test("258_redundant_patterns", "Main"); }
