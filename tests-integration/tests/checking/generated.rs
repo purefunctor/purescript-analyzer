@@ -523,3 +523,9 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_253_invalid_type_application_too_many_main() { run_test("253_invalid_type_application_too_many", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_254_higher_rank_elaboration_main() { run_test("254_higher_rank_elaboration", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_255_exhaustive_basic_main() { run_test("255_exhaustive_basic", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_256_exhaustive_multiple_main() { run_test("256_exhaustive_multiple", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_257_exhaustive_tuple_main() { run_test("257_exhaustive_tuple", "Main"); }

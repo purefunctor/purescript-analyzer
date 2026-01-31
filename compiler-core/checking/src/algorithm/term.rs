@@ -9,7 +9,7 @@ use crate::ExternalQueries;
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::unification::ElaborationMode;
 use crate::algorithm::{
-    binder, inspect, kind, operator, substitute, toolkit, transfer, unification,
+    binder, exhaustiveness, inspect, kind, operator, substitute, toolkit, transfer, unification,
 };
 use crate::core::{RowField, RowType, Type, TypeId};
 use crate::error::{ErrorKind, ErrorStep};
@@ -616,6 +616,16 @@ where
             let guarded_type = infer_guarded_expression(state, context, guarded)?;
             let _ = unification::subtype(state, context, inferred_type, guarded_type)?;
         }
+    }
+
+    // Check exhaustiveness after binders have been checked (so types are known)
+    if let Some(missing) =
+        exhaustiveness::check_case_exhaustiveness(state, context, &trunk_types, branches)?
+    {
+        let patterns = missing.join(", ");
+        let msg = format!("Pattern match is not exhaustive. Missing: {patterns}");
+        let message_id = state.intern_error_message(msg);
+        state.insert_error(ErrorKind::CustomWarning { message_id });
     }
 
     Ok(inferred_type)
