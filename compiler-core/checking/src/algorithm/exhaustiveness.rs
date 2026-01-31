@@ -7,7 +7,6 @@ use files::FileId;
 use indexing::TermItemId;
 use itertools::Itertools;
 use lowering::{BinderId, TermOperatorId};
-use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
 use sugar::OperatorTree;
 
@@ -17,7 +16,13 @@ use crate::{ExternalQueries, TypeId};
 const MISSING_NAME: SmolStr = SmolStr::new_inline("<MissingName>");
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub enum Pattern {
+pub struct Pattern {
+    kind: PatternKind,
+    t: TypeId,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub enum PatternKind {
     Wildcard,
     Boolean(bool),
     Char(char),
@@ -50,18 +55,16 @@ type WitnessVector = Vec<PatternId>;
 
 struct ExhaustivenessState {
     interner: interner::Interner<Pattern>,
-    types: FxHashMap<PatternId, TypeId>,
 }
 
 impl ExhaustivenessState {
-    fn allocate(&mut self, pattern: Pattern, t: TypeId) -> PatternId {
-        let id = self.interner.intern(pattern);
-        self.types.insert(id, t);
-        id
+    fn allocate(&mut self, kind: PatternKind, t: TypeId) -> PatternId {
+        let pattern = Pattern { kind, t };
+        self.interner.intern(pattern)
     }
 
     fn allocate_wildcard(&mut self, t: TypeId) -> PatternId {
-        self.allocate(Pattern::Wildcard, t)
+        self.allocate(PatternKind::Wildcard, t)
     }
 }
 
@@ -89,13 +92,13 @@ where
             lower_operator_chain_binder(check_state, exhaustiveness_state, context, id, t)
         }
         lowering::BinderKind::Integer { value } => match value {
-            Some(v) => exhaustiveness_state.allocate(Pattern::Integer(*v), t),
+            Some(v) => exhaustiveness_state.allocate(PatternKind::Integer(*v), t),
             None => exhaustiveness_state.allocate_wildcard(t),
         },
         lowering::BinderKind::Number { negative, value } => {
             if let Some(value) = value {
-                let pattern = Pattern::Number(*negative, SmolStr::clone(value));
-                exhaustiveness_state.allocate(pattern, t)
+                let kind = PatternKind::Number(*negative, SmolStr::clone(value));
+                exhaustiveness_state.allocate(kind, t)
             } else {
                 exhaustiveness_state.allocate_wildcard(t)
             }
@@ -116,18 +119,18 @@ where
         lowering::BinderKind::Wildcard => exhaustiveness_state.allocate_wildcard(t),
         lowering::BinderKind::String { value, .. } => {
             if let Some(value) = value {
-                let pattern = Pattern::String(SmolStr::clone(value));
-                exhaustiveness_state.allocate(pattern, t)
+                let kind = PatternKind::String(SmolStr::clone(value));
+                exhaustiveness_state.allocate(kind, t)
             } else {
                 exhaustiveness_state.allocate_wildcard(t)
             }
         }
         lowering::BinderKind::Char { value } => match value {
-            Some(v) => exhaustiveness_state.allocate(Pattern::Char(*v), t),
+            Some(v) => exhaustiveness_state.allocate(PatternKind::Char(*v), t),
             None => exhaustiveness_state.allocate_wildcard(t),
         },
         lowering::BinderKind::Boolean { boolean } => {
-            exhaustiveness_state.allocate(Pattern::Boolean(*boolean), t)
+            exhaustiveness_state.allocate(PatternKind::Boolean(*boolean), t)
         }
         lowering::BinderKind::Array { array } => {
             lower_array_binder(check_state, exhaustiveness_state, context, array, t)
@@ -156,7 +159,7 @@ where
         .iter()
         .map(|element| lower_binder(check_state, exhaustiveness_state, context, *element))
         .collect();
-    exhaustiveness_state.allocate(Pattern::Array { elements }, t)
+    exhaustiveness_state.allocate(PatternKind::Array { elements }, t)
 }
 
 fn lower_record_binder<Q>(
@@ -173,7 +176,7 @@ where
         .iter()
         .map(|element| lower_record_element(check_state, exhaustiveness_state, context, element))
         .collect();
-    exhaustiveness_state.allocate(Pattern::Record { elements }, t)
+    exhaustiveness_state.allocate(PatternKind::Record { elements }, t)
 }
 
 fn lower_record_element<Q>(
@@ -223,9 +226,7 @@ where
         .collect_vec();
 
     let constructor = Constructor { file_id: *file_id, item_id: *item_id, fields };
-    let pattern = Pattern::Constructor { constructor };
-
-    exhaustiveness_state.allocate(pattern, t)
+    exhaustiveness_state.allocate(PatternKind::Constructor { constructor }, t)
 }
 
 fn lower_operator_chain_binder<Q>(
@@ -305,9 +306,7 @@ where
         lower_operator_tree(check_state, exhaustiveness_state, context, right_tree, right);
 
     let constructor = Constructor { file_id, item_id, fields: vec![left_pattern, right_pattern] };
-    let pattern = Pattern::Constructor { constructor };
-
-    exhaustiveness_state.allocate(pattern, result)
+    exhaustiveness_state.allocate(PatternKind::Constructor { constructor }, result)
 }
 
 fn algorithm_u<Q>(
@@ -368,17 +367,16 @@ where
 
     let first_column = &exhaustiveness_state.interner[first_column];
 
-    if let Pattern::Wildcard = first_column {
-        let wildcards = expected.fields.iter().map(|&field_pat| {
-            let t = exhaustiveness_state.types.get(&field_pat);
-            let t = t.copied().unwrap_or(context.prim.unknown);
+    if let PatternKind::Wildcard = first_column.kind {
+        let wildcards = expected.fields.iter().map(|&pattern| {
+            let t = exhaustiveness_state.interner[pattern].t;
             exhaustiveness_state.allocate_wildcard(t)
         });
         let tail_columns = tail_columns.iter().copied();
         return Some(iter::chain(wildcards, tail_columns).collect());
     }
 
-    let Pattern::Constructor { constructor } = first_column else {
+    let PatternKind::Constructor { constructor } = &first_column.kind else {
         return Some(tail_columns.to_vec());
     };
 
@@ -397,7 +395,7 @@ fn default_matrix(
         let [first_column, ref default_columns @ ..] = row[..] else {
             unreachable!("invariant violated: default_matrix processed empty row");
         };
-        if let Pattern::Wildcard = &exhaustiveness_state.interner[first_column] {
+        if let PatternKind::Wildcard = exhaustiveness_state.interner[first_column].kind {
             Some(default_columns.to_vec())
         } else {
             None
