@@ -56,8 +56,10 @@ pub type WitnessVector = Vec<PatternId>;
 /// Determines if a [`PatternVector`] is useful with respect to a [`PatternMatrix`].
 ///
 /// A pattern vector is useful if it matches at least one value not matched by
-/// any pattern vector in the matrix. This is the core algorithm from Maranget's
-/// "Warnings for pattern matching" paper.
+/// any pattern vector in the matrix. This is one of the core algorithms from
+/// Maranget's "Warnings for pattern matching" paper.
+///
+/// See [`algorithm_u_constructor`] and [`algorithm_u_wildcard`] for reference.
 fn algorithm_u<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -90,6 +92,11 @@ where
     }
 }
 
+/// Induction 1
+///
+/// This function uses specialisation to spread the provided [`Constructor`]
+/// over both the [`PatternMatrix`] and the [`PatternVector`], before calling
+/// [`algorithm_u`] recursively with the specialised structures.
 fn algorithm_u_constructor<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -100,36 +107,49 @@ fn algorithm_u_constructor<Q>(
 where
     Q: ExternalQueries,
 {
-    let specialized_matrix = specialise_matrix(state, context, &constructor, matrix);
+    let specialised_matrix = specialise_matrix(state, &constructor, matrix);
 
-    let Some(specialized_vector) = specialise_vector(state, context, &constructor, vector) else {
+    let Some(specialised_vector) = specialise_vector(state, &constructor, vector) else {
         unreachable!("invariant violated: vector contains constructor");
     };
 
-    algorithm_u(state, context, &specialized_matrix, &specialized_vector)
+    algorithm_u(state, context, &specialised_matrix, &specialised_vector)
 }
 
+/// Induction 2
+///
+/// This function collects all constructor references from the first column of
+/// the matrix into a collection called the sigma.
+///
+/// If the sigma is complete, for each constructor in the sigma, we specialise
+/// the pattern matrix and pattern vector against it. Then, we recursively call
+/// [`algorithm_u`] against the specialised structures. The pattern vector is
+/// useful if any specialised pattern vector is useful against its specialised
+/// pattern matrix.
+///
+/// If the sigma is incomplete, we recursively call [`algorithm_u`] against the
+/// [`default_matrix`] of the pattern matrix and the tail of the pattern vector.
 fn algorithm_u_wildcard<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     matrix: &PatternMatrix,
     vector: &PatternVector,
-    first_type: TypeId,
+    t: TypeId,
 ) -> QueryResult<bool>
 where
     Q: ExternalQueries,
 {
-    let sigma = collect_sigma(state, context, matrix, first_type)?;
+    let sigma = collect_sigma(state, context, matrix, t)?;
     let complete = sigma_is_complete(context, &sigma)?;
 
     if complete {
-        algorithm_u_complete(state, context, matrix, vector, sigma)
+        algorithm_u_wildcard_complete(state, context, matrix, vector, sigma)
     } else {
         algorithm_u_wildcard_incomplete(state, context, matrix, vector)
     }
 }
 
-fn algorithm_u_complete<Q>(
+fn algorithm_u_wildcard_complete<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     matrix: &PatternMatrix,
@@ -140,14 +160,13 @@ where
     Q: ExternalQueries,
 {
     for constructor in sigma.constructors {
-        let specialized_matrix = specialise_matrix(state, context, &constructor, matrix);
+        let specialised_matrix = specialise_matrix(state, &constructor, matrix);
 
-        let Some(specialized_vector) = specialise_vector(state, context, &constructor, vector)
-        else {
+        let Some(specialised_vector) = specialise_vector(state, &constructor, vector) else {
             unreachable!("invariant violated: vector contains constructor");
         };
 
-        if algorithm_u(state, context, &specialized_matrix, &specialized_vector)? {
+        if algorithm_u(state, context, &specialised_matrix, &specialised_vector)? {
             return Ok(true);
         }
     }
@@ -195,7 +214,8 @@ where
 /// So... what exactly are witnesses? In the paper, these are defined as
 /// 'value vectors' that are known not to be matched against the pattern
 /// matrix but are instantiations of the pattern vector. In our implementation,
-/// these witnesses are patterns not covered yet by the matrix.
+/// these witnesses are pattern vectors that denote values not yet covered by
+/// the matrix.
 ///
 /// The [`algorithm_m_wildcard`] induction is prolific for producing these
 /// these witnesses as it compares the constructors that appear in the
@@ -250,20 +270,20 @@ fn algorithm_m_constructor<Q>(
     matrix: &PatternMatrix,
     vector: &PatternVector,
     constructor: Constructor,
-    first_type: TypeId,
+    t: TypeId,
 ) -> QueryResult<Option<Vec<WitnessVector>>>
 where
     Q: ExternalQueries,
 {
     let arity = constructor.fields.len();
 
-    let specialized_matrix = specialise_matrix(state, context, &constructor, matrix);
+    let specialised_matrix = specialise_matrix(state, &constructor, matrix);
 
-    let Some(specialized_vector) = specialise_vector(state, context, &constructor, vector) else {
+    let Some(specialised_vector) = specialise_vector(state, &constructor, vector) else {
         unreachable!("invariant violated: vector contains constructor");
     };
 
-    let witnesses = algorithm_m(state, context, &specialized_matrix, &specialized_vector)?;
+    let witnesses = algorithm_m(state, context, &specialised_matrix, &specialised_vector)?;
 
     let Some(witnesses) = witnesses else {
         return Ok(None);
@@ -280,7 +300,7 @@ where
             },
         };
 
-        let constructor = state.allocate_pattern(pattern, first_type);
+        let constructor = state.allocate_pattern(pattern, t);
         let tail_columns = tail_columns.iter().copied();
 
         iter::once(constructor).chain(tail_columns).collect()
@@ -319,17 +339,17 @@ fn algorithm_m_wildcard<Q>(
     context: &CheckContext<Q>,
     matrix: &PatternMatrix,
     vector: &PatternVector,
-    first_type: TypeId,
+    t: TypeId,
 ) -> QueryResult<Option<Vec<WitnessVector>>>
 where
     Q: ExternalQueries,
 {
-    let sigma = collect_sigma(state, context, matrix, first_type)?;
+    let sigma = collect_sigma(state, context, matrix, t)?;
     let complete = sigma_is_complete(context, &sigma)?;
     if complete {
-        algorithm_m_wildcard_complete(state, context, matrix, vector, first_type, &sigma)
+        algorithm_m_wildcard_complete(state, context, matrix, vector, t, &sigma)
     } else {
-        algorithm_m_wildcard_incomplete(state, context, matrix, vector, first_type, &sigma)
+        algorithm_m_wildcard_incomplete(state, context, matrix, vector, t, &sigma)
     }
 }
 
@@ -338,7 +358,7 @@ fn algorithm_m_wildcard_complete<Q>(
     context: &CheckContext<Q>,
     matrix: &PatternMatrix,
     vector: &PatternVector,
-    first_type: TypeId,
+    t: TypeId,
     sigma: &Sigma,
 ) -> QueryResult<Option<Vec<WitnessVector>>>
 where
@@ -349,15 +369,14 @@ where
     for constructor in &sigma.constructors {
         let arity = constructor.fields.len();
 
-        let specialized_matrix = specialise_matrix(state, context, constructor, matrix);
+        let specialised_matrix = specialise_matrix(state, constructor, matrix);
 
-        let Some(specialized_vector) = specialise_vector(state, context, constructor, vector)
-        else {
+        let Some(specialised_vector) = specialise_vector(state, constructor, vector) else {
             unreachable!("invariant violated: vector contains constructor");
         };
 
         if let Some(witnesses) =
-            algorithm_m(state, context, &specialized_matrix, &specialized_vector)?
+            algorithm_m(state, context, &specialised_matrix, &specialised_vector)?
         {
             for witness in witnesses {
                 let (argument_columns, tail_columns) = witness.split_at(arity);
@@ -370,7 +389,7 @@ where
                     },
                 };
 
-                let constructor = state.allocate_pattern(pattern, first_type);
+                let constructor = state.allocate_pattern(pattern, t);
                 let tail_columns = tail_columns.iter().copied();
 
                 let witnesses = iter::once(constructor).chain(tail_columns).collect();
@@ -387,7 +406,7 @@ fn algorithm_m_wildcard_incomplete<Q>(
     context: &CheckContext<Q>,
     matrix: &PatternMatrix,
     vector: &PatternVector,
-    first_type: TypeId,
+    t: TypeId,
     sigma: &Sigma,
 ) -> QueryResult<Option<Vec<WitnessVector>>>
 where
@@ -413,9 +432,9 @@ where
             },
         };
 
-        state.allocate_pattern(pattern, first_type)
+        state.allocate_pattern(pattern, t)
     } else {
-        state.allocate_wildcard(first_type)
+        state.allocate_wildcard(t)
     };
 
     let witness = witnesses
@@ -431,7 +450,7 @@ fn algorithm_m_other<Q>(
     context: &CheckContext<Q>,
     matrix: &PatternMatrix,
     vector: &PatternVector,
-    first_type: TypeId,
+    t: TypeId,
 ) -> QueryResult<Option<Vec<WitnessVector>>>
 where
     Q: ExternalQueries,
@@ -447,36 +466,36 @@ where
     };
 
     // Prefix with wildcard
-    let head = state.allocate_wildcard(first_type);
+    let head = state.allocate_wildcard(t);
     Ok(Some(witnesses.into_iter().map(|w| iter::once(head).chain(w).collect()).collect()))
 }
 
 /// Specialises a [`PatternMatrix`] given a [`Constructor`].
-fn specialise_matrix<Q>(
+///
+/// See documentation below for [`specialise_vector`].
+fn specialise_matrix(
     state: &mut CheckState,
-    context: &CheckContext<Q>,
     expected: &Constructor,
     matrix: &PatternMatrix,
-) -> PatternMatrix
-where
-    Q: ExternalQueries,
-{
-    let matrix = matrix.iter().filter_map(|row| specialise_vector(state, context, expected, row));
-    matrix.collect()
+) -> PatternMatrix {
+    matrix.iter().filter_map(|row| specialise_vector(state, expected, row)).collect()
 }
 
 /// Specialises a [`PatternVector`] given a [`Constructor`].
-fn specialise_vector<Q>(
+///
+/// Specialisation takes a pattern vector and applies the following rules:
+/// 1. If the first column is a wildcard, it expands it to `n` wildcards
+///    where `n` is the arity of the expected [`Constructor`].
+/// 2. It returns `None` for constructors that are not the expected
+///    [`Constructor`], which excludes them from the specialised matrix.
+///    For example, a pattern vector specialised on `Just` removes `Nothing`.
+/// 3. For matching constructors, it 'splats' the fields, effectively turning
+///    a pattern vector like `[Just _]` into `[_]` or `[Nothing]` into `[]`.
+fn specialise_vector(
     state: &mut CheckState,
-    context: &CheckContext<Q>,
     expected: &Constructor,
     vector: &PatternVector,
-) -> Option<PatternVector>
-where
-    Q: ExternalQueries,
-{
-    let _ = context;
-
+) -> Option<PatternVector> {
     let [first_column, ref tail_columns @ ..] = vector[..] else {
         unreachable!("invariant violated: specialise_vector processed empty row");
     };
