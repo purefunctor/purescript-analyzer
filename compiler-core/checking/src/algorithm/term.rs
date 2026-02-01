@@ -629,9 +629,8 @@ where
     }
 
     for redundant in report.redundant {
-        let msg = format!("Pattern match has redundant branch: {redundant}");
-        let message_id = state.intern_error_message(msg);
-        state.insert_error(ErrorKind::CustomWarning { message_id });
+        let pattern = state.intern_error_message(redundant);
+        state.insert_error(ErrorKind::RedundantPattern { pattern });
     }
 
     Ok(inferred_type)

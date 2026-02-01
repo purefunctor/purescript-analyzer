@@ -124,6 +124,9 @@ pub enum ErrorKind {
     CustomWarning {
         message_id: TypeErrorMessageId,
     },
+    RedundantPattern {
+        pattern: TypeErrorMessageId,
+    },
     CustomFailure {
         message_id: TypeErrorMessageId,
     },
