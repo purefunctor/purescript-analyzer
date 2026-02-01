@@ -1,0 +1,23 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+testPartialZero :: Number -> Int
+testPartialOneFive :: Number -> Int
+testWildcard :: Number -> Int
+
+Types
+
+Diagnostics
+warning[CustomWarning]: Pattern match is not exhaustive. Missing: _
+  --> 4:21..5:11
+  |
+4 | testPartialZero n = case n of
+  |                     ^~~~~~~~~
+warning[CustomWarning]: Pattern match is not exhaustive. Missing: _
+  --> 8:24..9:11
+  |
+8 | testPartialOneFive n = case n of
+  |                        ^~~~~~~~~

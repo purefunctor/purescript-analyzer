@@ -7,7 +7,7 @@ use lowering::{BinderId, TermOperatorId};
 use smol_str::SmolStr;
 use sugar::OperatorTree;
 
-use crate::algorithm::exhaustiveness::{Constructor, PatternId, PatternKind, RecordElement};
+use crate::algorithm::exhaustiveness::{PatternConstructor, PatternId, PatternKind, RecordElement};
 use crate::algorithm::state::{CheckContext, CheckState, OperatorBranchTypes};
 use crate::{ExternalQueries, TypeId};
 
@@ -36,13 +36,16 @@ where
             convert_operator_chain_binder(state, context, id, t)
         }
         lowering::BinderKind::Integer { value } => match value {
-            Some(v) => state.allocate_pattern(PatternKind::Integer(*v), t),
+            Some(v) => {
+                let constructor = PatternConstructor::Integer(*v);
+                state.allocate_constructor(constructor, t)
+            }
             None => state.allocate_wildcard(t),
         },
         lowering::BinderKind::Number { negative, value } => {
             if let Some(value) = value {
-                let kind = PatternKind::Number(*negative, SmolStr::clone(value));
-                state.allocate_pattern(kind, t)
+                let constructor = PatternConstructor::Number(*negative, SmolStr::clone(value));
+                state.allocate_constructor(constructor, t)
             } else {
                 state.allocate_wildcard(t)
             }
@@ -58,18 +61,22 @@ where
         lowering::BinderKind::Wildcard => state.allocate_wildcard(t),
         lowering::BinderKind::String { value, .. } => {
             if let Some(value) = value {
-                let kind = PatternKind::String(SmolStr::clone(value));
-                state.allocate_pattern(kind, t)
+                let constructor = PatternConstructor::String(SmolStr::clone(value));
+                state.allocate_constructor(constructor, t)
             } else {
                 state.allocate_wildcard(t)
             }
         }
         lowering::BinderKind::Char { value } => match value {
-            Some(v) => state.allocate_pattern(PatternKind::Char(*v), t),
+            Some(v) => {
+                let constructor = PatternConstructor::Char(*v);
+                state.allocate_constructor(constructor, t)
+            }
             None => state.allocate_wildcard(t),
         },
         lowering::BinderKind::Boolean { boolean } => {
-            state.allocate_pattern(PatternKind::Boolean(*boolean), t)
+            let constructor = PatternConstructor::Boolean(*boolean);
+            state.allocate_constructor(constructor, t)
         }
         lowering::BinderKind::Array { array } => lower_array_binder(state, context, array, t),
         lowering::BinderKind::Record { record } => lower_record_binder(state, context, record, t),
@@ -142,15 +149,15 @@ fn convert_constructor_binder<Q>(
 where
     Q: ExternalQueries,
 {
-    let Some((file_id, item_id)) = resolution else {
+    let Some((file_id, item_id)) = *resolution else {
         return state.allocate_wildcard(t);
     };
 
     let fields =
         arguments.iter().map(|argument| convert_binder(state, context, *argument)).collect_vec();
 
-    let constructor = Constructor { file_id: *file_id, item_id: *item_id, fields };
-    state.allocate_pattern(PatternKind::Constructor { constructor }, t)
+    let constructor = PatternConstructor::DataConstructor { file_id, item_id, fields };
+    state.allocate_constructor(constructor, t)
 }
 
 fn convert_operator_chain_binder<Q>(
@@ -216,6 +223,10 @@ where
     let left_pattern = convert_operator_tree(state, context, left_tree, left);
     let right_pattern = convert_operator_tree(state, context, right_tree, right);
 
-    let constructor = Constructor { file_id, item_id, fields: vec![left_pattern, right_pattern] };
-    state.allocate_pattern(PatternKind::Constructor { constructor }, result)
+    let constructor = PatternConstructor::DataConstructor {
+        file_id,
+        item_id,
+        fields: vec![left_pattern, right_pattern],
+    };
+    state.allocate_constructor(constructor, result)
 }

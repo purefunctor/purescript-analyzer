@@ -19,7 +19,9 @@ use smol_str::ToSmolStr;
 use stabilizing::StabilizedModule;
 use sugar::{Bracketed, Sectioned};
 
-use crate::algorithm::exhaustiveness::{Pattern, PatternId, PatternKind, PatternStorage};
+use crate::algorithm::exhaustiveness::{
+    Pattern, PatternConstructor, PatternId, PatternKind, PatternStorage,
+};
 use crate::algorithm::{constraint, transfer};
 use crate::core::{Type, TypeId, TypeInterner, Variable, debruijn, pretty};
 use crate::error::{CheckError, ErrorKind, ErrorStep};
@@ -1126,6 +1128,15 @@ impl CheckState {
     pub fn allocate_pattern(&mut self, kind: PatternKind, t: TypeId) -> PatternId {
         let pattern = Pattern { kind, t };
         self.patterns.intern(pattern)
+    }
+
+    pub fn allocate_constructor(
+        &mut self,
+        constructor: PatternConstructor,
+        t: TypeId,
+    ) -> PatternId {
+        let kind = PatternKind::Constructor { constructor };
+        self.allocate_pattern(kind, t)
     }
 
     pub fn allocate_wildcard(&mut self, t: TypeId) -> PatternId {

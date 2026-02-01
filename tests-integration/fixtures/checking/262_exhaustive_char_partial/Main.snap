@@ -1,0 +1,23 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+testPartialA :: Char -> Int
+testPartialB :: Char -> Int
+testWildcard :: Char -> Int
+
+Types
+
+Diagnostics
+warning[CustomWarning]: Pattern match is not exhaustive. Missing: _
+  --> 4:18..5:11
+  |
+4 | testPartialA c = case c of
+  |                  ^~~~~~~~~
+warning[CustomWarning]: Pattern match is not exhaustive. Missing: _
+  --> 8:18..9:11
+  |
+8 | testPartialB c = case c of
+  |                  ^~~~~~~~~

@@ -531,3 +531,13 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_257_exhaustive_tuple_main() { run_test("257_exhaustive_tuple", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_258_redundant_patterns_main() { run_test("258_redundant_patterns", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_259_exhaustive_boolean_partial_main() { run_test("259_exhaustive_boolean_partial", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_260_exhaustive_integer_partial_main() { run_test("260_exhaustive_integer_partial", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_261_exhaustive_number_partial_main() { run_test("261_exhaustive_number_partial", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_262_exhaustive_char_partial_main() { run_test("262_exhaustive_char_partial", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_263_exhaustive_string_partial_main() { run_test("263_exhaustive_string_partial", "Main"); }

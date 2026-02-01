@@ -1,0 +1,30 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+testPartialTrue :: Boolean -> Int
+testPartialFalse :: Boolean -> Int
+testExhaustive :: Boolean -> Int
+testNestedPartial :: Boolean -> Boolean -> Int
+testWildcardBoolean :: Boolean -> Int
+
+Types
+
+Diagnostics
+warning[CustomWarning]: Pattern match is not exhaustive. Missing: false
+  --> 4:21..5:12
+  |
+4 | testPartialTrue b = case b of
+  |                     ^~~~~~~~~
+warning[CustomWarning]: Pattern match is not exhaustive. Missing: true
+  --> 8:22..9:13
+  |
+8 | testPartialFalse b = case b of
+  |                      ^~~~~~~~~
+warning[CustomWarning]: Pattern match is not exhaustive. Missing: false
+  --> 18:11..19:14
+   |
+18 |   true -> case y of
+   |           ^~~~~~~~~
