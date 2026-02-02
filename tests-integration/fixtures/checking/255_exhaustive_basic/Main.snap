@@ -22,12 +22,12 @@ Roles
 Maybe = [Representational]
 
 Diagnostics
-warning[CustomWarning]: Pattern match is not exhaustive. Missing: Nothing
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: Nothing
   --> 5:9..6:14
   |
 5 | test1 = case _ of
   |         ^~~~~~~~~
-warning[CustomWarning]: Pattern match is not exhaustive. Missing: Just _
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: Just _
   --> 8:9..9:15
   |
 8 | test2 = case _ of

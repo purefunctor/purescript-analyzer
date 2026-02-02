@@ -26,22 +26,22 @@ Roles
 Maybe = [Representational]
 
 Diagnostics
-warning[CustomWarning]: Pattern match is not exhaustive. Missing: _
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: _
   --> 6:1..6:47
   |
 6 | testArrayWithMaybe :: Array (Maybe Int) -> Int
   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-warning[CustomWarning]: Pattern match is not exhaustive. Missing: _
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: _
   --> 10:1..10:55
    |
 10 | testArrayWithMultipleMaybe :: Array (Maybe Int) -> Int
    | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-warning[CustomWarning]: Pattern match is not exhaustive. Missing: _
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: _
   --> 19:1..19:57
    |
 19 | testNestedArrayMaybe :: Array (Array (Maybe Int)) -> Int
    | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-warning[RedundantPattern]: Pattern match has redundant branch: [Just _, Just _]
+warning[RedundantPattern]: Pattern match has redundant patterns: [Just _, Just _]
   --> 29:1..29:48
    |
 29 | testUselessMultiple :: Array (Maybe Int) -> Int

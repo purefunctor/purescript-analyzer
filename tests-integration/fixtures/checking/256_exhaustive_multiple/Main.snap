@@ -25,22 +25,22 @@ Roles
 Maybe = [Representational]
 
 Diagnostics
-warning[CustomWarning]: Pattern match is not exhaustive. Missing: Just _, Just _
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: Just _, Just _
   --> 11:15..14:24
    |
 11 | incomplete1 = case _, _ of
    |               ^~~~~~~~~~~~
-warning[CustomWarning]: Pattern match is not exhaustive. Missing: Just _, Nothing
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: Just _, Nothing
   --> 16:15..19:24
    |
 16 | incomplete2 = case _, _ of
    |               ^~~~~~~~~~~~
-warning[CustomWarning]: Pattern match is not exhaustive. Missing: Nothing, Just _
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: Nothing, Just _
   --> 21:15..24:24
    |
 21 | incomplete3 = case _, _ of
    |               ^~~~~~~~~~~~
-warning[CustomWarning]: Pattern match is not exhaustive. Missing: Nothing, Nothing
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: Nothing, Nothing
   --> 26:15..29:23
    |
 26 | incomplete4 = case _, _ of

@@ -313,12 +313,20 @@ impl ToDiagnostics for CheckError {
                 "CoercibleConstructorNotInScope",
                 "Constructor not in scope for Coercible".to_string(),
             ),
-            ErrorKind::RedundantPattern { pattern } => {
-                let pattern = lookup_message(*pattern);
+            ErrorKind::RedundantPatterns { patterns } => {
+                let patterns = patterns.join(", ");
                 (
                     Severity::Warning,
                     "RedundantPattern",
-                    format!("Pattern match has redundant branch: {pattern}"),
+                    format!("Pattern match has redundant patterns: {patterns}"),
+                )
+            }
+            ErrorKind::MissingPatterns { patterns } => {
+                let patterns = patterns.join(", ");
+                (
+                    Severity::Warning,
+                    "MissingPatterns",
+                    format!("Pattern match is not exhaustive. Missing: {patterns}"),
                 )
             }
             ErrorKind::CustomWarning { message_id } => {

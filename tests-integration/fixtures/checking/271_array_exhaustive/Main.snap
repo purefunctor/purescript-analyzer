@@ -11,12 +11,12 @@ testExhaustive :: Array Int -> Int
 Types
 
 Diagnostics
-warning[CustomWarning]: Pattern match is not exhaustive. Missing: _
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: _
   --> 4:1..4:38
   |
 4 | testNonExhaustive :: Array Int -> Int
   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-warning[RedundantPattern]: Pattern match has redundant branch: [_]
+warning[RedundantPattern]: Pattern match has redundant patterns: [_]
   --> 9:1..9:34
   |
 9 | testRedundant :: Array Int -> Int

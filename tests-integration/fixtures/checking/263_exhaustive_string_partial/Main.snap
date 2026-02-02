@@ -11,12 +11,12 @@ testWildcard :: String -> Int
 Types
 
 Diagnostics
-warning[CustomWarning]: Pattern match is not exhaustive. Missing: _
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: _
   --> 4:22..5:15
   |
 4 | testPartialHello s = case s of
   |                      ^~~~~~~~~
-warning[CustomWarning]: Pattern match is not exhaustive. Missing: _
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: _
   --> 8:22..9:15
   |
 8 | testPartialWorld s = case s of

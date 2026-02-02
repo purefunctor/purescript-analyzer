@@ -22,12 +22,12 @@ Roles
 Maybe = [Representational]
 
 Diagnostics
-warning[CustomWarning]: Pattern match is not exhaustive. Missing: Nothing
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: Nothing
   --> 7:3..10:15
   |
 7 |   let
   |   ^~~
-warning[CustomWarning]: Pattern match is not exhaustive. Missing: Just _
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: Just _
   --> 14:3..17:17
    |
 14 |   let

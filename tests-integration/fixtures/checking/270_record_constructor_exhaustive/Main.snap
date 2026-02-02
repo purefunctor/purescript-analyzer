@@ -25,17 +25,17 @@ Roles
 Maybe = [Representational]
 
 Diagnostics
-warning[CustomWarning]: Pattern match is not exhaustive. Missing: { x: Nothing }
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: { x: Nothing }
   --> 10:1..10:35
    |
 10 | test2 :: { x :: Maybe Int } -> Int
    | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-warning[RedundantPattern]: Pattern match has redundant branch: _
+warning[RedundantPattern]: Pattern match has redundant patterns: _
   --> 14:1..14:39
    |
 14 | test3 :: { x :: Int, y :: Int } -> Int
    | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-warning[CustomWarning]: Pattern match is not exhaustive. Missing: { a: Nothing, b: _ }
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: { a: Nothing, b: _ }
   --> 19:1..19:54
    |
 19 | test4 :: { a :: Maybe Int, b :: Maybe String } -> Int

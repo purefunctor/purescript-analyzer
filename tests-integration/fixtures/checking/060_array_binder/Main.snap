@@ -16,42 +16,42 @@ nested' :: forall (t53 :: Type). Array (Array (t53 :: Type)) -> (t53 :: Type)
 Types
 
 Diagnostics
-warning[CustomWarning]: Pattern match is not exhaustive. Missing: _
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: _
   --> 3:1..3:45
   |
 3 | test1 :: Array Int -> { x :: Int, y :: Int }
   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-warning[CustomWarning]: Pattern match is not exhaustive. Missing: _
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: _
   --> 6:1..6:25
   |
 6 | test1' [x, y] = { x, y }
   | ^~~~~~~~~~~~~~~~~~~~~~~~
-warning[CustomWarning]: Pattern match is not exhaustive. Missing: _
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: _
   --> 8:1..8:38
   |
 8 | test2 :: forall a. Array a -> Array a
   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-warning[CustomWarning]: Pattern match is not exhaustive. Missing: _
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: _
   --> 11:1..11:29
    |
 11 | test2' [x, y, z] = [z, y, x]
    | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
-warning[CustomWarning]: Pattern match is not exhaustive. Missing: _
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: _
   --> 13:1..13:26
    |
 13 | test3 :: Array Int -> Int
    | ^~~~~~~~~~~~~~~~~~~~~~~~~
-warning[CustomWarning]: Pattern match is not exhaustive. Missing: _
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: _
   --> 18:1..18:14
    |
 18 | test3' [] = 0
    | ^~~~~~~~~~~~~
-warning[CustomWarning]: Pattern match is not exhaustive. Missing: _
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: _
   --> 22:1..22:35
    |
 22 | nested :: Array (Array Int) -> Int
    | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-warning[CustomWarning]: Pattern match is not exhaustive. Missing: _
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: _
   --> 26:1..26:18
    |
 26 | nested' [[x]] = x

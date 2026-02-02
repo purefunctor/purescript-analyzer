@@ -31,27 +31,22 @@ Unit = []
 YesNo = []
 
 Diagnostics
-warning[RedundantPattern]: Pattern match has redundant branch: _
+warning[RedundantPattern]: Pattern match has redundant patterns: _, Unit
   --> 5:1..5:20
   |
 5 | unit :: Unit -> Int
   | ^~~~~~~~~~~~~~~~~~~
-warning[RedundantPattern]: Pattern match has redundant branch: Unit
-  --> 5:1..5:20
-  |
-5 | unit :: Unit -> Int
-  | ^~~~~~~~~~~~~~~~~~~
-warning[RedundantPattern]: Pattern match has redundant branch: Yes
+warning[RedundantPattern]: Pattern match has redundant patterns: Yes
   --> 12:1..12:20
    |
 12 | yes :: YesNo -> Int
    | ^~~~~~~~~~~~~~~~~~~
-warning[RedundantPattern]: Pattern match has redundant branch: No
+warning[RedundantPattern]: Pattern match has redundant patterns: No
   --> 17:1..17:19
    |
 17 | no :: YesNo -> Int
    | ^~~~~~~~~~~~~~~~~~
-warning[RedundantPattern]: Pattern match has redundant branch: _
+warning[RedundantPattern]: Pattern match has redundant patterns: _
   --> 22:1..22:22
    |
 22 | yesNo :: YesNo -> Int

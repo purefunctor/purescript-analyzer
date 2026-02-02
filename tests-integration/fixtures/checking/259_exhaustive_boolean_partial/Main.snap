@@ -13,17 +13,17 @@ testWildcardBoolean :: Boolean -> Int
 Types
 
 Diagnostics
-warning[CustomWarning]: Pattern match is not exhaustive. Missing: false
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: false
   --> 4:21..5:12
   |
 4 | testPartialTrue b = case b of
   |                     ^~~~~~~~~
-warning[CustomWarning]: Pattern match is not exhaustive. Missing: true
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: true
   --> 8:22..9:13
   |
 8 | testPartialFalse b = case b of
   |                      ^~~~~~~~~
-warning[CustomWarning]: Pattern match is not exhaustive. Missing: false
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: false
   --> 18:11..19:14
    |
 18 |   true -> case y of

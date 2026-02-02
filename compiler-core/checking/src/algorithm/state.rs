@@ -1007,16 +1007,14 @@ impl CheckState {
     }
 
     pub fn report_exhaustiveness(&mut self, exhaustiveness: ExhaustivenessReport) {
-        if let Some(missing) = exhaustiveness.missing {
-            let message =
-                format!("Pattern match is not exhaustive. Missing: {}", missing.join(", "));
-            let message_id = self.intern_error_message(message);
-            self.insert_error(ErrorKind::CustomWarning { message_id });
+        if let Some(patterns) = exhaustiveness.missing {
+            let patterns = Arc::from(patterns);
+            self.insert_error(ErrorKind::MissingPatterns { patterns });
         }
 
-        for redundant in exhaustiveness.redundant {
-            let pattern = self.intern_error_message(redundant);
-            self.insert_error(ErrorKind::RedundantPattern { pattern });
+        if !exhaustiveness.redundant.is_empty() {
+            let patterns = Arc::from(exhaustiveness.redundant);
+            self.insert_error(ErrorKind::RedundantPatterns { patterns });
         }
     }
 

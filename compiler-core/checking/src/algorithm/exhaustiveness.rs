@@ -887,8 +887,8 @@ where
 }
 
 pub struct ExhaustivenessReport {
-    pub missing: Option<Vec<String>>,
-    pub redundant: Vec<String>,
+    pub missing: Option<Vec<SmolStr>>,
+    pub redundant: Vec<SmolStr>,
 }
 
 pub fn check_case_patterns<Q>(

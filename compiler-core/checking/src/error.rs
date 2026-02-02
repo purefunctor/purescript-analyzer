@@ -124,8 +124,11 @@ pub enum ErrorKind {
     CustomWarning {
         message_id: TypeErrorMessageId,
     },
-    RedundantPattern {
-        pattern: TypeErrorMessageId,
+    RedundantPatterns {
+        patterns: Arc<[SmolStr]>,
+    },
+    MissingPatterns {
+        patterns: Arc<[SmolStr]>,
     },
     CustomFailure {
         message_id: TypeErrorMessageId,

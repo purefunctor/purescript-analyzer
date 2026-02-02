@@ -11,12 +11,12 @@ testWildcard :: Number -> Int
 Types
 
 Diagnostics
-warning[CustomWarning]: Pattern match is not exhaustive. Missing: _
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: _
   --> 4:21..5:11
   |
 4 | testPartialZero n = case n of
   |                     ^~~~~~~~~
-warning[CustomWarning]: Pattern match is not exhaustive. Missing: _
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: _
   --> 8:24..9:11
   |
 8 | testPartialOneFive n = case n of

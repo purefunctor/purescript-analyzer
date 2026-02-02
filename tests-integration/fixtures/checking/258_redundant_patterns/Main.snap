@@ -31,27 +31,22 @@ Unit = []
 YesNo = []
 
 Diagnostics
-warning[RedundantPattern]: Pattern match has redundant branch: _
+warning[RedundantPattern]: Pattern match has redundant patterns: _, Unit
   --> 5:8..8:12
   |
 5 | unit = case _ of
   |        ^~~~~~~~~
-warning[RedundantPattern]: Pattern match has redundant branch: Unit
-  --> 5:8..8:12
-  |
-5 | unit = case _ of
-  |        ^~~~~~~~~
-warning[RedundantPattern]: Pattern match has redundant branch: Yes
+warning[RedundantPattern]: Pattern match has redundant patterns: Yes
   --> 12:7..15:11
    |
 12 | yes = case _ of
    |       ^~~~~~~~~
-warning[RedundantPattern]: Pattern match has redundant branch: No
+warning[RedundantPattern]: Pattern match has redundant patterns: No
   --> 17:6..20:10
    |
 17 | no = case _ of
    |      ^~~~~~~~~
-warning[RedundantPattern]: Pattern match has redundant branch: _
+warning[RedundantPattern]: Pattern match has redundant patterns: _
   --> 22:9..25:9
    |
 22 | yesNo = case _ of
