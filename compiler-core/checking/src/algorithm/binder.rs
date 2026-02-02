@@ -290,7 +290,7 @@ where
             let record_type =
                 state.storage.intern(Type::Application(context.prim.record, row_type));
 
-            if let BinderMode::Check { expected_type, elaboration } = mode {
+            let record_type = if let BinderMode::Check { expected_type, elaboration } = mode {
                 unification::subtype_with_mode(
                     state,
                     context,
@@ -298,10 +298,14 @@ where
                     expected_type,
                     elaboration,
                 )?;
-                Ok(expected_type)
+                expected_type
             } else {
-                Ok(record_type)
-            }
+                record_type
+            };
+
+            state.term_scope.bind_binder(binder_id, record_type);
+
+            Ok(record_type)
         }
 
         lowering::BinderKind::Parenthesized { parenthesized } => {

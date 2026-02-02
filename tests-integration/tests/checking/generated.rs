@@ -553,3 +553,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_268_let_equation_exhaustive_main() { run_test("268_let_equation_exhaustive", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_269_instance_equation_exhaustive_main() { run_test("269_instance_equation_exhaustive", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_270_record_constructor_exhaustive_main() { run_test("270_record_constructor_exhaustive", "Main"); }
