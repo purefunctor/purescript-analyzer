@@ -29,6 +29,13 @@ pub struct SnapshotInfo {
     pub trace_path: Option<PathBuf>,
 }
 
+impl SnapshotInfo {
+    /// Returns the short path with `.new` suffix for display (e.g., `foo.snap.new`)
+    pub fn short_path_new(&self) -> String {
+        format!("{}.new", self.short_path)
+    }
+}
+
 /// Collect pending snapshots for a category, optionally filtered.
 pub fn collect_pending_snapshots(category: TestCategory, filters: &[String]) -> Vec<SnapshotInfo> {
     let pending_output = Command::new("cargo")
@@ -164,14 +171,14 @@ pub fn process_pending_snapshots(
             ui::display_snapshot_diff(
                 snap,
                 &info.snap_new,
-                &info.short_path,
+                &info.short_path_new(),
                 info.trace_path.as_deref(),
                 args.diff,
             )
         } else {
             ui::display_new_snapshot(
                 &info.snap_new,
-                &info.short_path,
+                &info.short_path_new(),
                 info.trace_path.as_deref(),
                 args.diff,
             )
