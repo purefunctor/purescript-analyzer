@@ -879,54 +879,102 @@ where
     }
 }
 
-pub struct CasePatternReport {
+pub struct ExhaustivenessReport {
     pub missing: Option<Vec<String>>,
     pub redundant: Vec<String>,
 }
 
-/// Checks case branch usefulness and exhaustiveness against scrutinee types.
-///
-/// Returns a report of missing patterns (if any) and redundant branches.
-/// Only unconditional branches are counted toward these checks, as pattern
-/// guards do not guarantee coverage.
 pub fn check_case_patterns<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    trunk_types: &[TypeId],
+    pattern_types: &[TypeId],
     branches: &[lowering::CaseBranch],
-) -> QueryResult<CasePatternReport>
+) -> QueryResult<ExhaustivenessReport>
 where
     Q: ExternalQueries,
 {
-    if trunk_types.is_empty() {
-        return Ok(CasePatternReport { missing: None, redundant: vec![] });
+    if pattern_types.is_empty() {
+        return Ok(ExhaustivenessReport { missing: None, redundant: vec![] });
     }
 
-    let mut unconditional = vec![];
-    for branch in branches {
-        let is_unconditional = matches!(
-            &branch.guarded_expression,
-            Some(lowering::GuardedExpression::Unconditional { .. }) | None
-        );
-        if !is_unconditional {
+    let unconditional = collect_unconditional_rows(
+        state,
+        context,
+        branches,
+        pattern_types,
+        |branch: &lowering::CaseBranch| (&branch.binders, &branch.guarded_expression),
+    );
+
+    check_exhaustiveness_core(state, context, pattern_types, unconditional)
+}
+
+pub fn check_equation_patterns<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    pattern_types: &[TypeId],
+    equations: &[lowering::Equation],
+) -> QueryResult<ExhaustivenessReport>
+where
+    Q: ExternalQueries,
+{
+    if pattern_types.is_empty() {
+        return Ok(ExhaustivenessReport { missing: None, redundant: vec![] });
+    }
+
+    let unconditional = collect_unconditional_rows(
+        state,
+        context,
+        equations,
+        pattern_types,
+        |equation: &lowering::Equation| (&equation.binders, &equation.guarded),
+    );
+
+    check_exhaustiveness_core(state, context, pattern_types, unconditional)
+}
+
+fn collect_unconditional_rows<Q, T, F>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    items: &[T],
+    pattern_types: &[TypeId],
+    to_binders: F,
+) -> Vec<PatternVector>
+where
+    Q: ExternalQueries,
+    F: Fn(&T) -> (&[lowering::BinderId], &Option<lowering::GuardedExpression>),
+{
+    let mut pattern_rows = vec![];
+    for item in items {
+        let (binders, guarded) = to_binders(item);
+
+        if !matches!(guarded, Some(lowering::GuardedExpression::Unconditional { .. }) | None) {
             continue;
         }
 
-        let mut row: PatternVector = vec![];
-        for &binder_id in branch.binders.iter() {
-            row.push(convert::convert_binder(state, context, binder_id));
+        let mut pattern_row = vec![];
+        for &binder_id in binders {
+            pattern_row.push(convert::convert_binder(state, context, binder_id));
         }
 
-        while row.len() < trunk_types.len() {
-            let t = trunk_types[row.len()];
-            row.push(state.allocate_wildcard(t));
-        }
+        let additional = pattern_types.iter().skip(pattern_row.len());
+        pattern_row.extend(additional.map(|&t| state.allocate_wildcard(t)));
 
-        if !row.is_empty() {
-            unconditional.push(row);
+        if !pattern_row.is_empty() {
+            pattern_rows.push(pattern_row);
         }
     }
+    pattern_rows
+}
 
+fn check_exhaustiveness_core<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    pattern_types: &[TypeId],
+    unconditional: PatternMatrix,
+) -> QueryResult<ExhaustivenessReport>
+where
+    Q: ExternalQueries,
+{
     let mut redundant = vec![];
     let mut matrix = vec![];
     for vector in &unconditional {
@@ -938,8 +986,7 @@ where
         }
     }
 
-    let query: PatternVector = trunk_types.iter().map(|&t| state.allocate_wildcard(t)).collect();
-
+    let query = pattern_types.iter().map(|&t| state.allocate_wildcard(t)).collect();
     let witnesses = algorithm_m(state, context, &unconditional, &query)?;
     let missing = witnesses.map(|witnesses| {
         witnesses
@@ -949,5 +996,5 @@ where
             .collect()
     });
 
-    Ok(CasePatternReport { missing, redundant })
+    Ok(ExhaustivenessReport { missing, redundant })
 }

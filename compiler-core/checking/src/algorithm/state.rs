@@ -20,7 +20,7 @@ use stabilizing::StabilizedModule;
 use sugar::{Bracketed, Sectioned};
 
 use crate::algorithm::exhaustiveness::{
-    Pattern, PatternConstructor, PatternId, PatternKind, PatternStorage,
+    ExhaustivenessReport, Pattern, PatternConstructor, PatternId, PatternKind, PatternStorage,
 };
 use crate::algorithm::{constraint, transfer};
 use crate::core::{Type, TypeId, TypeInterner, Variable, debruijn, pretty};
@@ -1004,6 +1004,20 @@ impl CheckState {
     {
         let (wanted, given) = self.constraints.take();
         constraint::solve_constraints(self, context, wanted, given)
+    }
+
+    pub fn report_exhaustiveness(&mut self, exhaustiveness: ExhaustivenessReport) {
+        if let Some(missing) = exhaustiveness.missing {
+            let message =
+                format!("Pattern match is not exhaustive. Missing: {}", missing.join(", "));
+            let message_id = self.intern_error_message(message);
+            self.insert_error(ErrorKind::CustomWarning { message_id });
+        }
+
+        for redundant in exhaustiveness.redundant {
+            let pattern = self.intern_error_message(redundant);
+            self.insert_error(ErrorKind::RedundantPattern { pattern });
+        }
     }
 
     /// Executes an action with an [`ErrorStep`] in scope.

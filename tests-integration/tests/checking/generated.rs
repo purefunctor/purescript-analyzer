@@ -541,3 +541,15 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_262_exhaustive_char_partial_main() { run_test("262_exhaustive_char_partial", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_263_exhaustive_string_partial_main() { run_test("263_exhaustive_string_partial", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_264_equation_exhaustive_basic_main() { run_test("264_equation_exhaustive_basic", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_265_equation_redundant_main() { run_test("265_equation_redundant", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_266_equation_guarded_main() { run_test("266_equation_guarded", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_267_equation_multiple_arguments_main() { run_test("267_equation_multiple_arguments", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_268_let_equation_exhaustive_main() { run_test("268_let_equation_exhaustive", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_269_instance_equation_exhaustive_main() { run_test("269_instance_equation_exhaustive", "Main"); }

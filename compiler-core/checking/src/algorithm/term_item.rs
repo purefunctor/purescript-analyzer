@@ -10,7 +10,8 @@ use crate::ExternalQueries;
 use crate::algorithm::kind::synonym;
 use crate::algorithm::state::{CheckContext, CheckState, InstanceHeadBinding};
 use crate::algorithm::{
-    constraint, inspect, kind, quantify, substitute, term, transfer, unification,
+    constraint, exhaustiveness, inspect, kind, quantify, substitute, term, toolkit, transfer,
+    unification,
 };
 use crate::core::{Instance, InstanceKind, Type, TypeId, Variable, debruijn};
 use crate::error::{ErrorKind, ErrorStep};
@@ -530,6 +531,15 @@ where
         } else if let Some(specialized_type) = specialized_type {
             let inferred_type = state.fresh_unification_type(context);
             term::infer_equations_core(state, context, inferred_type, &member.equations)?;
+
+            let (pattern_types, _) = toolkit::extract_function_arguments(state, specialized_type);
+            let exhaustiveness = exhaustiveness::check_equation_patterns(
+                state,
+                context,
+                &pattern_types,
+                &member.equations,
+            )?;
+            state.report_exhaustiveness(exhaustiveness);
 
             let matches = unification::subtype(state, context, inferred_type, specialized_type)?;
             if !matches {

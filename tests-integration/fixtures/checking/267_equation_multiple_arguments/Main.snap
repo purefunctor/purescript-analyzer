@@ -1,0 +1,47 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Just :: forall (a :: Type). (a :: Type) -> Maybe (a :: Type)
+Nothing :: forall (a :: Type). Maybe (a :: Type)
+complete :: Maybe Int -> Maybe Int -> Int
+incomplete1 :: Maybe Int -> Maybe Int -> Int
+incomplete2 :: Maybe Int -> Maybe Int -> Int
+incomplete3 :: Maybe Int -> Maybe Int -> Int
+incomplete4 :: Maybe Int -> Maybe Int -> Int
+
+Types
+Maybe :: Type -> Type
+
+Data
+Maybe
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+Maybe = [Representational]
+
+Diagnostics
+warning[CustomWarning]: Pattern match is not exhaustive. Missing: Just _, Just _
+  --> 11:1..11:45
+   |
+11 | incomplete1 :: Maybe Int -> Maybe Int -> Int
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+warning[CustomWarning]: Pattern match is not exhaustive. Missing: Just _, Nothing
+  --> 16:1..16:45
+   |
+16 | incomplete2 :: Maybe Int -> Maybe Int -> Int
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+warning[CustomWarning]: Pattern match is not exhaustive. Missing: Nothing, Just _
+  --> 21:1..21:45
+   |
+21 | incomplete3 :: Maybe Int -> Maybe Int -> Int
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+warning[CustomWarning]: Pattern match is not exhaustive. Missing: Nothing, Nothing
+  --> 26:1..26:45
+   |
+26 | incomplete4 :: Maybe Int -> Maybe Int -> Int
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

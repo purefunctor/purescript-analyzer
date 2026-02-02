@@ -38,6 +38,11 @@ where
 
     infer_equations_core(state, context, group_type, equations)?;
 
+    let (pattern_types, _) = toolkit::extract_function_arguments(state, group_type);
+    let exhaustiveness =
+        exhaustiveness::check_equation_patterns(state, context, &pattern_types, equations)?;
+    state.report_exhaustiveness(exhaustiveness);
+
     let residual_constraints = state.solve_constraints(context)?;
     Ok((group_type, residual_constraints))
 }
@@ -190,6 +195,10 @@ where
             let _ = unification::subtype(state, context, inferred_type, expected_type)?;
         }
     }
+
+    let exhaustiveness =
+        exhaustiveness::check_equation_patterns(state, context, &signature.arguments, equations)?;
+    state.report_exhaustiveness(exhaustiveness);
 
     let residual = state.solve_constraints(context)?;
     for constraint in residual {
@@ -618,20 +627,9 @@ where
         }
     }
 
-    // Check exhaustiveness/usefulness after binders have been checked (so types are known)
-    let report = exhaustiveness::check_case_patterns(state, context, &trunk_types, branches)?;
-
-    if let Some(missing) = report.missing {
-        let patterns = missing.join(", ");
-        let msg = format!("Pattern match is not exhaustive. Missing: {patterns}");
-        let message_id = state.intern_error_message(msg);
-        state.insert_error(ErrorKind::CustomWarning { message_id });
-    }
-
-    for redundant in report.redundant {
-        let pattern = state.intern_error_message(redundant);
-        state.insert_error(ErrorKind::RedundantPattern { pattern });
-    }
+    let exhaustiveness =
+        exhaustiveness::check_case_patterns(state, context, &trunk_types, branches)?;
+    state.report_exhaustiveness(exhaustiveness);
 
     Ok(inferred_type)
 }
@@ -1951,6 +1949,15 @@ where
         check_equations(state, context, signature_id, signature, &name.equations)
     } else {
         infer_equations_core(state, context, name_type, &name.equations)?;
+
+        let (pattern_types, _) = toolkit::extract_function_arguments(state, name_type);
+        let exhaustiveness = exhaustiveness::check_equation_patterns(
+            state,
+            context,
+            &pattern_types,
+            &name.equations,
+        )?;
+        state.report_exhaustiveness(exhaustiveness);
 
         // No let-generalization: infer equations and solve constraints;
         // residuals are deferred to parent scope for later error reporting.
