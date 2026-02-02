@@ -82,16 +82,19 @@ where
                 return "{ <invalid> }".to_string();
             }
 
-            let elements: Vec<String> = labels
-                .iter()
-                .zip(fields.iter())
-                .map(|(label, field_id)| {
-                    let pattern_str = pretty_pattern(context, state, *field_id);
-                    format!("{label}: {pattern_str}")
-                })
-                .collect();
+            let elements = labels.iter().zip(fields.iter()).map(|(label, field_id)| {
+                let pattern_str = pretty_pattern(context, state, *field_id);
+                format!("{label}: {pattern_str}")
+            });
 
+            let elements = elements.collect_vec();
             format!("{{ {} }}", elements.join(", "))
+        }
+        PatternConstructor::Array { fields } => {
+            let elements = fields.iter().map(|&id| pretty_pattern(context, state, id));
+
+            let elements = elements.collect_vec();
+            format!("[{}]", elements.join(", "))
         }
         PatternConstructor::Boolean(b) => b.to_string(),
         PatternConstructor::Char(c) => format!("'{c}'"),

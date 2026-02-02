@@ -555,3 +555,7 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_269_instance_equation_exhaustive_main() { run_test("269_instance_equation_exhaustive", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_270_record_constructor_exhaustive_main() { run_test("270_record_constructor_exhaustive", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_271_array_exhaustive_main() { run_test("271_array_exhaustive", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_272_array_nested_constructor_main() { run_test("272_array_nested_constructor", "Main"); }

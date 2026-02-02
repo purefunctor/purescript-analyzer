@@ -101,11 +101,12 @@ fn lower_array_binder<Q>(
 where
     Q: ExternalQueries,
 {
-    let mut elements = vec![];
+    let mut fields = vec![];
     for &element in array {
-        elements.push(convert_binder(state, context, element)?);
+        fields.push(convert_binder(state, context, element)?);
     }
-    Ok(state.allocate_pattern(PatternKind::Array { elements }, t))
+    let constructor = PatternConstructor::Array { fields };
+    Ok(state.allocate_constructor(constructor, t))
 }
 
 fn lower_record_binder<Q>(
