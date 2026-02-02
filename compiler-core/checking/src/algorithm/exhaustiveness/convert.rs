@@ -10,13 +10,11 @@ use smol_str::SmolStr;
 use sugar::OperatorTree;
 
 use crate::ExternalQueries;
-use crate::algorithm::exhaustiveness::{PatternConstructor, PatternId, PatternKind, RecordElement};
+use crate::algorithm::exhaustiveness::{PatternConstructor, PatternId};
 use crate::algorithm::kind::synonym;
 use crate::algorithm::state::{CheckContext, CheckState, OperatorBranchTypes};
 use crate::algorithm::toolkit;
 use crate::core::{Type, TypeId};
-
-const MISSING_NAME: SmolStr = SmolStr::new_inline("<MissingName>");
 
 pub fn convert_binder<Q>(
     state: &mut CheckState,
@@ -124,12 +122,8 @@ where
             Ok(state.allocate_constructor(constructor, t))
         }
         None => {
-            // Fallback: use the conservative path
-            let mut elements = vec![];
-            for element in record.iter() {
-                elements.push(lower_record_element(state, context, element)?);
-            }
-            Ok(state.allocate_pattern(PatternKind::Record { elements }, t))
+            // Fallback: use a wildcard when we can't build a canonical record constructor
+            Ok(state.allocate_wildcard(t))
         }
     }
 }
@@ -202,31 +196,6 @@ where
     }
 
     Ok(Some((labels, fields)))
-}
-
-fn lower_record_element<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    element: &lowering::BinderRecordItem,
-) -> QueryResult<RecordElement>
-where
-    Q: ExternalQueries,
-{
-    match element {
-        lowering::BinderRecordItem::RecordField { name, value } => {
-            let name = name.clone().unwrap_or(MISSING_NAME);
-            let value = if let Some(value) = value {
-                convert_binder(state, context, *value)?
-            } else {
-                state.allocate_wildcard(context.prim.unknown)
-            };
-            Ok(RecordElement::Named(name, value))
-        }
-        lowering::BinderRecordItem::RecordPun { name, .. } => {
-            let name = name.clone().unwrap_or(MISSING_NAME);
-            Ok(RecordElement::Pun(name))
-        }
-    }
 }
 
 fn convert_constructor_binder<Q>(

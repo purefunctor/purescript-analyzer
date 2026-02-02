@@ -5,9 +5,7 @@ use indexing::TermItemId;
 use itertools::Itertools;
 
 use crate::ExternalQueries;
-use crate::algorithm::exhaustiveness::{
-    PatternConstructor, PatternId, PatternKind, RecordElement, WitnessVector,
-};
+use crate::algorithm::exhaustiveness::{PatternConstructor, PatternId, PatternKind, WitnessVector};
 use crate::algorithm::state::{CheckContext, CheckState};
 
 pub fn pretty_witness<Q>(
@@ -28,20 +26,6 @@ where
     let pattern = &state.patterns[id];
     match &pattern.kind {
         PatternKind::Wildcard => "_".to_string(),
-        PatternKind::Array { elements } => {
-            let mut elements = elements.iter().map(|&e| pretty_pattern(context, state, e));
-            format!("[{}]", elements.join(", "))
-        }
-        PatternKind::Record { elements } => {
-            let mut elements = elements.iter().map(|e| match e {
-                RecordElement::Named(name, pattern) => {
-                    let pattern = pretty_pattern(context, state, *pattern);
-                    format!("{name}: {pattern}")
-                }
-                RecordElement::Pun(name) => name.to_string(),
-            });
-            format!("{{ {} }}", elements.join(", "))
-        }
         PatternKind::Constructor { constructor } => pretty_constructor(context, state, constructor),
     }
 }

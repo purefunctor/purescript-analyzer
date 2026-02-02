@@ -23,15 +23,7 @@ pub struct Pattern {
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum PatternKind {
     Wildcard,
-    Array { elements: Vec<PatternId> },
-    Record { elements: Vec<RecordElement> },
     Constructor { constructor: PatternConstructor },
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub enum RecordElement {
-    Named(SmolStr, PatternId),
-    Pun(SmolStr),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -214,9 +206,6 @@ where
         PatternKind::Wildcard => {
             algorithm_u_wildcard(state, context, matrix, vector, first_pattern.t)
         }
-        PatternKind::Array { .. } | PatternKind::Record { .. } => {
-            algorithm_u_other(state, context, matrix, vector)
-        }
     }
 }
 
@@ -315,21 +304,6 @@ where
     algorithm_u(state, context, &default, &tail_columns)
 }
 
-fn algorithm_u_other<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    matrix: &PatternMatrix,
-    vector: &PatternVector,
-) -> QueryResult<bool>
-where
-    Q: ExternalQueries,
-{
-    // For literals and other patterns, treat as incomplete sigma (conservative)
-    let default = default_matrix(state, matrix);
-    let tail_columns = vector[1..].to_vec();
-    algorithm_u(state, context, &default, &tail_columns)
-}
-
 /// Determines the matching [`WitnessVector`] given a [`PatternMatrix`]
 /// and some [`PatternVector`].
 ///
@@ -376,9 +350,6 @@ where
         }
         PatternKind::Wildcard => {
             algorithm_m_wildcard(state, context, matrix, vector, first_pattern.t)
-        }
-        PatternKind::Array { .. } | PatternKind::Record { .. } => {
-            algorithm_m_other(state, context, matrix, vector, first_pattern.t)
         }
     }
 }
@@ -549,31 +520,6 @@ where
         .collect();
 
     Ok(Some(witness))
-}
-
-fn algorithm_m_other<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    matrix: &PatternMatrix,
-    vector: &PatternVector,
-    t: TypeId,
-) -> QueryResult<Option<Vec<WitnessVector>>>
-where
-    Q: ExternalQueries,
-{
-    // For literals and other patterns, treat as incomplete sigma (conservative)
-    let default = default_matrix(state, matrix);
-    let tail = vector[1..].to_vec();
-
-    let witnesses = algorithm_m(state, context, &default, &tail)?;
-
-    let Some(witnesses) = witnesses else {
-        return Ok(None);
-    };
-
-    // Prefix with wildcard
-    let head = state.allocate_wildcard(t);
-    Ok(Some(witnesses.into_iter().map(|w| iter::once(head).chain(w).collect()).collect()))
 }
 
 /// Specialises a [`PatternMatrix`] given a [`PatternConstructor`].
