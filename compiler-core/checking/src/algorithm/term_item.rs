@@ -10,8 +10,7 @@ use crate::ExternalQueries;
 use crate::algorithm::kind::synonym;
 use crate::algorithm::state::{CheckContext, CheckState, InstanceHeadBinding};
 use crate::algorithm::{
-    constraint, equation, exhaustiveness, inspect, kind, quantify, substitute, term, toolkit,
-    transfer, unification,
+    constraint, equation, inspect, kind, quantify, substitute, term, transfer, unification,
 };
 use crate::core::{Instance, InstanceKind, Type, TypeId, Variable, debruijn};
 use crate::error::{ErrorKind, ErrorStep};
@@ -555,14 +554,8 @@ where
         let inferred_type = state.fresh_unification_type(context);
         equation::infer_equations_core(state, context, inferred_type, &member.equations)?;
 
-        let (pattern_types, _) = toolkit::extract_function_arguments(state, specialized_type);
-        let exhaustiveness = exhaustiveness::check_equation_patterns(
-            state,
-            context,
-            &pattern_types,
-            &member.equations,
-        )?;
-        state.report_exhaustiveness(exhaustiveness);
+        let origin = equation::ExhaustivenessOrigin::FromType(specialized_type);
+        equation::patterns(state, context, origin, &member.equations)?;
 
         let matches = unification::subtype(state, context, inferred_type, specialized_type)?;
         if !matches {
@@ -571,11 +564,11 @@ where
             state.insert_error(ErrorKind::InstanceMemberTypeMismatch { expected, actual });
         }
 
-        let residual = state.solve_constraints(context)?;
-        for constraint in residual {
-            let constraint = state.render_local_type(context, constraint);
-            state.insert_error(ErrorKind::NoInstanceFound { constraint });
-        }
+        let _ = equation::constraints(
+            state,
+            context,
+            equation::ConstraintsPolicy::Report,
+        )?;
     }
 
     state.type_scope.unbind(debruijn::Level(size.0));

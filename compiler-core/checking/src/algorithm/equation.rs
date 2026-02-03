@@ -7,6 +7,70 @@ use crate::algorithm::{binder, exhaustiveness, inspect, term, toolkit, unificati
 use crate::core::{Type, TypeId};
 use crate::error::ErrorKind;
 
+/// Type origin for the [`patterns`] function.
+pub enum ExhaustivenessOrigin<'a> {
+    /// The types of equation patterns comes from checking.
+    FromSignature(&'a [TypeId]),
+    /// The types of equation patterns comes from inference.
+    FromType(TypeId),
+}
+
+/// Checks and reports exhaustiveness for an equation group.
+pub fn patterns<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    origin: ExhaustivenessOrigin<'_>,
+    equations: &[lowering::Equation],
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    match origin {
+        ExhaustivenessOrigin::FromSignature(signature) => {
+            let exhaustiveness =
+                exhaustiveness::check_equation_patterns(state, context, signature, equations)?;
+            state.report_exhaustiveness(exhaustiveness);
+        }
+        ExhaustivenessOrigin::FromType(t) => {
+            let (arguments, _) = toolkit::extract_function_arguments(state, t);
+            let exhaustiveness =
+                exhaustiveness::check_equation_patterns(state, context, &arguments, equations)?;
+            state.report_exhaustiveness(exhaustiveness);
+        }
+    };
+    Ok(())
+}
+
+/// Constraints policy for the [`constraints`] function.
+pub enum ConstraintsPolicy {
+    /// Residual constraints are returned to the caller.
+    Return,
+    /// Residual constraints are eagerly reported.
+    Report,
+}
+
+/// Solves constraints for an equation group.
+pub fn constraints<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    policy: ConstraintsPolicy,
+) -> QueryResult<Vec<TypeId>>
+where
+    Q: ExternalQueries,
+{
+    let residual = state.solve_constraints(context)?;
+    match policy {
+        ConstraintsPolicy::Return => Ok(residual),
+        ConstraintsPolicy::Report => {
+            for constraint in residual {
+                let constraint = state.render_local_type(context, constraint);
+                state.insert_error(ErrorKind::NoInstanceFound { constraint });
+            }
+            Ok(vec![])
+        }
+    }
+}
+
 /// Infers the type of top-level value group equations.
 ///
 /// This function depends on the unification variable created for the current
@@ -31,13 +95,11 @@ where
 
     infer_equations_core(state, context, group_type, equations)?;
 
-    let (pattern_types, _) = toolkit::extract_function_arguments(state, group_type);
-    let exhaustiveness =
-        exhaustiveness::check_equation_patterns(state, context, &pattern_types, equations)?;
-    state.report_exhaustiveness(exhaustiveness);
+    let origin = ExhaustivenessOrigin::FromType(group_type);
+    patterns(state, context, origin, equations)?;
 
-    let residual_constraints = state.solve_constraints(context)?;
-    Ok((group_type, residual_constraints))
+    let residual = constraints(state, context, ConstraintsPolicy::Return)?;
+    Ok((group_type, residual))
 }
 
 /// Infers the type of value group equations.
@@ -114,15 +176,10 @@ where
 {
     check_equations_core(state, context, signature_id, &signature, equations)?;
 
-    let exhaustiveness =
-        exhaustiveness::check_equation_patterns(state, context, &signature.arguments, equations)?;
-    state.report_exhaustiveness(exhaustiveness);
+    let origin = ExhaustivenessOrigin::FromSignature(&signature.arguments);
+    patterns(state, context, origin, equations)?;
 
-    let residual = state.solve_constraints(context)?;
-    for constraint in residual {
-        let constraint = state.render_local_type(context, constraint);
-        state.insert_error(ErrorKind::NoInstanceFound { constraint });
-    }
+    let _ = constraints(state, context, ConstraintsPolicy::Report)?;
 
     if let Some(variable) = signature.variables.first() {
         state.type_scope.unbind(variable.level);

@@ -5,6 +5,8 @@ transparency (editor introspection) and compatibility with query-based increment
 
 ### Pipeline Components
 
+The component names listed below are crate names in this workspace.
+
 - **lexing**: tokenization and the layout algorithm
 - **parsing**: parsing into a rowan-based CST
 - **syntax**: types for the rowan-based CST

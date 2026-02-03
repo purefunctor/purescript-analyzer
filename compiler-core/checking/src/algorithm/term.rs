@@ -1705,35 +1705,24 @@ where
 
         equation::check_equations_core(state, context, signature_id, &signature, &name.equations)?;
 
-        let pattern_types = &signature.arguments;
-        let exhaustiveness = exhaustiveness::check_equation_patterns(
-            state,
-            context,
-            pattern_types,
-            &name.equations,
-        )?;
-        state.report_exhaustiveness(exhaustiveness);
+        let origin = equation::ExhaustivenessOrigin::FromSignature(&signature.arguments);
+        equation::patterns(state, context, origin, &name.equations)?;
 
         if let Some(variable) = signature.variables.first() {
             state.type_scope.unbind(variable.level);
         }
     } else {
         equation::infer_equations_core(state, context, name_type, &name.equations)?;
-        let (pattern_types, _) = toolkit::extract_function_arguments(state, name_type);
-        let exhaustiveness = exhaustiveness::check_equation_patterns(
-            state,
-            context,
-            &pattern_types,
-            &name.equations,
-        )?;
-        state.report_exhaustiveness(exhaustiveness);
+
+        let origin = equation::ExhaustivenessOrigin::FromType(name_type);
+        equation::patterns(state, context, origin, &name.equations)?;
     };
 
     // PureScript does not have let generalisation; residuals are moved
     // to the parent scope's wanted constraints. Given constraints must
     // also be preserved across let bindings. This is demonstrated by
     // 274_givens_retained, 275_givens_scoped
-    let residual = state.solve_constraints(context)?;
+    let residual = equation::constraints(state, context, equation::ConstraintsPolicy::Return)?;
     state.constraints.extend_wanted(&residual);
 
     Ok(())
