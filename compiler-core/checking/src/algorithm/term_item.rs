@@ -10,8 +10,8 @@ use crate::ExternalQueries;
 use crate::algorithm::kind::synonym;
 use crate::algorithm::state::{CheckContext, CheckState, InstanceHeadBinding};
 use crate::algorithm::{
-    constraint, exhaustiveness, inspect, kind, quantify, substitute, term, toolkit, transfer,
-    unification,
+    constraint, equation, exhaustiveness, inspect, kind, quantify, substitute, term, toolkit,
+    transfer, unification,
 };
 use crate::core::{Instance, InstanceKind, Type, TypeId, Variable, debruijn};
 use crate::error::{ErrorKind, ErrorStep};
@@ -299,12 +299,12 @@ where
         let signature =
             inspect::inspect_signature_core(state, context, group_type, surface_bindings)?;
 
-        term::check_equations(state, context, *signature_id, signature, equations)?;
+        equation::check_equations(state, context, *signature_id, signature, equations)?;
         crate::debug_fields!(state, context, { group_type = group_type }, "checked");
         Ok(None)
     } else {
         let (inferred_type, residual_constraints) =
-            term::infer_equations(state, context, item_id, equations)?;
+            equation::infer_equations(state, context, item_id, equations)?;
         crate::debug_fields!(state, context, { inferred_type = inferred_type }, "inferred");
         Ok(Some(InferredValueGroup { inferred_type, residual_constraints }))
     }
@@ -552,10 +552,10 @@ where
         let signature =
             inspect::inspect_signature_core(state, context, member_type, &surface_bindings)?;
 
-        term::check_equations(state, context, *signature_id, signature, &member.equations)?;
+        equation::check_equations(state, context, *signature_id, signature, &member.equations)?;
     } else if let Some(specialized_type) = specialized_type {
         let inferred_type = state.fresh_unification_type(context);
-        term::infer_equations_core(state, context, inferred_type, &member.equations)?;
+        equation::infer_equations_core(state, context, inferred_type, &member.equations)?;
 
         let (pattern_types, _) = toolkit::extract_function_arguments(state, specialized_type);
         let exhaustiveness = exhaustiveness::check_equation_patterns(

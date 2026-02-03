@@ -47,6 +47,9 @@ pub mod substitute;
 /// Implements type inference and checking for [`lowering::ExpressionKind`].
 pub mod term;
 
+/// Implements equation checking and inference shared by value and let bindings.
+pub mod equation;
+
 /// Shared utilities for common type manipulation patterns.
 pub mod toolkit;
 
