@@ -80,8 +80,15 @@ where
             Type::Forall(ref binder, inner) => {
                 let mut binder = binder.clone();
 
-                let new_level = if let Some(&binding_id) = surface_bindings.next() {
-                    state.type_scope.bound.bind(debruijn::Variable::Forall(binding_id))
+                // Only consume a surface binding for explicit foralls;
+                // implicit foralls are added during generalisation and
+                // don't have corresponding surface bindings.
+                let new_level = if !binder.implicit {
+                    if let Some(&binding_id) = surface_bindings.next() {
+                        state.type_scope.bound.bind(debruijn::Variable::Forall(binding_id))
+                    } else {
+                        state.type_scope.bound.bind(debruijn::Variable::Core)
+                    }
                 } else {
                     state.type_scope.bound.bind(debruijn::Variable::Core)
                 };

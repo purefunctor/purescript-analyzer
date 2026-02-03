@@ -749,7 +749,7 @@ where
         let result_kind = signature.result;
         let type_variables = kinds.into_iter().map(|(id, visible, name, kind)| {
             let level = state.type_scope.bind_forall(id, kind);
-            ForallBinder { visible, name, level, kind }
+            ForallBinder { visible, implicit: false, name, level, kind }
         });
 
         let type_variables = type_variables.collect_vec();
@@ -769,7 +769,7 @@ where
             let visible = variable.visible;
             let name = variable.name.clone().unwrap_or(MISSING_NAME);
             let level = state.type_scope.bind_forall(variable.id, kind);
-            Ok(ForallBinder { visible, name, level, kind })
+            Ok(ForallBinder { visible, implicit: false, name, level, kind })
         });
 
         let type_variables = type_variables.collect::<QueryResult<Vec<_>>>()?;

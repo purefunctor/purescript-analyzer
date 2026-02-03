@@ -44,7 +44,7 @@ pub fn quantify(state: &mut CheckState, id: TypeId) -> Option<(TypeId, debruijn:
             .to_level(size)
             .unwrap_or_else(|| unreachable!("invariant violated: invalid {index} for {size}"));
 
-        let binder = ForallBinder { visible: false, name, level, kind };
+        let binder = ForallBinder { visible: false, implicit: true, name, level, kind };
         quantified = state.storage.intern(Type::Forall(binder, quantified));
 
         substitutions.insert(id, (level, kind));

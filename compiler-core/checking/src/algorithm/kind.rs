@@ -638,7 +638,7 @@ where
     };
 
     let level = state.type_scope.bind_forall(binding.id, kind);
-    Ok(ForallBinder { visible, name, level, kind })
+    Ok(ForallBinder { visible, implicit: false, name, level, kind })
 }
 
 pub(crate) fn lookup_file_type<Q>(

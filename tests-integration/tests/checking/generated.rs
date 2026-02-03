@@ -565,3 +565,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_274_givens_retained_main() { run_test("274_givens_retained", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_275_givens_scoped_main() { run_test("275_givens_scoped", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_276_where_clause_outer_scope_main() { run_test("276_where_clause_outer_scope", "Main"); }

@@ -12,6 +12,7 @@ use smol_str::SmolStr;
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ForallBinder {
     pub visible: bool,
+    pub implicit: bool,
     pub name: SmolStr,
     pub level: debruijn::Level,
     pub kind: TypeId,
