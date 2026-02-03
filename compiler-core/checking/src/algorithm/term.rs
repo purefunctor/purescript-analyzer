@@ -314,6 +314,17 @@ where
 {
     state.with_error_step(ErrorStep::CheckingExpression(expr_id), |state| {
         let inferred = infer_expression_quiet(state, context, expr_id)?;
+        // Instantiate the inferred type when the expected type is not
+        // polymorphic, so constraints are collected as wanted rather
+        // than leaking into unification. Skipped for higher-rank
+        // arguments where constraints must match structurally.
+        let expected = state.normalize_type(expected);
+        let inferred =
+            if matches!(state.storage[expected], Type::Forall(..) | Type::Constrained(..)) {
+                inferred
+            } else {
+                toolkit::instantiate_constrained(state, inferred)
+            };
         unification::subtype_with_mode(state, context, inferred, expected, ElaborationMode::No)?;
         crate::trace_fields!(state, context, { inferred = inferred, expected = expected });
         Ok(inferred)
@@ -592,7 +603,8 @@ where
     }
 
     let result_type = if let Some(body) = expression {
-        infer_expression(state, context, body)?
+        let body_type = infer_expression(state, context, body)?;
+        toolkit::instantiate_constrained(state, body_type)
     } else {
         state.fresh_unification_type(context)
     };
