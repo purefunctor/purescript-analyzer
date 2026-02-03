@@ -141,7 +141,7 @@ where
             if *negative {
                 builder.push('-');
             }
-            builder.push_str(&n.to_string());
+            builder.push_str(n.as_ref());
             builder.finish()
         }
     }
@@ -162,5 +162,5 @@ where
     };
 
     let item = &indexed.items[term_id];
-    item.name.as_ref().map(SmolStr::clone)
+    item.name.clone()
 }

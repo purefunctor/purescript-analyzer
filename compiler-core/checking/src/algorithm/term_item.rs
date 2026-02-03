@@ -564,11 +564,7 @@ where
             state.insert_error(ErrorKind::InstanceMemberTypeMismatch { expected, actual });
         }
 
-        let _ = equation::constraints(
-            state,
-            context,
-            equation::ConstraintsPolicy::Report,
-        )?;
+        let _ = equation::constraints(state, context, equation::ConstraintsPolicy::Report)?;
     }
 
     state.type_scope.unbind(debruijn::Level(size.0));

@@ -285,7 +285,13 @@ fn make_forall_a_to_a(context: &CheckContext<QueryEngine>, state: &mut CheckStat
     let bound_a = state.bound_variable(0, context.prim.t);
     let a_to_a = state.function(bound_a, bound_a);
 
-    let binder = ForallBinder { visible: false, implicit: false, name: "a".into(), level, kind: context.prim.t };
+    let binder = ForallBinder {
+        visible: false,
+        implicit: false,
+        name: "a".into(),
+        level,
+        kind: context.prim.t,
+    };
     let forall_a_to_a = state.storage.intern(Type::Forall(binder, a_to_a));
 
     state.type_scope.unbind(level);
@@ -352,13 +358,25 @@ fn test_subtype_nested_forall() {
     let a_to_b_to_a = state.function(bound_a, b_to_a);
 
     let forall_b = state.storage.intern(Type::Forall(
-        ForallBinder { visible: false, implicit: false, name: "b".into(), level: level_b, kind: context.prim.t },
+        ForallBinder {
+            visible: false,
+            implicit: false,
+            name: "b".into(),
+            level: level_b,
+            kind: context.prim.t,
+        },
         a_to_b_to_a,
     ));
     state.type_scope.unbind(level_b);
 
     let forall_a_b = state.storage.intern(Type::Forall(
-        ForallBinder { visible: false, implicit: false, name: "a".into(), level: level_a, kind: context.prim.t },
+        ForallBinder {
+            visible: false,
+            implicit: false,
+            name: "a".into(),
+            level: level_a,
+            kind: context.prim.t,
+        },
         forall_b,
     ));
     state.type_scope.unbind(level_a);

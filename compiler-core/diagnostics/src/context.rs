@@ -149,7 +149,7 @@ impl<'a> DiagnosticsContext<'a> {
                 let signature = group
                     .signature
                     .as_slice()
-                    .into_iter()
+                    .iter()
                     .filter_map(|signature| self.stabilized.syntax_ptr(*signature));
 
                 let equations = group
