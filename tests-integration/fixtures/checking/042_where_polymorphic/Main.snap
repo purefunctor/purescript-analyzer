@@ -4,7 +4,7 @@ assertion_line: 28
 expression: report
 ---
 Terms
-apply :: forall (t5 :: Type). (t5 :: Type) -> (t5 :: Type)
+apply :: forall (t4 :: Type). (t4 :: Type) -> (t4 :: Type)
 apply' :: forall (b :: Type). (b :: Type) -> (b :: Type)
 
 Types

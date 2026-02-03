@@ -1697,22 +1697,37 @@ where
         return Ok(());
     };
 
-    let exhaustiveness = if let Some(signature_id) = name.signature {
+    if let Some(signature_id) = name.signature {
         let surface_bindings = state.surface_bindings.get_let(id);
         let surface_bindings = surface_bindings.as_deref().unwrap_or_default();
 
         let signature = inspect::inspect_signature(state, context, name_type, surface_bindings)?;
 
         equation::check_equations_core(state, context, signature_id, &signature, &name.equations)?;
+
         let pattern_types = &signature.arguments;
-        exhaustiveness::check_equation_patterns(state, context, pattern_types, &name.equations)?
+        let exhaustiveness = exhaustiveness::check_equation_patterns(
+            state,
+            context,
+            pattern_types,
+            &name.equations,
+        )?;
+        state.report_exhaustiveness(exhaustiveness);
+
+        if let Some(variable) = signature.variables.first() {
+            state.type_scope.unbind(variable.level);
+        }
     } else {
         equation::infer_equations_core(state, context, name_type, &name.equations)?;
         let (pattern_types, _) = toolkit::extract_function_arguments(state, name_type);
-        exhaustiveness::check_equation_patterns(state, context, &pattern_types, &name.equations)?
+        let exhaustiveness = exhaustiveness::check_equation_patterns(
+            state,
+            context,
+            &pattern_types,
+            &name.equations,
+        )?;
+        state.report_exhaustiveness(exhaustiveness);
     };
-
-    state.report_exhaustiveness(exhaustiveness);
 
     // PureScript does not have let generalisation; residuals are moved
     // to the parent scope's wanted constraints. Given constraints must
