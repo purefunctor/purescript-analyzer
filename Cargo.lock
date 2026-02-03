@@ -306,6 +306,7 @@ dependencies = [
  "smol_str",
  "stabilizing",
  "sugar",
+ "syntax",
  "tracing",
 ]
 

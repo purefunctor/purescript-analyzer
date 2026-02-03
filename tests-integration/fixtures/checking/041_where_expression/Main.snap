@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -10,8 +11,8 @@ compose ::
     ((t14 :: Type) -> (t12 :: Type)) ->
     (t14 :: Type) ->
     (t11 :: Type)
-apply :: forall (t19 :: Type). (t19 :: Type) -> (t19 :: Type)
-nested :: forall (t24 :: Type). (t24 :: Type) -> (t24 :: Type)
+apply :: forall (t20 :: Type). (t20 :: Type) -> (t20 :: Type)
+nested :: forall (t25 :: Type). (t25 :: Type) -> (t25 :: Type)
 multiPattern :: Boolean -> Int
 factorial :: Int -> Int
 

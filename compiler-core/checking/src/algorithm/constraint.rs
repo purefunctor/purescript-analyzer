@@ -31,7 +31,7 @@ pub fn solve_constraints<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     wanted: VecDeque<TypeId>,
-    given: Vec<TypeId>,
+    given: &[TypeId],
 ) -> QueryResult<Vec<TypeId>>
 where
     Q: ExternalQueries,
@@ -144,14 +144,14 @@ pub(crate) fn constraint_application(
 fn elaborate_given<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    given: Vec<TypeId>,
+    given: &[TypeId],
 ) -> QueryResult<Vec<ConstraintApplication>>
 where
     Q: ExternalQueries,
 {
     let mut elaborated = vec![];
 
-    for constraint in given {
+    for &constraint in given {
         elaborated.push(constraint);
         elaborate_superclasses(state, context, constraint, &mut elaborated)?;
     }

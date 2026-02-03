@@ -140,6 +140,18 @@ fn check_file(engine: &QueryEngine, _files: &Files, id: FileId, relative_path: &
     let resolved = engine.resolved(id);
     let checked = engine.checked(id);
 
+    let lowered_ref = match &lowered {
+        Ok(l) => l,
+        Err(_) => {
+            return FileResult {
+                relative_path: relative_path.to_string(),
+                error_count: 1,
+                warning_count: 0,
+                output: format!("{relative_path}:1:1: error[LowerError]: Failed to lower\n"),
+            };
+        }
+    };
+
     let checked_ref = match &checked {
         Ok(c) => c,
         Err(_) => {
@@ -152,7 +164,8 @@ fn check_file(engine: &QueryEngine, _files: &Files, id: FileId, relative_path: &
         }
     };
 
-    let context = DiagnosticsContext::new(&content, &root, &stabilized, &indexed, checked_ref);
+    let context =
+        DiagnosticsContext::new(&content, &root, &stabilized, &indexed, lowered_ref, checked_ref);
 
     let mut all_diagnostics = vec![];
 

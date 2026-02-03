@@ -1,0 +1,21 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+consume :: forall (a :: Type). Given (a :: Type) => (a :: Type) -> (a :: Type)
+testGiven :: forall (a :: Type). Given (a :: Type) => (a :: Type) -> (a :: Type)
+
+Types
+Given :: Type -> Constraint
+
+Classes
+class Given (&0 :: Type)
+
+Diagnostics
+error[NoInstanceFound]: No instance found for: Given Int
+  --> 6:1..6:41
+  |
+6 | testGiven :: forall a. Given a => a -> a
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

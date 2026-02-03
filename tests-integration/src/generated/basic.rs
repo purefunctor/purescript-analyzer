@@ -396,7 +396,8 @@ pub fn report_checked(engine: &QueryEngine, id: FileId) -> String {
     let lowered = engine.lowered(id).unwrap();
     let resolved = engine.resolved(id).unwrap();
 
-    let context = DiagnosticsContext::new(&content, &root, &stabilized, &indexed, &checked);
+    let context =
+        DiagnosticsContext::new(&content, &root, &stabilized, &indexed, &lowered, &checked);
 
     let mut all_diagnostics = vec![];
 

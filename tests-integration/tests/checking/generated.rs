@@ -561,3 +561,7 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_272_array_nested_constructor_main() { run_test("272_array_nested_constructor", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_273_class_member_instantiation_main() { run_test("273_class_member_instantiation", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_274_givens_retained_main() { run_test("274_givens_retained", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_275_givens_scoped_main() { run_test("275_givens_scoped", "Main"); }

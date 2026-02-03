@@ -50,7 +50,8 @@ fn collect_diagnostics_core(
         common::file_uri(&snapshot.engine, &files, id)?
     };
 
-    let context = DiagnosticsContext::new(&content, &root, &stabilized, &indexed, &checked);
+    let context =
+        DiagnosticsContext::new(&content, &root, &stabilized, &indexed, &lowered, &checked);
 
     let mut all_diagnostics = vec![];
 

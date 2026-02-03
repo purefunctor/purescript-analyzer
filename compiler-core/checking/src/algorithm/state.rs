@@ -1003,7 +1003,30 @@ impl CheckState {
         Q: ExternalQueries,
     {
         let (wanted, given) = self.constraints.take();
-        constraint::solve_constraints(self, context, wanted, given)
+        constraint::solve_constraints(self, context, wanted, &given)
+    }
+
+    pub fn with_local_givens<T>(&mut self, action: impl FnOnce(&mut Self) -> T) -> T {
+        let length = self.constraints.given.len();
+        let result = action(self);
+        self.constraints.given.drain(length..);
+        result
+    }
+
+    pub fn solve_constraints_local<Q>(
+        &mut self,
+        context: &CheckContext<Q>,
+    ) -> QueryResult<Vec<TypeId>>
+    where
+        Q: ExternalQueries,
+    {
+        let (wanted, given) = self.constraints.take();
+        let residuals = constraint::solve_constraints(self, context, wanted, &given);
+
+        let after_solve = mem::replace(&mut self.constraints.given, given);
+        debug_assert!(after_solve.is_empty(), "invariant violated: non-empty givens");
+
+        residuals
     }
 
     pub fn report_exhaustiveness(&mut self, exhaustiveness: ExhaustivenessReport) {

@@ -1,6 +1,7 @@
 use checking::CheckedModule;
 use checking::error::ErrorStep;
 use indexing::IndexedModule;
+use lowering::LoweredModule;
 use rowan::ast::{AstNode, AstPtr};
 use rowan::{NodeOrToken, TextRange};
 use stabilizing::StabilizedModule;
@@ -59,11 +60,28 @@ fn significant_ranges(node: &SyntaxNode) -> Option<TextRange> {
     Some(start.cover(end))
 }
 
+fn pointers_span<I>(context: &DiagnosticsContext<'_>, iterator: I) -> Option<Span>
+where
+    I: IntoIterator<Item = SyntaxNodePtr>,
+    I::IntoIter: DoubleEndedIterator,
+{
+    let mut iter = iterator.into_iter();
+
+    let start_ptr = iter.next()?;
+    let end_ptr = iter.next_back().unwrap_or(start_ptr);
+
+    let start_span = context.span_from_syntax_ptr(&start_ptr)?;
+    let end_span = context.span_from_syntax_ptr(&end_ptr)?;
+
+    Some(Span::new(start_span.start, end_span.end))
+}
+
 pub struct DiagnosticsContext<'a> {
     pub content: &'a str,
     pub root: &'a SyntaxNode,
     pub stabilized: &'a StabilizedModule,
     pub indexed: &'a IndexedModule,
+    pub lowered: &'a LoweredModule,
     pub checked: &'a CheckedModule,
 }
 
@@ -73,9 +91,10 @@ impl<'a> DiagnosticsContext<'a> {
         root: &'a SyntaxNode,
         stabilized: &'a StabilizedModule,
         indexed: &'a IndexedModule,
+        lowered: &'a LoweredModule,
         checked: &'a CheckedModule,
     ) -> DiagnosticsContext<'a> {
-        DiagnosticsContext { content, root, stabilized, indexed, checked }
+        DiagnosticsContext { content, root, stabilized, indexed, lowered, checked }
     }
 
     pub fn span_from_syntax_ptr(&self, ptr: &SyntaxNodePtr) -> Option<Span> {
@@ -124,6 +143,23 @@ impl<'a> DiagnosticsContext<'a> {
             ErrorStep::InferringAdoMap(id)
             | ErrorStep::InferringAdoApply(id)
             | ErrorStep::CheckingAdoLet(id) => self.stabilized.syntax_ptr(*id)?,
+            ErrorStep::CheckingLetName(id) => {
+                let group = self.lowered.info.get_let_binding_group(*id);
+
+                let signature = group
+                    .signature
+                    .as_slice()
+                    .into_iter()
+                    .filter_map(|signature| self.stabilized.syntax_ptr(*signature));
+
+                let equations = group
+                    .equations
+                    .as_ref()
+                    .iter()
+                    .filter_map(|equation| self.stabilized.syntax_ptr(*equation));
+
+                return pointers_span(self, signature.chain(equations));
+            }
         };
         self.span_from_syntax_ptr(&ptr)
     }

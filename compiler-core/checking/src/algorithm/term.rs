@@ -119,6 +119,35 @@ pub fn check_equations<Q>(
 where
     Q: ExternalQueries,
 {
+    check_equations_core(state, context, signature_id, &signature, equations)?;
+
+    let exhaustiveness =
+        exhaustiveness::check_equation_patterns(state, context, &signature.arguments, equations)?;
+    state.report_exhaustiveness(exhaustiveness);
+
+    let residual = state.solve_constraints(context)?;
+    for constraint in residual {
+        let constraint = state.render_local_type(context, constraint);
+        state.insert_error(ErrorKind::NoInstanceFound { constraint });
+    }
+
+    if let Some(variable) = signature.variables.first() {
+        state.type_scope.unbind(variable.level);
+    }
+
+    Ok(())
+}
+
+fn check_equations_core<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    signature_id: lowering::TypeId,
+    signature: &inspect::InspectSignature,
+    equations: &[lowering::Equation],
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
     let expected_arity = signature.arguments.len();
 
     for equation in equations {
@@ -194,20 +223,6 @@ where
             let inferred_type = infer_guarded_expression(state, context, guarded)?;
             let _ = unification::subtype(state, context, inferred_type, expected_type)?;
         }
-    }
-
-    let exhaustiveness =
-        exhaustiveness::check_equation_patterns(state, context, &signature.arguments, equations)?;
-    state.report_exhaustiveness(exhaustiveness);
-
-    let residual = state.solve_constraints(context)?;
-    for constraint in residual {
-        let constraint = state.render_local_type(context, constraint);
-        state.insert_error(ErrorKind::NoInstanceFound { constraint });
-    }
-
-    if let Some(variable) = signature.variables.first() {
-        state.type_scope.unbind(variable.level);
     }
 
     Ok(())
@@ -1943,6 +1958,21 @@ fn check_let_name_binding<Q>(
 where
     Q: ExternalQueries,
 {
+    state.with_local_givens(|state| {
+        state.with_error_step(ErrorStep::CheckingLetName(id), |state| {
+            check_let_name_binding_core(state, context, id)
+        })
+    })
+}
+
+fn check_let_name_binding_core<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    id: lowering::LetBindingNameGroupId,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
     let Some(name) = context.lowered.info.get_let_binding(id) else {
         return Ok(());
     };
@@ -1951,31 +1981,32 @@ where
         return Ok(());
     };
 
-    if let Some(signature_id) = name.signature {
+    let exhaustiveness = if let Some(signature_id) = name.signature {
         let surface_bindings = state.surface_bindings.get_let(id);
         let surface_bindings = surface_bindings.as_deref().unwrap_or_default();
 
         let signature =
             inspect::inspect_signature_core(state, context, name_type, surface_bindings)?;
 
-        check_equations(state, context, signature_id, signature, &name.equations)
+        check_equations_core(state, context, signature_id, &signature, &name.equations)?;
+
+        let pattern_types = &signature.arguments;
+        exhaustiveness::check_equation_patterns(state, context, pattern_types, &name.equations)?
     } else {
         infer_equations_core(state, context, name_type, &name.equations)?;
 
         let (pattern_types, _) = toolkit::extract_function_arguments(state, name_type);
-        let exhaustiveness = exhaustiveness::check_equation_patterns(
-            state,
-            context,
-            &pattern_types,
-            &name.equations,
-        )?;
-        state.report_exhaustiveness(exhaustiveness);
+        exhaustiveness::check_equation_patterns(state, context, &pattern_types, &name.equations)?
+    };
 
-        // No let-generalization: infer equations and solve constraints;
-        // residuals are deferred to parent scope for later error reporting.
-        let residual = state.solve_constraints(context)?;
-        state.constraints.extend_wanted(&residual);
+    state.report_exhaustiveness(exhaustiveness);
 
-        Ok(())
-    }
+    // PureScript does not have let generalisation; residuals are moved
+    // to the parent scope's wanted constraints. Given constraints must
+    // also be preserved across let bindings. This is demonstrated by
+    // 274_givens_retained, 275_givens_scoped
+    let residual = state.solve_constraints_local(context)?;
+    state.constraints.extend_wanted(&residual);
+
+    Ok(())
 }
