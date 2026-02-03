@@ -47,6 +47,5 @@ where
     tools::push_given_constraints(state, &input.constraints);
     tools::emit_superclass_constraints(state, context, &input)?;
     tools::register_derived_instance(state, context, input);
-
     tools::solve_and_report_constraints(state, context)
 }

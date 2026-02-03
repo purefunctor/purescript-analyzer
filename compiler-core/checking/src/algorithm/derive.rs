@@ -42,61 +42,65 @@ pub fn check_derive<Q>(
 where
     Q: ExternalQueries,
 {
-    let CheckDerive {
-        item_id,
+    state.with_error_step(ErrorStep::TermDeclaration(input.item_id), |state| {
+        state.with_local_givens(|state| check_derive_core(state, context, input))
+    })
+}
+
+fn check_derive_core<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    input: CheckDerive<'_>,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    let CheckDerive { derive_id, constraints, arguments, class_file, class_id, is_newtype, .. } =
+        input;
+
+    // Save the current size of the environment for unbinding.
+    let size = state.type_scope.size();
+
+    let class_kind = kind::lookup_file_type(state, context, class_file, class_id)?;
+    let expected_kinds = term_item::instantiate_class_kind(state, context, class_kind)?;
+
+    if expected_kinds.len() != arguments.len() {
+        state.insert_error(ErrorKind::InstanceHeadMismatch {
+            class_file,
+            class_item: class_id,
+            expected: expected_kinds.len(),
+            actual: arguments.len(),
+        });
+    }
+
+    let mut core_arguments = vec![];
+    for (argument, expected_kind) in arguments.iter().zip(expected_kinds) {
+        let (inferred_type, inferred_kind) =
+            kind::check_surface_kind(state, context, *argument, expected_kind)?;
+        core_arguments.push((inferred_type, inferred_kind));
+    }
+
+    let mut core_constraints = vec![];
+    for constraint in constraints.iter() {
+        let (inferred_type, inferred_kind) = kind::infer_surface_kind(state, context, *constraint)?;
+        core_constraints.push((inferred_type, inferred_kind));
+    }
+
+    let elaborated = tools::ElaboratedDerive {
         derive_id,
-        constraints,
-        arguments,
+        constraints: core_constraints,
+        arguments: core_arguments,
         class_file,
         class_id,
-        is_newtype,
-    } = input;
+    };
 
-    state.with_error_step(ErrorStep::TermDeclaration(item_id), |state| {
-        // Save the current size of the environment for unbinding.
-        let size = state.type_scope.size();
+    if is_newtype {
+        check_newtype_derive(state, context, elaborated)?;
+    } else {
+        let class_is = |known| Some((class_file, class_id)) == known;
+        let known_types = &context.known_types;
 
-        let class_kind = kind::lookup_file_type(state, context, class_file, class_id)?;
-        let expected_kinds = term_item::instantiate_class_kind(state, context, class_kind)?;
-
-        if expected_kinds.len() != arguments.len() {
-            state.insert_error(ErrorKind::InstanceHeadMismatch {
-                class_file,
-                class_item: class_id,
-                expected: expected_kinds.len(),
-                actual: arguments.len(),
-            });
-        }
-
-        let mut core_arguments = vec![];
-        for (argument, expected_kind) in arguments.iter().zip(expected_kinds) {
-            let (inferred_type, inferred_kind) =
-                kind::check_surface_kind(state, context, *argument, expected_kind)?;
-            core_arguments.push((inferred_type, inferred_kind));
-        }
-
-        let mut core_constraints = vec![];
-        for constraint in constraints.iter() {
-            let (inferred_type, inferred_kind) =
-                kind::infer_surface_kind(state, context, *constraint)?;
-            core_constraints.push((inferred_type, inferred_kind));
-        }
-
-        let elaborated = tools::ElaboratedDerive {
-            derive_id,
-            constraints: core_constraints,
-            arguments: core_arguments,
-            class_file,
-            class_id,
-        };
-
-        if is_newtype {
-            check_newtype_derive(state, context, elaborated)?;
-        } else {
-            let class_is = |known| Some((class_file, class_id)) == known;
-            let known_types = &context.known_types;
-
-            macro_rules! dispatch {
+        macro_rules! dispatch {
                 ($($($known:ident)|+ => $handler:path),+ $(,)?) => {
                     $(if $(class_is(known_types.$known))||+ {
                         $handler(state, context, elaborated)?;
@@ -106,28 +110,27 @@ where
                 };
             }
 
-            dispatch! {
-                eq | ord => check_derive_class,
-                functor => functor::check_derive_functor,
-                bifunctor => functor::check_derive_bifunctor,
-                contravariant => contravariant::check_derive_contravariant,
-                profunctor => contravariant::check_derive_profunctor,
-                foldable => foldable::check_derive_foldable,
-                bifoldable => foldable::check_derive_bifoldable,
-                traversable => traversable::check_derive_traversable,
-                bitraversable => traversable::check_derive_bitraversable,
-                eq1 => eq1::check_derive_eq1,
-                ord1 => eq1::check_derive_ord1,
-                newtype => newtype::check_derive_newtype,
-                generic => generic::check_derive_generic,
-            }
+        dispatch! {
+            eq | ord => check_derive_class,
+            functor => functor::check_derive_functor,
+            bifunctor => functor::check_derive_bifunctor,
+            contravariant => contravariant::check_derive_contravariant,
+            profunctor => contravariant::check_derive_profunctor,
+            foldable => foldable::check_derive_foldable,
+            bifoldable => foldable::check_derive_bifoldable,
+            traversable => traversable::check_derive_traversable,
+            bitraversable => traversable::check_derive_bitraversable,
+            eq1 => eq1::check_derive_eq1,
+            ord1 => eq1::check_derive_ord1,
+            newtype => newtype::check_derive_newtype,
+            generic => generic::check_derive_generic,
         }
+    }
 
-        // Unbind type variables bound during elaboration.
-        state.type_scope.unbind(debruijn::Level(size.0));
+    // Unbind type variables bound during elaboration.
+    state.type_scope.unbind(debruijn::Level(size.0));
 
-        Ok(())
-    })
+    Ok(())
 }
 
 fn check_derive_class<Q>(
@@ -160,7 +163,6 @@ where
     tools::register_derived_instance(state, context, input);
 
     generate_field_constraints(state, context, data_file, data_id, derived_type, class)?;
-
     tools::solve_and_report_constraints(state, context)
 }
 
@@ -212,7 +214,6 @@ where
     tools::register_derived_instance(state, context, input);
 
     state.constraints.push_wanted(delegate_constraint);
-
     tools::solve_and_report_constraints(state, context)
 }
 

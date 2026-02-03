@@ -40,7 +40,6 @@ where
 
     let config = VarianceConfig::Single((Variance::Covariant, traversable));
     generate_variance_constraints(state, context, data_file, data_id, derived_type, config)?;
-
     tools::solve_and_report_constraints(state, context)
 }
 
@@ -81,6 +80,5 @@ where
     );
 
     generate_variance_constraints(state, context, data_file, data_id, derived_type, config)?;
-
     tools::solve_and_report_constraints(state, context)
 }

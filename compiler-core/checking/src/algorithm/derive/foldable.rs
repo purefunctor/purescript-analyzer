@@ -40,7 +40,6 @@ where
 
     let config = VarianceConfig::Single((Variance::Covariant, foldable));
     generate_variance_constraints(state, context, data_file, data_id, derived_type, config)?;
-
     tools::solve_and_report_constraints(state, context)
 }
 
@@ -79,6 +78,5 @@ where
         VarianceConfig::Pair((Variance::Covariant, foldable), (Variance::Covariant, foldable));
 
     generate_variance_constraints(state, context, data_file, data_id, derived_type, config)?;
-
     tools::solve_and_report_constraints(state, context)
 }

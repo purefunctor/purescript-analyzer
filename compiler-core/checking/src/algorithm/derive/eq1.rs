@@ -108,6 +108,5 @@ where
     // Emit the wanted constraint `Eq (Identity a)`
     let wanted_constraint = state.storage.intern(Type::Application(class_type, applied_type));
     state.constraints.push_wanted(wanted_constraint);
-
     tools::solve_and_report_constraints(state, context)
 }
