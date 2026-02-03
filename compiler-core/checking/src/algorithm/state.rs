@@ -998,14 +998,6 @@ impl CheckState {
         result
     }
 
-    pub fn solve_constraints<Q>(&mut self, context: &CheckContext<Q>) -> QueryResult<Vec<TypeId>>
-    where
-        Q: ExternalQueries,
-    {
-        let (wanted, given) = self.constraints.take();
-        constraint::solve_constraints(self, context, wanted, &given)
-    }
-
     pub fn with_local_givens<T>(&mut self, action: impl FnOnce(&mut Self) -> T) -> T {
         let length = self.constraints.given.len();
         let result = action(self);
@@ -1013,10 +1005,7 @@ impl CheckState {
         result
     }
 
-    pub fn solve_constraints_local<Q>(
-        &mut self,
-        context: &CheckContext<Q>,
-    ) -> QueryResult<Vec<TypeId>>
+    pub fn solve_constraints<Q>(&mut self, context: &CheckContext<Q>) -> QueryResult<Vec<TypeId>>
     where
         Q: ExternalQueries,
     {

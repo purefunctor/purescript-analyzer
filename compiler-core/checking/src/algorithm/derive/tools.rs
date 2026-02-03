@@ -93,7 +93,7 @@ pub fn solve_and_report_constraints<Q>(
 where
     Q: ExternalQueries,
 {
-    let residual = state.solve_constraints_local(context)?;
+    let residual = state.solve_constraints(context)?;
     for constraint in residual {
         let constraint = state.render_local_type(context, constraint);
         state.insert_error(ErrorKind::NoInstanceFound { constraint });

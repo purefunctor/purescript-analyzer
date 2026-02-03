@@ -2005,7 +2005,7 @@ where
     // to the parent scope's wanted constraints. Given constraints must
     // also be preserved across let bindings. This is demonstrated by
     // 274_givens_retained, 275_givens_scoped
-    let residual = state.solve_constraints_local(context)?;
+    let residual = state.solve_constraints(context)?;
     state.constraints.extend_wanted(&residual);
 
     Ok(())

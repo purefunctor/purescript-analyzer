@@ -273,28 +273,41 @@ pub fn check_value_group<Q>(
 where
     Q: ExternalQueries,
 {
-    let CheckValueGroup { item_id, signature, equations } = input;
-    state.with_error_step(ErrorStep::TermDeclaration(item_id), |state| {
-        let _span = tracing::debug_span!("check_value_group").entered();
-        if let Some(signature_id) = signature {
-            let group_type = term::lookup_file_term(state, context, context.id, item_id)?;
-
-            let surface_bindings = state.surface_bindings.get_term(item_id);
-            let surface_bindings = surface_bindings.as_deref().unwrap_or_default();
-
-            let signature =
-                inspect::inspect_signature_core(state, context, group_type, surface_bindings)?;
-
-            term::check_equations(state, context, *signature_id, signature, equations)?;
-            crate::debug_fields!(state, context, { group_type = group_type }, "checking");
-            Ok(None)
-        } else {
-            let (inferred_type, residual_constraints) =
-                term::infer_equations(state, context, item_id, equations)?;
-            crate::debug_fields!(state, context, { inferred_type = inferred_type }, "inferring");
-            Ok(Some(InferredValueGroup { inferred_type, residual_constraints }))
-        }
+    state.with_error_step(ErrorStep::TermDeclaration(input.item_id), |state| {
+        state.with_local_givens(|state| {
+            let _span = tracing::debug_span!("check_value_group").entered();
+            check_value_group_core(context, state, input)
+        })
     })
+}
+
+fn check_value_group_core<Q>(
+    context: &CheckContext<Q>,
+    state: &mut CheckState,
+    input: CheckValueGroup<'_>,
+) -> QueryResult<Option<InferredValueGroup>>
+where
+    Q: ExternalQueries,
+{
+    let CheckValueGroup { item_id, signature, equations } = input;
+    if let Some(signature_id) = signature {
+        let group_type = term::lookup_file_term(state, context, context.id, item_id)?;
+
+        let surface_bindings = state.surface_bindings.get_term(item_id);
+        let surface_bindings = surface_bindings.as_deref().unwrap_or_default();
+
+        let signature =
+            inspect::inspect_signature_core(state, context, group_type, surface_bindings)?;
+
+        term::check_equations(state, context, *signature_id, signature, equations)?;
+        crate::debug_fields!(state, context, { group_type = group_type }, "checked");
+        Ok(None)
+    } else {
+        let (inferred_type, residual_constraints) =
+            term::infer_equations(state, context, item_id, equations)?;
+        crate::debug_fields!(state, context, { inferred_type = inferred_type }, "inferred");
+        Ok(Some(InferredValueGroup { inferred_type, residual_constraints }))
+    }
 }
 
 /// Generalises an [`InferredValueGroup`].
@@ -451,8 +464,20 @@ pub fn check_instance_member_group<Q>(
 where
     Q: ExternalQueries,
 {
+    state.with_error_step(ErrorStep::TermDeclaration(input.instance_id), |state| {
+        state.with_local_givens(|state| check_instance_member_group_core(state, context, input))
+    })
+}
+
+fn check_instance_member_group_core<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    input: CheckInstanceMemberGroup<'_>,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
     let CheckInstanceMemberGroup {
-        instance_id,
         instance_bindings,
         member,
         class_file,
@@ -460,105 +485,104 @@ where
         instance_arguments,
         instance_constraints,
         kind_variables,
+        ..
     } = input;
 
-    state.with_error_step(ErrorStep::TermDeclaration(instance_id), |state| {
-        let _span = tracing::debug_span!("check_instance_member_group").entered();
+    let _span = tracing::debug_span!("check_instance_member_group").entered();
 
-        // Save the current size of the environment for unbinding.
-        let size = state.type_scope.size();
+    // Save the current size of the environment for unbinding.
+    let size = state.type_scope.size();
 
-        // Bind kind variables generalised after instance head checking.
-        for &kind_variable in kind_variables {
-            let kind = transfer::localize(state, context, kind_variable);
-            state.type_scope.bind_core(kind);
+    // Bind kind variables generalised after instance head checking.
+    for &kind_variable in kind_variables {
+        let kind = transfer::localize(state, context, kind_variable);
+        state.type_scope.bind_core(kind);
+    }
+
+    for binding in instance_bindings {
+        state.type_scope.bind_implicit(binding.node, binding.id, binding.kind);
+    }
+
+    let class_member_type = lookup_class_member(state, context, member.resolution)?;
+
+    for (constraint_type, _) in instance_constraints {
+        let local_constraint = transfer::localize(state, context, *constraint_type);
+        state.constraints.push_given(local_constraint);
+    }
+
+    let specialized_type = if let Some(class_member_type) = class_member_type {
+        specialize_class_member(
+            state,
+            context,
+            class_member_type,
+            (class_file, class_id),
+            instance_arguments,
+        )?
+    } else {
+        None
+    };
+
+    // The specialized type may have constraints like `Show a => (a -> b) -> f a -> f b`.
+    // We push `Show a` as a given and use the body `(a -> b) -> f a -> f b` for checking.
+    let specialized_type = specialized_type.map(|mut t| {
+        while let normalized = state.normalize_type(t)
+            && let Type::Constrained(constraint, constrained) = &state.storage[normalized]
+        {
+            state.constraints.push_given(*constraint);
+            t = *constrained;
         }
+        t
+    });
 
-        for binding in instance_bindings {
-            state.type_scope.bind_implicit(binding.node, binding.id, binding.kind);
-        }
+    if let Some(signature_id) = &member.signature {
+        let surface_bindings = inspect::collect_signature_variables(context, *signature_id);
 
-        let class_member_type = lookup_class_member(state, context, member.resolution)?;
+        let (member_type, _) =
+            kind::check_surface_kind(state, context, *signature_id, context.prim.t)?;
 
-        for (constraint_type, _) in instance_constraints {
-            let local_constraint = transfer::localize(state, context, *constraint_type);
-            state.constraints.push_given(local_constraint);
-        }
-
-        let specialized_type = if let Some(class_member_type) = class_member_type {
-            specialize_class_member(
-                state,
-                context,
-                class_member_type,
-                (class_file, class_id),
-                instance_arguments,
-            )?
-        } else {
-            None
-        };
-
-        // The specialized type may have constraints like `Show a => (a -> b) -> f a -> f b`.
-        // We push `Show a` as a given and use the body `(a -> b) -> f a -> f b` for checking.
-        let specialized_type = specialized_type.map(|mut t| {
-            while let normalized = state.normalize_type(t)
-                && let Type::Constrained(constraint, constrained) = &state.storage[normalized]
-            {
-                state.constraints.push_given(*constraint);
-                t = *constrained;
-            }
-            t
-        });
-
-        if let Some(signature_id) = &member.signature {
-            let surface_bindings = inspect::collect_signature_variables(context, *signature_id);
-
-            let (member_type, _) =
-                kind::check_surface_kind(state, context, *signature_id, context.prim.t)?;
-
-            if let Some(specialized_type) = specialized_type {
-                let unified = unification::unify(state, context, member_type, specialized_type)?;
-                if !unified {
-                    let expected = state.render_local_type(context, specialized_type);
-                    let actual = state.render_local_type(context, member_type);
-                    state.insert_error(ErrorKind::InstanceMemberTypeMismatch { expected, actual });
-                }
-            }
-
-            let signature =
-                inspect::inspect_signature_core(state, context, member_type, &surface_bindings)?;
-
-            term::check_equations(state, context, *signature_id, signature, &member.equations)?;
-        } else if let Some(specialized_type) = specialized_type {
-            let inferred_type = state.fresh_unification_type(context);
-            term::infer_equations_core(state, context, inferred_type, &member.equations)?;
-
-            let (pattern_types, _) = toolkit::extract_function_arguments(state, specialized_type);
-            let exhaustiveness = exhaustiveness::check_equation_patterns(
-                state,
-                context,
-                &pattern_types,
-                &member.equations,
-            )?;
-            state.report_exhaustiveness(exhaustiveness);
-
-            let matches = unification::subtype(state, context, inferred_type, specialized_type)?;
-            if !matches {
+        if let Some(specialized_type) = specialized_type {
+            let unified = unification::unify(state, context, member_type, specialized_type)?;
+            if !unified {
                 let expected = state.render_local_type(context, specialized_type);
-                let actual = state.render_local_type(context, inferred_type);
+                let actual = state.render_local_type(context, member_type);
                 state.insert_error(ErrorKind::InstanceMemberTypeMismatch { expected, actual });
             }
-
-            let residual = state.solve_constraints(context)?;
-            for constraint in residual {
-                let constraint = state.render_local_type(context, constraint);
-                state.insert_error(ErrorKind::NoInstanceFound { constraint });
-            }
         }
 
-        state.type_scope.unbind(debruijn::Level(size.0));
+        let signature =
+            inspect::inspect_signature_core(state, context, member_type, &surface_bindings)?;
 
-        Ok(())
-    })
+        term::check_equations(state, context, *signature_id, signature, &member.equations)?;
+    } else if let Some(specialized_type) = specialized_type {
+        let inferred_type = state.fresh_unification_type(context);
+        term::infer_equations_core(state, context, inferred_type, &member.equations)?;
+
+        let (pattern_types, _) = toolkit::extract_function_arguments(state, specialized_type);
+        let exhaustiveness = exhaustiveness::check_equation_patterns(
+            state,
+            context,
+            &pattern_types,
+            &member.equations,
+        )?;
+        state.report_exhaustiveness(exhaustiveness);
+
+        let matches = unification::subtype(state, context, inferred_type, specialized_type)?;
+        if !matches {
+            let expected = state.render_local_type(context, specialized_type);
+            let actual = state.render_local_type(context, inferred_type);
+            state.insert_error(ErrorKind::InstanceMemberTypeMismatch { expected, actual });
+        }
+
+        let residual = state.solve_constraints(context)?;
+        for constraint in residual {
+            let constraint = state.render_local_type(context, constraint);
+            state.insert_error(ErrorKind::NoInstanceFound { constraint });
+        }
+    }
+
+    state.type_scope.unbind(debruijn::Level(size.0));
+
+    Ok(())
 }
 
 macro_rules! debug_assert_class_constraint {
