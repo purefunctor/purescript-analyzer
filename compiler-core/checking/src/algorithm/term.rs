@@ -1701,8 +1701,7 @@ where
         let surface_bindings = state.surface_bindings.get_let(id);
         let surface_bindings = surface_bindings.as_deref().unwrap_or_default();
 
-        let signature =
-            inspect::inspect_signature_core(state, context, name_type, surface_bindings)?;
+        let signature = inspect::inspect_signature(state, context, name_type, surface_bindings)?;
 
         equation::check_equations_core(state, context, signature_id, &signature, &name.equations)?;
         let pattern_types = &signature.arguments;

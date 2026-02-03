@@ -697,8 +697,7 @@ where
         let surface_bindings = state.surface_bindings.get_type(item_id);
         let surface_bindings = surface_bindings.as_deref().unwrap_or_default();
 
-        let signature =
-            inspect::inspect_signature_core(state, context, stored_kind, surface_bindings)?;
+        let signature = inspect::inspect_signature(state, context, stored_kind, surface_bindings)?;
 
         if variables.len() != signature.arguments.len() {
             state.insert_error(ErrorKind::TypeSignatureVariableMismatch {

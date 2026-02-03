@@ -296,8 +296,7 @@ where
         let surface_bindings = state.surface_bindings.get_term(item_id);
         let surface_bindings = surface_bindings.as_deref().unwrap_or_default();
 
-        let signature =
-            inspect::inspect_signature_core(state, context, group_type, surface_bindings)?;
+        let signature = inspect::inspect_signature(state, context, group_type, surface_bindings)?;
 
         equation::check_equations(state, context, *signature_id, signature, equations)?;
         crate::debug_fields!(state, context, { group_type = group_type }, "checked");
@@ -549,8 +548,7 @@ where
             }
         }
 
-        let signature =
-            inspect::inspect_signature_core(state, context, member_type, &surface_bindings)?;
+        let signature = inspect::inspect_signature(state, context, member_type, &surface_bindings)?;
 
         equation::check_equations(state, context, *signature_id, signature, &member.equations)?;
     } else if let Some(specialized_type) = specialized_type {

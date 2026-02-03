@@ -54,7 +54,7 @@ where
     Arc::from(variables)
 }
 
-pub fn inspect_signature_core<Q>(
+pub fn inspect_signature<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     type_id: TypeId,
