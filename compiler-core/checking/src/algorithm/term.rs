@@ -110,7 +110,9 @@ where
     });
 
     let parameter_types = parameter_types.collect_vec();
+
     let result_type = infer_expression_core(state, context, expr_id)?;
+    let result_type = toolkit::instantiate_constrained(state, result_type);
 
     Ok(state.make_function(&parameter_types, result_type))
 }
@@ -352,7 +354,7 @@ fn infer_case_of<Q>(
 where
     Q: ExternalQueries,
 {
-    let inferred_type = state.fresh_unification_type(context);
+    let result_type = state.fresh_unification_type(context);
 
     let mut trunk_types = vec![];
     for trunk in trunk.iter() {
@@ -366,15 +368,22 @@ where
         }
         if let Some(guarded) = &branch.guarded_expression {
             let guarded_type = infer_guarded_expression(state, context, guarded)?;
-            let _ = unification::subtype(state, context, inferred_type, guarded_type)?;
+            let _ = unification::subtype(state, context, guarded_type, result_type)?;
         }
     }
 
     let exhaustiveness =
         exhaustiveness::check_case_patterns(state, context, &trunk_types, branches)?;
+
+    let has_missing = exhaustiveness.missing.is_some();
     state.report_exhaustiveness(exhaustiveness);
 
-    Ok(inferred_type)
+    if has_missing {
+        let constrained_type = Type::Constrained(context.prim.partial, result_type);
+        Ok(state.storage.intern(constrained_type))
+    } else {
+        Ok(result_type)
+    }
 }
 
 /// Lookup `bind` from resolution, or synthesize `?m ?a -> (?a -> ?m ?b) -> ?m ?b`.

@@ -7,10 +7,14 @@ Terms
 Just :: forall (a :: Type). (a :: Type) -> Maybe (a :: Type)
 Nothing :: forall (a :: Type). Maybe (a :: Type)
 complete :: forall (t6 :: Type) (t7 :: Type). Maybe (t6 :: Type) -> Maybe (t7 :: Type) -> Int
-incomplete1 :: forall (t19 :: Type) (t20 :: Type). Maybe (t19 :: Type) -> Maybe (t20 :: Type) -> Int
-incomplete2 :: forall (t30 :: Type) (t31 :: Type). Maybe (t30 :: Type) -> Maybe (t31 :: Type) -> Int
-incomplete3 :: forall (t41 :: Type) (t42 :: Type). Maybe (t41 :: Type) -> Maybe (t42 :: Type) -> Int
-incomplete4 :: forall (t52 :: Type) (t53 :: Type). Maybe (t52 :: Type) -> Maybe (t53 :: Type) -> Int
+incomplete1 ::
+  forall (t19 :: Type) (t20 :: Type). Partial => Maybe (t19 :: Type) -> Maybe (t20 :: Type) -> Int
+incomplete2 ::
+  forall (t30 :: Type) (t31 :: Type). Partial => Maybe (t30 :: Type) -> Maybe (t31 :: Type) -> Int
+incomplete3 ::
+  forall (t41 :: Type) (t42 :: Type). Partial => Maybe (t41 :: Type) -> Maybe (t42 :: Type) -> Int
+incomplete4 ::
+  forall (t52 :: Type) (t53 :: Type). Partial => Maybe (t52 :: Type) -> Maybe (t53 :: Type) -> Int
 
 Types
 Maybe :: Type -> Type

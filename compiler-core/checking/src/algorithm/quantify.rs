@@ -98,9 +98,20 @@ where
 
     let mut pending = vec![];
     let mut unsatisfied = vec![];
+    let mut latent = vec![];
 
     for constraint in constraints {
         let constraint = Zonk::on(state, constraint);
+
+        // Partial is a latent constraint, it has no type arguments so it
+        // never has unification variables, but should be generalised
+        // rather than reported as unsatisfied. This allows inferring
+        // `Partial => Int` for expressions with non-exhaustive patterns.
+        if constraint == context.prim.partial {
+            latent.push(constraint);
+            continue;
+        }
+
         let unification: FxHashSet<u32> = collect_unification(state, constraint).nodes().collect();
         if unification.is_empty() {
             unsatisfied.push(constraint);
@@ -113,7 +124,7 @@ where
     let (generalised, ambiguous) = classify_constraints_by_reachability(pending, in_signature);
 
     // Subtle: stable ordering for consistent output
-    let generalised = generalised.into_iter().sorted().collect_vec();
+    let generalised = latent.into_iter().chain(generalised).sorted().collect_vec();
     let minimized = minimize_by_superclasses(state, context, generalised)?;
 
     let constrained_type = minimized.into_iter().rfold(type_id, |constrained, constraint| {

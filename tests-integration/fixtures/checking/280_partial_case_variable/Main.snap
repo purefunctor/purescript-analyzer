@@ -6,8 +6,8 @@ expression: report
 Terms
 Just :: forall (a :: Type). (a :: Type) -> Maybe (a :: Type)
 Nothing :: forall (a :: Type). Maybe (a :: Type)
-test1 :: forall (t5 :: Type). Partial => Maybe (t5 :: Type) -> Int
-test2 :: forall (t10 :: Type). Partial => Maybe (t10 :: Type) -> Int
+test :: Partial => Maybe Int -> Int
+test' :: Partial => Maybe Int -> Int
 
 Types
 Maybe :: Type -> Type
@@ -23,12 +23,12 @@ Maybe = [Representational]
 
 Diagnostics
 warning[MissingPatterns]: Pattern match is not exhaustive. Missing: Nothing
-  --> 5:9..6:14
+  --> 5:10..6:18
   |
-5 | test1 = case _ of
-  |         ^~~~~~~~~
-warning[MissingPatterns]: Pattern match is not exhaustive. Missing: Just _
-  --> 8:9..9:15
+5 | test a = case a of
+  |          ^~~~~~~~~
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: Nothing
+  --> 8:9..9:18
   |
-8 | test2 = case _ of
+8 | test' = case _ of
   |         ^~~~~~~~~

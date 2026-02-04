@@ -569,3 +569,11 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_276_where_clause_outer_scope_main() { run_test("276_where_clause_outer_scope", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_277_keyword_as_variable_main() { run_test("277_keyword_as_variable", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_278_partial_case_nested_main() { run_test("278_partial_case_nested", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_279_partial_let_where_main() { run_test("279_partial_let_where", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_280_partial_case_variable_main() { run_test("280_partial_case_variable", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_281_sectioned_constraint_generation_main() { run_test("281_sectioned_constraint_generation", "Main"); }

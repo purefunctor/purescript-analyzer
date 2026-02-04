@@ -16,8 +16,18 @@ warning[MissingPatterns]: Pattern match is not exhaustive. Missing: _
   |
 4 | testPartialZero n = case n of
   |                     ^~~~~~~~~
+error[NoInstanceFound]: No instance found for: Partial
+  --> 3:1..3:30
+  |
+3 | testPartialZero :: Int -> Int
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 warning[MissingPatterns]: Pattern match is not exhaustive. Missing: _
   --> 8:20..9:9
   |
 8 | testPartialOne n = case n of
   |                    ^~~~~~~~~
+error[NoInstanceFound]: No instance found for: Partial
+  --> 7:1..7:29
+  |
+7 | testPartialOne :: Int -> Int
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
