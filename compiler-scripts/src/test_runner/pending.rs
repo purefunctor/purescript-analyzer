@@ -2,6 +2,7 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::{env, fs};
 
+use anyhow::Context;
 use console::style;
 use serde::Deserialize;
 
@@ -37,19 +38,22 @@ impl SnapshotInfo {
 }
 
 /// Collect pending snapshots for a category, optionally filtered.
-pub fn collect_pending_snapshots(category: TestCategory, filters: &[String]) -> Vec<SnapshotInfo> {
+pub fn collect_pending_snapshots(
+    category: TestCategory,
+    filters: &[String],
+) -> anyhow::Result<Vec<SnapshotInfo>> {
     let pending_output = Command::new("cargo")
         .arg("insta")
         .arg("pending-snapshots")
         .arg("--as-json")
         .stderr(Stdio::null())
         .output()
-        .expect("Failed to run cargo insta");
+        .context("failed to run cargo insta")?;
 
     let pending = String::from_utf8_lossy(&pending_output.stdout);
     let pending = pending.trim();
 
-    let cwd = env::current_dir().unwrap();
+    let cwd = env::current_dir().context("failed to get working directory")?;
     let path_fragments = category.snapshot_path_fragments();
 
     let mut snapshots = Vec::new();
@@ -93,7 +97,7 @@ pub fn collect_pending_snapshots(category: TestCategory, filters: &[String]) -> 
         });
     }
 
-    snapshots
+    Ok(snapshots)
 }
 
 fn collect_exclusion_patterns(args: &RunArgs) -> Vec<String> {
@@ -130,8 +134,8 @@ pub fn process_pending_snapshots(
     category: TestCategory,
     args: &RunArgs,
     trace_paths: &[PathBuf],
-) -> PendingResult {
-    let mut snapshots = collect_pending_snapshots(category, &args.filters);
+) -> anyhow::Result<PendingResult> {
+    let mut snapshots = collect_pending_snapshots(category, &args.filters)?;
 
     // Populate trace paths
     for info in &mut snapshots {
@@ -194,7 +198,7 @@ pub fn process_pending_snapshots(
         );
     }
 
-    PendingResult { count: visible.len(), excluded_count, total_lines_changed }
+    Ok(PendingResult { count: visible.len(), excluded_count, total_lines_changed })
 }
 
 pub struct AcceptRejectResult {

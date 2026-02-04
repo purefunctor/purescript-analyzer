@@ -21,7 +21,7 @@ fn main() {
 
     if let Some(name) = &cli.args.create {
         if let Err(error) = create_fixture(cli.category, name) {
-            eprintln!("{}", error);
+            eprintln!("{:#}", error);
             std::process::exit(1);
         }
         return;
@@ -71,7 +71,7 @@ fn main() {
                 }
             }
             Err(error) => {
-                eprintln!("{}", error);
+                eprintln!("{:#}", error);
                 std::process::exit(1);
             }
         }
@@ -80,19 +80,37 @@ fn main() {
 
     match &cli.args.command {
         Some(CategoryCommand::Accept(args)) => {
-            let outcome = accept_category(cli.category, args);
+            let outcome = match accept_category(cli.category, args) {
+                Ok(outcome) => outcome,
+                Err(error) => {
+                    eprintln!("{:#}", error);
+                    std::process::exit(1);
+                }
+            };
             if !outcome.success {
                 std::process::exit(1);
             }
         }
         Some(CategoryCommand::Reject(args)) => {
-            let outcome = reject_category(cli.category, args);
+            let outcome = match reject_category(cli.category, args) {
+                Ok(outcome) => outcome,
+                Err(error) => {
+                    eprintln!("{:#}", error);
+                    std::process::exit(1);
+                }
+            };
             if !outcome.success {
                 std::process::exit(1);
             }
         }
         None => {
-            let outcome = run_category(cli.category, &cli.args);
+            let outcome = match run_category(cli.category, &cli.args) {
+                Ok(outcome) => outcome,
+                Err(error) => {
+                    eprintln!("{:#}", error);
+                    std::process::exit(1);
+                }
+            };
             if !outcome.tests_passed {
                 std::process::exit(1);
             }

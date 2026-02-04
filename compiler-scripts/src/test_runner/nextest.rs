@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::process::{Command, Stdio};
 
+use anyhow::Context;
 use console::style;
 
 use crate::test_runner::category::TestCategory;
@@ -46,15 +47,15 @@ pub fn run_nextest(
     category: TestCategory,
     args: &RunArgs,
     fixture_hashes: &HashMap<String, String>,
-) -> bool {
+) -> anyhow::Result<bool> {
     let mut cmd = build_nextest_command(category, args, fixture_hashes);
 
     if args.verbose {
-        let status = cmd.status().expect("Failed to run cargo nextest");
-        status.success()
+        let status = cmd.status().context("failed to run cargo nextest")?;
+        Ok(status.success())
     } else {
         cmd.stdout(Stdio::null()).stderr(Stdio::null());
-        let status = cmd.status().expect("Failed to run cargo nextest");
+        let status = cmd.status().context("failed to run cargo nextest")?;
 
         if !status.success() {
             eprintln!("{}", style("Tests failed, re-running verbose...").yellow());
@@ -75,6 +76,6 @@ pub fn run_nextest(
             let _ = retry.status();
         }
 
-        status.success()
+        Ok(status.success())
     }
 }

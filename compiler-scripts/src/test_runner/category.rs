@@ -1,6 +1,8 @@
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
+use anyhow::bail;
+
 #[derive(Copy, Clone, Debug)]
 pub enum TestCategory {
     Checking,
@@ -45,7 +47,7 @@ impl TestCategory {
 }
 
 impl FromStr for TestCategory {
-    type Err = String;
+    type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
@@ -53,10 +55,10 @@ impl FromStr for TestCategory {
             "lowering" | "l" => Ok(TestCategory::Lowering),
             "resolving" | "r" => Ok(TestCategory::Resolving),
             "lsp" => Ok(TestCategory::Lsp),
-            _ => Err(format!(
+            _ => bail!(
                 "unknown test category '{}', expected: checking (c), lowering (l), resolving (r), lsp",
                 s
-            )),
+            ),
         }
     }
 }

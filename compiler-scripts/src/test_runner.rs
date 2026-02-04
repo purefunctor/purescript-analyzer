@@ -23,20 +23,20 @@ pub struct TestOutcome {
     pub trace_paths: Vec<PathBuf>,
 }
 
-pub fn run_category(category: TestCategory, args: &RunArgs) -> TestOutcome {
+pub fn run_category(category: TestCategory, args: &RunArgs) -> anyhow::Result<TestOutcome> {
     // 1. Hash fixtures and print timing
     let start = Instant::now();
     let fixture_hashes = crate::fixtures::fixture_env();
     println!("{}", style(format!("Hashed fixtures in {}ms", start.elapsed().as_millis())).dim());
 
     // 2. Run nextest
-    let tests_passed = nextest::run_nextest(category, args, &fixture_hashes);
+    let tests_passed = nextest::run_nextest(category, args, &fixture_hashes)?;
 
     // 3. Collect trace paths
     let trace_paths = traces::collect_trace_paths(&args.filters, args.debug);
 
     // 4. Process pending snapshots
-    let pending_result = pending::process_pending_snapshots(category, args, &trace_paths);
+    let pending_result = pending::process_pending_snapshots(category, args, &trace_paths)?;
 
     // 5. Print next actions
     ui::print_next_actions(NextActionsArgs {
@@ -51,7 +51,7 @@ pub fn run_category(category: TestCategory, args: &RunArgs) -> TestOutcome {
         showed_diffs: args.diff,
     });
 
-    TestOutcome { tests_passed, pending_count: pending_result.count, trace_paths }
+    Ok(TestOutcome { tests_passed, pending_count: pending_result.count, trace_paths })
 }
 
 pub struct SnapshotOutcome {
@@ -59,12 +59,15 @@ pub struct SnapshotOutcome {
     pub count: usize,
 }
 
-pub fn accept_category(category: TestCategory, args: &SnapshotArgs) -> SnapshotOutcome {
-    let snapshots = pending::collect_pending_snapshots(category, &args.filters);
+pub fn accept_category(
+    category: TestCategory,
+    args: &SnapshotArgs,
+) -> anyhow::Result<SnapshotOutcome> {
+    let snapshots = pending::collect_pending_snapshots(category, &args.filters)?;
 
     if snapshots.is_empty() {
         println!("{}", style("No pending snapshots found.").dim());
-        return SnapshotOutcome { success: true, count: 0 };
+        return Ok(SnapshotOutcome { success: true, count: 0 });
     }
 
     if !args.all && args.filters.is_empty() {
@@ -78,22 +81,25 @@ pub fn accept_category(category: TestCategory, args: &SnapshotArgs) -> SnapshotO
             "To accept all, run: {}",
             style(format!("just t {} accept --all", category.as_str())).cyan()
         );
-        return SnapshotOutcome { success: false, count: 0 };
+        return Ok(SnapshotOutcome { success: false, count: 0 });
     }
 
     let result = pending::accept_snapshots(&snapshots);
     println!();
     println!("{}", style(format!("Accepted {} snapshot(s)", result.accepted)).green());
 
-    SnapshotOutcome { success: result.failed == 0, count: result.accepted }
+    Ok(SnapshotOutcome { success: result.failed == 0, count: result.accepted })
 }
 
-pub fn reject_category(category: TestCategory, args: &SnapshotArgs) -> SnapshotOutcome {
-    let snapshots = pending::collect_pending_snapshots(category, &args.filters);
+pub fn reject_category(
+    category: TestCategory,
+    args: &SnapshotArgs,
+) -> anyhow::Result<SnapshotOutcome> {
+    let snapshots = pending::collect_pending_snapshots(category, &args.filters)?;
 
     if snapshots.is_empty() {
         println!("{}", style("No pending snapshots found.").dim());
-        return SnapshotOutcome { success: true, count: 0 };
+        return Ok(SnapshotOutcome { success: true, count: 0 });
     }
 
     if !args.all && args.filters.is_empty() {
@@ -107,19 +113,19 @@ pub fn reject_category(category: TestCategory, args: &SnapshotArgs) -> SnapshotO
             "To reject all, run: {}",
             style(format!("just t {} reject --all", category.as_str())).cyan()
         );
-        return SnapshotOutcome { success: false, count: 0 };
+        return Ok(SnapshotOutcome { success: false, count: 0 });
     }
 
     let result = pending::reject_snapshots(&snapshots);
     println!();
     println!("{}", style(format!("Rejected {} snapshot(s)", result.rejected)).red());
 
-    SnapshotOutcome { success: result.failed == 0, count: result.rejected }
+    Ok(SnapshotOutcome { success: result.failed == 0, count: result.rejected })
 }
 
 pub use fixture::DeleteFixtureOutcome;
 
-pub fn create_fixture(category: TestCategory, name: &str) -> Result<(), String> {
+pub fn create_fixture(category: TestCategory, name: &str) -> anyhow::Result<()> {
     fixture::create_fixture(category, name).map(|_| ())
 }
 
@@ -127,6 +133,6 @@ pub fn delete_fixture(
     category: TestCategory,
     name: &str,
     confirm: bool,
-) -> Result<DeleteFixtureOutcome, String> {
+) -> anyhow::Result<DeleteFixtureOutcome> {
     fixture::delete_fixture(category, name, confirm)
 }
