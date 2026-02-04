@@ -371,121 +371,154 @@ where
 
 pub fn promote_type(
     state: &mut CheckState,
-    codomain: debruijn::Size,
+    initial_codomain: debruijn::Size,
     unification_id: u32,
     solution: TypeId,
 ) -> bool {
-    let solution = state.normalize_type(solution);
-    match state.storage[solution] {
-        Type::Application(function, argument) => {
-            promote_type(state, codomain, unification_id, function)
-                && promote_type(state, codomain, unification_id, argument)
-        }
+    /// Invariant context for the inner recursion of [`promote_type`].
+    struct PromoteContext {
+        /// The type scope size when calling [`solve`].
+        ///
+        /// Bound variables at or above this level are introduced
+        /// by foralls within the solution and don't escape.
+        initial_codomain: debruijn::Size,
+        /// The unification variable being solved.
+        unification_id: u32,
+    }
 
-        Type::Constrained(constraint, inner) => {
-            promote_type(state, codomain, unification_id, constraint)
-                && promote_type(state, codomain, unification_id, inner)
-        }
-
-        Type::Constructor(_, _) => true,
-
-        Type::Forall(ref binder, inner) => {
-            let inner_codomain = codomain.increment();
-            promote_type(state, codomain, unification_id, binder.kind)
-                && promote_type(state, inner_codomain, unification_id, inner)
-        }
-
-        Type::Function(argument, result) => {
-            promote_type(state, codomain, unification_id, argument)
-                && promote_type(state, codomain, unification_id, result)
-        }
-
-        Type::Integer(_) => true,
-
-        Type::KindApplication(function, argument) => {
-            promote_type(state, codomain, unification_id, function)
-                && promote_type(state, codomain, unification_id, argument)
-        }
-
-        Type::Kinded(inner, kind) => {
-            promote_type(state, codomain, unification_id, inner)
-                && promote_type(state, codomain, unification_id, kind)
-        }
-
-        Type::Operator(_, _) => true,
-
-        Type::OperatorApplication(_, _, left, right) => {
-            promote_type(state, codomain, unification_id, left)
-                && promote_type(state, codomain, unification_id, right)
-        }
-
-        Type::Row(RowType { ref fields, tail }) => {
-            let fields = Arc::clone(fields);
-
-            for field in fields.iter() {
-                if !promote_type(state, codomain, unification_id, field.id) {
-                    return false;
-                }
+    fn aux(s: &mut CheckState, c: &PromoteContext, codomain: debruijn::Size, t: TypeId) -> bool {
+        let t = s.normalize_type(t);
+        match s.storage[t] {
+            Type::Application(function, argument) => {
+                aux(s, c, codomain, function) && aux(s, c, codomain, argument)
             }
 
-            if let Some(tail) = tail
-                && !promote_type(state, codomain, unification_id, tail)
-            {
-                return false;
+            Type::Constrained(constraint, inner) => {
+                aux(s, c, codomain, constraint) && aux(s, c, codomain, inner)
             }
 
-            true
-        }
+            Type::Constructor(_, _) => true,
 
-        Type::String(_, _) => true,
-
-        Type::SynonymApplication(_, _, _, ref arguments) => {
-            let arguments = Arc::clone(arguments);
-            for argument in arguments.iter() {
-                if !promote_type(state, codomain, unification_id, *argument) {
-                    return false;
-                }
-            }
-            true
-        }
-
-        Type::Unification(solution_id) => {
-            let unification = state.unification.get(unification_id);
-            let solution = state.unification.get(solution_id);
-
-            if unification_id == solution_id {
-                return false;
+            Type::Forall(ref binder, inner) => {
+                let inner_codomain = codomain.increment();
+                aux(s, c, codomain, binder.kind) && aux(s, c, inner_codomain, inner)
             }
 
-            if unification.domain < solution.domain {
-                let promoted_ty =
-                    state.fresh_unification_kinded_at(unification.domain, unification.kind);
-
-                // promoted_ty is simple enough to not warrant `solve` recursion
-                state.unification.solve(solution_id, promoted_ty);
+            Type::Function(argument, result) => {
+                aux(s, c, codomain, argument) && aux(s, c, codomain, result)
             }
 
-            true
-        }
+            Type::Integer(_) => true,
 
-        Type::Variable(ref variable) => {
-            // A bound variable escapes if its level >= the unification variable's domain.
-            // This means the variable was bound at or after the unification was created.
-            match variable {
-                Variable::Bound(level, kind) => {
-                    let unification = state.unification.get(unification_id);
-                    if level.0 >= unification.domain.0 {
+            Type::KindApplication(function, argument) => {
+                aux(s, c, codomain, function) && aux(s, c, codomain, argument)
+            }
+
+            Type::Kinded(inner, kind) => aux(s, c, codomain, inner) && aux(s, c, codomain, kind),
+
+            Type::Operator(_, _) => true,
+
+            Type::OperatorApplication(_, _, left, right) => {
+                aux(s, c, codomain, left) && aux(s, c, codomain, right)
+            }
+
+            Type::Row(RowType { ref fields, tail }) => {
+                let fields = Arc::clone(fields);
+
+                for field in fields.iter() {
+                    if !aux(s, c, codomain, field.id) {
                         return false;
                     }
-                    promote_type(state, codomain, unification_id, *kind)
                 }
-                Variable::Skolem(_, kind) => promote_type(state, codomain, unification_id, *kind),
-                Variable::Free(_) => true,
-            }
-        }
 
-        Type::Unknown => true,
+                if let Some(tail) = tail
+                    && !aux(s, c, codomain, tail)
+                {
+                    return false;
+                }
+
+                true
+            }
+
+            Type::String(_, _) => true,
+
+            Type::SynonymApplication(_, _, _, ref arguments) => {
+                let arguments = Arc::clone(arguments);
+                for argument in arguments.iter() {
+                    if !aux(s, c, codomain, *argument) {
+                        return false;
+                    }
+                }
+                true
+            }
+
+            Type::Unification(solution_id) => {
+                let unification = s.unification.get(c.unification_id);
+                let solution = s.unification.get(solution_id);
+
+                if c.unification_id == solution_id {
+                    return false;
+                }
+
+                if unification.domain < solution.domain {
+                    let promoted_ty =
+                        s.fresh_unification_kinded_at(unification.domain, unification.kind);
+
+                    // promoted_ty is simple enough to not warrant `solve` recursion
+                    s.unification.solve(solution_id, promoted_ty);
+                }
+
+                true
+            }
+
+            Type::Variable(ref variable) => {
+                // Given a unification variable ?u created at depth C; and
+                // the solve depth S, the type scope size when solve was
+                // called; and a given variable bound at `level`, we define:
+                //
+                //   level < C        — safe, in scope when ?u was created
+                //   C <= level < S   — unsafe, introduced after ?u but before solving
+                //   S <= level       — safe, bound by a forall within the solution
+                //
+                // The third rule enables impredicative solutions. Forall types
+                // inside the solution introduce bound variables that are local
+                // to the solution type and don't escape. For example:
+                //
+                // Solving `?a[:1] := forall c. Maybe c`
+                //
+                //   forall a.           -- level 0, below C(1) → safe
+                //     forall b.         -- level 1, C=1, ?a created here
+                //       solve at S=2
+                //         forall c.     -- level 2, >= S(2) → solution-internal, safe
+                //           Maybe c
+                //
+                // Without the third rule, `c` at level 2 >= C(1) would be
+                // rejected as escaping, breaking `?a := forall c. Maybe c`.
+                match variable {
+                    Variable::Bound(level, kind) => {
+                        if level.0 >= c.initial_codomain.0 {
+                            // S <= level
+                            return aux(s, c, codomain, *kind);
+                        }
+                        let unification = s.unification.get(c.unification_id);
+                        if level.0 >= unification.domain.0 {
+                            // C <= level < S
+                            return false;
+                        }
+                        // level < C
+                        aux(s, c, codomain, *kind)
+                    }
+                    Variable::Skolem(_, kind) => aux(s, c, codomain, *kind),
+                    Variable::Free(_) => true,
+                }
+            }
+
+            Type::Unknown => true,
+        }
     }
+
+    let c = PromoteContext { initial_codomain, unification_id };
+    aux(state, &c, initial_codomain, solution)
 }
 
 /// Checks that `t1_row` is a subtype of `t2_row`, generated errors for

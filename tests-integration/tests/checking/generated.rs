@@ -577,3 +577,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_280_partial_case_variable_main() { run_test("280_partial_case_variable", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_281_sectioned_constraint_generation_main() { run_test("281_sectioned_constraint_generation", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_282_higher_rank_unification_main() { run_test("282_higher_rank_unification", "Main"); }
