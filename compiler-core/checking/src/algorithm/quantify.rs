@@ -355,14 +355,14 @@ pub fn quantify_instance(state: &mut CheckState, instance: &mut Instance) -> Opt
 
 /// Builds a topological sort of the [`UniGraph`].
 ///
-/// This function uses the domain-based sorting of the unification variables
+/// This function uses the depth-based sorting of the unification variables
 /// as the base for the post-order traversal. In turn, this ensures that
-/// unconnected nodes are ordered by domain while connected ones are sorted
+/// unconnected nodes are ordered by depth while connected ones are sorted
 /// topologically. The resulting [`IndexSet`] can be iterated in reverse to
 /// build the `forall` binders during quantification.
 fn ordered_toposort(graph: &UniGraph, state: &CheckState) -> Option<IndexSet<u32>> {
     let mut nodes: Vec<u32> = graph.nodes().collect();
-    nodes.sort_by_key(|&id| (state.unification.get(id).domain, id));
+    nodes.sort_by_key(|&id| (state.unification.get(id).depth, id));
 
     let mut dfs = DfsPostOrder::empty(graph);
     let mut unsolved = IndexSet::new();
@@ -488,9 +488,9 @@ fn collect_unification(state: &mut CheckState, id: TypeId) -> UniGraph {
 mod tests {
     use super::*;
 
-    fn add_unification(state: &mut CheckState, domain: u32) -> u32 {
+    fn add_unification(state: &mut CheckState, depth: u32) -> u32 {
         let kind = state.storage.intern(Type::Unknown);
-        state.unification.fresh(debruijn::Size(domain), kind)
+        state.unification.fresh(debruijn::Size(depth), kind)
     }
 
     #[test]
@@ -637,7 +637,7 @@ mod tests {
 
         let sorted: Vec<u32> = result.unwrap().into_iter().collect();
 
-        // All have the same domain,
+        // All have the same depth,
         assert_eq!(sorted, vec![id3, id2, id0, id1]);
     }
 }

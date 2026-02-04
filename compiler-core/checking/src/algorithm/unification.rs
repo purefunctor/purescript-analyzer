@@ -350,9 +350,9 @@ where
         solution = solution,
     });
 
-    let codomain = state.type_scope.size();
+    let solve_depth = state.type_scope.size();
 
-    if !promote_type(state, codomain, unification_id, solution) {
+    if !promote_type(state, solve_depth, unification_id, solution) {
         crate::trace_fields!(state, context, {
             ?unification_id = unification_id,
             solution = solution,
@@ -371,7 +371,7 @@ where
 
 pub fn promote_type(
     state: &mut CheckState,
-    initial_codomain: debruijn::Size,
+    solve_depth: debruijn::Size,
     unification_id: u32,
     solution: TypeId,
 ) -> bool {
@@ -381,58 +381,58 @@ pub fn promote_type(
         ///
         /// Bound variables at or above this level are introduced
         /// by foralls within the solution and don't escape.
-        initial_codomain: debruijn::Size,
+        solve_depth: debruijn::Size,
         /// The unification variable being solved.
         unification_id: u32,
     }
 
-    fn aux(s: &mut CheckState, c: &PromoteContext, codomain: debruijn::Size, t: TypeId) -> bool {
+    fn aux(s: &mut CheckState, c: &PromoteContext, depth: debruijn::Size, t: TypeId) -> bool {
         let t = s.normalize_type(t);
         match s.storage[t] {
             Type::Application(function, argument) => {
-                aux(s, c, codomain, function) && aux(s, c, codomain, argument)
+                aux(s, c, depth, function) && aux(s, c, depth, argument)
             }
 
             Type::Constrained(constraint, inner) => {
-                aux(s, c, codomain, constraint) && aux(s, c, codomain, inner)
+                aux(s, c, depth, constraint) && aux(s, c, depth, inner)
             }
 
             Type::Constructor(_, _) => true,
 
             Type::Forall(ref binder, inner) => {
-                let inner_codomain = codomain.increment();
-                aux(s, c, codomain, binder.kind) && aux(s, c, inner_codomain, inner)
+                let inner_depth = depth.increment();
+                aux(s, c, depth, binder.kind) && aux(s, c, inner_depth, inner)
             }
 
             Type::Function(argument, result) => {
-                aux(s, c, codomain, argument) && aux(s, c, codomain, result)
+                aux(s, c, depth, argument) && aux(s, c, depth, result)
             }
 
             Type::Integer(_) => true,
 
             Type::KindApplication(function, argument) => {
-                aux(s, c, codomain, function) && aux(s, c, codomain, argument)
+                aux(s, c, depth, function) && aux(s, c, depth, argument)
             }
 
-            Type::Kinded(inner, kind) => aux(s, c, codomain, inner) && aux(s, c, codomain, kind),
+            Type::Kinded(inner, kind) => aux(s, c, depth, inner) && aux(s, c, depth, kind),
 
             Type::Operator(_, _) => true,
 
             Type::OperatorApplication(_, _, left, right) => {
-                aux(s, c, codomain, left) && aux(s, c, codomain, right)
+                aux(s, c, depth, left) && aux(s, c, depth, right)
             }
 
             Type::Row(RowType { ref fields, tail }) => {
                 let fields = Arc::clone(fields);
 
                 for field in fields.iter() {
-                    if !aux(s, c, codomain, field.id) {
+                    if !aux(s, c, depth, field.id) {
                         return false;
                     }
                 }
 
                 if let Some(tail) = tail
-                    && !aux(s, c, codomain, tail)
+                    && !aux(s, c, depth, tail)
                 {
                     return false;
                 }
@@ -445,7 +445,7 @@ pub fn promote_type(
             Type::SynonymApplication(_, _, _, ref arguments) => {
                 let arguments = Arc::clone(arguments);
                 for argument in arguments.iter() {
-                    if !aux(s, c, codomain, *argument) {
+                    if !aux(s, c, depth, *argument) {
                         return false;
                     }
                 }
@@ -460,9 +460,9 @@ pub fn promote_type(
                     return false;
                 }
 
-                if unification.domain < solution.domain {
+                if unification.depth < solution.depth {
                     let promoted_ty =
-                        s.fresh_unification_kinded_at(unification.domain, unification.kind);
+                        s.fresh_unification_kinded_at(unification.depth, unification.kind);
 
                     // promoted_ty is simple enough to not warrant `solve` recursion
                     s.unification.solve(solution_id, promoted_ty);
@@ -496,19 +496,19 @@ pub fn promote_type(
                 // rejected as escaping, breaking `?a := forall c. Maybe c`.
                 match variable {
                     Variable::Bound(level, kind) => {
-                        if level.0 >= c.initial_codomain.0 {
+                        if level.0 >= c.solve_depth.0 {
                             // S <= level
-                            return aux(s, c, codomain, *kind);
+                            return aux(s, c, depth, *kind);
                         }
                         let unification = s.unification.get(c.unification_id);
-                        if level.0 >= unification.domain.0 {
+                        if level.0 >= unification.depth.0 {
                             // C <= level < S
                             return false;
                         }
                         // level < C
-                        aux(s, c, codomain, *kind)
+                        aux(s, c, depth, *kind)
                     }
-                    Variable::Skolem(_, kind) => aux(s, c, codomain, *kind),
+                    Variable::Skolem(_, kind) => aux(s, c, depth, *kind),
                     Variable::Free(_) => true,
                 }
             }
@@ -517,8 +517,8 @@ pub fn promote_type(
         }
     }
 
-    let c = PromoteContext { initial_codomain, unification_id };
-    aux(state, &c, initial_codomain, solution)
+    let c = PromoteContext { solve_depth, unification_id };
+    aux(state, &c, solve_depth, solution)
 }
 
 /// Checks that `t1_row` is a subtype of `t2_row`, generated errors for

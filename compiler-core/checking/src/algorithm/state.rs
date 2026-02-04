@@ -1069,16 +1069,16 @@ impl CheckState {
 
 /// Functions for creating unification variables.
 impl CheckState {
-    /// Creates a fresh unification variable with the provided domain and kind.
-    pub fn fresh_unification_kinded_at(&mut self, domain: debruijn::Size, kind: TypeId) -> TypeId {
-        let unification_id = self.unification.fresh(domain, kind);
+    /// Creates a fresh unification variable with the provided depth and kind.
+    pub fn fresh_unification_kinded_at(&mut self, depth: debruijn::Size, kind: TypeId) -> TypeId {
+        let unification_id = self.unification.fresh(depth, kind);
         self.storage.intern(Type::Unification(unification_id))
     }
 
     /// Creates a fresh unification variable with the provided kind.
     pub fn fresh_unification_kinded(&mut self, kind: TypeId) -> TypeId {
-        let domain = self.type_scope.size();
-        self.fresh_unification_kinded_at(domain, kind)
+        let depth = self.type_scope.size();
+        self.fresh_unification_kinded_at(depth, kind)
     }
 
     /// Creates a fresh polykinded unification variable.

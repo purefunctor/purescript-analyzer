@@ -118,31 +118,27 @@ fn test_solve_bound() {
 }
 
 #[test]
-fn test_solve_invalid() {
+fn test_solve_escaping_variable() {
     let (engine, id) = empty_engine();
     let ContextState { ref context, ref mut state } = ContextState::new(&engine, id);
 
     // [a :: Int]
     state.type_scope.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_1), context.prim.int);
 
+    // ?u created at depth C = 1
     let unification = state.fresh_unification_type(context);
     let Type::Unification(unification_id) = state.storage[unification] else {
         unreachable!("invariant violated");
     };
 
-    // [a :: Int, b :: String]
-    let level = state
-        .type_scope
-        .bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_2), context.prim.string);
+    // [a :: Int, b :: String] S = 2
+    state.type_scope.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_2), context.prim.string);
 
-    let bound_b = state.bound_variable(0, context.prim.int);
-    let bound_a = state.bound_variable(1, context.prim.string);
-    let b_to_a = state.function(bound_b, bound_a);
+    // b is at level 1 which is C(1) <= level(1) < S(2)
+    let bound_b = state.bound_variable(1, context.prim.string);
 
-    state.type_scope.unbind(level);
-
-    let solve_result = unification::solve(state, context, unification_id, b_to_a).unwrap();
-    assert!(solve_result.is_none());
+    let solve_result = unification::solve(state, context, unification_id, bound_b).unwrap();
+    assert!(solve_result.is_none(), "should reject: b escapes the scope where ?u was created");
 }
 
 #[test]
@@ -169,9 +165,9 @@ fn test_solve_promotion() {
     let entries: Vec<_> = state.unification.iter().copied().collect();
     for (index, entry) in entries.iter().enumerate() {
         let UnificationState::Solved(solution) = entry.state else { continue };
-        let domain = entry.domain;
+        let depth = entry.depth;
         let solution = pretty::print_local(state, context, solution);
-        writeln!(snapshot, "?{index}[{domain}] := {solution}").unwrap();
+        writeln!(snapshot, "?{index}[{depth}] := {solution}").unwrap();
     }
 
     insta::assert_snapshot!(snapshot);

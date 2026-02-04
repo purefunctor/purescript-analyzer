@@ -454,7 +454,7 @@ where
         Type::Unification(unification_id) => match source {
             TraversalSource::Local { state, .. } => {
                 let unification = state.unification.get(unification_id);
-                arena.text(format!("?{}[{}]", unification_id, unification.domain))
+                arena.text(format!("?{}[{}]", unification_id, unification.depth))
             }
             TraversalSource::Global { .. } => arena.text(format!("?{}[<Global>]", unification_id)),
         },

@@ -511,7 +511,7 @@ where
     });
 
     let mut unsolved_kinds = unsolved_kinds.collect_vec();
-    unsolved_kinds.sort_by_key(|&(_, id)| (state.unification.get(id).domain, id));
+    unsolved_kinds.sort_by_key(|&(_, id)| (state.unification.get(id).depth, id));
 
     let reference_type = unsolved_kinds.iter().fold(reference_type, |reference, &(kind, _)| {
         state.storage.intern(Type::KindApplication(reference, kind))

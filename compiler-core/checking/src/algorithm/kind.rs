@@ -443,10 +443,10 @@ where
                 Type::Function(_, result) => result,
 
                 Type::Unification(unification_id) => {
-                    let domain = state.unification.get(unification_id).domain;
+                    let depth = state.unification.get(unification_id).depth;
 
-                    let argument_u = state.fresh_unification_kinded_at(domain, context.prim.t);
-                    let result_u = state.fresh_unification_kinded_at(domain, context.prim.t);
+                    let argument_u = state.fresh_unification_kinded_at(depth, context.prim.t);
+                    let result_u = state.fresh_unification_kinded_at(depth, context.prim.t);
                     let function = state.storage.intern(Type::Function(argument_u, result_u));
 
                     let _ = unification::solve(state, context, unification_id, function);
