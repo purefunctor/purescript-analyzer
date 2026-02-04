@@ -2,7 +2,7 @@ use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
-use convert_case::{Case, Converter};
+use heck::ToSnakeCase;
 use itertools::Itertools;
 
 fn read_dir<'output>(path: &Path) -> impl Iterator<Item = PathBuf> + use<'output> {
@@ -44,10 +44,9 @@ fn run_test(folder: &str, file: &str) {{
     )
     .unwrap();
 
-    let converter = Converter::new().to_case(Case::Snake);
     for folder in read_dir(Path::new("./fixtures/lsp")) {
         let Some(stem) = folder.file_stem() else { continue };
-        let folder_name = converter.convert(stem.to_os_string().into_string().unwrap());
+        let folder_name = stem.to_os_string().into_string().unwrap().to_snake_case();
         writeln!(
             buffer,
             r#"
@@ -73,14 +72,13 @@ fn run_test(folder: &str, file: &str) {{
     settings.bind(|| insta::assert_snapshot!(file, report));
 }}"#).unwrap();
 
-    let converter = Converter::new().to_case(Case::Snake);
     for folder in read_dir(Path::new("./fixtures/lowering")) {
         let Some(stem) = folder.file_stem() else { continue };
-        let folder_name = converter.convert(stem.to_os_string().into_string().unwrap());
+        let folder_name = stem.to_os_string().into_string().unwrap().to_snake_case();
         for file in read_purs_files(&folder) {
             let Some(file_stem) = file.file_stem() else { continue };
             let file_name = file_stem.to_os_string().into_string().unwrap();
-            let test_name = format!("{}_{}", folder_name, converter.convert(&file_name));
+            let test_name = format!("{}_{}", folder_name, file_name.to_snake_case());
             writeln!(
                 buffer,
                 r#"
@@ -107,14 +105,13 @@ fn run_test(folder: &str, file: &str) {{
     settings.bind(|| insta::assert_snapshot!(file, report));
 }}"#).unwrap();
 
-    let converter = Converter::new().to_case(Case::Snake);
     for folder in read_dir(Path::new("./fixtures/resolving")) {
         let Some(stem) = folder.file_stem() else { continue };
-        let folder_name = converter.convert(stem.to_os_string().into_string().unwrap());
+        let folder_name = stem.to_os_string().into_string().unwrap().to_snake_case();
         for file in read_purs_files(&folder) {
             let Some(file_stem) = file.file_stem() else { continue };
             let file_name = file_stem.to_os_string().into_string().unwrap();
-            let test_name = format!("{}_{}", folder_name, converter.convert(&file_name));
+            let test_name = format!("{}_{}", folder_name, file_name.to_snake_case());
             writeln!(
                 buffer,
                 r#"
@@ -157,10 +154,9 @@ fn run_test(folder: &str, file: &str) {{
     settings.bind(|| insta::assert_snapshot!(file, report));
 }}"#).unwrap();
 
-    let converter = Converter::new().to_case(Case::Snake);
     for folder in read_dir(Path::new("./fixtures/checking")) {
         let Some(stem) = folder.file_stem() else { continue };
-        let folder_name = converter.convert(stem.to_os_string().into_string().unwrap());
+        let folder_name = stem.to_os_string().into_string().unwrap().to_snake_case();
         // Skip the prelude folder - it's shared setup, not a test
         if folder_name == "prelude" {
             continue;

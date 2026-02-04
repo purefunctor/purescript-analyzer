@@ -6,7 +6,7 @@ allowed-tools: Bash(mkdir:*)
 
 # Type Checker Integration Tests
 
-Make sure to load the compiler-scripts skill for command syntax and flags. The category is `checking`.
+Use the command reference at `reference/compiler-scripts.md` for test runner syntax, snapshot workflows, filters, and trace debugging. The category is `checking`.
 
 **Language:** Fixtures use PureScript syntax, not Haskell.
 
@@ -15,10 +15,10 @@ Make sure to load the compiler-scripts skill for command syntax and flags. The c
 ### 1. Create fixture directory
 
 ```bash
-mkdir tests-integration/fixtures/checking/{NNN_descriptive_name}
+just t checking --create "descriptive name"
 ```
 
-Find next number: `ls tests-integration/fixtures/checking/ | tail -5`
+The CLI picks the next fixture number and creates the folder.
 
 Tests are auto-discovered by `build.rs`.
 

@@ -60,6 +60,9 @@ pub fn run_nextest(
             eprintln!("{}", style("Tests failed, re-running verbose...").yellow());
 
             let verbose_args = RunArgs {
+                create: None,
+                delete: None,
+                confirm: false,
                 command: None,
                 filters: args.filters.clone(),
                 verbose: true,

@@ -1,6 +1,7 @@
 mod category;
 mod cli;
 mod decision;
+mod fixture;
 mod nextest;
 mod pending;
 mod traces;
@@ -114,4 +115,18 @@ pub fn reject_category(category: TestCategory, args: &SnapshotArgs) -> SnapshotO
     println!("{}", style(format!("Rejected {} snapshot(s)", result.rejected)).red());
 
     SnapshotOutcome { success: result.failed == 0, count: result.rejected }
+}
+
+pub use fixture::DeleteFixtureOutcome;
+
+pub fn create_fixture(category: TestCategory, name: &str) -> Result<(), String> {
+    fixture::create_fixture(category, name).map(|_| ())
+}
+
+pub fn delete_fixture(
+    category: TestCategory,
+    name: &str,
+    confirm: bool,
+) -> Result<DeleteFixtureOutcome, String> {
+    fixture::delete_fixture(category, name, confirm)
 }

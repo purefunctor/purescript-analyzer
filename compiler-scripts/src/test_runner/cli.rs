@@ -21,6 +21,18 @@ pub struct SnapshotArgs {
 
 #[derive(Args, Clone, Debug)]
 pub struct RunArgs {
+    /// Create a new fixture directory with a template file
+    #[arg(long, value_name = "NAME")]
+    pub create: Option<String>,
+
+    /// Delete a fixture directory (dry-run unless --confirm)
+    #[arg(long, value_name = "NAME")]
+    pub delete: Option<String>,
+
+    /// Confirm deletion for --delete
+    #[arg(long)]
+    pub confirm: bool,
+
     /// Subcommand (accept/reject) or test filters
     #[command(subcommand)]
     pub command: Option<CategoryCommand>,
