@@ -587,3 +587,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_285_derive_newtype_higher_kinded_main() { run_test("285_derive_newtype_higher_kinded", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_286_invalid_vector_newtype_derive_main() { run_test("286_invalid_vector_newtype_derive", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_287_lambda_partial_main() { run_test("287_lambda_partial", "Main"); }

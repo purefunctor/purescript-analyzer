@@ -342,7 +342,20 @@ where
         state.fresh_unification_type(context)
     };
 
-    Ok(state.make_function(&argument_types, result_type))
+    let function_type = state.make_function(&argument_types, result_type);
+
+    let exhaustiveness =
+        exhaustiveness::check_lambda_patterns(state, context, &argument_types, binders)?;
+
+    let has_missing = exhaustiveness.missing.is_some();
+    state.report_exhaustiveness(exhaustiveness);
+
+    if has_missing {
+        let constrained_type = Type::Constrained(context.prim.partial, function_type);
+        Ok(state.storage.intern(constrained_type))
+    } else {
+        Ok(function_type)
+    }
 }
 
 fn infer_case_of<Q>(

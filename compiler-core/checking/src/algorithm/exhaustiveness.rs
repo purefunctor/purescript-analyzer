@@ -892,6 +892,27 @@ pub struct ExhaustivenessReport {
     pub redundant: Vec<SmolStr>,
 }
 
+pub fn check_lambda_patterns<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    pattern_types: &[TypeId],
+    binders: &[lowering::BinderId],
+) -> QueryResult<ExhaustivenessReport>
+where
+    Q: ExternalQueries,
+{
+    if pattern_types.is_empty() {
+        return Ok(ExhaustivenessReport { missing: None, redundant: vec![] });
+    }
+
+    let unconditional =
+        collect_unconditional_rows(state, context, &[binders], pattern_types, |binders| {
+            (binders, &None)
+        })?;
+
+    check_exhaustiveness_core(state, context, pattern_types, unconditional)
+}
+
 pub fn check_case_patterns<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
