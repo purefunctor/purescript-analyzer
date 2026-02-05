@@ -942,7 +942,7 @@ where
 /// Matches a wanted constraint to given constraints.
 fn match_given_instances<Q>(
     state: &mut CheckState,
-    context: &CheckContext<Q>,
+    _context: &CheckContext<Q>,
     wanted: &ConstraintApplication,
     given: &[ConstraintApplication],
 ) -> QueryResult<Option<MatchInstance>>
@@ -958,7 +958,6 @@ where
             continue;
         }
 
-        let mut match_results = Vec::with_capacity(wanted.arguments.len());
         let mut stuck_positions = vec![];
 
         for (index, (&wanted_argument, &given_argument)) in
@@ -973,24 +972,12 @@ where
             if matches!(match_result, MatchType::Stuck) {
                 stuck_positions.push(index);
             }
-
-            match_results.push(match_result);
         }
 
-        if stuck_positions.is_empty() {
-            return Ok(Some(MatchInstance::Match { constraints: vec![], equalities: vec![] }));
-        }
-
-        if !can_determine_stuck(
-            context,
-            wanted.file_id,
-            wanted.item_id,
-            &match_results,
-            &stuck_positions,
-        )? {
-            continue 'given;
-        }
-
+        // Given constraints are valid by construction (from signatures and
+        // superclass elaboration). When a unification variable makes a position
+        // stuck, it is safe to emit an equality rather than requiring functional
+        // dependencies to cover it — the given constraint is authoritative.
         let equalities = stuck_positions.iter().map(|&index| {
             let wanted = wanted.arguments[index];
             let given = given.arguments[index];

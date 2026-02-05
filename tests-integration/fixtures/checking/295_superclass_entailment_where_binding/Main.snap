@@ -1,0 +1,18 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+test ::
+  forall (m :: Type -> Type) (a :: Type).
+    MonadRec (m :: Type -> Type) => (a :: Type) -> (m :: Type -> Type) (a :: Type)
+test2 ::
+  forall (m :: Type -> Type) (a :: Type).
+    MonadRec (m :: Type -> Type) =>
+    (m :: Type -> Type) (a :: Type) -> (m :: Type -> Type) (a :: Type)
+test3 ::
+  forall (m :: Type -> Type).
+    MonadRec (m :: Type -> Type) => (m :: Type -> Type) Int -> (m :: Type -> Type) Int
+
+Types
