@@ -131,7 +131,9 @@ where
         derive::lookup_local_term_type(state, context, data_file, constructor_id)?;
 
     let field_types = if let Some(constructor_type) = constructor_type {
-        derive::instantiate_constructor_fields(state, constructor_type, arguments)
+        let (constructor_type, _) =
+            derive::instantiate_constructor_fields(state, constructor_type, arguments);
+        constructor_type
     } else {
         vec![]
     };

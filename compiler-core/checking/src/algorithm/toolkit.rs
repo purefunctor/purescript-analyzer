@@ -131,9 +131,10 @@ pub fn instantiate_constrained(state: &mut CheckState, type_id: TypeId) -> TypeI
 /// Instantiates [`Type::Forall`] with the provided arguments.
 ///
 /// This function falls back to constructing skolem variables if there's
-/// not enough arguments provided. This is primarily used to specialise
-/// constructor types based on the [`Type::Application`] and [`Type::KindApplication`]
-/// used in an instance head. For example:
+/// not enough arguments provided. The number of skolem variables produced
+/// is returned alongside the instantiated type. This is primarily used to
+/// specialise constructor types based on the [`Type::Application`] and
+/// [`Type::KindApplication`] used in an instance head. For example:
 ///
 /// ```purescript
 /// -- Proxy @Type Int
@@ -146,8 +147,9 @@ pub fn instantiate_with_arguments(
     state: &mut CheckState,
     mut type_id: TypeId,
     arguments: impl AsRef<[TypeId]>,
-) -> TypeId {
+) -> (TypeId, usize) {
     let mut arguments_iter = arguments.as_ref().iter().copied();
+    let mut skolemized = 0;
 
     safe_loop! {
         type_id = state.normalize_type(type_id);
@@ -158,15 +160,17 @@ pub fn instantiate_with_arguments(
                 let inner = *inner;
 
                 let argument_type = arguments_iter.next().unwrap_or_else(|| {
+                    skolemized += 1;
                     let skolem = Variable::Skolem(binder_level, binder_kind);
                     state.storage.intern(Type::Variable(skolem))
                 });
 
-                type_id = substitute::SubstituteBound::on(state, binder_level, argument_type, inner);
+                type_id =
+                    substitute::SubstituteBound::on(state, binder_level, argument_type, inner);
             }
             _ => break,
         }
     }
 
-    type_id
+    (type_id, skolemized)
 }

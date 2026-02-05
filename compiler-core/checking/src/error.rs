@@ -94,6 +94,7 @@ pub enum ErrorKind {
     ExpectedNewtype {
         type_message: TypeErrorMessageId,
     },
+    InvalidNewtypeDeriveSkolemArguments,
     NoInstanceFound {
         constraint: TypeErrorMessageId,
     },

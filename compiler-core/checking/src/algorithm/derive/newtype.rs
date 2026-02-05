@@ -39,7 +39,7 @@ where
         return Ok(());
     }
 
-    let inner_type =
+    let (inner_type, _) =
         derive::get_newtype_inner(state, context, newtype_file, newtype_id, newtype_type)?;
 
     let _ = unification::unify(state, context, wildcard_type, inner_type);

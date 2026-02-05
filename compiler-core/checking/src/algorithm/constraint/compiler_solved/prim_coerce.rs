@@ -97,7 +97,7 @@ where
         && is_newtype(context, file_id, type_id)?
     {
         if is_constructor_in_scope(context, file_id, type_id)? {
-            let inner = derive::get_newtype_inner(state, context, file_id, type_id, left)?;
+            let (inner, _) = derive::get_newtype_inner(state, context, file_id, type_id, left)?;
             let constraint = make_coercible_constraint(state, context, inner, right);
             return Ok(NewtypeCoercionResult::Success(MatchInstance::Match {
                 constraints: vec![constraint],
@@ -113,7 +113,7 @@ where
         && is_newtype(context, file_id, type_id)?
     {
         if is_constructor_in_scope(context, file_id, type_id)? {
-            let inner = derive::get_newtype_inner(state, context, file_id, type_id, right)?;
+            let (inner, _) = derive::get_newtype_inner(state, context, file_id, type_id, right)?;
             let constraint = make_coercible_constraint(state, context, left, inner);
             return Ok(NewtypeCoercionResult::Success(MatchInstance::Match {
                 constraints: vec![constraint],

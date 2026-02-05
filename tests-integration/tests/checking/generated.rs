@@ -583,3 +583,7 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_283_type_operator_synonym_expansion_main() { run_test("283_type_operator_synonym_expansion", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_284_type_operator_synonym_with_binders_main() { run_test("284_type_operator_synonym_with_binders", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_285_derive_newtype_higher_kinded_main() { run_test("285_derive_newtype_higher_kinded", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_286_invalid_vector_newtype_derive_main() { run_test("286_invalid_vector_newtype_derive", "Main"); }

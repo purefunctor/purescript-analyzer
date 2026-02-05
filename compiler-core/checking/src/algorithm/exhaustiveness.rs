@@ -850,7 +850,8 @@ where
 {
     let constructor_type = derive::lookup_local_term_type(state, context, file_id, term_id)?;
     if let Some(constructor_type) = constructor_type {
-        let constructor = toolkit::instantiate_with_arguments(state, constructor_type, arguments);
+        let (constructor, _) =
+            toolkit::instantiate_with_arguments(state, constructor_type, arguments);
         let (fields, _) = toolkit::extract_function_arguments(state, constructor);
         Ok(fields)
     } else {

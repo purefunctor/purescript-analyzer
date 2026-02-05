@@ -313,6 +313,12 @@ impl ToDiagnostics for CheckError {
                 "CoercibleConstructorNotInScope",
                 "Constructor not in scope for Coercible".to_string(),
             ),
+            ErrorKind::InvalidNewtypeDeriveSkolemArguments => (
+                Severity::Error,
+                "InvalidNewtypeDeriveSkolemArguments",
+                "Cannot derive newtype instance where skolemised arguments do not appear trailing in the inner type."
+                    .to_string(),
+            ),
             ErrorKind::RedundantPatterns { patterns } => {
                 let patterns = patterns.join(", ");
                 (

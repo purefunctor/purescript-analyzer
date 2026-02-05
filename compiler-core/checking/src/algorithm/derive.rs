@@ -19,7 +19,7 @@ use crate::ExternalQueries;
 use crate::algorithm::safety::safe_loop;
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::{kind, term_item, toolkit, transfer};
-use crate::core::{Type, TypeId, debruijn};
+use crate::core::{Type, TypeId, Variable, debruijn};
 use crate::error::{ErrorKind, ErrorStep};
 
 /// Input fields for [`check_derive`].
@@ -196,9 +196,50 @@ where
         return Ok(());
     }
 
-    let inner_type = get_newtype_inner(state, context, newtype_file, newtype_id, newtype_type)?;
+    // Extract the inner type for a given newtype, instantiating any instance
+    // head arguments. For classes that expect higher-kinded arguments like
+    // `Eq1`, the unspecified arguments are skolemised and we keep track of
+    // the count for validation in the next step.
+    //
+    // derive newtype instance Eq NonZero
+    //
+    //   inner_type := Int
+    //   skolem_count := 0
+    //
+    // derive newtype instance Eq1 (Vector n)
+    //
+    //   inner_type := Array ~a
+    //   skolem_count := 1
+    //
+    let (inner_type, skolem_count) =
+        get_newtype_inner(state, context, newtype_file, newtype_id, newtype_type)?;
 
-    // Build `Class t1 t2 Inner` given the constraint `Class t1 t2 Newtype`
+    // Classes like `Eq1` expect a higher-kinded `Type -> Type` argument.
+    // In order to derive the `Type -> Type` required to build the delegate
+    // constraint for `Eq1`, we expect that the inner type is a chain of
+    // type applications that can be peeled to reveal the expected kind.
+    //
+    // This peeling is only sound if the arguments being removed are the
+    // skolem variables that we introduced previously, and if we found an
+    // exact `skolem_count` of them. For example:
+    //
+    // derive newtype instance Eq1 (Vector n)
+    //
+    //   inner_type := Array ~a
+    //   skolem_count := 1
+    //
+    //   inner_type := Array
+    //   delegate_constraint := Eq1 Array
+    //
+    let inner_type = if skolem_count == 0 {
+        inner_type
+    } else if let Some(inner_type) = try_peel_trailing_skolems(state, inner_type, skolem_count) {
+        inner_type
+    } else {
+        state.insert_error(ErrorKind::InvalidNewtypeDeriveSkolemArguments);
+        return Ok(());
+    };
+
     let delegate_constraint = {
         let class_type = state.storage.intern(Type::Constructor(input.class_file, input.class_id));
 
@@ -215,6 +256,32 @@ where
 
     state.constraints.push_wanted(delegate_constraint);
     tools::solve_and_report_constraints(state, context)
+}
+
+fn try_peel_trailing_skolems(
+    state: &mut CheckState,
+    mut type_id: TypeId,
+    mut count: usize,
+) -> Option<TypeId> {
+    safe_loop! {
+        if count == 0 {
+            break Some(type_id);
+        }
+        type_id = state.normalize_type(type_id);
+        if let Type::Application(function, argument) | Type::KindApplication(function, argument) =
+            state.storage[type_id]
+        {
+            let argument = state.normalize_type(argument);
+            if matches!(state.storage[argument], Type::Variable(Variable::Skolem(_, _))) {
+                count -= 1;
+                type_id = function;
+            } else {
+                break None;
+            }
+        } else {
+            break None;
+        }
+    }
 }
 
 pub fn extract_type_constructor(
@@ -272,30 +339,33 @@ where
 ///
 /// Newtypes have exactly one constructor with exactly one field.
 /// This function extracts that field type, substituting any type parameters.
+/// If not enough type arguments are supplied, it skolemises the remaining
+/// binders and returns the skolem count.
 pub fn get_newtype_inner<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     newtype_file: FileId,
     newtype_id: TypeItemId,
     newtype_type: TypeId,
-) -> QueryResult<TypeId>
+) -> QueryResult<(TypeId, usize)>
 where
     Q: ExternalQueries,
 {
     let constructors = tools::lookup_data_constructors(context, newtype_file, newtype_id)?;
 
     let [constructor_id] = constructors[..] else {
-        return Ok(context.prim.unknown);
+        return Ok((context.prim.unknown, 0));
     };
 
     let constructor_type = lookup_local_term_type(state, context, newtype_file, constructor_id)?;
     let Some(constructor_type) = constructor_type else {
-        return Ok(context.prim.unknown);
+        return Ok((context.prim.unknown, 0));
     };
 
     let arguments = toolkit::extract_all_applications(state, newtype_type);
-    let fields = instantiate_constructor_fields(state, constructor_type, &arguments);
-    Ok(fields.into_iter().next().unwrap_or(context.prim.unknown))
+    let (fields, skolem_count) =
+        instantiate_constructor_fields(state, constructor_type, &arguments);
+    Ok((fields.into_iter().next().unwrap_or(context.prim.unknown), skolem_count))
 }
 
 /// Generates constraints for all fields of across all constructors.
@@ -330,7 +400,7 @@ where
         let constructor_type = lookup_local_term_type(state, context, data_file, constructor_id)?;
         let Some(constructor_type) = constructor_type else { continue };
 
-        let field_types = instantiate_constructor_fields(state, constructor_type, &arguments);
+        let (field_types, _) = instantiate_constructor_fields(state, constructor_type, &arguments);
         for field_type in field_types {
             higher_kinded::generate_constraint(state, context, field_type, class, class1);
         }
@@ -343,7 +413,8 @@ where
 ///
 /// This function uses [`toolkit::instantiate_with_arguments`] to specialise
 /// the constructor type with the given type arguments, then extracts the
-/// function arguments. Consider the ff:
+/// function arguments, returning the fields and the number of skolems that
+/// were introduced for the remaining arguments. Consider the ff:
 ///
 /// ```purescript
 /// data Either a b = Left a | Right b
@@ -356,6 +427,10 @@ where
 ///
 /// derive instance Eq (Proxy @Type Int)
 /// -- Proxy :: Proxy @Type Int
+///
+/// derive instance Eq1 (Vector n)
+/// -- Vector :: Vector n ~a
+/// -- skolem_count := 1
 /// ```
 ///
 /// The `arguments` parameter should be obtained by calling
@@ -365,8 +440,9 @@ fn instantiate_constructor_fields(
     state: &mut CheckState,
     constructor_type: TypeId,
     arguments: &[TypeId],
-) -> Vec<TypeId> {
-    let constructor = toolkit::instantiate_with_arguments(state, constructor_type, arguments);
+) -> (Vec<TypeId>, usize) {
+    let (constructor, skolem_count) =
+        toolkit::instantiate_with_arguments(state, constructor_type, arguments);
     let (fields, _) = toolkit::extract_function_arguments(state, constructor);
-    fields
+    (fields, skolem_count)
 }
