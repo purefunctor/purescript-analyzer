@@ -122,6 +122,24 @@ pub fn collect_constraints(state: &mut CheckState, mut type_id: TypeId) -> TypeI
     }
 }
 
+/// Collects [`Type::Constrained`] as given constraints.
+///
+/// Peels constraint layers from a type, pushing each as a given rather than
+/// a wanted. Used when the expected type carries constraints that should
+/// discharge wanted constraints from the inferred type e.g. `unsafePartial`
+/// discharging `Partial`.
+pub fn collect_given_constraints(state: &mut CheckState, mut type_id: TypeId) -> TypeId {
+    safe_loop! {
+        type_id = state.normalize_type(type_id);
+        if let Type::Constrained(constraint, constrained) = state.storage[type_id] {
+            state.constraints.push_given(constraint);
+            type_id = constrained;
+        } else {
+            break type_id;
+        }
+    }
+}
+
 /// [`instantiate_forall`] then [`collect_constraints`].
 pub fn instantiate_constrained(state: &mut CheckState, type_id: TypeId) -> TypeId {
     let type_id = instantiate_forall(state, type_id);

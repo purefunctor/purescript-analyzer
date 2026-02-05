@@ -589,3 +589,7 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_286_invalid_vector_newtype_derive_main() { run_test("286_invalid_vector_newtype_derive", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_287_lambda_partial_main() { run_test("287_lambda_partial", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_288_unsafe_partial_application_main() { run_test("288_unsafe_partial_application", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_289_custom_constraint_discharge_main() { run_test("289_custom_constraint_discharge", "Main"); }

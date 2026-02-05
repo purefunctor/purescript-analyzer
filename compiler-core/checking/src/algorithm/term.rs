@@ -50,15 +50,32 @@ where
         // than leaking into unification. Skipped for higher-rank
         // arguments where constraints must match structurally.
         let expected = state.normalize_type(expected);
-        let inferred =
-            if matches!(state.storage[expected], Type::Forall(..) | Type::Constrained(..)) {
-                inferred
-            } else {
-                toolkit::instantiate_constrained(state, inferred)
-            };
-        unification::subtype_with_mode(state, context, inferred, expected, ElaborationMode::No)?;
-        crate::trace_fields!(state, context, { inferred = inferred, expected = expected });
-        Ok(inferred)
+        if matches!(state.storage[expected], Type::Constrained(..)) {
+            // Peel constraints from expected as givens so they can
+            // discharge wanted constraints from the inferred type
+            // e.g. unsafePartial discharging Partial
+            let expected = toolkit::collect_given_constraints(state, expected);
+            let inferred = toolkit::instantiate_constrained(state, inferred);
+            unification::subtype_with_mode(
+                state, context, inferred, expected, ElaborationMode::No,
+            )?;
+            crate::trace_fields!(state, context, { inferred = inferred, expected = expected });
+            Ok(inferred)
+        } else if matches!(state.storage[expected], Type::Forall(..)) {
+            // Higher-rank, keep inferred as-is for structural matching.
+            unification::subtype_with_mode(
+                state, context, inferred, expected, ElaborationMode::No,
+            )?;
+            crate::trace_fields!(state, context, { inferred = inferred, expected = expected });
+            Ok(inferred)
+        } else {
+            let inferred = toolkit::instantiate_constrained(state, inferred);
+            unification::subtype_with_mode(
+                state, context, inferred, expected, ElaborationMode::No,
+            )?;
+            crate::trace_fields!(state, context, { inferred = inferred, expected = expected });
+            Ok(inferred)
+        }
     })
 }
 
