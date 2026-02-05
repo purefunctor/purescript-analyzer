@@ -109,6 +109,27 @@ pub fn instantiate_forall(state: &mut CheckState, mut type_id: TypeId) -> TypeId
     }
 }
 
+/// Skolemises [`Type::Forall`] by replacing bound variables with skolem constants.
+///
+/// This mirrors [`instantiate_forall`] but introduces skolem variables instead
+/// of unification variables. Skolem variables are rigid, they cannot be unified
+/// with other types, enforcing parametricity over the quantified variable.
+pub fn skolemise_forall(state: &mut CheckState, mut type_id: TypeId) -> TypeId {
+    safe_loop! {
+        type_id = state.normalize_type(type_id);
+        if let Type::Forall(ref binder, inner) = state.storage[type_id] {
+            let binder_level = binder.level;
+            let binder_kind = binder.kind;
+
+            let v = Variable::Skolem(binder_level, binder_kind);
+            let t = state.storage.intern(Type::Variable(v));
+            type_id = substitute::SubstituteBound::on(state, binder_level, t, inner);
+        } else {
+            break type_id;
+        }
+    }
+}
+
 /// Collects [`Type::Constrained`] as wanted constraints.
 pub fn collect_constraints(state: &mut CheckState, mut type_id: TypeId) -> TypeId {
     safe_loop! {

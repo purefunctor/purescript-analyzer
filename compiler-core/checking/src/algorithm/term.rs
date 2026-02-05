@@ -62,7 +62,13 @@ where
             crate::trace_fields!(state, context, { inferred = inferred, expected = expected });
             Ok(inferred)
         } else if matches!(state.storage[expected], Type::Forall(..)) {
-            // Higher-rank, keep inferred as-is for structural matching.
+            // Higher-rank expected type. Skolemise forall and collect
+            // given constraints on the expected side, then instantiate and
+            // collect wanted constraints on the inferred side, before
+            // comparing the unwrapped body types.
+            let expected = toolkit::skolemise_forall(state, expected);
+            let expected = toolkit::collect_given_constraints(state, expected);
+            let inferred = toolkit::instantiate_constrained(state, inferred);
             unification::subtype_with_mode(
                 state, context, inferred, expected, ElaborationMode::No,
             )?;

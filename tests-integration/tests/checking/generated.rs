@@ -597,3 +597,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_290_apply_constraint_discharge_main() { run_test("290_apply_constraint_discharge", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_291_compose_constraint_discharge_main() { run_test("291_compose_constraint_discharge", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_292_higher_rank_constraint_discharge_main() { run_test("292_higher_rank_constraint_discharge", "Main"); }
