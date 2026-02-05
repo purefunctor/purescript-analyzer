@@ -12,7 +12,7 @@ use building_types::QueryResult;
 use files::FileId;
 use indexing::TypeItemId;
 use itertools::Itertools;
-use lowering::GroupedModule;
+use lowering::{GroupedModule, LoweredModule, TypeItemIr};
 
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::{kind, substitute, transfer, unification};
@@ -325,6 +325,16 @@ enum DiscoveredSynonym {
     Additional { synonym: Synonym, arguments: Arc<[TypeId]>, additional: Vec<TypeId> },
 }
 
+fn resolve_operator_target(
+    lowered: &LoweredModule,
+    item_id: TypeItemId,
+) -> Option<(FileId, TypeItemId)> {
+    let TypeItemIr::Operator { resolution, .. } = lowered.info.get_type_item(item_id)? else {
+        return None;
+    };
+    *resolution
+}
+
 fn discover_synonym_application<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -410,6 +420,44 @@ where
                 Ok(Some(DiscoveredSynonym::Saturated { synonym, arguments }))
             } else {
                 Ok(Some(DiscoveredSynonym::Additional { synonym, arguments, additional }))
+            }
+        }
+
+        Type::OperatorApplication(operator_file_id, operator_item_id, left, right) => {
+            let resolution = if operator_file_id == context.id {
+                resolve_operator_target(&context.lowered, operator_item_id)
+            } else {
+                let lowered = context.queries.lowered(operator_file_id)?;
+                resolve_operator_target(&lowered, operator_item_id)
+            };
+
+            let Some((file_id, item_id)) = resolution else {
+                return Ok(None);
+            };
+
+            let Some((synonym, _)) = lookup_file_synonym(state, context, file_id, item_id)? else {
+                return Ok(None);
+            };
+
+            if is_recursive_synonym(context, file_id, item_id)? {
+                state.insert_error(ErrorKind::RecursiveSynonymExpansion { file_id, item_id });
+                return Ok(None);
+            }
+
+            let arguments = vec![left, right];
+
+            if arguments.len() != synonym.type_variables.0 as usize {
+                return Ok(None);
+            }
+
+            if additional.is_empty() {
+                Ok(Some(DiscoveredSynonym::Saturated { synonym, arguments }))
+            } else {
+                Ok(Some(DiscoveredSynonym::Additional {
+                    synonym,
+                    arguments: Arc::from(arguments),
+                    additional,
+                }))
             }
         }
 

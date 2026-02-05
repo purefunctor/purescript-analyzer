@@ -579,3 +579,7 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_281_sectioned_constraint_generation_main() { run_test("281_sectioned_constraint_generation", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_282_higher_rank_unification_main() { run_test("282_higher_rank_unification", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_283_type_operator_synonym_expansion_main() { run_test("283_type_operator_synonym_expansion", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_284_type_operator_synonym_with_binders_main() { run_test("284_type_operator_synonym_with_binders", "Main"); }
