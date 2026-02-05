@@ -273,6 +273,14 @@ where
         return Ok(state.allocate_wildcard(t));
     };
 
+    // The operator_id points to itself, thus we need to follow the
+    // resolution to find the constructor that it actually points to.
+    let Some((constructor_file_id, constructor_item_id)) =
+        resolve_term_operator(context, file_id, item_id)?
+    else {
+        return Ok(state.allocate_wildcard(t));
+    };
+
     let Some(OperatorBranchTypes { left, right, result }) =
         state.term_scope.lookup_operator_node(operator_id)
     else {
@@ -285,9 +293,35 @@ where
     let right_pattern = convert_operator_tree(state, context, right_tree, right)?;
 
     let constructor = PatternConstructor::DataConstructor {
-        file_id,
-        item_id,
+        file_id: constructor_file_id,
+        item_id: constructor_item_id,
         fields: vec![left_pattern, right_pattern],
     };
+
     Ok(state.allocate_constructor(constructor, result))
+}
+
+fn resolve_term_operator<Q>(
+    context: &CheckContext<Q>,
+    file_id: FileId,
+    item_id: TermItemId,
+) -> QueryResult<Option<(FileId, TermItemId)>>
+where
+    Q: ExternalQueries,
+{
+    let on_lowered = |lowered: &lowering::LoweredModule| {
+        if let Some(lowering::TermItemIr::Operator { resolution, .. }) =
+            lowered.info.get_term_item(item_id)
+        {
+            *resolution
+        } else {
+            None
+        }
+    };
+    if file_id == context.id {
+        Ok(on_lowered(&context.lowered))
+    } else {
+        let lowered = context.queries.lowered(file_id)?;
+        Ok(on_lowered(&lowered))
+    }
 }
