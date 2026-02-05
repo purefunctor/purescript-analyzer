@@ -59,6 +59,10 @@ where
         OperatorTree::Leaf(Some(type_id)) => match mode {
             OperatorKindMode::Infer => E::infer_surface(state, context, *type_id),
             OperatorKindMode::Check { expected_type } => {
+                // Peel constraints from the expected type as givens,
+                // so operator arguments like `unsafePartial $ expr`
+                // can discharge constraints like Partial properly.
+                let expected_type = toolkit::collect_given_constraints(state, expected_type);
                 E::check_surface(state, context, *type_id, expected_type)
             }
         },
@@ -122,6 +126,9 @@ where
     E::record_branch_types(state, operator_id, left_type, right_type, result_type);
 
     if let OperatorKindMode::Check { expected_type } = mode {
+        // Peel constraints from the expected type as givens,
+        // so operator result constraints can be discharged.
+        let expected_type = toolkit::collect_given_constraints(state, expected_type);
         let _ = unification::subtype(state, context, result_type, expected_type)?;
     }
 

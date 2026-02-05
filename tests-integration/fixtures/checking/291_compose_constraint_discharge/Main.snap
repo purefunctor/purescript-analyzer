@@ -1,0 +1,41 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Just :: forall (a :: Type). (a :: Type) -> Maybe (a :: Type)
+Nothing :: forall (a :: Type). Maybe (a :: Type)
+fromJust :: forall (a :: Type). Partial => Maybe (a :: Type) -> (a :: Type)
+compose ::
+  forall (a :: Type) (b :: Type) (c :: Type).
+    ((b :: Type) -> (c :: Type)) -> ((a :: Type) -> (b :: Type)) -> (a :: Type) -> (c :: Type)
+<<< ::
+  forall (a :: Type) (b :: Type) (c :: Type).
+    ((b :: Type) -> (c :: Type)) -> ((a :: Type) -> (b :: Type)) -> (a :: Type) -> (c :: Type)
+toArray :: forall (a :: Type). Maybe (a :: Type) -> Array (a :: Type)
+test ::
+  forall (a :: Type) (b :: Type).
+    (Array (a :: Type) -> Maybe (b :: Type)) -> Maybe (a :: Type) -> (b :: Type)
+test' ::
+  forall (t25 :: Type) (t30 :: Type).
+    (Array (t30 :: Type) -> Maybe (t25 :: Type)) -> Maybe (t30 :: Type) -> (t25 :: Type)
+
+Types
+Maybe :: Type -> Type
+
+Data
+Maybe
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+Maybe = [Representational]
+
+Diagnostics
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: Nothing
+  --> 7:1..7:46
+  |
+7 | fromJust :: forall a. Partial => Maybe a -> a
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -593,3 +593,7 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_288_unsafe_partial_application_main() { run_test("288_unsafe_partial_application", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_289_custom_constraint_discharge_main() { run_test("289_custom_constraint_discharge", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_290_apply_constraint_discharge_main() { run_test("290_apply_constraint_discharge", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_291_compose_constraint_discharge_main() { run_test("291_compose_constraint_discharge", "Main"); }
