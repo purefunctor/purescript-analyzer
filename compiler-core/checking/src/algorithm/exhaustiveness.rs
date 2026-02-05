@@ -961,6 +961,43 @@ where
     check_exhaustiveness_core(state, context, pattern_types, unconditional)
 }
 
+/// Returns `true` if any alternative in a conditional guard set is trivially true.
+fn has_trivially_true_alternative<Q>(
+    context: &CheckContext<Q>,
+    pattern_guarded: &[lowering::PatternGuarded],
+) -> bool
+where
+    Q: ExternalQueries,
+{
+    pattern_guarded.iter().any(|pg| {
+        !pg.pattern_guards.is_empty()
+            && pg.pattern_guards.iter().all(|g| is_trivially_true_guard(context, g))
+    })
+}
+
+/// Returns `true` if the guard is `true` or `otherwise` from `Data.Boolean`.
+fn is_trivially_true_guard<Q>(context: &CheckContext<Q>, guard: &lowering::PatternGuard) -> bool
+where
+    Q: ExternalQueries,
+{
+    if guard.binder.is_some() {
+        return false;
+    }
+    let Some(expr_id) = guard.expression else {
+        return false;
+    };
+    let Some(kind) = context.lowered.info.get_expression_kind(expr_id) else {
+        return false;
+    };
+    match kind {
+        lowering::ExpressionKind::Boolean { boolean: true } => true,
+        lowering::ExpressionKind::Variable {
+            resolution: Some(lowering::TermVariableResolution::Reference(file_id, term_id)),
+        } => context.known_terms.otherwise == Some((*file_id, *term_id)),
+        _ => false,
+    }
+}
+
 fn collect_unconditional_rows<Q, T, F>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -976,8 +1013,13 @@ where
     for item in items {
         let (binders, guarded) = to_binders(item);
 
-        if !matches!(guarded, Some(lowering::GuardedExpression::Unconditional { .. }) | None) {
-            continue;
+        match guarded {
+            Some(lowering::GuardedExpression::Unconditional { .. }) | None => {}
+            Some(lowering::GuardedExpression::Conditionals { pattern_guarded }) => {
+                if !has_trivially_true_alternative(context, pattern_guarded) {
+                    continue;
+                }
+            }
         }
 
         let mut pattern_row = vec![];

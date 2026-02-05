@@ -372,6 +372,7 @@ where
     pub prim_coerce: PrimCoerceCore,
     pub prim_type_error: PrimTypeErrorCore,
     pub known_types: KnownTypesCore,
+    pub known_terms: KnownTermsCore,
     pub known_reflectable: KnownReflectableCore,
     pub known_generic: Option<KnownGeneric>,
 
@@ -413,6 +414,7 @@ where
         let prim_coerce = PrimCoerceCore::collect(queries)?;
         let prim_type_error = PrimTypeErrorCore::collect(queries, state)?;
         let known_types = KnownTypesCore::collect(queries)?;
+        let known_terms = KnownTermsCore::collect(queries)?;
         let known_reflectable = KnownReflectableCore::collect(queries, &mut state.storage)?;
         let known_generic = KnownGeneric::collect(queries, &mut state.storage)?;
         let resolved = queries.resolved(id)?;
@@ -431,6 +433,7 @@ where
             prim_coerce,
             prim_type_error,
             known_types,
+            known_terms,
             known_reflectable,
             known_generic,
             id,
@@ -756,6 +759,21 @@ impl PrimTypeErrorCore {
     }
 }
 
+fn fetch_known_term(
+    queries: &impl ExternalQueries,
+    m: &str,
+    n: &str,
+) -> QueryResult<Option<(FileId, indexing::TermItemId)>> {
+    let Some(file_id) = queries.module_file(m) else {
+        return Ok(None);
+    };
+    let resolved = queries.resolved(file_id)?;
+    let Some((file_id, term_id)) = resolved.exports.lookup_term(n) else {
+        return Ok(None);
+    };
+    Ok(Some((file_id, term_id)))
+}
+
 fn fetch_known_type(
     queries: &impl ExternalQueries,
     m: &str,
@@ -909,6 +927,17 @@ impl KnownGeneric {
             no_arguments,
             argument,
         }))
+    }
+}
+
+pub struct KnownTermsCore {
+    pub otherwise: Option<(FileId, indexing::TermItemId)>,
+}
+
+impl KnownTermsCore {
+    fn collect(queries: &impl ExternalQueries) -> QueryResult<KnownTermsCore> {
+        let otherwise = fetch_known_term(queries, "Data.Boolean", "otherwise")?;
+        Ok(KnownTermsCore { otherwise })
     }
 }
 

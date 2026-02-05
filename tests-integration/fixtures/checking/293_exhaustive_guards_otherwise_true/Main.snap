@@ -1,0 +1,13 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+lessThan :: Int -> Int -> Boolean
+test :: Int -> Int
+test' :: Int -> Int
+test2 :: Int -> Int
+test2' :: Int -> Int
+
+Types

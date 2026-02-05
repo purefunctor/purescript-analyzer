@@ -15,8 +15,3 @@ warning[MissingPatterns]: Pattern match is not exhaustive. Missing: true
   |
 3 | testGuarded :: Boolean -> Int
   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-warning[MissingPatterns]: Pattern match is not exhaustive. Missing: _
-  --> 7:1..7:34
-  |
-7 | testGuardedBoth :: Boolean -> Int
-  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
