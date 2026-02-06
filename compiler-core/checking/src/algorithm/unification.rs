@@ -108,50 +108,16 @@ where
                 && subtype_with_mode(state, context, t1_result, t2_result, ElaborationMode::No)?)
         }
 
-        (Type::Application(t1_partial, t1_result), Type::Function(t2_argument, t2_result)) => {
-            let t1_partial = state.normalize_type(t1_partial);
-            if let Type::Application(t1_constructor, t1_argument) = state.storage[t1_partial] {
-                Ok(unify(state, context, t1_constructor, context.prim.function)?
-                    && subtype_with_mode(
-                        state,
-                        context,
-                        t2_argument,
-                        t1_argument,
-                        ElaborationMode::No,
-                    )?
-                    && subtype_with_mode(
-                        state,
-                        context,
-                        t1_result,
-                        t2_result,
-                        ElaborationMode::No,
-                    )?)
-            } else {
-                unify(state, context, t1, t2)
-            }
+        (Type::Application(_, _), Type::Function(t2_argument, t2_result)) => {
+            let t2 = state.storage.intern(Type::Application(context.prim.function, t2_argument));
+            let t2 = state.storage.intern(Type::Application(t2, t2_result));
+            subtype_with_mode(state, context, t1, t2, mode)
         }
 
-        (Type::Function(t1_argument, t1_result), Type::Application(t2_partial, t2_result)) => {
-            let t2_partial = state.normalize_type(t2_partial);
-            if let Type::Application(t2_constructor, t2_argument) = state.storage[t2_partial] {
-                Ok(unify(state, context, t2_constructor, context.prim.function)?
-                    && subtype_with_mode(
-                        state,
-                        context,
-                        t2_argument,
-                        t1_argument,
-                        ElaborationMode::No,
-                    )?
-                    && subtype_with_mode(
-                        state,
-                        context,
-                        t1_result,
-                        t2_result,
-                        ElaborationMode::No,
-                    )?)
-            } else {
-                unify(state, context, t1, t2)
-            }
+        (Type::Function(t1_argument, t1_result), Type::Application(_, _)) => {
+            let t1 = state.storage.intern(Type::Application(context.prim.function, t1_argument));
+            let t1 = state.storage.intern(Type::Application(t1, t1_result));
+            subtype_with_mode(state, context, t1, t2, mode)
         }
 
         (_, Type::Forall(ref binder, inner)) => {
@@ -259,26 +225,19 @@ where
         //   monomorphic = identity
         //
         // Unifying `?a ?t ?t` and `a -> a` solves `?a := Function`.
-        (Type::Application(t1_partial, t1_result), Type::Function(t2_argument, t2_result)) => {
-            let t1_partial = state.normalize_type(t1_partial);
-            if let Type::Application(t1_constructor, t1_argument) = state.storage[t1_partial] {
-                unify(state, context, t1_constructor, context.prim.function)?
-                    && unify(state, context, t1_argument, t2_argument)?
-                    && unify(state, context, t1_result, t2_result)?
-            } else {
-                false
-            }
+        //
+        // We reconstruct the `Application`-based form for a `Function` as the
+        // type to unify against, allowing `Application(?f, ?x)` to unify.
+        (Type::Application(_, _), Type::Function(t2_argument, t2_result)) => {
+            let t2 = state.storage.intern(Type::Application(context.prim.function, t2_argument));
+            let t2 = state.storage.intern(Type::Application(t2, t2_result));
+            unify(state, context, t1, t2)?
         }
 
-        (Type::Function(t1_argument, t1_result), Type::Application(t2_partial, t2_result)) => {
-            let t2_partial = state.normalize_type(t2_partial);
-            if let Type::Application(t2_constructor, t2_argument) = state.storage[t2_partial] {
-                unify(state, context, t2_constructor, context.prim.function)?
-                    && unify(state, context, t1_argument, t2_argument)?
-                    && unify(state, context, t1_result, t2_result)?
-            } else {
-                false
-            }
+        (Type::Function(t1_argument, t1_result), Type::Application(_, _)) => {
+            let t1 = state.storage.intern(Type::Application(context.prim.function, t1_argument));
+            let t1 = state.storage.intern(Type::Application(t1, t1_result));
+            unify(state, context, t1, t2)?
         }
 
         (Type::Row(t1_row), Type::Row(t2_row)) => unify_rows(state, context, t1_row, t2_row)?,

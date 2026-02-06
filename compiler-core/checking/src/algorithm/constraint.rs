@@ -542,6 +542,18 @@ where
                 .and_also(|| match_type(state, context, bindings, equalities, w_result, g_result))
         }
 
+        (&Type::Function(w_argument, w_result), &Type::Application(_, _)) => {
+            let wanted = state.storage.intern(Type::Application(context.prim.function, w_argument));
+            let wanted = state.storage.intern(Type::Application(wanted, w_result));
+            match_type(state, context, bindings, equalities, wanted, given)
+        }
+
+        (&Type::Application(_, _), &Type::Function(g_argument, g_result)) => {
+            let given = state.storage.intern(Type::Application(context.prim.function, g_argument));
+            let given = state.storage.intern(Type::Application(given, g_result));
+            match_type(state, context, bindings, equalities, wanted, given)
+        }
+
         (
             &Type::KindApplication(w_function, w_argument),
             &Type::KindApplication(g_function, g_argument),
@@ -681,7 +693,15 @@ where
 /// found in value signatures rather than top-level instance declarations;
 /// unlike [`match_type`], this function does not build bindings or equalities
 /// for [`Variable::Bound`] or [`Variable::Implicit`] variables.
-fn match_given_type(state: &mut CheckState, wanted: TypeId, given: TypeId) -> MatchType {
+fn match_given_type<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    wanted: TypeId,
+    given: TypeId,
+) -> MatchType
+where
+    Q: ExternalQueries,
+{
     let wanted = state.normalize_type(wanted);
     let given = state.normalize_type(given);
 
@@ -700,7 +720,7 @@ fn match_given_type(state: &mut CheckState, wanted: TypeId, given: TypeId) -> Ma
             Type::Variable(Variable::Bound(g_level, g_kind)),
         ) => {
             if w_level == g_level {
-                match_given_type(state, *w_kind, *g_kind)
+                match_given_type(state, context, *w_kind, *g_kind)
             } else {
                 MatchType::Apart
             }
@@ -711,7 +731,7 @@ fn match_given_type(state: &mut CheckState, wanted: TypeId, given: TypeId) -> Ma
             Type::Variable(Variable::Skolem(g_level, g_kind)),
         ) => {
             if w_level == g_level {
-                match_given_type(state, *w_kind, *g_kind)
+                match_given_type(state, context, *w_kind, *g_kind)
             } else {
                 MatchType::Apart
             }
@@ -720,26 +740,39 @@ fn match_given_type(state: &mut CheckState, wanted: TypeId, given: TypeId) -> Ma
         (
             &Type::Application(w_function, w_argument),
             &Type::Application(g_function, g_argument),
-        ) => match_given_type(state, w_function, g_function)
-            .and_also(|| match_given_type(state, w_argument, g_argument)),
+        ) => match_given_type(state, context, w_function, g_function)
+            .and_also(|| match_given_type(state, context, w_argument, g_argument)),
 
         (&Type::Function(w_argument, w_result), &Type::Function(g_argument, g_result)) => {
-            match_given_type(state, w_argument, g_argument)
-                .and_also(|| match_given_type(state, w_result, g_result))
+            match_given_type(state, context, w_argument, g_argument)
+                .and_also(|| match_given_type(state, context, w_result, g_result))
+        }
+
+        (&Type::Function(w_argument, w_result), &Type::Application(_, _)) => {
+            let wanted = state.storage.intern(Type::Application(context.prim.function, w_argument));
+            let wanted = state.storage.intern(Type::Application(wanted, w_result));
+            match_given_type(state, context, wanted, given)
+        }
+
+        (&Type::Application(_, _), &Type::Function(g_argument, g_result)) => {
+            let given = state.storage.intern(Type::Application(context.prim.function, g_argument));
+            let given = state.storage.intern(Type::Application(given, g_result));
+            match_given_type(state, context, wanted, given)
         }
 
         (
             &Type::KindApplication(w_function, w_argument),
             &Type::KindApplication(g_function, g_argument),
-        ) => match_given_type(state, w_function, g_function)
-            .and_also(|| match_given_type(state, w_argument, g_argument)),
+        ) => match_given_type(state, context, w_function, g_function)
+            .and_also(|| match_given_type(state, context, w_argument, g_argument)),
 
         (
             &Type::OperatorApplication(f1, t1, l1, r1),
             &Type::OperatorApplication(f2, t2, l2, r2),
         ) => {
             if f1 == f2 && t1 == t2 {
-                match_given_type(state, l1, l2).and_also(|| match_given_type(state, r1, r2))
+                match_given_type(state, context, l1, l2)
+                    .and_also(|| match_given_type(state, context, r1, r2))
             } else {
                 MatchType::Apart
             }
@@ -750,7 +783,7 @@ fn match_given_type(state: &mut CheckState, wanted: TypeId, given: TypeId) -> Ma
                 let a1 = Arc::clone(a1);
                 let a2 = Arc::clone(a2);
                 iter::zip(a1.iter(), a2.iter()).fold(MatchType::Match, |result, (&a1, &a2)| {
-                    result.and_also(|| match_given_type(state, a1, a2))
+                    result.and_also(|| match_given_type(state, context, a1, a2))
                 })
             } else {
                 MatchType::Apart
@@ -799,6 +832,11 @@ fn can_unify(state: &mut CheckState, t1: TypeId, t2: TypeId) -> CanUnify {
             can_unify(state, t1_argument, t2_argument)
                 .and_also(|| can_unify(state, t1_result, t2_result))
         }
+
+        // Function(a, b) and Application(Application(head, a), b) can potentially unify
+        // when head resolves to the Function constructor.
+        (&Type::Function(..), &Type::Application(..))
+        | (&Type::Application(..), &Type::Function(..)) => Unify,
 
         (
             &Type::KindApplication(t1_function, t1_argument),
@@ -964,7 +1002,7 @@ where
 /// Matches a wanted constraint to given constraints.
 fn match_given_instances<Q>(
     state: &mut CheckState,
-    _context: &CheckContext<Q>,
+    context: &CheckContext<Q>,
     wanted: &ConstraintApplication,
     given: &[ConstraintApplication],
 ) -> QueryResult<Option<MatchInstance>>
@@ -985,7 +1023,7 @@ where
         for (index, (&wanted_argument, &given_argument)) in
             wanted.arguments.iter().zip(&given.arguments).enumerate()
         {
-            let match_result = match_given_type(state, wanted_argument, given_argument);
+            let match_result = match_given_type(state, context, wanted_argument, given_argument);
 
             if matches!(match_result, MatchType::Apart) {
                 continue 'given;
