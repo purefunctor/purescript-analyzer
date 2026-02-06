@@ -15,7 +15,7 @@ use lowering::StringKind;
 use smol_str::SmolStr;
 
 use crate::ExternalQueries;
-use crate::algorithm::derive::{self, tools};
+use crate::algorithm::derive::{self, DeriveStrategy, tools};
 use crate::algorithm::state::{CheckContext, CheckState, KnownGeneric};
 use crate::algorithm::{toolkit, unification};
 use crate::core::{Type, TypeId};
@@ -25,7 +25,7 @@ pub fn check_derive_generic<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     input: tools::ElaboratedDerive,
-) -> QueryResult<()>
+) -> QueryResult<Option<DeriveStrategy>>
 where
     Q: ExternalQueries,
 {
@@ -36,13 +36,13 @@ where
             expected: 2,
             actual: input.arguments.len(),
         });
-        return Ok(());
+        return Ok(None);
     };
 
     let Some((data_file, data_id)) = derive::extract_type_constructor(state, derived_type) else {
         let type_message = state.render_local_type(context, derived_type);
         state.insert_error(ErrorKind::CannotDeriveForType { type_message });
-        return Ok(());
+        return Ok(None);
     };
 
     let Some(ref known_generic) = context.known_generic else {
@@ -50,7 +50,7 @@ where
             class_file: input.class_file,
             class_id: input.class_id,
         });
-        return Ok(());
+        return Ok(None);
     };
 
     let constructors = tools::lookup_data_constructors(context, data_file, data_id)?;
@@ -60,11 +60,9 @@ where
 
     let _ = unification::unify(state, context, wildcard_type, generic_rep)?;
 
-    tools::push_given_constraints(state, &input.constraints);
-    tools::emit_superclass_constraints(state, context, &input)?;
-    tools::register_derived_instance(state, context, input);
+    tools::register_derived_instance(state, context, input)?;
 
-    Ok(())
+    Ok(Some(DeriveStrategy::HeadOnly))
 }
 
 fn build_generic_rep<Q>(

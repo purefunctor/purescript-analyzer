@@ -35,16 +35,16 @@ error[CannotUnify]: Cannot unify 'Type' with 'Type -> Type'
   |
 6 | derive instance Functor (Pair Int String)
   |                         ^~~~~~~~~~~~~~~~~
-error[CannotDeriveForType]: Cannot derive for type: Pair Int String
-  --> 6:1..6:42
-  |
-6 | derive instance Functor (Pair Int String)
-  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 error[CannotUnify]: Cannot unify 'Type' with 'Type -> Type'
   --> 9:25..9:29
   |
 9 | derive instance Functor Unit
   |                         ^~~~
+error[CannotDeriveForType]: Cannot derive for type: Pair Int String
+  --> 6:1..6:42
+  |
+6 | derive instance Functor (Pair Int String)
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 error[CannotDeriveForType]: Cannot derive for type: Unit
   --> 9:1..9:29
   |

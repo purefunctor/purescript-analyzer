@@ -98,7 +98,7 @@ derive Eq1 (Rec :: Type -> Type)
 derive (Eq1 (&0 :: Type -> Type), Eq (&1 :: Type)) => Eq (Wrap @Type (&0 :: Type -> Type) (&1 :: Type) :: Type)
 
 Diagnostics
-error[NoInstanceFound]: No instance found for: Eq ((&1 :: Type -> Type) (~&2 :: Type))
+error[NoInstanceFound]: No instance found for: Eq ((&1 :: Type -> Type) (~&0 :: Type))
   --> 35:1..35:43
    |
 35 | derive instance Eq1 f => Eq1 (Compose f g)

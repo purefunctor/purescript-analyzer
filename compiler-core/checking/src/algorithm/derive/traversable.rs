@@ -3,17 +3,17 @@
 use building_types::QueryResult;
 
 use crate::ExternalQueries;
-use crate::algorithm::derive::variance::{Variance, VarianceConfig, generate_variance_constraints};
-use crate::algorithm::derive::{self, tools};
+use crate::algorithm::derive::variance::{Variance, VarianceConfig};
+use crate::algorithm::derive::{self, DeriveStrategy, tools};
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::error::ErrorKind;
 
-/// Checks a derive instance for Traversable.
+/// Checks a derive instance head for Traversable.
 pub fn check_derive_traversable<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     input: tools::ElaboratedDerive,
-) -> QueryResult<()>
+) -> QueryResult<Option<DeriveStrategy>>
 where
     Q: ExternalQueries,
 {
@@ -24,31 +24,28 @@ where
             expected: 1,
             actual: input.arguments.len(),
         });
-        return Ok(());
+        return Ok(None);
     };
 
     let Some((data_file, data_id)) = derive::extract_type_constructor(state, derived_type) else {
         let type_message = state.render_local_type(context, derived_type);
         state.insert_error(ErrorKind::CannotDeriveForType { type_message });
-        return Ok(());
+        return Ok(None);
     };
 
     let traversable = Some((input.class_file, input.class_id));
-    tools::push_given_constraints(state, &input.constraints);
-    tools::emit_superclass_constraints(state, context, &input)?;
-    tools::register_derived_instance(state, context, input);
+    tools::register_derived_instance(state, context, input)?;
 
     let config = VarianceConfig::Single((Variance::Covariant, traversable));
-    generate_variance_constraints(state, context, data_file, data_id, derived_type, config)?;
-    tools::solve_and_report_constraints(state, context)
+    Ok(Some(DeriveStrategy::VarianceConstraints { data_file, data_id, derived_type, config }))
 }
 
-/// Checks a derive instance for Bitraversable.
+/// Checks a derive instance head for Bitraversable.
 pub fn check_derive_bitraversable<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     input: tools::ElaboratedDerive,
-) -> QueryResult<()>
+) -> QueryResult<Option<DeriveStrategy>>
 where
     Q: ExternalQueries,
 {
@@ -59,26 +56,23 @@ where
             expected: 1,
             actual: input.arguments.len(),
         });
-        return Ok(());
+        return Ok(None);
     };
 
     let Some((data_file, data_id)) = derive::extract_type_constructor(state, derived_type) else {
         let type_message = state.render_local_type(context, derived_type);
         state.insert_error(ErrorKind::CannotDeriveForType { type_message });
-        return Ok(());
+        return Ok(None);
     };
 
     // Bitraversable derivation emits Traversable constraints for wrapped parameters.
     let traversable = context.known_types.traversable;
-    tools::push_given_constraints(state, &input.constraints);
-    tools::emit_superclass_constraints(state, context, &input)?;
-    tools::register_derived_instance(state, context, input);
+    tools::register_derived_instance(state, context, input)?;
 
     let config = VarianceConfig::Pair(
         (Variance::Covariant, traversable),
         (Variance::Covariant, traversable),
     );
 
-    generate_variance_constraints(state, context, data_file, data_id, derived_type, config)?;
-    tools::solve_and_report_constraints(state, context)
+    Ok(Some(DeriveStrategy::VarianceConstraints { data_file, data_id, derived_type, config }))
 }

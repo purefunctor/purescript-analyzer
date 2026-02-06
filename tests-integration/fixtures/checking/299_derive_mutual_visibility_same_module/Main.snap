@@ -1,0 +1,32 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Hours :: DurationComponent
+Minutes :: DurationComponent
+Seconds :: DurationComponent
+Duration :: DurationComponent -> Int -> Duration
+
+Types
+DurationComponent :: Type
+Duration :: Type
+
+Data
+DurationComponent
+  Quantified = :0
+  Kind = :0
+
+Duration
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+DurationComponent = []
+Duration = []
+
+Derived
+derive Eq (Duration :: Type)
+derive Eq (DurationComponent :: Type)

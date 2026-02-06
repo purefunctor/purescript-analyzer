@@ -77,6 +77,7 @@ impl DerivedSkolems {
 pub type ParameterConfig = (Variance, Option<(FileId, TypeItemId)>);
 
 /// Configuration for variance-aware derivation.
+#[derive(Clone, Copy)]
 pub enum VarianceConfig {
     Single(ParameterConfig),
     Pair(ParameterConfig, ParameterConfig),

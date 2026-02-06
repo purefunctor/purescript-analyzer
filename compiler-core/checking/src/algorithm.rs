@@ -86,9 +86,10 @@ pub fn check_source(queries: &impl ExternalQueries, file_id: FileId) -> QueryRes
 
     check_term_signatures(&mut state, &context)?;
     check_instance_heads(&mut state, &context)?;
-    check_derive_heads(&mut state, &context)?;
+    let derive_results = check_derive_heads(&mut state, &context)?;
     check_value_groups(&mut state, &context)?;
     check_instance_members(&mut state, &context)?;
+    check_derive_members(&mut state, &context, &derive_results)?;
 
     Ok(state.checked)
 }
@@ -282,7 +283,7 @@ where
 fn check_derive_heads<Q>(
     state: &mut state::CheckState,
     context: &state::CheckContext<Q>,
-) -> QueryResult<()>
+) -> QueryResult<Vec<derive::DeriveHeadResult>>
 where
     Q: ExternalQueries,
 {
@@ -290,6 +291,8 @@ where
         Scc::Base(item) | Scc::Recursive(item) => slice::from_ref(item),
         Scc::Mutual(items) => items.as_slice(),
     });
+
+    let mut results = vec![];
 
     for &item_id in items {
         let Some(TermItemIr::Derive { newtype, constraints, arguments, resolution }) =
@@ -316,9 +319,25 @@ where
             is_newtype: *newtype,
         };
 
-        derive::check_derive(state, context, check_derive)?;
+        if let Some(result) = derive::check_derive_head(state, context, check_derive)? {
+            results.push(result);
+        }
     }
 
+    Ok(results)
+}
+
+fn check_derive_members<Q>(
+    state: &mut state::CheckState,
+    context: &state::CheckContext<Q>,
+    derive_results: &[derive::DeriveHeadResult],
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    for result in derive_results {
+        derive::check_derive_member(state, context, result)?;
+    }
     Ok(())
 }
 

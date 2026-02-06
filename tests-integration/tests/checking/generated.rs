@@ -611,3 +611,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_297_applied_function_type_decomposition_main() { run_test("297_applied_function_type_decomposition", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_298_operator_alias_class_method_main() { run_test("298_operator_alias_class_method", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_299_derive_mutual_visibility_same_module_main() { run_test("299_derive_mutual_visibility_same_module", "Main"); }

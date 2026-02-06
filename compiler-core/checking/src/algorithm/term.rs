@@ -57,7 +57,11 @@ where
             let expected = toolkit::collect_given_constraints(state, expected);
             let inferred = toolkit::instantiate_constrained(state, inferred);
             unification::subtype_with_mode(
-                state, context, inferred, expected, ElaborationMode::No,
+                state,
+                context,
+                inferred,
+                expected,
+                ElaborationMode::No,
             )?;
             crate::trace_fields!(state, context, { inferred = inferred, expected = expected });
             Ok(inferred)
@@ -70,14 +74,22 @@ where
             let expected = toolkit::collect_given_constraints(state, expected);
             let inferred = toolkit::instantiate_constrained(state, inferred);
             unification::subtype_with_mode(
-                state, context, inferred, expected, ElaborationMode::No,
+                state,
+                context,
+                inferred,
+                expected,
+                ElaborationMode::No,
             )?;
             crate::trace_fields!(state, context, { inferred = inferred, expected = expected });
             Ok(inferred)
         } else {
             let inferred = toolkit::instantiate_constrained(state, inferred);
             unification::subtype_with_mode(
-                state, context, inferred, expected, ElaborationMode::No,
+                state,
+                context,
+                inferred,
+                expected,
+                ElaborationMode::No,
             )?;
             crate::trace_fields!(state, context, { inferred = inferred, expected = expected });
             Ok(inferred)

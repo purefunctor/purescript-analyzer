@@ -3,17 +3,17 @@
 use building_types::QueryResult;
 
 use crate::ExternalQueries;
-use crate::algorithm::derive::variance::{Variance, VarianceConfig, generate_variance_constraints};
-use crate::algorithm::derive::{self, tools};
+use crate::algorithm::derive::variance::{Variance, VarianceConfig};
+use crate::algorithm::derive::{self, DeriveStrategy, tools};
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::error::ErrorKind;
 
-/// Checks a derive instance for Contravariant.
+/// Checks a derive instance head for Contravariant.
 pub fn check_derive_contravariant<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     input: tools::ElaboratedDerive,
-) -> QueryResult<()>
+) -> QueryResult<Option<DeriveStrategy>>
 where
     Q: ExternalQueries,
 {
@@ -24,31 +24,28 @@ where
             expected: 1,
             actual: input.arguments.len(),
         });
-        return Ok(());
+        return Ok(None);
     };
 
     let Some((data_file, data_id)) = derive::extract_type_constructor(state, derived_type) else {
         let type_message = state.render_local_type(context, derived_type);
         state.insert_error(ErrorKind::CannotDeriveForType { type_message });
-        return Ok(());
+        return Ok(None);
     };
 
     let contravariant = Some((input.class_file, input.class_id));
-    tools::push_given_constraints(state, &input.constraints);
-    tools::emit_superclass_constraints(state, context, &input)?;
-    tools::register_derived_instance(state, context, input);
+    tools::register_derived_instance(state, context, input)?;
 
     let config = VarianceConfig::Single((Variance::Contravariant, contravariant));
-    generate_variance_constraints(state, context, data_file, data_id, derived_type, config)?;
-    tools::solve_and_report_constraints(state, context)
+    Ok(Some(DeriveStrategy::VarianceConstraints { data_file, data_id, derived_type, config }))
 }
 
-/// Checks a derive instance for Profunctor.
+/// Checks a derive instance head for Profunctor.
 pub fn check_derive_profunctor<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     input: tools::ElaboratedDerive,
-) -> QueryResult<()>
+) -> QueryResult<Option<DeriveStrategy>>
 where
     Q: ExternalQueries,
 {
@@ -59,27 +56,24 @@ where
             expected: 1,
             actual: input.arguments.len(),
         });
-        return Ok(());
+        return Ok(None);
     };
 
     let Some((data_file, data_id)) = derive::extract_type_constructor(state, derived_type) else {
         let type_message = state.render_local_type(context, derived_type);
         state.insert_error(ErrorKind::CannotDeriveForType { type_message });
-        return Ok(());
+        return Ok(None);
     };
 
     // Profunctor: first param is contravariant, second is covariant.
     let contravariant = context.known_types.contravariant;
     let functor = context.known_types.functor;
-    tools::push_given_constraints(state, &input.constraints);
-    tools::emit_superclass_constraints(state, context, &input)?;
-    tools::register_derived_instance(state, context, input);
+    tools::register_derived_instance(state, context, input)?;
 
     let config = VarianceConfig::Pair(
         (Variance::Contravariant, contravariant),
         (Variance::Covariant, functor),
     );
 
-    generate_variance_constraints(state, context, data_file, data_id, derived_type, config)?;
-    tools::solve_and_report_constraints(state, context)
+    Ok(Some(DeriveStrategy::VarianceConstraints { data_file, data_id, derived_type, config }))
 }

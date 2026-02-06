@@ -69,12 +69,12 @@ derive (Ord1 (&0 :: Type -> Type), Ord (&1 :: Type)) => Ord (Wrap @Type (&0 :: T
 derive Ord1 (&0 :: Type -> Type) => Ord1 (Wrap @Type (&0 :: Type -> Type) :: Type -> Type)
 
 Diagnostics
-error[NoInstanceFound]: No instance found for: Eq ((&1 :: Type -> Type) (~&2 :: Type))
+error[NoInstanceFound]: No instance found for: Eq ((&1 :: Type -> Type) (~&0 :: Type))
   --> 26:1..26:43
    |
 26 | derive instance Eq1 f => Eq1 (Compose f g)
    | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-error[NoInstanceFound]: No instance found for: Ord ((&1 :: Type -> Type) (~&2 :: Type))
+error[NoInstanceFound]: No instance found for: Ord ((&1 :: Type -> Type) (~&0 :: Type))
   --> 27:1..27:45
    |
 27 | derive instance Ord1 f => Ord1 (Compose f g)

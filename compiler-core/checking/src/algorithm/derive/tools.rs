@@ -37,13 +37,6 @@ pub fn emit_constraint(
     state.constraints.push_wanted(constraint);
 }
 
-/// Pushes given constraints from the instance head onto the constraint stack.
-pub fn push_given_constraints(state: &mut CheckState, constraints: &[(TypeId, TypeId)]) {
-    for (constraint_type, _) in constraints {
-        state.constraints.push_given(*constraint_type);
-    }
-}
-
 /// Emits wanted constraints for the superclasses of the class being derived.
 ///
 /// When deriving `Traversable (Compose f g)`, this emits:
@@ -55,13 +48,14 @@ pub fn push_given_constraints(state: &mut CheckState, constraints: &[(TypeId, Ty
 pub fn emit_superclass_constraints<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    input: &ElaboratedDerive,
+    class_file: FileId,
+    class_id: TypeItemId,
+    arguments: &[(TypeId, TypeId)],
 ) -> QueryResult<()>
 where
     Q: ExternalQueries,
 {
-    let Some(class_info) =
-        constraint::lookup_file_class(state, context, input.class_file, input.class_id)?
+    let Some(class_info) = constraint::lookup_file_class(state, context, class_file, class_id)?
     else {
         return Ok(());
     };
@@ -72,7 +66,7 @@ where
 
     let initial_level = class_info.quantified_variables.0 + class_info.kind_variables.0;
     let mut bindings = FxHashMap::default();
-    for (index, &(argument_type, _)) in input.arguments.iter().enumerate() {
+    for (index, &(argument_type, _)) in arguments.iter().enumerate() {
         let level = debruijn::Level(initial_level + index as u32);
         bindings.insert(level, argument_type);
     }
@@ -109,7 +103,8 @@ pub fn register_derived_instance<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     input: ElaboratedDerive,
-) where
+) -> QueryResult<()>
+where
     Q: ExternalQueries,
 {
     let ElaboratedDerive { derive_id, constraints, arguments, class_file, class_id } = input;
@@ -124,13 +119,7 @@ pub fn register_derived_instance<Q>(
 
     quantify::quantify_instance(state, &mut instance);
 
-    let _ = constraint::validate_instance_rows(
-        state,
-        context,
-        class_file,
-        class_id,
-        &instance.arguments,
-    );
+    constraint::validate_instance_rows(state, context, class_file, class_id, &instance.arguments)?;
 
     for (t, k) in instance.arguments.iter_mut() {
         *t = transfer::globalize(state, context, *t);
@@ -143,6 +132,8 @@ pub fn register_derived_instance<Q>(
     }
 
     state.checked.derived.insert(derive_id, instance);
+
+    Ok(())
 }
 
 /// Looks up data constructors for a type, handling cross-file lookups.
