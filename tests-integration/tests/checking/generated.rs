@@ -613,3 +613,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_298_operator_alias_class_method_main() { run_test("298_operator_alias_class_method", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_299_derive_mutual_visibility_same_module_main() { run_test("299_derive_mutual_visibility_same_module", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_300_instance_shift_variables_main() { run_test("300_instance_shift_variables", "Main"); }

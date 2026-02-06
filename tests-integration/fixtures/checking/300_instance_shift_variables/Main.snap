@@ -1,0 +1,26 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Wrap ::
+  forall (k :: Type) (e :: Type) (w :: (k :: Type) -> Type) (a :: (k :: Type)).
+    (w :: (k :: Type) -> Type) (a :: (k :: Type)) ->
+    Wrap @(k :: Type) (e :: Type) (w :: (k :: Type) -> Type) (a :: (k :: Type))
+
+Types
+Wrap :: forall (k :: Type). Type -> ((k :: Type) -> Type) -> (k :: Type) -> Type
+
+Data
+Wrap
+  Quantified = :0
+  Kind = :1
+
+
+Roles
+Wrap = [Phantom, Representational, Nominal]
+
+Instances
+instance Functor (&1 :: Type -> Type) => Functor (Wrap @Type (&0 :: Type) (&1 :: Type -> Type) :: Type -> Type)
+  chain: 0

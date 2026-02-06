@@ -508,13 +508,43 @@ where
         state.constraints.push_given(local_constraint);
     }
 
+    // The bound_count is used to shift the levels of class member types which
+    // were originally bound with only the class' type variables in scope.
+    //
+    // Here is a quick example with `Functor` and `Vector`, we can observe
+    // immediately that without any intervention, `map` falls into a scope
+    // conflict where now there's two variables at level 1, `n` and `a`.
+    //
+    // For example, without shifting
+    //
+    // ```purescript
+    // newtype Vector :: Symbol -> Int -> Type -> Type
+    // newtype Vector s:0 n:1 a:2 = Vector (Array a)
+    //
+    // class Functor f:0 where
+    //   map :: forall a:1 b:2. (a -> b) -> f a -> f b
+    //
+    // instance Functor (Vector s:0 n:1) where
+    //   -- map :: forall f:0 a:1 b:2. Functor f => (a -> b) -> f a -> f b
+    //   map f (Vector x) = Vector (map f x)
+    // ```
+    //
+    // Finally, with shifting
+    //
+    // ```purescript
+    // instance Functor (Vector s:0 n:1) where
+    //   -- map :: forall f:2 a:3 b:4. Functor f => (a -> b) -> f a -> f b
+    //   map f (Vector x) = Vector (map f x)
+    // ```
     let specialized_type = if let Some(class_member_type) = class_member_type {
+        let bound_count = kind_variables.len() + instance_bindings.len();
         specialize_class_member(
             state,
             context,
             class_member_type,
             (class_file, class_id),
             instance_arguments,
+            bound_count as u32,
         )?
     } else {
         None
@@ -597,6 +627,7 @@ fn specialize_class_member<Q>(
     class_member_type: TypeId,
     (class_file, class_id): (FileId, TypeItemId),
     instance_arguments: &[(TypeId, TypeId)],
+    bound_count: u32,
 ) -> QueryResult<Option<TypeId>>
 where
     Q: ExternalQueries,
@@ -616,6 +647,8 @@ where
 
     let arguments = arguments.collect_vec();
     let kind_variables = class_info.quantified_variables.0 + class_info.kind_variables.0;
+
+    specialized = substitute::ShiftBound::on(state, specialized, bound_count);
 
     let mut kind_variables = 0..kind_variables;
     let mut arguments = arguments.into_iter();
