@@ -7,7 +7,6 @@ use purescript_registry::RegistryLayout;
 /// Includes paths for repository checkouts, tarball cache, and unpacked packages.
 #[derive(Debug, Clone)]
 pub struct Layout {
-    pub root: PathBuf,
     pub repos_dir: PathBuf,
     pub registry_dir: PathBuf,
     pub index_dir: PathBuf,
@@ -24,7 +23,7 @@ impl Layout {
         let cache_tarballs_dir = root.join("cache").join("tarballs");
         let packages_dir = root.join("packages");
 
-        Layout { root, repos_dir, registry_dir, index_dir, cache_tarballs_dir, packages_dir }
+        Layout { repos_dir, registry_dir, index_dir, cache_tarballs_dir, packages_dir }
     }
 
     pub fn registry_layout(&self) -> RegistryLayout {
@@ -33,9 +32,5 @@ impl Layout {
 
     pub fn tarball_cache_path(&self, name: &str, version: &str) -> PathBuf {
         self.cache_tarballs_dir.join(format!("{}-{}.tar.gz", name, version))
-    }
-
-    pub fn package_dir(&self, name: &str, version: &str) -> PathBuf {
-        self.packages_dir.join(format!("{}-{}", name, version))
     }
 }

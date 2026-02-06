@@ -14,7 +14,6 @@ use crate::loader;
 
 /// Result of checking a single file.
 pub struct FileResult {
-    pub relative_path: String,
     pub error_count: usize,
     pub warning_count: usize,
     pub output: String,
@@ -96,7 +95,6 @@ fn check_file(engine: &QueryEngine, _files: &Files, id: FileId, relative_path: &
 
     let Ok((parsed, _)) = engine.parsed(id) else {
         return FileResult {
-            relative_path: relative_path.to_string(),
             error_count: 1,
             warning_count: 0,
             output: format!("{relative_path}:1:1: error[ParseError]: Failed to parse file\n"),
@@ -114,7 +112,6 @@ fn check_file(engine: &QueryEngine, _files: &Files, id: FileId, relative_path: &
         Ok(s) => s,
         Err(_) => {
             return FileResult {
-                relative_path: relative_path.to_string(),
                 error_count: 1,
                 warning_count: 0,
                 output: format!(
@@ -128,7 +125,6 @@ fn check_file(engine: &QueryEngine, _files: &Files, id: FileId, relative_path: &
         Ok(i) => i,
         Err(_) => {
             return FileResult {
-                relative_path: relative_path.to_string(),
                 error_count: 1,
                 warning_count: 0,
                 output: format!("{relative_path}:1:1: error[IndexError]: Failed to index\n"),
@@ -144,7 +140,6 @@ fn check_file(engine: &QueryEngine, _files: &Files, id: FileId, relative_path: &
         Ok(l) => l,
         Err(_) => {
             return FileResult {
-                relative_path: relative_path.to_string(),
                 error_count: 1,
                 warning_count: 0,
                 output: format!("{relative_path}:1:1: error[LowerError]: Failed to lower\n"),
@@ -156,7 +151,6 @@ fn check_file(engine: &QueryEngine, _files: &Files, id: FileId, relative_path: &
         Ok(c) => c,
         Err(_) => {
             return FileResult {
-                relative_path: relative_path.to_string(),
                 error_count: 1,
                 warning_count: 0,
                 output: format!("{relative_path}:1:1: error[CheckError]: Failed to check\n"),
@@ -212,7 +206,7 @@ fn check_file(engine: &QueryEngine, _files: &Files, id: FileId, relative_path: &
         ));
     }
 
-    FileResult { relative_path: relative_path.to_string(), error_count, warning_count, output }
+    FileResult { error_count, warning_count, output }
 }
 
 fn offset_to_line_col(line_index: &LineIndex, content: &str, offset: TextSize) -> (u32, u32) {

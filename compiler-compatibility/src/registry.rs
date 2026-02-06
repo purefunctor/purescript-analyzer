@@ -59,10 +59,6 @@ impl Registry {
         Ok(())
     }
 
-    pub fn layout(&self) -> &Layout {
-        &self.layout
-    }
-
     pub fn reader(&self) -> &FsRegistry {
         &self.reader
     }
