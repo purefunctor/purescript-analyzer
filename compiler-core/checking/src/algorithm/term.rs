@@ -1545,7 +1545,7 @@ where
     F: FnOnce(&mut CheckState, &CheckContext<Q>, A, TypeId) -> QueryResult<TypeId>,
 {
     crate::trace_fields!(state, context, { function = function_t });
-    let function_t = state.normalize_type(function_t);
+    let function_t = kind::synonym::normalize_expand_type(state, context, function_t)?;
     match state.storage[function_t] {
         // Check that `argument_id :: argument_type`
         Type::Function(argument_type, result_type) => {

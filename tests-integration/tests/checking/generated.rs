@@ -605,3 +605,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_294_exhaustive_operator_constructor_main() { run_test("294_exhaustive_operator_constructor", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_295_superclass_entailment_where_binding_main() { run_test("295_superclass_entailment_where_binding", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_296_type_operator_synonym_in_application_main() { run_test("296_type_operator_synonym_in_application", "Main"); }

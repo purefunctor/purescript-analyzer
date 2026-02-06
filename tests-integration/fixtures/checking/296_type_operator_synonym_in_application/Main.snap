@@ -1,0 +1,32 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Box :: forall (a :: Type). (a :: Type) -> Box (a :: Type)
+unbox :: Box ~> Array
+test :: Array Int
+
+Types
+Transform :: forall (t12 :: Type). ((t12 :: Type) -> Type) -> ((t12 :: Type) -> Type) -> Type
+~> :: forall (t12 :: Type). ((t12 :: Type) -> Type) -> ((t12 :: Type) -> Type) -> Type
+Box :: Type -> Type
+
+Synonyms
+Transform = forall (t12 :: Type) (f :: (t12 :: Type) -> Type) (g :: (t12 :: Type) -> Type) (a :: (t12 :: Type)).
+  (f :: (t12 :: Type) -> Type) (a :: (t12 :: Type)) ->
+  (g :: (t12 :: Type) -> Type) (a :: (t12 :: Type))
+  Quantified = :1
+  Kind = :0
+  Type = :2
+
+
+Data
+Box
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+Box = [Representational]
