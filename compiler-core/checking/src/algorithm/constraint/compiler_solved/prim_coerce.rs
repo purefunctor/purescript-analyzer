@@ -50,6 +50,10 @@ where
         return Ok(Some(result));
     }
 
+    if let Some(result) = try_function_coercion(state, context, left, right)? {
+        return Ok(Some(result));
+    }
+
     if let Some(result) = try_higher_kinded_coercion(state, context, left, right)? {
         return Ok(Some(result));
     }
@@ -256,6 +260,32 @@ where
         let checked = context.queries.checked(file_id)?;
         Ok(checked.lookup_roles(type_id))
     }
+}
+
+/// Decomposes `Coercible (a -> b) (c -> d)` into `Coercible a c` and `Coercible b d`.
+fn try_function_coercion<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    left: TypeId,
+    right: TypeId,
+) -> QueryResult<Option<MatchInstance>>
+where
+    Q: ExternalQueries,
+{
+    let strict = toolkit::SynthesiseFunction::No;
+    let Some((left_argument, left_result)) =
+        toolkit::decompose_function(state, context, left, strict)?
+    else {
+        return Ok(None);
+    };
+    let Some((right_argument, right_result)) =
+        toolkit::decompose_function(state, context, right, strict)?
+    else {
+        return Ok(None);
+    };
+    let c1 = make_coercible_constraint(state, context, left_argument, right_argument);
+    let c2 = make_coercible_constraint(state, context, left_result, right_result);
+    Ok(Some(MatchInstance::Match { constraints: vec![c1, c2], equalities: vec![] }))
 }
 
 fn try_row_coercion<Q>(

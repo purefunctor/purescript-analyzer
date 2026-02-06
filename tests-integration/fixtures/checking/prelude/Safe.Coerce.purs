@@ -1,4 +1,4 @@
-module Safe.Coerce where
+module Safe.Coerce (coerce, module Prim.Coerce) where
 
 import Prim.Coerce (class Coercible)
 

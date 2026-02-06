@@ -1,0 +1,23 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Age :: Int -> Age
+wrapAge :: Int -> Age
+
+Types
+Age :: Type
+
+Data
+Age
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+Age = []
+
+Derived
+derive Newtype (Age :: Type) (Int :: Type)

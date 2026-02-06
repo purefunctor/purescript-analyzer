@@ -615,3 +615,7 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_299_derive_mutual_visibility_same_module_main() { run_test("299_derive_mutual_visibility_same_module", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_300_instance_shift_variables_main() { run_test("300_instance_shift_variables", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_301_coercible_symmetry_main() { run_test("301_coercible_symmetry", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_302_coercible_function_decomposition_main() { run_test("302_coercible_function_decomposition", "Main"); }

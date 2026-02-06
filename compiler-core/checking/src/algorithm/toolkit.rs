@@ -1,5 +1,8 @@
+use building_types::QueryResult;
+
+use crate::ExternalQueries;
 use crate::algorithm::safety::safe_loop;
-use crate::algorithm::state::CheckState;
+use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::substitute;
 use crate::core::{Type, TypeId, Variable};
 
@@ -212,4 +215,59 @@ pub fn instantiate_with_arguments(
     }
 
     (type_id, skolemised)
+}
+
+#[derive(Copy, Clone, Debug)]
+pub enum SynthesiseFunction {
+    Yes,
+    No,
+}
+
+/// Decompose a type into `(argument, result)` as if it were a function type.
+///
+/// Handles three representations:
+/// - `Type::Function(a, b)`, the standard function representation
+/// - `Type::Application(Application(f, a), b)`, the application-based form
+/// - `Type::Unification(u)`, which requires function type synthesis
+pub fn decompose_function<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    t: TypeId,
+    mode: SynthesiseFunction,
+) -> QueryResult<Option<(TypeId, TypeId)>>
+where
+    Q: ExternalQueries,
+{
+    match state.storage[t] {
+        Type::Function(argument, result) => Ok(Some((argument, result))),
+
+        Type::Unification(unification_id) if matches!(mode, SynthesiseFunction::Yes) => {
+            let argument = state.fresh_unification_type(context);
+            let result = state.fresh_unification_type(context);
+
+            let function = state.storage.intern(Type::Function(argument, result));
+            state.unification.solve(unification_id, function);
+
+            Ok(Some((argument, result)))
+        }
+
+        Type::Application(partial, result) => {
+            let partial = state.normalize_type(partial);
+            if let Type::Application(constructor, argument) = state.storage[partial] {
+                let constructor = state.normalize_type(constructor);
+                if constructor == context.prim.function {
+                    return Ok(Some((argument, result)));
+                }
+                if matches!(mode, SynthesiseFunction::Yes)
+                    && let Type::Unification(unification_id) = state.storage[constructor]
+                {
+                    state.unification.solve(unification_id, context.prim.function);
+                    return Ok(Some((argument, result)));
+                }
+            }
+            Ok(None)
+        }
+
+        _ => Ok(None),
+    }
 }

@@ -156,7 +156,29 @@ where
         elaborate_superclasses(state, context, constraint, &mut elaborated)?;
     }
 
-    Ok(elaborated.into_iter().filter_map(|given| constraint_application(state, given)).collect())
+    let applications =
+        elaborated.into_iter().filter_map(|given| constraint_application(state, given));
+    let mut applications = applications.collect_vec();
+
+    let is_coercible = |file_id, item_id| {
+        (&context.prim_coerce).file_id == file_id && (&context.prim_coerce).coercible == item_id
+    };
+
+    // For coercible applications, also elaborate into symmetric versions.
+    let symmetric = applications.iter().filter_map(|application| {
+        let is_coercible = is_coercible(application.file_id, application.item_id);
+        let &[left, right] = application.arguments.as_slice() else { return None };
+        is_coercible.then(|| ConstraintApplication {
+            file_id: application.file_id,
+            item_id: application.item_id,
+            arguments: vec![right, left],
+        })
+    });
+
+    let reversed = symmetric.collect_vec();
+    applications.extend(reversed);
+
+    Ok(applications)
 }
 
 /// Discovers superclass constraints for a given constraint.
