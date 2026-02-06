@@ -476,7 +476,7 @@ where
     Ok(global_type.map(|global_type| transfer::localize(state, context, global_type)))
 }
 
-/// Gets the inner type for a newtype, specialized with type arguments.
+/// Gets the inner type for a newtype, specialised with type arguments.
 ///
 /// Newtypes have exactly one constructor with exactly one field.
 /// This function extracts that field type, substituting any type parameters.

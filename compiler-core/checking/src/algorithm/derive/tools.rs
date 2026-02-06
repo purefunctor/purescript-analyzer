@@ -72,8 +72,8 @@ where
     }
 
     for &(superclass, _) in class_info.superclasses.iter() {
-        let specialized = substitute::SubstituteBindings::on(state, &bindings, superclass);
-        state.constraints.push_wanted(specialized);
+        let specialised = substitute::SubstituteBindings::on(state, &bindings, superclass);
+        state.constraints.push_wanted(specialised);
     }
 
     Ok(())

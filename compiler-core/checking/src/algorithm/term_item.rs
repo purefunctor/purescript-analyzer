@@ -441,7 +441,7 @@ pub struct CheckInstanceMemberGroup<'a> {
     kind_variables: &'a [TypeId],
 }
 
-/// Checks an instance member group against its specialized class member type.
+/// Checks an instance member group against its specialised class member type.
 ///
 /// This rule maintains the following invariants:
 /// - Check mode: `inferred_type <: signature_type` and `signature_type ~ specialised_type`
@@ -536,9 +536,9 @@ where
     //   -- map :: forall f:2 a:3 b:4. Functor f => (a -> b) -> f a -> f b
     //   map f (Vector x) = Vector (map f x)
     // ```
-    let specialized_type = if let Some(class_member_type) = class_member_type {
+    let specialised_type = if let Some(class_member_type) = class_member_type {
         let bound_count = kind_variables.len() + instance_bindings.len();
-        specialize_class_member(
+        specialise_class_member(
             state,
             context,
             class_member_type,
@@ -550,9 +550,9 @@ where
         None
     };
 
-    // The specialized type may have constraints like `Show a => (a -> b) -> f a -> f b`.
+    // The specialised type may have constraints like `Show a => (a -> b) -> f a -> f b`.
     // We push `Show a` as a given and use the body `(a -> b) -> f a -> f b` for checking.
-    let specialized_type = specialized_type.map(|mut t| {
+    let specialised_type = specialised_type.map(|mut t| {
         while let normalized = state.normalize_type(t)
             && let Type::Constrained(constraint, constrained) = &state.storage[normalized]
         {
@@ -568,10 +568,10 @@ where
         let (member_type, _) =
             kind::check_surface_kind(state, context, *signature_id, context.prim.t)?;
 
-        if let Some(specialized_type) = specialized_type {
-            let unified = unification::unify(state, context, member_type, specialized_type)?;
+        if let Some(specialised_type) = specialised_type {
+            let unified = unification::unify(state, context, member_type, specialised_type)?;
             if !unified {
-                let expected = state.render_local_type(context, specialized_type);
+                let expected = state.render_local_type(context, specialised_type);
                 let actual = state.render_local_type(context, member_type);
                 state.insert_error(ErrorKind::InstanceMemberTypeMismatch { expected, actual });
             }
@@ -580,16 +580,16 @@ where
         let signature = inspect::inspect_signature(state, context, member_type, &surface_bindings)?;
 
         equation::check_equations(state, context, *signature_id, signature, &member.equations)?;
-    } else if let Some(specialized_type) = specialized_type {
+    } else if let Some(specialised_type) = specialised_type {
         let inferred_type = state.fresh_unification_type(context);
         equation::infer_equations_core(state, context, inferred_type, &member.equations)?;
 
-        let origin = equation::ExhaustivenessOrigin::FromType(specialized_type);
+        let origin = equation::ExhaustivenessOrigin::FromType(specialised_type);
         equation::patterns(state, context, origin, &member.equations)?;
 
-        let matches = unification::subtype(state, context, inferred_type, specialized_type)?;
+        let matches = unification::subtype(state, context, inferred_type, specialised_type)?;
         if !matches {
-            let expected = state.render_local_type(context, specialized_type);
+            let expected = state.render_local_type(context, specialised_type);
             let actual = state.render_local_type(context, inferred_type);
             state.insert_error(ErrorKind::InstanceMemberTypeMismatch { expected, actual });
         }
@@ -617,11 +617,11 @@ macro_rules! debug_assert_class_constraint {
     };
 }
 
-/// Specializes a class member type for a specific instance.
+/// Specialises a class member type for a specific instance.
 ///
 /// Given a class member type like `forall a. Show a => a -> String`,
 /// and instance arguments like `Int`, this returns `Int -> String`.
-fn specialize_class_member<Q>(
+fn specialise_class_member<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     class_member_type: TypeId,
@@ -637,7 +637,7 @@ where
         return Ok(None);
     };
 
-    let mut specialized = class_member_type;
+    let mut specialised = class_member_type;
 
     let arguments = instance_arguments.iter().map(|(t, k)| {
         let t = transfer::localize(state, context, *t);
@@ -648,12 +648,12 @@ where
     let arguments = arguments.collect_vec();
     let kind_variables = class_info.quantified_variables.0 + class_info.kind_variables.0;
 
-    specialized = substitute::ShiftBound::on(state, specialized, bound_count);
+    specialised = substitute::ShiftBound::on(state, specialised, bound_count);
 
     let mut kind_variables = 0..kind_variables;
     let mut arguments = arguments.into_iter();
 
-    while let normalized = state.normalize_type(specialized)
+    while let normalized = state.normalize_type(specialised)
         && let Type::Forall(binder, inner) = &state.storage[normalized]
     {
         let binder_level = binder.level;
@@ -670,14 +670,14 @@ where
             state.storage.intern(Type::Variable(skolem))
         };
 
-        specialized = substitute::SubstituteBound::on(state, binder_level, replacement, inner);
+        specialised = substitute::SubstituteBound::on(state, binder_level, replacement, inner);
     }
 
-    specialized = state.normalize_type(specialized);
-    if let Type::Constrained(constraint, constrained) = state.storage[specialized] {
+    specialised = state.normalize_type(specialised);
+    if let Type::Constrained(constraint, constrained) = state.storage[specialised] {
         debug_assert_class_constraint!(state, constraint, class_file, class_id);
-        specialized = constrained;
+        specialised = constrained;
     }
 
-    Ok(Some(specialized))
+    Ok(Some(specialised))
 }

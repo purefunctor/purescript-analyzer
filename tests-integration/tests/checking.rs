@@ -331,7 +331,7 @@ fn test_subtype_mono_of_poly_fail() {
     // Create ∀a. a -> a
     let forall_a_to_a = make_forall_a_to_a(context, state);
 
-    // (Int -> Int) <: ∀a. (a -> a) should fail (RHS forall gets skolemized)
+    // (Int -> Int) <: ∀a. (a -> a) should fail (RHS forall gets skolemised)
     let int_to_int = state.function(context.prim.int, context.prim.int);
     let result = unification::subtype(state, context, int_to_int, forall_a_to_a).unwrap();
     assert!(!result, "(Int -> Int) <: ∀a. (a -> a) should fail");

@@ -1137,7 +1137,7 @@ impl CheckState {
 }
 
 impl CheckState {
-    /// Normalizes unification and bound type variables.
+    /// Normalises unification and bound type variables.
     ///
     /// This function also applies path compression to unification variables,
     /// where if a unification variable `?0` solves to `?1`, which solves to

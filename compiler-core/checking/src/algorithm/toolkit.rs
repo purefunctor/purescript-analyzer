@@ -188,7 +188,7 @@ pub fn instantiate_with_arguments(
     arguments: impl AsRef<[TypeId]>,
 ) -> (TypeId, usize) {
     let mut arguments_iter = arguments.as_ref().iter().copied();
-    let mut skolemized = 0;
+    let mut skolemised = 0;
 
     safe_loop! {
         type_id = state.normalize_type(type_id);
@@ -199,7 +199,7 @@ pub fn instantiate_with_arguments(
                 let inner = *inner;
 
                 let argument_type = arguments_iter.next().unwrap_or_else(|| {
-                    skolemized += 1;
+                    skolemised += 1;
                     let skolem = Variable::Skolem(binder_level, binder_kind);
                     state.storage.intern(Type::Variable(skolem))
                 });
@@ -211,5 +211,5 @@ pub fn instantiate_with_arguments(
         }
     }
 
-    (type_id, skolemized)
+    (type_id, skolemised)
 }

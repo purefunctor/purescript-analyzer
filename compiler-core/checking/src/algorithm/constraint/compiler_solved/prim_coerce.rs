@@ -334,7 +334,7 @@ where
 
     // decompose_kind_for_coercion instantiates the variables into
     // skolem variables, then returns the first argument, which in
-    // this case is the already-skolemized `~k`
+    // this case is the already skolemised `~k`
     //
     // left_kind_applied := Maybe @~k
     // left_domain       := ~k
