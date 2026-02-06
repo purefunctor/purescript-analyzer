@@ -619,3 +619,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_301_coercible_symmetry_main() { run_test("301_coercible_symmetry", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_302_coercible_function_decomposition_main() { run_test("302_coercible_function_decomposition", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_303_instance_given_constraint_main() { run_test("303_instance_given_constraint", "Main"); }
