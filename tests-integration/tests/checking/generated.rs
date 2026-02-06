@@ -621,3 +621,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_302_coercible_function_decomposition_main() { run_test("302_coercible_function_decomposition", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_303_instance_given_constraint_main() { run_test("303_instance_given_constraint", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_305_type_operator_unification_main() { run_test("305_type_operator_unification", "Main"); }

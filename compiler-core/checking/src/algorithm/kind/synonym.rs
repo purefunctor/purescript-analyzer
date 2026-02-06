@@ -542,6 +542,42 @@ where
     })
 }
 
+/// Normalises a type operator application to constructor application form.
+fn expand_type_operator<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    type_id: TypeId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let Type::OperatorApplication(file_id, item_id, left, right) = state.storage[type_id] else {
+        return Ok(type_id);
+    };
+
+    let resolution = if file_id == context.id {
+        context.lowered.info.get_type_item(item_id).and_then(|ir| match ir {
+            TypeItemIr::Operator { resolution, .. } => *resolution,
+            _ => None,
+        })
+    } else {
+        context.queries.lowered(file_id)?.info.get_type_item(item_id).and_then(|ir| match ir {
+            TypeItemIr::Operator { resolution, .. } => *resolution,
+            _ => None,
+        })
+    };
+
+    let Some((file_id, item_id)) = resolution else {
+        return Ok(type_id);
+    };
+
+    let constructor = state.storage.intern(Type::Constructor(file_id, item_id));
+    let left = state.storage.intern(Type::Application(constructor, left));
+    let right = state.storage.intern(Type::Application(left, right));
+
+    Ok(right)
+}
+
 pub fn normalize_expand_type<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -554,7 +590,8 @@ where
 
     for _ in 0..EXPANSION_LIMIT {
         let normalized_id = state.normalize_type(type_id);
-        let expanded_id = expand_type_synonym(state, context, normalized_id)?;
+        let expanded_id = expand_type_operator(state, context, normalized_id)?;
+        let expanded_id = expand_type_synonym(state, context, expanded_id)?;
 
         if expanded_id == type_id {
             return Ok(type_id);

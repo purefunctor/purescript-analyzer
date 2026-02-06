@@ -1,0 +1,25 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Left :: forall (a :: Type) (b :: Type). (a :: Type) -> Either (a :: Type) (b :: Type)
+Right :: forall (a :: Type) (b :: Type). (b :: Type) -> Either (a :: Type) (b :: Type)
+in1 :: forall (a :: Type) (z :: Type). (a :: Type) -> (a :: Type) \/ (z :: Type)
+in2 ::
+  forall (a :: Type) (b :: Type) (z :: Type).
+    (b :: Type) -> (a :: Type) \/ (b :: Type) \/ (z :: Type)
+
+Types
+Either :: Type -> Type -> Type
+\/ :: Type -> Type -> Type
+
+Data
+Either
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+Either = [Representational, Representational]
