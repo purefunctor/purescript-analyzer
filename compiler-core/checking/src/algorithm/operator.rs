@@ -114,12 +114,12 @@ where
     let operator_type = toolkit::instantiate_forall(state, operator_type);
     let operator_type = toolkit::collect_constraints(state, operator_type);
 
-    let Type::Function(left_type, operator_type) = state.storage[operator_type] else {
+    let Some((left_type, operator_type)) = decompose_function(state, context, operator_type)?
+    else {
         return Ok(unknown);
     };
 
-    let operator_type = state.normalize_type(operator_type);
-    let Type::Function(right_type, result_type) = state.storage[operator_type] else {
+    let Some((right_type, result_type)) = decompose_function(state, context, operator_type)? else {
         return Ok(unknown);
     };
 
@@ -149,6 +149,52 @@ where
     )?;
 
     Ok(E::build(state, context, operator, (left, right), result_type))
+}
+
+/// Decompose a type into `(argument, result)` as if it were a function type.
+///
+/// This function handles three representations:
+/// - `Type::Function(a, b)`, the standard function representation
+/// - `Type::Application(Application(f, a), b)`, the application-based form
+/// - `Type::Unification(u)`, which requires function type synthesis
+fn decompose_function<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    t: TypeId,
+) -> QueryResult<Option<(TypeId, TypeId)>>
+where
+    Q: ExternalQueries,
+{
+    match state.storage[t] {
+        Type::Function(argument, result) => Ok(Some((argument, result))),
+
+        Type::Unification(unification_id) => {
+            let argument = state.fresh_unification_type(context);
+            let result = state.fresh_unification_type(context);
+
+            let function = state.storage.intern(Type::Function(argument, result));
+            state.unification.solve(unification_id, function);
+
+            Ok(Some((argument, result)))
+        }
+
+        Type::Application(partial, result) => {
+            let partial = state.normalize_type(partial);
+            if let Type::Application(constructor, argument) = state.storage[partial] {
+                let constructor = state.normalize_type(constructor);
+                if constructor == context.prim.function {
+                    return Ok(Some((argument, result)));
+                }
+                if let Type::Unification(unification_id) = state.storage[constructor] {
+                    state.unification.solve(unification_id, context.prim.function);
+                    return Ok(Some((argument, result)));
+                }
+            }
+            Ok(None)
+        }
+
+        _ => Ok(None),
+    }
 }
 
 pub trait IsOperator<Q: ExternalQueries>: IsElement {

@@ -1,0 +1,16 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+<<$>> ::
+  forall (t2 :: Type) (a :: (t2 :: Type) -> (t2 :: Type) -> Type) (t :: (t2 :: Type)).
+    Category (a :: (t2 :: Type) -> (t2 :: Type) -> Type) =>
+    (a :: (t2 :: Type) -> (t2 :: Type) -> Type) (t :: (t2 :: Type)) (t :: (t2 :: Type))
+test :: (Int -> Int) -> Int -> Int
+test' ::
+  forall (t8 :: Type) (t12 :: Type).
+    ((t12 :: Type) -> (t8 :: Type)) -> (t12 :: Type) -> (t8 :: Type)
+
+Types
