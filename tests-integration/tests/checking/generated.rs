@@ -607,3 +607,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_295_superclass_entailment_where_binding_main() { run_test("295_superclass_entailment_where_binding", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_296_type_operator_synonym_in_application_main() { run_test("296_type_operator_synonym_in_application", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_297_applied_function_type_decomposition_main() { run_test("297_applied_function_type_decomposition", "Main"); }

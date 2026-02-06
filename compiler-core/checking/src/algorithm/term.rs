@@ -1602,6 +1602,24 @@ where
             )
         }
 
+        // Application(Application(f, a), b) as Function(a, b)
+        Type::Application(partial, result_type) => {
+            let partial = state.normalize_type(partial);
+            if let Type::Application(constructor, argument_type) = state.storage[partial] {
+                let constructor = state.normalize_type(constructor);
+                if constructor == context.prim.function {
+                    check_argument(state, context, argument_id, argument_type)?;
+                    return Ok(result_type);
+                }
+                if let Type::Unification(unification_id) = state.storage[constructor] {
+                    state.unification.solve(unification_id, context.prim.function);
+                    check_argument(state, context, argument_id, argument_type)?;
+                    return Ok(result_type);
+                }
+            }
+            Ok(context.prim.unknown)
+        }
+
         _ => Ok(context.prim.unknown),
     }
 }
