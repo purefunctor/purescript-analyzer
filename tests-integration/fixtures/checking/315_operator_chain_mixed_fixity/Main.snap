@@ -1,0 +1,15 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+eq :: forall (a :: Type). Eq (a :: Type) => (a :: Type) -> (a :: Type) -> Boolean
+conj :: Boolean -> Boolean -> Boolean
+== :: forall (a :: Type). Eq (a :: Type) => (a :: Type) -> (a :: Type) -> Boolean
+&& :: Boolean -> Boolean -> Boolean
+test1 :: Int -> Boolean
+test2 :: Boolean
+test3 :: Int -> Int -> Boolean
+
+Types
