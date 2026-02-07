@@ -161,7 +161,7 @@ where
     let mut applications = applications.collect_vec();
 
     let is_coercible = |file_id, item_id| {
-        (&context.prim_coerce).file_id == file_id && (&context.prim_coerce).coercible == item_id
+        context.prim_coerce.file_id == file_id && context.prim_coerce.coercible == item_id
     };
 
     // For coercible applications, also elaborate into symmetric versions.

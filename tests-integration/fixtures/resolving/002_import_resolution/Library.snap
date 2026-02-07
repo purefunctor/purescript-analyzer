@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/resolving/generated.rs
+assertion_line: 12
 expression: report
 ---
 module Library
@@ -23,6 +24,8 @@ Exported Types:
   - TypeOnly
   - HideTy
 
+Exported Classes:
+
 Local Terms:
   - MkHideTy
   - Ctor3
@@ -37,6 +40,8 @@ Local Types:
   - MultiTy
   - TypeOnly
   - HideTy
+
+Local Classes:
 
 Class Members:
 

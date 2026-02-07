@@ -134,6 +134,25 @@ impl ResolvedModule {
         }
     }
 
+    pub fn lookup_class(
+        &self,
+        prim: &ResolvedModule,
+        qualifier: Option<&str>,
+        name: &str,
+    ) -> Option<(FileId, TypeItemId)> {
+        if let Some(qualifier) = qualifier {
+            let import = self.qualified.get(qualifier)?;
+            let (file, id, kind) = import.lookup_class(name)?;
+            if matches!(kind, ImportKind::Hidden) { None } else { Some((file, id)) }
+        } else {
+            let lookup_item = |import: &ResolvedImport| import.lookup_class(name);
+            let lookup_prim = || prim.exports.lookup_class(name);
+            None.or_else(|| self.locals.lookup_class(name))
+                .or_else(|| self.lookup_unqualified(lookup_item))
+                .or_else(|| self.lookup_prim_import(lookup_item, lookup_prim))
+        }
+    }
+
     pub fn lookup_class_member(
         &self,
         class_id: TypeItemId,
@@ -181,6 +200,7 @@ type ResolvedImportsQualified = FxHashMap<SmolStr, ResolvedImport>;
 pub struct ResolvedLocals {
     terms: FxHashMap<SmolStr, (FileId, TermItemId)>,
     types: FxHashMap<SmolStr, (FileId, TypeItemId)>,
+    classes: FxHashMap<SmolStr, (FileId, TypeItemId)>,
 }
 
 impl ResolvedLocals {
@@ -203,6 +223,14 @@ impl ResolvedLocals {
     pub fn iter_types(&self) -> impl Iterator<Item = (&SmolStr, FileId, TypeItemId)> {
         self.types.iter().map(|(k, (f, i))| (k, *f, *i))
     }
+
+    pub fn lookup_class(&self, name: &str) -> Option<(FileId, TypeItemId)> {
+        self.classes.get(name).copied()
+    }
+
+    pub fn iter_classes(&self) -> impl Iterator<Item = (&SmolStr, FileId, TypeItemId)> {
+        self.classes.iter().map(|(k, (f, i))| (k, *f, *i))
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -215,6 +243,7 @@ pub enum ExportSource {
 pub struct ResolvedExports {
     terms: FxHashMap<SmolStr, (FileId, TermItemId, ExportSource)>,
     types: FxHashMap<SmolStr, (FileId, TypeItemId, ExportSource)>,
+    classes: FxHashMap<SmolStr, (FileId, TypeItemId, ExportSource)>,
 }
 
 impl ResolvedExports {
@@ -237,6 +266,14 @@ impl ResolvedExports {
     pub fn iter_types(&self) -> impl Iterator<Item = (&SmolStr, FileId, TypeItemId)> {
         self.types.iter().map(|(k, (f, i, _))| (k, *f, *i))
     }
+
+    pub fn lookup_class(&self, name: &str) -> Option<(FileId, TypeItemId)> {
+        self.classes.get(name).copied().map(|(f, i, _)| (f, i))
+    }
+
+    pub fn iter_classes(&self) -> impl Iterator<Item = (&SmolStr, FileId, TypeItemId)> {
+        self.classes.iter().map(|(k, (f, i, _))| (k, *f, *i))
+    }
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -247,13 +284,15 @@ pub struct ResolvedImport {
     pub exported: bool,
     terms: FxHashMap<SmolStr, (FileId, TermItemId, ImportKind)>,
     types: FxHashMap<SmolStr, (FileId, TypeItemId, ImportKind)>,
+    classes: FxHashMap<SmolStr, (FileId, TypeItemId, ImportKind)>,
 }
 
 impl ResolvedImport {
     fn new(id: ImportId, file: FileId, kind: ImportKind, exported: bool) -> ResolvedImport {
         let terms = FxHashMap::default();
         let types = FxHashMap::default();
-        ResolvedImport { id, file, kind, exported, terms, types }
+        let classes = FxHashMap::default();
+        ResolvedImport { id, file, kind, exported, terms, types, classes }
     }
 
     pub fn lookup_term(&self, name: &str) -> Option<(FileId, TermItemId, ImportKind)> {
@@ -276,6 +315,14 @@ impl ResolvedImport {
 
     pub fn iter_types(&self) -> impl Iterator<Item = (&SmolStr, FileId, TypeItemId, ImportKind)> {
         self.types.iter().map(|(k, (f, i, d))| (k, *f, *i, *d))
+    }
+
+    pub fn lookup_class(&self, name: &str) -> Option<(FileId, TypeItemId, ImportKind)> {
+        self.classes.get(name).copied()
+    }
+
+    pub fn iter_classes(&self) -> impl Iterator<Item = (&SmolStr, FileId, TypeItemId, ImportKind)> {
+        self.classes.iter().map(|(k, (f, i, d))| (k, *f, *i, *d))
     }
 }
 

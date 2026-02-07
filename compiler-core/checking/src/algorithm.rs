@@ -420,6 +420,11 @@ pub fn check_prim(queries: &impl ExternalQueries, file_id: FileId) -> QueryResul
         prim_type.unwrap_or_else(|| unreachable!("invariant violated: {name} not in Prim"))
     };
 
+    let lookup_class = |name: &str| {
+        let prim_class = resolved.exports.lookup_class(name);
+        prim_class.unwrap_or_else(|| unreachable!("invariant violated: {name} not in Prim"))
+    };
+
     let type_core = {
         let (file_id, item_id) = lookup_type("Type");
         queries.intern_type(Type::Constructor(file_id, item_id))
@@ -455,10 +460,12 @@ pub fn check_prim(queries: &impl ExternalQueries, file_id: FileId) -> QueryResul
     insert_type("String", type_core);
     insert_type("Char", type_core);
     insert_type("Boolean", type_core);
-    insert_type("Partial", constraint_core);
     insert_type("Constraint", type_core);
     insert_type("Symbol", type_core);
     insert_type("Row", type_to_type_core);
+
+    let (_, partial_id) = lookup_class("Partial");
+    checked_module.types.insert(partial_id, constraint_core);
 
     let mut insert_roles = |name: &str, roles: &[Role]| {
         let (_, item_id) = lookup_type(name);

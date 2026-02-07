@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/resolving/generated.rs
+assertion_line: 12
 expression: report
 ---
 module ImportQualifiedHiding
@@ -18,6 +19,8 @@ L Types:
   - LibTy is Implicit
   - TypeOnly is Implicit
 
+L Classes:
+
 Exported Terms:
   - libFn
   - MkLibTy
@@ -28,9 +31,13 @@ Exported Types:
   - LibTy
   - TypeOnly
 
+Exported Classes:
+
 Local Terms:
 
 Local Types:
+
+Local Classes:
 
 Class Members:
 

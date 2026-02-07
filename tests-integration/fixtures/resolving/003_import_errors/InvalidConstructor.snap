@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/resolving/generated.rs
+assertion_line: 12
 expression: report
 ---
 module InvalidConstructor
@@ -13,10 +14,14 @@ Exported Terms:
 Exported Types:
   - Invalid
 
+Exported Classes:
+
 Local Terms:
 
 Local Types:
   - Invalid
+
+Local Classes:
 
 Class Members:
 

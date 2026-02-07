@@ -481,6 +481,22 @@ impl<'r, 's> PrimLookup<'r, 's> {
         self.storage.intern(Type::Constructor(file_id, type_id))
     }
 
+    fn class_item(&self, name: &str) -> TypeItemId {
+        let (_, type_id) =
+            self.resolved.lookup_class(self.resolved, None, name).unwrap_or_else(|| {
+                unreachable!("invariant violated: {name} not in {}", self.module_name)
+            });
+        type_id
+    }
+
+    fn class_constructor(&mut self, name: &str) -> TypeId {
+        let (file_id, type_id) =
+            self.resolved.lookup_class(self.resolved, None, name).unwrap_or_else(|| {
+                unreachable!("invariant violated: {name} not in {}", self.module_name)
+            });
+        self.storage.intern(Type::Constructor(file_id, type_id))
+    }
+
     fn intern(&mut self, ty: Type) -> TypeId {
         self.storage.intern(ty)
     }
@@ -535,7 +551,7 @@ impl PrimCore {
             string: lookup.type_constructor("String"),
             char: lookup.type_constructor("Char"),
             boolean: lookup.type_constructor("Boolean"),
-            partial: lookup.type_constructor("Partial"),
+            partial: lookup.class_constructor("Partial"),
             constraint: lookup.type_constructor("Constraint"),
             symbol: lookup.type_constructor("Symbol"),
             row,
@@ -564,10 +580,10 @@ impl PrimIntCore {
 
         Ok(PrimIntCore {
             file_id,
-            add: lookup.type_item("Add"),
-            mul: lookup.type_item("Mul"),
-            compare: lookup.type_item("Compare"),
-            to_string: lookup.type_item("ToString"),
+            add: lookup.class_item("Add"),
+            mul: lookup.class_item("Mul"),
+            compare: lookup.class_item("Compare"),
+            to_string: lookup.class_item("ToString"),
         })
     }
 }
@@ -623,9 +639,9 @@ impl PrimSymbolCore {
 
         Ok(PrimSymbolCore {
             file_id,
-            append: lookup.type_item("Append"),
-            compare: lookup.type_item("Compare"),
-            cons: lookup.type_item("Cons"),
+            append: lookup.class_item("Append"),
+            compare: lookup.class_item("Compare"),
+            cons: lookup.class_item("Cons"),
         })
     }
 }
@@ -669,10 +685,10 @@ impl PrimRowCore {
 
         Ok(PrimRowCore {
             file_id,
-            union: lookup.type_item("Union"),
-            cons: lookup.type_item("Cons"),
-            lacks: lookup.type_item("Lacks"),
-            nub: lookup.type_item("Nub"),
+            union: lookup.class_item("Union"),
+            cons: lookup.class_item("Cons"),
+            lacks: lookup.class_item("Lacks"),
+            nub: lookup.class_item("Nub"),
         })
     }
 }
@@ -698,7 +714,7 @@ impl PrimRowListCore {
 
         Ok(PrimRowListCore {
             file_id,
-            row_to_list: lookup.type_item("RowToList"),
+            row_to_list: lookup.class_item("RowToList"),
             cons: lookup.type_constructor("Cons"),
             nil: lookup.type_constructor("Nil"),
         })
@@ -719,7 +735,7 @@ impl PrimCoerceCore {
         let resolved = queries.resolved(file_id)?;
         let (_, coercible) = resolved
             .exports
-            .lookup_type("Coercible")
+            .lookup_class("Coercible")
             .unwrap_or_else(|| unreachable!("invariant violated: Coercible not in Prim.Coerce"));
 
         Ok(PrimCoerceCore { file_id, coercible })
@@ -748,8 +764,8 @@ impl PrimTypeErrorCore {
 
         Ok(PrimTypeErrorCore {
             file_id,
-            warn: lookup.type_item("Warn"),
-            fail: lookup.type_item("Fail"),
+            warn: lookup.class_item("Warn"),
+            fail: lookup.class_item("Fail"),
             text: lookup.type_constructor("Text"),
             quote: lookup.type_constructor("Quote"),
             quote_label: lookup.type_constructor("QuoteLabel"),
@@ -774,7 +790,7 @@ fn fetch_known_term(
     Ok(Some((file_id, term_id)))
 }
 
-fn fetch_known_type(
+fn fetch_known_class(
     queries: &impl ExternalQueries,
     m: &str,
     n: &str,
@@ -783,7 +799,7 @@ fn fetch_known_type(
         return Ok(None);
     };
     let resolved = queries.resolved(file_id)?;
-    let Some((file_id, type_id)) = resolved.exports.lookup_type(n) else {
+    let Some((file_id, type_id)) = resolved.exports.lookup_class(n) else {
         return Ok(None);
     };
     Ok(Some((file_id, type_id)))
@@ -824,21 +840,21 @@ pub struct KnownTypesCore {
 
 impl KnownTypesCore {
     fn collect(queries: &impl ExternalQueries) -> QueryResult<KnownTypesCore> {
-        let eq = fetch_known_type(queries, "Data.Eq", "Eq")?;
-        let eq1 = fetch_known_type(queries, "Data.Eq", "Eq1")?;
-        let ord = fetch_known_type(queries, "Data.Ord", "Ord")?;
-        let ord1 = fetch_known_type(queries, "Data.Ord", "Ord1")?;
-        let functor = fetch_known_type(queries, "Data.Functor", "Functor")?;
-        let bifunctor = fetch_known_type(queries, "Data.Bifunctor", "Bifunctor")?;
+        let eq = fetch_known_class(queries, "Data.Eq", "Eq")?;
+        let eq1 = fetch_known_class(queries, "Data.Eq", "Eq1")?;
+        let ord = fetch_known_class(queries, "Data.Ord", "Ord")?;
+        let ord1 = fetch_known_class(queries, "Data.Ord", "Ord1")?;
+        let functor = fetch_known_class(queries, "Data.Functor", "Functor")?;
+        let bifunctor = fetch_known_class(queries, "Data.Bifunctor", "Bifunctor")?;
         let contravariant =
-            fetch_known_type(queries, "Data.Functor.Contravariant", "Contravariant")?;
-        let profunctor = fetch_known_type(queries, "Data.Profunctor", "Profunctor")?;
-        let foldable = fetch_known_type(queries, "Data.Foldable", "Foldable")?;
-        let bifoldable = fetch_known_type(queries, "Data.Bifoldable", "Bifoldable")?;
-        let traversable = fetch_known_type(queries, "Data.Traversable", "Traversable")?;
-        let bitraversable = fetch_known_type(queries, "Data.Bitraversable", "Bitraversable")?;
-        let newtype = fetch_known_type(queries, "Data.Newtype", "Newtype")?;
-        let generic = fetch_known_type(queries, "Data.Generic.Rep", "Generic")?;
+            fetch_known_class(queries, "Data.Functor.Contravariant", "Contravariant")?;
+        let profunctor = fetch_known_class(queries, "Data.Profunctor", "Profunctor")?;
+        let foldable = fetch_known_class(queries, "Data.Foldable", "Foldable")?;
+        let bifoldable = fetch_known_class(queries, "Data.Bifoldable", "Bifoldable")?;
+        let traversable = fetch_known_class(queries, "Data.Traversable", "Traversable")?;
+        let bitraversable = fetch_known_class(queries, "Data.Bitraversable", "Bitraversable")?;
+        let newtype = fetch_known_class(queries, "Data.Newtype", "Newtype")?;
+        let generic = fetch_known_class(queries, "Data.Generic.Rep", "Generic")?;
         Ok(KnownTypesCore {
             eq,
             eq1,
@@ -869,8 +885,8 @@ impl KnownReflectableCore {
         queries: &impl ExternalQueries,
         storage: &mut TypeInterner,
     ) -> QueryResult<KnownReflectableCore> {
-        let is_symbol = fetch_known_type(queries, "Data.Symbol", "IsSymbol")?;
-        let reflectable = fetch_known_type(queries, "Data.Reflectable", "Reflectable")?;
+        let is_symbol = fetch_known_class(queries, "Data.Symbol", "IsSymbol")?;
+        let reflectable = fetch_known_class(queries, "Data.Reflectable", "Reflectable")?;
         let ordering = fetch_known_constructor(queries, storage, "Data.Ordering", "Ordering")?;
         Ok(KnownReflectableCore { is_symbol, reflectable, ordering })
     }
@@ -1046,7 +1062,6 @@ impl CheckState {
 
         residuals
     }
-
 
     pub fn report_exhaustiveness(&mut self, exhaustiveness: ExhaustivenessReport) {
         if let Some(patterns) = exhaustiveness.missing {

@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/resolving/generated.rs
+assertion_line: 12
 expression: report
 ---
 module ImportUnqualifiedImplicit
@@ -21,6 +22,8 @@ Types:
   - TypeOnly is Implicit
   - HideTy is Implicit
 
+Classes:
+
 Qualified Imports:
 
 Exported Terms:
@@ -38,9 +41,13 @@ Exported Types:
   - TypeOnly
   - HideTy
 
+Exported Classes:
+
 Local Terms:
 
 Local Types:
+
+Local Classes:
 
 Class Members:
 

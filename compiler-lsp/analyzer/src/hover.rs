@@ -113,8 +113,21 @@ fn hover_import(
 
     let hover_type_import = |engine: &QueryEngine, name: &str| {
         let name = name.trim_start_matches("(").trim_end_matches(")");
-        let (f_id, t_id) =
-            import_resolved.exports.lookup_type(name).ok_or(AnalyzerError::NonFatal)?;
+        let (f_id, t_id) = import_resolved
+            .exports
+            .lookup_type(name)
+            .or_else(|| import_resolved.exports.lookup_class(name))
+            .ok_or(AnalyzerError::NonFatal)?;
+        hover_file_type(engine, f_id, t_id)
+    };
+
+    let hover_class_import = |engine: &QueryEngine, name: &str| {
+        let name = name.trim_start_matches("(").trim_end_matches(")");
+        let (f_id, t_id) = import_resolved
+            .exports
+            .lookup_class(name)
+            .or_else(|| import_resolved.exports.lookup_type(name))
+            .ok_or(AnalyzerError::NonFatal)?;
         hover_file_type(engine, f_id, t_id)
     };
 
@@ -127,7 +140,7 @@ fn hover_import(
         cst::ImportItem::ImportClass(cst) => {
             let token = cst.name_token().ok_or(AnalyzerError::NonFatal)?;
             let name = token.text();
-            hover_type_import(engine, name)
+            hover_class_import(engine, name)
         }
         cst::ImportItem::ImportType(cst) => {
             let token = cst.name_token().ok_or(AnalyzerError::NonFatal)?;

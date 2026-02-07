@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/resolving/generated.rs
+assertion_line: 12
 expression: report
 ---
 module ReExporter
@@ -13,6 +14,8 @@ Terms:
   - eq is Implicit
 
 Types:
+
+Classes:
   - Show is Implicit
   - Ord is Implicit
   - Eq is Implicit
@@ -26,6 +29,8 @@ Exported Terms:
   - eq
 
 Exported Types:
+
+Exported Classes:
   - Show
   - Ord
   - Eq
@@ -33,6 +38,8 @@ Exported Types:
 Local Terms:
 
 Local Types:
+
+Local Classes:
 
 Class Members:
   - Show.show (imported)

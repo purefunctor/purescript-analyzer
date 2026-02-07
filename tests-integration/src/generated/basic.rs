@@ -38,6 +38,15 @@ pub fn report_resolved(engine: &QueryEngine, id: FileId, name: &str) -> String {
             }
             writeln!(buffer, "  - {name} is {kind:?}").unwrap();
         }
+
+        writeln!(buffer).unwrap();
+        writeln!(buffer, "Classes:").unwrap();
+        for (name, _, _, kind) in import.iter_classes() {
+            if matches!(kind, ImportKind::Hidden) {
+                continue;
+            }
+            writeln!(buffer, "  - {name} is {kind:?}").unwrap();
+        }
     }
 
     writeln!(buffer).unwrap();
@@ -60,6 +69,15 @@ pub fn report_resolved(engine: &QueryEngine, id: FileId, name: &str) -> String {
             }
             writeln!(buffer, "  - {name} is {kind:?}").unwrap();
         }
+
+        writeln!(buffer).unwrap();
+        writeln!(buffer, "{name} Classes:").unwrap();
+        for (name, _, _, kind) in import.iter_classes() {
+            if matches!(kind, ImportKind::Hidden) {
+                continue;
+            }
+            writeln!(buffer, "  - {name} is {kind:?}").unwrap();
+        }
     }
 
     writeln!(buffer).unwrap();
@@ -75,6 +93,12 @@ pub fn report_resolved(engine: &QueryEngine, id: FileId, name: &str) -> String {
     }
 
     writeln!(buffer).unwrap();
+    writeln!(buffer, "Exported Classes:").unwrap();
+    for (name, _, _) in resolved.exports.iter_classes() {
+        writeln!(buffer, "  - {name}").unwrap();
+    }
+
+    writeln!(buffer).unwrap();
     writeln!(buffer, "Local Terms:").unwrap();
     for (name, _, _) in resolved.locals.iter_terms() {
         writeln!(buffer, "  - {name}").unwrap();
@@ -83,6 +107,12 @@ pub fn report_resolved(engine: &QueryEngine, id: FileId, name: &str) -> String {
     writeln!(buffer).unwrap();
     writeln!(buffer, "Local Types:").unwrap();
     for (name, _, _) in resolved.locals.iter_types() {
+        writeln!(buffer, "  - {name}").unwrap();
+    }
+
+    writeln!(buffer).unwrap();
+    writeln!(buffer, "Local Classes:").unwrap();
+    for (name, _, _) in resolved.locals.iter_classes() {
         writeln!(buffer, "  - {name}").unwrap();
     }
 

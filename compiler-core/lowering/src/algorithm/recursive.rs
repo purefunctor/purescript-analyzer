@@ -890,9 +890,11 @@ fn lower_type_kind(
 ) -> TypeKind {
     match cst {
         cst::Type::TypeApplicationChain(cst) => {
-            let mut children = cst.children().map(|cst| lower_type(state, context, &cst));
-            let function = children.next();
-            let arguments = children.collect();
+            let mut children = cst.children();
+            let function = children.next().map(|cst| lower_type(state, context, &cst));
+            let in_constraint = mem::replace(&mut state.in_constraint, false);
+            let arguments = children.map(|cst| lower_type(state, context, &cst)).collect();
+            state.in_constraint = in_constraint;
             TypeKind::ApplicationChain { function, arguments }
         }
         cst::Type::TypeArrow(cst) => {
@@ -902,15 +904,23 @@ fn lower_type_kind(
             TypeKind::Arrow { argument, result }
         }
         cst::Type::TypeConstrained(cst) => {
-            let mut children = cst.children().map(|cst| lower_type(state, context, &cst));
-            let constraint = children.next();
-            let constrained = children.next();
+            let mut children = cst.children();
+            let in_constraint = mem::replace(&mut state.in_constraint, true);
+            let constraint = children.next().map(|cst| lower_type(state, context, &cst));
+            state.in_constraint = in_constraint;
+            let constrained = children.next().map(|cst| lower_type(state, context, &cst));
             TypeKind::Constrained { constraint, constrained }
         }
         cst::Type::TypeConstructor(cst) => {
             let resolution = cst.name().and_then(|cst| {
                 let (qualifier, name) = lower_qualified_name(&cst, cst::QualifiedName::upper)?;
-                state.resolve_type_reference(context, qualifier.as_deref(), &name)
+                if state.in_constraint {
+                    state.resolve_class_reference(context, qualifier.as_deref(), &name).or_else(
+                        || state.resolve_type_reference(context, qualifier.as_deref(), &name),
+                    )
+                } else {
+                    state.resolve_type_reference(context, qualifier.as_deref(), &name)
+                }
             });
             if resolution.is_none() {
                 let id = context.stabilized.lookup_cst(cst).expect_id();
