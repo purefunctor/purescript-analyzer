@@ -699,7 +699,16 @@ where
 
         let signature = inspect::inspect_signature(state, context, stored_kind, surface_bindings)?;
 
-        if variables.len() != signature.arguments.len() {
+        // The kind signature may have more function arrows than the
+        // definition has parameters when the result kind is itself a
+        // function kind. For example:
+        //
+        //   type C2 :: forall k. (k -> Type) -> (k -> Type) -> k -> Type
+        //   type C2 a z = Coproduct a z
+        //
+        // The kind decomposes into 3 arrows but the synonym only has 2
+        // parameters. The excess arrows belong to the result kind.
+        if variables.len() > signature.arguments.len() {
             state.insert_error(ErrorKind::TypeSignatureVariableMismatch {
                 id: signature_id,
                 expected: 0,
@@ -713,11 +722,13 @@ where
             return Ok(None);
         };
 
-        let variables = variables.iter();
-        let arguments = signature.arguments.iter();
+        let parameter_count = variables.len();
+        let (matched_arguments, excess_arguments) =
+            signature.arguments.split_at(parameter_count);
 
         let kinds = variables
-            .zip(arguments)
+            .iter()
+            .zip(matched_arguments.iter())
             .map(|(variable, &argument)| {
                 // Use contravariant subtyping for type variables:
                 //
@@ -746,7 +757,11 @@ where
             .collect::<QueryResult<Vec<_>>>()?;
 
         let kind_variables = signature.variables;
-        let result_kind = signature.result;
+
+        // Fold excess arguments back into the result kind.
+        let result_kind = excess_arguments.iter().rfold(signature.result, |result, &argument| {
+            state.storage.intern(Type::Function(argument, result))
+        });
         let type_variables = kinds.into_iter().map(|(id, visible, name, kind)| {
             let level = state.type_scope.bind_forall(id, kind);
             ForallBinder { visible, implicit: false, name, level, kind }

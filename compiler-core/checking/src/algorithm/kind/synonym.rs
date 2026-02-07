@@ -179,7 +179,21 @@ where
     let expected_arity = synonym.type_variables.0 as usize;
     let actual_arity = arguments.len();
 
-    if expected_arity != actual_arity {
+    // A synonym's result kind can itself be a function kind, which means
+    // the application chain may contain more arguments than the synonym
+    // has parameters. For example:
+    //
+    //   type C2 :: forall k. (k -> Type) -> (k -> Type) -> k -> Type
+    //   type C2 a z = Coproduct a z
+    //
+    //   in1 :: forall a z. a ~> C2 a z
+    //
+    // The lowered application chain for `C2 a z x` has 3 arguments, but
+    // the synonym only has 2 parameters. After expanding with the first
+    // 2 arguments, `C2 a z` becomes `Coproduct a z` with kind `k -> Type`.
+    // The third argument `x` is then applied to the expanded result as a
+    // regular type application, giving `Coproduct a z x` of kind `Type`.
+    if actual_arity < expected_arity {
         if state.defer_synonym_expansion {
             let (synonym_type, synonym_kind) = infer_partial_synonym_application(
                 state,
@@ -195,12 +209,36 @@ where
         }
     }
 
+    // Continuing our previous example, `C2 a z x` produces:
+    //
+    //   synonym_arguments := [a, z]
+    //   excess_arguments  := [x]
+    let (synonym_arguments, excess_arguments) = arguments.split_at(expected_arity);
+
     let defer_synonym_expansion = mem::replace(&mut state.defer_synonym_expansion, true);
-
-    let (synonym_type, synonym_kind) =
-        infer_synonym_application_arguments(state, context, (file_id, type_id), kind, arguments)?;
-
+    let (mut synonym_type, mut synonym_kind) = infer_synonym_application_arguments(
+        state,
+        context,
+        (file_id, type_id),
+        kind,
+        synonym_arguments,
+    )?;
     state.defer_synonym_expansion = defer_synonym_expansion;
+
+    // Continuing our previous example, `C2 a z x` expands:
+    //
+    //   synonym_type := Coproduct a z
+    //   synonym_kind := (k -> Type)
+    //
+    // Finally, we append the excess arguments to get:
+    //
+    //   synonym_type := Coproduct a z x
+    //   synonym_kind := Type
+    //
+    for &argument in excess_arguments {
+        (synonym_type, synonym_kind) =
+            kind::infer_surface_app_kind(state, context, (synonym_type, synonym_kind), argument)?;
+    }
 
     Ok((synonym_type, synonym_kind))
 }
