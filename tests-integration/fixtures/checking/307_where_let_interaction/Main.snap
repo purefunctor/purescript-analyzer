@@ -1,0 +1,19 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+method :: forall (a :: Type). MyClass (a :: Type) => (a :: Type) -> Int
+test :: forall (a :: Type). MyClass (a :: Type) => (a :: Type) -> Int
+test2 :: forall (a :: Type). MyClass (a :: Type) => (a :: Type) -> Int
+
+Types
+MyClass :: Type -> Constraint
+
+Classes
+class MyClass (&0 :: Type)
+
+Instances
+instance MyClass (Int :: Type)
+  chain: 0

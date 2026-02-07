@@ -1,4 +1,5 @@
 use std::iter;
+use std::mem;
 
 use building_types::QueryResult;
 use itertools::{Itertools, Position};
@@ -1749,11 +1750,19 @@ fn check_let_name_binding<Q>(
 where
     Q: ExternalQueries,
 {
-    state.with_local_givens(|state| {
-        state.with_error_step(ErrorStep::CheckingLetName(id), |state| {
-            check_let_name_binding_core(state, context, id)
-        })
-    })
+    let outer_wanted = mem::take(&mut state.constraints.wanted);
+    let outer_given = mem::take(&mut state.constraints.given);
+
+    let result = state.with_error_step(ErrorStep::CheckingLetName(id), |state| {
+        check_let_name_binding_core(state, context, id)
+    });
+
+    // Residuals from solving are the only wanteds remaining.
+    let residual = mem::replace(&mut state.constraints.wanted, outer_wanted);
+    state.constraints.given = outer_given;
+    state.constraints.wanted.extend(residual);
+
+    result
 }
 
 fn check_let_name_binding_core<Q>(
@@ -1791,12 +1800,12 @@ where
 
         let origin = equation::ExhaustivenessOrigin::FromType(name_type);
         equation::patterns(state, context, origin, &name.equations)?;
-    };
+    }
 
-    // PureScript does not have let generalisation; residuals are moved
-    // to the parent scope's wanted constraints. Given constraints must
-    // also be preserved across let bindings. This is demonstrated by
-    // 274_givens_retained, 275_givens_scoped
+    // PureScript does not generalise let bindings. Constraints propagate
+    // to the enclosing declaration where they are solved via dictionary
+    // passing. Both wanteds and givens are scoped to this binding by
+    // the caller, so the standard solver only sees local constraints.
     let residual = equation::constraints(state, context, equation::ConstraintsPolicy::Return)?;
     state.constraints.extend_wanted(&residual);
 

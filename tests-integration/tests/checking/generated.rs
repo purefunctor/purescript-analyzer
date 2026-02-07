@@ -625,3 +625,7 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_305_type_operator_unification_main() { run_test("305_type_operator_unification", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_306_kind_application_instance_matching_main() { run_test("306_kind_application_instance_matching", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_307_where_let_interaction_main() { run_test("307_where_let_interaction", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_308_let_constraint_scoping_main() { run_test("308_let_constraint_scoping", "Main"); }

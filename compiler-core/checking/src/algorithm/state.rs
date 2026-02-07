@@ -1047,6 +1047,7 @@ impl CheckState {
         residuals
     }
 
+
     pub fn report_exhaustiveness(&mut self, exhaustiveness: ExhaustivenessReport) {
         if let Some(patterns) = exhaustiveness.missing {
             let patterns = Arc::from(patterns);
