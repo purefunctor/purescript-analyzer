@@ -637,3 +637,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_311_prim_qualified_main() { run_test("311_prim_qualified", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_312_prim_qualified_override_main() { run_test("312_prim_qualified_override", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_313_guarded_constraint_propagation_main() { run_test("313_guarded_constraint_propagation", "Main"); }

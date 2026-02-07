@@ -14,15 +14,15 @@ Types
 
 Diagnostics
 error[CannotUnify]: Cannot unify 'Int' with 'String'
-  --> 10:7..11:16
+  --> 11:13..11:16
    |
-10 |       g :: Int -> String
-   |       ^~~~~~~~~~~~~~~~~~
+11 |       g x = f x
+   |             ^~~
 error[CannotUnify]: Cannot unify 'String' with 'Int'
-  --> 8:7..9:16
+  --> 9:13..9:16
   |
-8 |   let f :: Int -> Int
-  |       ^~~~~~~~~~~~~~~
+9 |       f x = g x
+  |             ^~~
 error[CannotUnify]: Cannot unify '?2[:0] -> ?3[:0]' with '?3[:0]'
   --> 17:7..17:14
    |

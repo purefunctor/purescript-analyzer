@@ -270,8 +270,7 @@ where
         };
 
         if let Some(guarded) = &equation.guarded {
-            let inferred_type = term::infer_guarded_expression(state, context, guarded)?;
-            let _ = unification::subtype(state, context, inferred_type, expected_type)?;
+            term::check_guarded_expression(state, context, guarded, expected_type)?;
         }
     }
 

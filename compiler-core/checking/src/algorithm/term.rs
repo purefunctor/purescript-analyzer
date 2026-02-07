@@ -1826,6 +1826,37 @@ where
     }
 }
 
+pub fn check_guarded_expression<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    guarded: &lowering::GuardedExpression,
+    expected: TypeId,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    match guarded {
+        lowering::GuardedExpression::Unconditional { where_expression } => {
+            let Some(w) = where_expression else {
+                return Ok(());
+            };
+            check_where_expression(state, context, w, expected)?;
+            Ok(())
+        }
+        lowering::GuardedExpression::Conditionals { pattern_guarded } => {
+            for pattern_guarded in pattern_guarded.iter() {
+                for pattern_guard in pattern_guarded.pattern_guards.iter() {
+                    check_pattern_guard(state, context, pattern_guard)?;
+                }
+                if let Some(w) = &pattern_guarded.where_expression {
+                    check_where_expression(state, context, w, expected)?;
+                }
+            }
+            Ok(())
+        }
+    }
+}
+
 fn check_pattern_guard<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -1864,4 +1895,22 @@ where
     };
 
     infer_expression(state, context, expression)
+}
+
+fn check_where_expression<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    where_expression: &lowering::WhereExpression,
+    expected: TypeId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    check_let_chunks(state, context, &where_expression.bindings)?;
+
+    let Some(expression) = where_expression.expression else {
+        return Ok(context.prim.unknown);
+    };
+
+    check_expression(state, context, expression, expected)
 }

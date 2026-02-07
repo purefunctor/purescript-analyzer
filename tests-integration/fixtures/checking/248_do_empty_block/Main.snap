@@ -16,10 +16,10 @@ error[EmptyDoBlock]: Empty do block
 6 | test = do
   |        ^~
 error[CannotUnify]: Cannot unify '???' with 'Effect Int'
-  --> 5:1..5:19
+  --> 6:8..6:10
   |
-5 | test :: Effect Int
-  | ^~~~~~~~~~~~~~~~~~
+6 | test = do
+  |        ^~
 error[EmptyDoBlock]: Empty do block
   --> 8:9..8:11
   |
