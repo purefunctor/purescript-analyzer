@@ -639,3 +639,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_312_prim_qualified_override_main() { run_test("312_prim_qualified_override", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_313_guarded_constraint_propagation_main() { run_test("313_guarded_constraint_propagation", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_314_derive_newtype_function_main() { run_test("314_derive_newtype_function", "Main"); }

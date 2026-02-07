@@ -265,7 +265,9 @@ where
 
     let inner_type = if skolem_count == 0 {
         inner_type
-    } else if let Some(inner_type) = try_peel_trailing_skolems(state, inner_type, skolem_count) {
+    } else if let Some(inner_type) =
+        try_peel_trailing_skolems(state, context, inner_type, skolem_count)
+    {
         inner_type
     } else {
         state.insert_error(ErrorKind::InvalidNewtypeDeriveSkolemArguments);
@@ -399,11 +401,15 @@ fn generate_delegate_constraint(
     state.push_wanted(wanted_constraint);
 }
 
-fn try_peel_trailing_skolems(
+fn try_peel_trailing_skolems<Q>(
     state: &mut CheckState,
+    context: &CheckContext<Q>,
     mut type_id: TypeId,
     mut count: usize,
-) -> Option<TypeId> {
+) -> Option<TypeId>
+where
+    Q: ExternalQueries,
+{
     safe_loop! {
         if count == 0 {
             break Some(type_id);
@@ -416,6 +422,14 @@ fn try_peel_trailing_skolems(
             if matches!(state.storage[argument], Type::Variable(Variable::Skolem(_, _))) {
                 count -= 1;
                 type_id = function;
+            } else {
+                break None;
+            }
+        } else if let Type::Function(argument, result) = state.storage[type_id] {
+            let result = state.normalize_type(result);
+            if matches!(state.storage[result], Type::Variable(Variable::Skolem(_, _))) {
+                count -= 1;
+                type_id = state.storage.intern(Type::Application(context.prim.function, argument));
             } else {
                 break None;
             }
