@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -13,8 +14,8 @@ MaybeAlias ::
   forall (k :: Type) (n :: (k :: Type)) (a :: Type).
     Maybe @(k :: Type) (n :: (k :: Type)) (a :: Type) ->
     MaybeAlias @(k :: Type) (n :: (k :: Type)) (a :: Type)
-coerceContainer :: Container Maybe -> Container MaybeAlias
-coerceContainerReverse :: Container MaybeAlias -> Container Maybe
+coerceContainer :: Container (Maybe @Type) -> Container (MaybeAlias @Type)
+coerceContainerReverse :: Container (MaybeAlias @Type) -> Container (Maybe @Type)
 
 Types
 Maybe :: forall (k :: Type). (k :: Type) -> Type -> Type

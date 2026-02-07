@@ -118,31 +118,27 @@ fn test_solve_bound() {
 }
 
 #[test]
-fn test_solve_invalid() {
+fn test_solve_escaping_variable() {
     let (engine, id) = empty_engine();
     let ContextState { ref context, ref mut state } = ContextState::new(&engine, id);
 
     // [a :: Int]
     state.type_scope.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_1), context.prim.int);
 
+    // ?u created at depth C = 1
     let unification = state.fresh_unification_type(context);
     let Type::Unification(unification_id) = state.storage[unification] else {
         unreachable!("invariant violated");
     };
 
-    // [a :: Int, b :: String]
-    let level = state
-        .type_scope
-        .bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_2), context.prim.string);
+    // [a :: Int, b :: String] S = 2
+    state.type_scope.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_2), context.prim.string);
 
-    let bound_b = state.bound_variable(0, context.prim.int);
-    let bound_a = state.bound_variable(1, context.prim.string);
-    let b_to_a = state.function(bound_b, bound_a);
+    // b is at level 1 which is C(1) <= level(1) < S(2)
+    let bound_b = state.bound_variable(1, context.prim.string);
 
-    state.type_scope.unbind(level);
-
-    let solve_result = unification::solve(state, context, unification_id, b_to_a).unwrap();
-    assert!(solve_result.is_none());
+    let solve_result = unification::solve(state, context, unification_id, bound_b).unwrap();
+    assert!(solve_result.is_none(), "should reject: b escapes the scope where ?u was created");
 }
 
 #[test]
@@ -169,9 +165,9 @@ fn test_solve_promotion() {
     let entries: Vec<_> = state.unification.iter().copied().collect();
     for (index, entry) in entries.iter().enumerate() {
         let UnificationState::Solved(solution) = entry.state else { continue };
-        let domain = entry.domain;
+        let depth = entry.depth;
         let solution = pretty::print_local(state, context, solution);
-        writeln!(snapshot, "?{index}[{domain}] := {solution}").unwrap();
+        writeln!(snapshot, "?{index}[{depth}] := {solution}").unwrap();
     }
 
     insta::assert_snapshot!(snapshot);
@@ -285,7 +281,13 @@ fn make_forall_a_to_a(context: &CheckContext<QueryEngine>, state: &mut CheckStat
     let bound_a = state.bound_variable(0, context.prim.t);
     let a_to_a = state.function(bound_a, bound_a);
 
-    let binder = ForallBinder { visible: false, name: "a".into(), level, kind: context.prim.t };
+    let binder = ForallBinder {
+        visible: false,
+        implicit: false,
+        name: "a".into(),
+        level,
+        kind: context.prim.t,
+    };
     let forall_a_to_a = state.storage.intern(Type::Forall(binder, a_to_a));
 
     state.type_scope.unbind(level);
@@ -329,7 +331,7 @@ fn test_subtype_mono_of_poly_fail() {
     // Create ∀a. a -> a
     let forall_a_to_a = make_forall_a_to_a(context, state);
 
-    // (Int -> Int) <: ∀a. (a -> a) should fail (RHS forall gets skolemized)
+    // (Int -> Int) <: ∀a. (a -> a) should fail (RHS forall gets skolemised)
     let int_to_int = state.function(context.prim.int, context.prim.int);
     let result = unification::subtype(state, context, int_to_int, forall_a_to_a).unwrap();
     assert!(!result, "(Int -> Int) <: ∀a. (a -> a) should fail");
@@ -352,13 +354,25 @@ fn test_subtype_nested_forall() {
     let a_to_b_to_a = state.function(bound_a, b_to_a);
 
     let forall_b = state.storage.intern(Type::Forall(
-        ForallBinder { visible: false, name: "b".into(), level: level_b, kind: context.prim.t },
+        ForallBinder {
+            visible: false,
+            implicit: false,
+            name: "b".into(),
+            level: level_b,
+            kind: context.prim.t,
+        },
         a_to_b_to_a,
     ));
     state.type_scope.unbind(level_b);
 
     let forall_a_b = state.storage.intern(Type::Forall(
-        ForallBinder { visible: false, name: "a".into(), level: level_a, kind: context.prim.t },
+        ForallBinder {
+            visible: false,
+            implicit: false,
+            name: "a".into(),
+            level: level_a,
+            kind: context.prim.t,
+        },
         forall_b,
     ));
     state.type_scope.unbind(level_a);

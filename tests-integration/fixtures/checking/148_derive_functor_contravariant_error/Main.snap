@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -39,5 +40,9 @@ derive Functor (Predicate :: Type -> Type)
 derive Functor (Reader (&0 :: Type) :: Type -> Type)
 derive Functor (Cont (&0 :: Type) :: Type -> Type)
 
-Errors
-ContravariantOccurrence { type_id: Id<checking::core::Type>(45) } at [TermDeclaration(Idx::<TermItem>(1))]
+Diagnostics
+error[ContravariantOccurrence]: Type variable occurs in contravariant position: (~&0 :: Type)
+  --> 6:1..6:34
+  |
+6 | derive instance Functor Predicate
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

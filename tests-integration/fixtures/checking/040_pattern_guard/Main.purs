@@ -8,4 +8,4 @@ bar s | b <- "hello" = b
 
 foo' x | c <- 42 = c
 
-bar' s | b <- "hello" = b 
+bar' s | b <- "hello" = b

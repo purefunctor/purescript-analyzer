@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/resolving/generated.rs
+assertion_line: 12
 expression: report
 ---
 module ImportQualifiedExplicit
@@ -19,6 +20,8 @@ L Types:
   - MultiTy is Explicit
   - TypeOnly is Explicit
 
+L Classes:
+
 Exported Terms:
   - libFn
   - MkLibTy
@@ -30,9 +33,13 @@ Exported Types:
   - MultiTy
   - TypeOnly
 
+Exported Classes:
+
 Local Terms:
 
 Local Types:
+
+Local Classes:
 
 Class Members:
 

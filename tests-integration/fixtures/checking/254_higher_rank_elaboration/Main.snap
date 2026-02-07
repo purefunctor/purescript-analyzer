@@ -1,0 +1,31 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+reflectSymbol :: forall (sym :: Symbol). IsSymbol (sym :: Symbol) => Proxy (sym :: Symbol) -> String
+Proxy :: forall (a :: Symbol). Proxy (a :: Symbol)
+reifySymbol ::
+  forall (r :: Type).
+    String ->
+    (forall (sym :: Symbol). IsSymbol (sym :: Symbol) => Proxy (sym :: Symbol) -> (r :: Type)) ->
+    (r :: Type)
+unsafeCoerce :: forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type)
+test :: String -> String
+
+Types
+IsSymbol :: Symbol -> Constraint
+Proxy :: Symbol -> Type
+
+Data
+Proxy
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+Proxy = [Phantom]
+
+Classes
+class IsSymbol (&0 :: Symbol)

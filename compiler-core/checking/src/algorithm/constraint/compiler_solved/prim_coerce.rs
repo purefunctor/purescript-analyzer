@@ -50,6 +50,10 @@ where
         return Ok(Some(result));
     }
 
+    if let Some(result) = try_function_coercion(state, context, left, right)? {
+        return Ok(Some(result));
+    }
+
     if let Some(result) = try_higher_kinded_coercion(state, context, left, right)? {
         return Ok(Some(result));
     }
@@ -97,7 +101,7 @@ where
         && is_newtype(context, file_id, type_id)?
     {
         if is_constructor_in_scope(context, file_id, type_id)? {
-            let inner = derive::get_newtype_inner(state, context, file_id, type_id, left)?;
+            let (inner, _) = derive::get_newtype_inner(state, context, file_id, type_id, left)?;
             let constraint = make_coercible_constraint(state, context, inner, right);
             return Ok(NewtypeCoercionResult::Success(MatchInstance::Match {
                 constraints: vec![constraint],
@@ -113,7 +117,7 @@ where
         && is_newtype(context, file_id, type_id)?
     {
         if is_constructor_in_scope(context, file_id, type_id)? {
-            let inner = derive::get_newtype_inner(state, context, file_id, type_id, right)?;
+            let (inner, _) = derive::get_newtype_inner(state, context, file_id, type_id, right)?;
             let constraint = make_coercible_constraint(state, context, left, inner);
             return Ok(NewtypeCoercionResult::Success(MatchInstance::Match {
                 constraints: vec![constraint],
@@ -258,6 +262,32 @@ where
     }
 }
 
+/// Decomposes `Coercible (a -> b) (c -> d)` into `Coercible a c` and `Coercible b d`.
+fn try_function_coercion<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    left: TypeId,
+    right: TypeId,
+) -> QueryResult<Option<MatchInstance>>
+where
+    Q: ExternalQueries,
+{
+    let strict = toolkit::SynthesiseFunction::No;
+    let Some((left_argument, left_result)) =
+        toolkit::decompose_function(state, context, left, strict)?
+    else {
+        return Ok(None);
+    };
+    let Some((right_argument, right_result)) =
+        toolkit::decompose_function(state, context, right, strict)?
+    else {
+        return Ok(None);
+    };
+    let c1 = make_coercible_constraint(state, context, left_argument, right_argument);
+    let c2 = make_coercible_constraint(state, context, left_result, right_result);
+    Ok(Some(MatchInstance::Match { constraints: vec![c1, c2], equalities: vec![] }))
+}
+
 fn try_row_coercion<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -334,7 +364,7 @@ where
 
     // decompose_kind_for_coercion instantiates the variables into
     // skolem variables, then returns the first argument, which in
-    // this case is the already-skolemized `~k`
+    // this case is the already skolemised `~k`
     //
     // left_kind_applied := Maybe @~k
     // left_domain       := ~k

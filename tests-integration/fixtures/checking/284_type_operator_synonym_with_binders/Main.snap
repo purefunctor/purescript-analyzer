@@ -1,0 +1,32 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Cons :: forall (a :: Type). (a :: Type) -> List (a :: Type) -> List (a :: Type)
+Nil :: forall (a :: Type). List (a :: Type)
+head :: List ~> List
+
+Types
+List :: Type -> Type
+Transform :: forall (t14 :: Type). ((t14 :: Type) -> Type) -> ((t14 :: Type) -> Type) -> Type
+~> :: forall (t14 :: Type). ((t14 :: Type) -> Type) -> ((t14 :: Type) -> Type) -> Type
+
+Synonyms
+Transform = forall (t14 :: Type) (f :: (t14 :: Type) -> Type) (g :: (t14 :: Type) -> Type) (a :: (t14 :: Type)).
+  (f :: (t14 :: Type) -> Type) (a :: (t14 :: Type)) ->
+  (g :: (t14 :: Type) -> Type) (a :: (t14 :: Type))
+  Quantified = :1
+  Kind = :0
+  Type = :2
+
+
+Data
+List
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+List = [Representational]

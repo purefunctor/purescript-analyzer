@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/resolving/generated.rs
+assertion_line: 12
 expression: report
 ---
 module ImportExplicit
@@ -12,12 +13,16 @@ Terms:
 Types:
   - Id is Explicit
 
+Classes:
+
 Terms:
   - Id is Implicit
 
 Types:
   - Hidden is Implicit
   - Id is Implicit
+
+Classes:
 
 Qualified Imports:
 
@@ -27,6 +32,8 @@ QualifiedExplicit Terms:
 QualifiedExplicit Types:
   - Id is Explicit
 
+QualifiedExplicit Classes:
+
 QualifiedImplicit Terms:
   - Id is Implicit
 
@@ -34,13 +41,19 @@ QualifiedImplicit Types:
   - Hidden is Implicit
   - Id is Implicit
 
+QualifiedImplicit Classes:
+
 Exported Terms:
 
 Exported Types:
 
+Exported Classes:
+
 Local Terms:
 
 Local Types:
+
+Local Classes:
 
 Class Members:
 

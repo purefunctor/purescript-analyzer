@@ -1,0 +1,34 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Just :: forall (a :: Type). (a :: Type) -> Maybe (a :: Type)
+Nothing :: forall (a :: Type). Maybe (a :: Type)
+test :: Maybe ~> Maybe
+test' :: NaturalTransformation Maybe Maybe
+
+Types
+Maybe :: Type -> Type
+NaturalTransformation ::
+  forall (t13 :: Type). ((t13 :: Type) -> Type) -> ((t13 :: Type) -> Type) -> Type
+~> :: forall (t13 :: Type). ((t13 :: Type) -> Type) -> ((t13 :: Type) -> Type) -> Type
+
+Synonyms
+NaturalTransformation = forall (t13 :: Type) (f :: (t13 :: Type) -> Type) (g :: (t13 :: Type) -> Type) (a :: (t13 :: Type)).
+  (f :: (t13 :: Type) -> Type) (a :: (t13 :: Type)) ->
+  (g :: (t13 :: Type) -> Type) (a :: (t13 :: Type))
+  Quantified = :1
+  Kind = :0
+  Type = :2
+
+
+Data
+Maybe
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+Maybe = [Representational]

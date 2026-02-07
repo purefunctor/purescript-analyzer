@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -20,5 +21,9 @@ Identity = [Representational]
 Derived
 derive Show (Identity String :: Type)
 
-Errors
-NoInstanceFound { Show String } at [TermDeclaration(Idx::<TermItem>(1))]
+Diagnostics
+error[NoInstanceFound]: No instance found for: Show String
+  --> 7:1..7:47
+  |
+7 | derive newtype instance Show (Identity String)
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

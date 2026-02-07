@@ -1,0 +1,44 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+identity :: forall (a :: Type). Identity (a :: Type) => (a :: Type) -> (a :: Type)
+
+Types
+Identity :: Type -> Constraint
+
+Classes
+class Identity (&0 :: Type)
+
+Instances
+instance forall (&0 :: Type) (&1 :: ???). Identity (??? (&2 :: (&1 :: (&0 :: Type))) :: ???)
+  chain: 0
+
+Diagnostics
+error[NotInScope]: 'Undefined' is not in scope
+  --> 8:20..8:29
+  |
+8 | instance Identity (Undefined a) where
+  |                    ^~~~~~~~~
+error[InvalidTypeApplication]: Cannot apply type '???' to '(&0 :: ?2[:0])'. '???' has kind '???', which is not a function kind.
+  --> 8:20..8:31
+  |
+8 | instance Identity (Undefined a) where
+  |                    ^~~~~~~~~~~
+error[CannotUnify]: Cannot unify '???' with 'Type'
+  --> 8:19..8:32
+  |
+8 | instance Identity (Undefined a) where
+  |                   ^~~~~~~~~~~~~
+error[CannotUnify]: Cannot unify 'Type' with '???'
+  --> 8:1..14:8
+  |
+8 | instance Identity (Undefined a) where
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[CannotUnify]: Cannot unify 'Type' with '???'
+  --> 8:1..14:8
+  |
+8 | instance Identity (Undefined a) where
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -1,23 +1,12 @@
 ---
 source: tests-integration/tests/lowering.rs
+assertion_line: 186
 expression: lowered.errors
 ---
 [
     NotInScope(
         AdoFn {
             kind: Map,
-            id: AstId<syntax::cst::ExpressionAdo>(8),
-        },
-    ),
-    NotInScope(
-        AdoFn {
-            kind: Apply,
-            id: AstId<syntax::cst::ExpressionAdo>(8),
-        },
-    ),
-    NotInScope(
-        AdoFn {
-            kind: Pure,
             id: AstId<syntax::cst::ExpressionAdo>(8),
         },
     ),

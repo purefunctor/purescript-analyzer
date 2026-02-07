@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/resolving/generated.rs
+assertion_line: 12
 expression: report
 ---
 module LocalClass
@@ -13,6 +14,8 @@ Exported Terms:
   - apply
 
 Exported Types:
+
+Exported Classes:
   - Apply
   - Functor
 
@@ -21,6 +24,8 @@ Local Terms:
   - apply
 
 Local Types:
+
+Local Classes:
   - Apply
   - Functor
 

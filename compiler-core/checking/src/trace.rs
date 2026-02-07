@@ -5,13 +5,33 @@
 //! `no-tracing` feature is enabled.
 
 use building_types::QueryResult;
+use syntax::SyntaxNodePtr;
 
 use crate::ExternalQueries;
 use crate::algorithm::state::CheckContext;
 use crate::error::ErrorStep;
 
-/// Extracts the byte offset range from an error step.
-pub fn step_byte_range<Q>(step: &ErrorStep, context: &CheckContext<Q>) -> Option<(u32, u32)>
+fn spanning_byte_range<I>(iterator: I) -> Option<(u32, u32)>
+where
+    I: IntoIterator<Item = SyntaxNodePtr>,
+    I::IntoIter: DoubleEndedIterator,
+{
+    let mut iter = iterator.into_iter();
+
+    let start = iter.next()?;
+    let end = iter.next_back().unwrap_or(start);
+
+    let start = start.text_range();
+    let end = end.text_range();
+
+    let range = start.cover(end);
+    let start = range.start().into();
+    let end = range.end().into();
+
+    Some((start, end))
+}
+
+fn step_byte_range<Q>(step: &ErrorStep, context: &CheckContext<Q>) -> Option<(u32, u32)>
 where
     Q: ExternalQueries,
 {
@@ -32,6 +52,29 @@ where
         ErrorStep::TypeDeclaration(id) => {
             context.indexed.type_item_ptr(&context.stabilized, *id).next()?
         }
+        ErrorStep::InferringDoBind(id)
+        | ErrorStep::InferringDoDiscard(id)
+        | ErrorStep::CheckingDoLet(id) => context.stabilized.syntax_ptr(*id)?,
+        ErrorStep::InferringAdoMap(id)
+        | ErrorStep::InferringAdoApply(id)
+        | ErrorStep::CheckingAdoLet(id) => context.stabilized.syntax_ptr(*id)?,
+        ErrorStep::CheckingLetName(id) => {
+            let group = context.lowered.info.get_let_binding_group(*id);
+
+            let signature = group
+                .signature
+                .as_slice()
+                .iter()
+                .filter_map(|signature| context.stabilized.syntax_ptr(*signature));
+
+            let equations = group
+                .equations
+                .as_ref()
+                .iter()
+                .filter_map(|equation| context.stabilized.syntax_ptr(*equation));
+
+            return spanning_byte_range(signature.chain(equations));
+        }
     };
 
     let range = pointer.text_range();
@@ -42,7 +85,6 @@ where
     Some((start, end))
 }
 
-/// Returns the byte offset range for the most specific (innermost) error step.
 pub fn current_offset<Q>(check_steps: &[ErrorStep], context: &CheckContext<Q>) -> Option<(u32, u32)>
 where
     Q: ExternalQueries,

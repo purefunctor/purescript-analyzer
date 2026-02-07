@@ -1,0 +1,22 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+apply ::
+  forall (f :: Type -> Type) (g :: Type -> Type).
+    NatTrans (f :: Type -> Type) (g :: Type -> Type) ->
+    (f :: Type -> Type) Int ->
+    (g :: Type -> Type) Int
+
+Types
+NatTrans :: forall (t12 :: Type). ((t12 :: Type) -> Type) -> ((t12 :: Type) -> Type) -> Type
+
+Synonyms
+NatTrans = forall (t12 :: Type) (f :: (t12 :: Type) -> Type) (g :: (t12 :: Type) -> Type) (a :: (t12 :: Type)).
+  (f :: (t12 :: Type) -> Type) (a :: (t12 :: Type)) ->
+  (g :: (t12 :: Type) -> Type) (a :: (t12 :: Type))
+  Quantified = :1
+  Kind = :0
+  Type = :2

@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/resolving/generated.rs
+assertion_line: 12
 expression: report
 ---
 module DuplicateQualifiedImport
@@ -15,13 +16,19 @@ Library Types:
   - Css is Implicit
   - Html is Implicit
 
+Library Classes:
+
 Exported Terms:
 
 Exported Types:
 
+Exported Classes:
+
 Local Terms:
 
 Local Types:
+
+Local Classes:
 
 Class Members:
 

@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/resolving/generated.rs
+assertion_line: 12
 expression: report
 ---
 module LibraryExplicit
@@ -15,6 +16,8 @@ Exported Types:
   - Hidden
   - Id
 
+Exported Classes:
+
 Local Terms:
   - Hidden
   - Id
@@ -22,6 +25,8 @@ Local Terms:
 Local Types:
   - Hidden
   - Id
+
+Local Classes:
 
 Class Members:
 

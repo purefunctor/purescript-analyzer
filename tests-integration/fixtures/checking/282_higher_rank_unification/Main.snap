@@ -1,0 +1,23 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+findImpl ::
+  forall (a :: Type) (b :: Type).
+    Fn2
+      (forall (c :: Type). Maybe (c :: Type))
+      ((a :: Type) -> Maybe (b :: Type))
+      (Maybe (b :: Type))
+findMap :: forall (a :: Type) (b :: Type). ((a :: Type) -> Maybe (b :: Type)) -> Maybe (b :: Type)
+findMapImpl ::
+  forall (a :: Type) (b :: Type).
+    Fn3
+      (forall (c :: Type). Maybe (c :: Type))
+      (forall (c :: Type). Maybe (c :: Type) -> Boolean)
+      ((a :: Type) -> Maybe (b :: Type))
+      (Maybe (b :: Type))
+findMap' :: forall (a :: Type) (b :: Type). ((a :: Type) -> Maybe (b :: Type)) -> Maybe (b :: Type)
+
+Types

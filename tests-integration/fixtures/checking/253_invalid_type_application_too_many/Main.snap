@@ -1,0 +1,28 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+
+Types
+Bad :: ???
+
+Synonyms
+Bad = Array Int String
+  Quantified = :0
+  Kind = :0
+  Type = :0
+
+
+Diagnostics
+error[InvalidTypeApplication]: Cannot apply type 'Array Int' to 'String'. 'Array Int' has kind 'Type', which is not a function kind.
+  --> 3:12..3:28
+  |
+3 | type Bad = Array Int String
+  |            ^~~~~~~~~~~~~~~~
+error[CannotUnify]: Cannot unify 'Type' with '???'
+  --> 3:12..3:28
+  |
+3 | type Bad = Array Int String
+  |            ^~~~~~~~~~~~~~~~

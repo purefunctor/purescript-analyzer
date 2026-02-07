@@ -12,11 +12,11 @@ use building_types::QueryResult;
 use files::FileId;
 use indexing::TypeItemId;
 use itertools::Itertools;
-use lowering::GroupedModule;
+use lowering::{GroupedModule, LoweredModule, TypeItemIr};
 
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::{kind, substitute, transfer, unification};
-use crate::core::{Saturation, Synonym, Type, TypeId};
+use crate::core::{Saturation, Synonym, Type, TypeId, debruijn};
 use crate::error::ErrorKind;
 use crate::{CheckedModule, ExternalQueries};
 
@@ -131,6 +131,7 @@ pub fn infer_synonym_constructor<Q: ExternalQueries>(
     }
 
     if is_recursive_synonym(context, file_id, type_id)? {
+        state.insert_error(ErrorKind::RecursiveSynonymExpansion { file_id, item_id: type_id });
         let synonym_type = state.storage.intern(Type::Constructor(file_id, type_id));
         return Ok((synonym_type, kind));
     }
@@ -178,7 +179,21 @@ where
     let expected_arity = synonym.type_variables.0 as usize;
     let actual_arity = arguments.len();
 
-    if expected_arity != actual_arity {
+    // A synonym's result kind can itself be a function kind, which means
+    // the application chain may contain more arguments than the synonym
+    // has parameters. For example:
+    //
+    //   type C2 :: forall k. (k -> Type) -> (k -> Type) -> k -> Type
+    //   type C2 a z = Coproduct a z
+    //
+    //   in1 :: forall a z. a ~> C2 a z
+    //
+    // The lowered application chain for `C2 a z x` has 3 arguments, but
+    // the synonym only has 2 parameters. After expanding with the first
+    // 2 arguments, `C2 a z` becomes `Coproduct a z` with kind `k -> Type`.
+    // The third argument `x` is then applied to the expanded result as a
+    // regular type application, giving `Coproduct a z x` of kind `Type`.
+    if actual_arity < expected_arity {
         if state.defer_synonym_expansion {
             let (synonym_type, synonym_kind) = infer_partial_synonym_application(
                 state,
@@ -194,12 +209,36 @@ where
         }
     }
 
+    // Continuing our previous example, `C2 a z x` produces:
+    //
+    //   synonym_arguments := [a, z]
+    //   excess_arguments  := [x]
+    let (synonym_arguments, excess_arguments) = arguments.split_at(expected_arity);
+
     let defer_synonym_expansion = mem::replace(&mut state.defer_synonym_expansion, true);
-
-    let (synonym_type, synonym_kind) =
-        infer_synonym_application_arguments(state, context, (file_id, type_id), kind, arguments)?;
-
+    let (mut synonym_type, mut synonym_kind) = infer_synonym_application_arguments(
+        state,
+        context,
+        (file_id, type_id),
+        kind,
+        synonym_arguments,
+    )?;
     state.defer_synonym_expansion = defer_synonym_expansion;
+
+    // Continuing our previous example, `C2 a z x` expands:
+    //
+    //   synonym_type := Coproduct a z
+    //   synonym_kind := (k -> Type)
+    //
+    // Finally, we append the excess arguments to get:
+    //
+    //   synonym_type := Coproduct a z x
+    //   synonym_kind := Type
+    //
+    for &argument in excess_arguments {
+        (synonym_type, synonym_kind) =
+            kind::infer_surface_app_kind(state, context, (synonym_type, synonym_kind), argument)?;
+    }
 
     Ok((synonym_type, synonym_kind))
 }
@@ -324,6 +363,16 @@ enum DiscoveredSynonym {
     Additional { synonym: Synonym, arguments: Arc<[TypeId]>, additional: Vec<TypeId> },
 }
 
+fn resolve_operator_target(
+    lowered: &LoweredModule,
+    item_id: TypeItemId,
+) -> Option<(FileId, TypeItemId)> {
+    let TypeItemIr::Operator { resolution, .. } = lowered.info.get_type_item(item_id)? else {
+        return None;
+    };
+    *resolution
+}
+
 fn discover_synonym_application<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -412,6 +461,44 @@ where
             }
         }
 
+        Type::OperatorApplication(operator_file_id, operator_item_id, left, right) => {
+            let resolution = if operator_file_id == context.id {
+                resolve_operator_target(&context.lowered, operator_item_id)
+            } else {
+                let lowered = context.queries.lowered(operator_file_id)?;
+                resolve_operator_target(&lowered, operator_item_id)
+            };
+
+            let Some((file_id, item_id)) = resolution else {
+                return Ok(None);
+            };
+
+            let Some((synonym, _)) = lookup_file_synonym(state, context, file_id, item_id)? else {
+                return Ok(None);
+            };
+
+            if is_recursive_synonym(context, file_id, item_id)? {
+                state.insert_error(ErrorKind::RecursiveSynonymExpansion { file_id, item_id });
+                return Ok(None);
+            }
+
+            let arguments = vec![left, right];
+
+            if arguments.len() != synonym.type_variables.0 as usize {
+                return Ok(None);
+            }
+
+            if additional.is_empty() {
+                Ok(Some(DiscoveredSynonym::Saturated { synonym, arguments }))
+            } else {
+                Ok(Some(DiscoveredSynonym::Additional {
+                    synonym,
+                    arguments: Arc::from(arguments),
+                    additional,
+                }))
+            }
+        }
+
         _ => Ok(None),
     }
 }
@@ -419,6 +506,30 @@ where
 fn instantiate_saturated(state: &mut CheckState, synonym: Synonym, arguments: &[TypeId]) -> TypeId {
     let count = synonym.quantified_variables.0 as usize + synonym.kind_variables.0 as usize;
     let mut instantiated = state.normalize_type(synonym.synonym_type);
+
+    // Synonym bodies are originally bound starting at level 0. When expanding
+    // in a non-empty scope, we shift their levels up by the current scope size
+    // size to avoid conflicts.
+    //
+    // First, without shifting
+    //
+    // ```purescript
+    // type Transform f:0 g:1 = forall a:2. f a -> g a
+    //
+    // instance Parallel (ReaderT e:0 f:1) (ReaderT e:0 m:2) where
+    //   -- parallel :: m:2 ~> f:1
+    //   --          :: forall a:2. m a -> f a
+    // ```
+    //
+    // Then, with shifting
+    //
+    // ```purescript
+    // instance Parallel (ReaderT e:0 f:1) (ReaderT e:0 m:2) where
+    //   -- parallel :: m:2 ~> f:1
+    //   --          :: forall a:5. m a -> f a
+    // ```
+    let debruijn::Size(scope_size) = state.type_scope.size();
+    instantiated = substitute::ShiftBound::on(state, instantiated, scope_size);
 
     for _ in 0..count {
         if let Type::Forall(ref binder, inner) = state.storage[instantiated] {
@@ -468,6 +579,42 @@ where
     })
 }
 
+/// Normalises a type operator application to constructor application form.
+fn expand_type_operator<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    type_id: TypeId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let Type::OperatorApplication(file_id, item_id, left, right) = state.storage[type_id] else {
+        return Ok(type_id);
+    };
+
+    let resolution = if file_id == context.id {
+        context.lowered.info.get_type_item(item_id).and_then(|ir| match ir {
+            TypeItemIr::Operator { resolution, .. } => *resolution,
+            _ => None,
+        })
+    } else {
+        context.queries.lowered(file_id)?.info.get_type_item(item_id).and_then(|ir| match ir {
+            TypeItemIr::Operator { resolution, .. } => *resolution,
+            _ => None,
+        })
+    };
+
+    let Some((file_id, item_id)) = resolution else {
+        return Ok(type_id);
+    };
+
+    let constructor = state.storage.intern(Type::Constructor(file_id, item_id));
+    let left = state.storage.intern(Type::Application(constructor, left));
+    let right = state.storage.intern(Type::Application(left, right));
+
+    Ok(right)
+}
+
 pub fn normalize_expand_type<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -480,7 +627,8 @@ where
 
     for _ in 0..EXPANSION_LIMIT {
         let normalized_id = state.normalize_type(type_id);
-        let expanded_id = expand_type_synonym(state, context, normalized_id)?;
+        let expanded_id = expand_type_operator(state, context, normalized_id)?;
+        let expanded_id = expand_type_synonym(state, context, expanded_id)?;
 
         if expanded_id == type_id {
             return Ok(type_id);

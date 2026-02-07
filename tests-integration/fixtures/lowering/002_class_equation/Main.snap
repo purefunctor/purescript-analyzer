@@ -9,25 +9,25 @@ Expressions:
 
 Types:
 
-k@Some(Position { line: 2, character: 30 })
-  resolves to forall Some(Position { line: 2, character: 22 })
-p@Some(Position { line: 4, character: 20 })
-  resolves to forall Some(Position { line: 4, character: 17 })
-p@Some(Position { line: 4, character: 27 })
-  resolves to forall Some(Position { line: 4, character: 17 })
-k@Some(Position { line: 2, character: 25 })
-  resolves to forall Some(Position { line: 2, character: 22 })
-a@Some(Position { line: 7, character: 17 })
-  resolves to forall Some(Position { line: 6, character: 17 })
-a@Some(Position { line: 6, character: 8 })
-  resolves to forall Some(Position { line: 6, character: 17 })
-a@Some(Position { line: 4, character: 22 })
-  resolves to forall Some(Position { line: 3, character: 12 })
-k@Some(Position { line: 3, character: 27 })
-  resolves to forall Some(Position { line: 2, character: 22 })
-b@Some(Position { line: 4, character: 29 })
-  resolves to forall Some(Position { line: 3, character: 21 })
-a@Some(Position { line: 7, character: 12 })
-  resolves to forall Some(Position { line: 6, character: 17 })
-k@Some(Position { line: 3, character: 18 })
-  resolves to forall Some(Position { line: 2, character: 22 })
+k@2:30
+  -> forall@2:22
+p@4:20
+  -> forall@4:17
+p@4:27
+  -> forall@4:17
+k@2:25
+  -> forall@2:22
+a@7:17
+  -> forall@6:17
+a@6:8
+  -> forall@6:17
+a@4:22
+  -> forall@3:12
+k@3:27
+  -> forall@2:22
+b@4:29
+  -> forall@3:21
+a@7:12
+  -> forall@6:17
+k@3:18
+  -> forall@2:22

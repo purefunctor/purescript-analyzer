@@ -117,6 +117,22 @@ impl CompletionSource for LocalTypes {
             items.push(item.build())
         }
 
+        let source = context.resolved.locals.iter_classes();
+        let source = source.filter(move |(name, _, _)| filter.matches(name));
+
+        for (name, file_id, type_id) in source {
+            let mut item = CompletionItemSpec::new(
+                name.to_string(),
+                context.range,
+                CompletionItemKind::STRUCT,
+                CompletionResolveData::TypeItem(file_id, type_id),
+            );
+
+            item.label_description("Local".to_string());
+
+            items.push(item.build())
+        }
+
         Ok(())
     }
 }
@@ -179,6 +195,27 @@ impl CompletionSource for ImportedTypes {
 
         for import in source {
             let source = import.iter_types().filter(move |(name, _, _, kind)| {
+                filter.matches(name) && !matches!(kind, ImportKind::Hidden)
+            });
+            for (name, f, t, _) in source {
+                let (parsed, _) = context.engine.parsed(f)?;
+                let description = parsed.module_name().map(|name| name.to_string());
+
+                let mut item = CompletionItemSpec::new(
+                    name.to_string(),
+                    context.range,
+                    CompletionItemKind::STRUCT,
+                    CompletionResolveData::TypeItem(f, t),
+                );
+
+                if let Some(description) = description {
+                    item.label_description(description);
+                }
+
+                items.push(item.build())
+            }
+
+            let source = import.iter_classes().filter(move |(name, _, _, kind)| {
                 filter.matches(name) && !matches!(kind, ImportKind::Hidden)
             });
             for (name, f, t, _) in source {
@@ -286,6 +323,29 @@ impl CompletionSource for QualifiedTypes<'_> {
             items.push(item.build())
         }
 
+        let source = import.iter_classes().filter(move |(name, _, _, kind)| {
+            filter.matches(name) && !matches!(kind, ImportKind::Hidden)
+        });
+
+        for (name, file_id, type_id, _) in source {
+            let (parsed, _) = context.engine.parsed(file_id)?;
+            let description = parsed.module_name().map(|name| name.to_string());
+
+            let mut item = CompletionItemSpec::new(
+                name.to_string(),
+                context.range,
+                CompletionItemKind::STRUCT,
+                CompletionResolveData::TypeItem(file_id, type_id),
+            );
+
+            item.edit_text(format!("{}.{name}", self.0));
+            if let Some(description) = description {
+                item.label_description(description);
+            }
+
+            items.push(item.build())
+        }
+
         Ok(())
     }
 }
@@ -369,7 +429,7 @@ impl SuggestionsHelper for SuggestedTypes {
     fn exports(
         resolved: &ResolvedModule,
     ) -> impl Iterator<Item = (&SmolStr, FileId, Self::ItemId)> {
-        resolved.exports.iter_types()
+        resolved.exports.iter_types().chain(resolved.exports.iter_classes())
     }
 
     fn candidate(
@@ -543,6 +603,25 @@ impl CompletionSource for PrimTypes {
             items.push(item.build())
         }
 
+        let source = context
+            .prim_resolved
+            .exports
+            .iter_classes()
+            .filter(move |(name, _, _)| filter.matches(name));
+
+        for (name, file_id, type_item) in source {
+            let mut item = CompletionItemSpec::new(
+                name.to_string(),
+                context.range,
+                CompletionItemKind::STRUCT,
+                CompletionResolveData::TypeItem(file_id, type_item),
+            );
+
+            item.label_description("Prim".to_string());
+
+            items.push(item.build())
+        }
+
         Ok(())
     }
 }
@@ -603,7 +682,7 @@ impl SuggestionsHelper for QualifiedTypesSuggestions<'_> {
     fn exports(
         resolved: &ResolvedModule,
     ) -> impl Iterator<Item = (&SmolStr, FileId, Self::ItemId)> {
-        resolved.exports.iter_types()
+        resolved.exports.iter_types().chain(resolved.exports.iter_classes())
     }
 
     fn candidate(

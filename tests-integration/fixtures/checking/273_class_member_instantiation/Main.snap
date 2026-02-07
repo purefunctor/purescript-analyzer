@@ -1,0 +1,47 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Unit :: Unit
+mempty :: forall (a :: Type). Monoid (a :: Type) => (a :: Type)
+append :: forall (a :: Type). Semigroup (a :: Type) => (a :: Type) -> (a :: Type) -> (a :: Type)
+apply :: forall (a :: Type) (b :: Type). ((a :: Type) -> (b :: Type)) -> (a :: Type) -> (b :: Type)
+pure :: forall (m :: Type -> Type) (a :: Type). (a :: Type) -> (m :: Type -> Type) (a :: Type)
+lift2 ::
+  forall (m :: Type -> Type) (a :: Type) (b :: Type) (c :: Type).
+    ((a :: Type) -> (b :: Type) -> (c :: Type)) ->
+    (m :: Type -> Type) (a :: Type) ->
+    (m :: Type -> Type) (b :: Type) ->
+    (m :: Type -> Type) (c :: Type)
+test1 :: forall (a :: Type). Monoid (a :: Type) => Unit -> (a :: Type)
+test2 :: forall (t22 :: Type) (t23 :: Type). Monoid (t23 :: Type) => (t22 :: Type) -> (t23 :: Type)
+test3 :: forall (t24 :: Type). Monoid (t24 :: Type) => (t24 :: Type)
+test4 ::
+  forall (t32 :: Type -> Type) (t33 :: Type).
+    Monoid (t33 :: Type) => (t32 :: Type -> Type) (t33 :: Type)
+test5 ::
+  forall (t37 :: Type -> Type) (t40 :: Type).
+    Semigroup (t40 :: Type) =>
+    (t37 :: Type -> Type) (t40 :: Type) ->
+    (t37 :: Type -> Type) (t40 :: Type) ->
+    (t37 :: Type -> Type) (t40 :: Type)
+
+Types
+Unit :: Type
+Monoid :: Type -> Constraint
+Semigroup :: Type -> Constraint
+
+Data
+Unit
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+Unit = []
+
+Classes
+class Monoid (&0 :: Type)
+class Semigroup (&0 :: Type)

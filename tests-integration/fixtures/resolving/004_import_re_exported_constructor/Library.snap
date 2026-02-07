@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/resolving/generated.rs
+assertion_line: 12
 expression: report
 ---
 module Library
@@ -14,15 +15,21 @@ Internal Terms:
 Internal Types:
   - Internal is Implicit
 
+Internal Classes:
+
 Exported Terms:
   - Internal
 
 Exported Types:
   - Internal
 
+Exported Classes:
+
 Local Terms:
 
 Local Types:
+
+Local Classes:
 
 Class Members:
 

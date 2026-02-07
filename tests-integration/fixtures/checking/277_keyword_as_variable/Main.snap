@@ -1,0 +1,28 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+test1 :: forall (t8 :: Type). (t8 :: Type) -> (t8 :: Type)
+test2 :: forall (t11 :: Type). (t11 :: Type) -> (t11 :: Type)
+test3 :: forall (t14 :: Type). (t14 :: Type) -> (t14 :: Type)
+test4 :: forall (t17 :: Type). (t17 :: Type) -> (t17 :: Type)
+test5 :: forall (t20 :: Type). (t20 :: Type) -> (t20 :: Type)
+test6 :: forall (t23 :: Type). (t23 :: Type) -> (t23 :: Type)
+
+Types
+Test1 :: forall (as :: Type). (as :: Type) -> (as :: Type)
+Test2 :: forall (phantom :: Type). (phantom :: Type) -> (phantom :: Type)
+Test3 :: forall (nominal :: Type). (nominal :: Type) -> (nominal :: Type)
+Test4 :: forall (representational :: Type). (representational :: Type) -> (representational :: Type)
+Test5 :: forall (hiding :: Type). (hiding :: Type) -> (hiding :: Type)
+Test6 :: forall (role :: Type). (role :: Type) -> (role :: Type)
+
+Roles
+Test1 = [Nominal]
+Test2 = [Nominal]
+Test3 = [Nominal]
+Test4 = [Nominal]
+Test5 = [Nominal]
+Test6 = [Nominal]

@@ -9,11 +9,11 @@ Expressions:
 
 Types:
 
-a@Some(Position { line: 5, character: 29 })
-  resolves to forall Some(Position { line: 5, character: 9 })
-k@Some(Position { line: 5, character: 15 })
-  resolves to forall Some(Position { line: 4, character: 19 })
-k@Some(Position { line: 4, character: 22 })
-  resolves to forall Some(Position { line: 4, character: 19 })
-a@Some(Position { line: 2, character: 17 })
-  resolves to forall Some(Position { line: 2, character: 10 })
+a@5:29
+  -> forall@5:9
+k@5:15
+  -> forall@4:19
+k@4:22
+  -> forall@4:19
+a@2:17
+  -> forall@2:10

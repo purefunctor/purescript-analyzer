@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -28,8 +29,24 @@ Derived
 derive Functor (Pair Int String :: Type)
 derive Functor (Unit :: Type)
 
-Errors
-CannotUnify { Type, Type -> Type } at [TermDeclaration(Idx::<TermItem>(1)), CheckingKind(AstId<syntax::cst::Type>(19))]
-CannotDeriveForType { type_id: Id<checking::core::Type>(35) } at [TermDeclaration(Idx::<TermItem>(1))]
-CannotUnify { Type, Type -> Type } at [TermDeclaration(Idx::<TermItem>(3)), CheckingKind(AstId<syntax::cst::Type>(28))]
-CannotDeriveForType { type_id: Id<checking::core::Type>(17) } at [TermDeclaration(Idx::<TermItem>(3))]
+Diagnostics
+error[CannotUnify]: Cannot unify 'Type' with 'Type -> Type'
+  --> 6:25..6:42
+  |
+6 | derive instance Functor (Pair Int String)
+  |                         ^~~~~~~~~~~~~~~~~
+error[CannotUnify]: Cannot unify 'Type' with 'Type -> Type'
+  --> 9:25..9:29
+  |
+9 | derive instance Functor Unit
+  |                         ^~~~
+error[CannotDeriveForType]: Cannot derive for type: Pair Int String
+  --> 6:1..6:42
+  |
+6 | derive instance Functor (Pair Int String)
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[CannotDeriveForType]: Cannot derive for type: Unit
+  --> 9:1..9:29
+  |
+9 | derive instance Functor Unit
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -62,6 +62,26 @@ pub struct ResolvedModule {
 }
 
 impl ResolvedModule {
+    fn lookup_qualified<ItemId, LookupFn, DefaultFn>(
+        &self,
+        qualifier: &str,
+        lookup: LookupFn,
+        default: DefaultFn,
+    ) -> Option<(FileId, ItemId)>
+    where
+        LookupFn: FnOnce(&ResolvedImport) -> Option<(FileId, ItemId, ImportKind)>,
+        DefaultFn: FnOnce() -> Option<(FileId, ItemId)>,
+    {
+        if let Some(import) = self.qualified.get(qualifier) {
+            let (file, id, kind) = lookup(import)?;
+            if matches!(kind, ImportKind::Hidden) { None } else { Some((file, id)) }
+        } else if qualifier == "Prim" {
+            default()
+        } else {
+            None
+        }
+    }
+
     fn lookup_unqualified<ItemId, LookupFn>(&self, lookup: LookupFn) -> Option<(FileId, ItemId)>
     where
         LookupFn: Fn(&ResolvedImport) -> Option<(FileId, ItemId, ImportKind)>,
@@ -103,9 +123,9 @@ impl ResolvedModule {
         name: &str,
     ) -> Option<(FileId, TermItemId)> {
         if let Some(qualifier) = qualifier {
-            let import = self.qualified.get(qualifier)?;
-            let (file, id, kind) = import.lookup_term(name)?;
-            if matches!(kind, ImportKind::Hidden) { None } else { Some((file, id)) }
+            let lookup_item = |import: &ResolvedImport| import.lookup_term(name);
+            let lookup_prim = || prim.exports.lookup_term(name);
+            self.lookup_qualified(qualifier, lookup_item, lookup_prim)
         } else {
             let lookup_item = |import: &ResolvedImport| import.lookup_term(name);
             let lookup_prim = || prim.exports.lookup_term(name);
@@ -122,13 +142,32 @@ impl ResolvedModule {
         name: &str,
     ) -> Option<(FileId, TypeItemId)> {
         if let Some(qualifier) = qualifier {
-            let import = self.qualified.get(qualifier)?;
-            let (file, id, kind) = import.lookup_type(name)?;
-            if matches!(kind, ImportKind::Hidden) { None } else { Some((file, id)) }
+            let lookup_item = |import: &ResolvedImport| import.lookup_type(name);
+            let lookup_prim = || prim.exports.lookup_type(name);
+            self.lookup_qualified(qualifier, lookup_item, lookup_prim)
         } else {
             let lookup_item = |import: &ResolvedImport| import.lookup_type(name);
             let lookup_prim = || prim.exports.lookup_type(name);
             None.or_else(|| self.locals.lookup_type(name))
+                .or_else(|| self.lookup_unqualified(lookup_item))
+                .or_else(|| self.lookup_prim_import(lookup_item, lookup_prim))
+        }
+    }
+
+    pub fn lookup_class(
+        &self,
+        prim: &ResolvedModule,
+        qualifier: Option<&str>,
+        name: &str,
+    ) -> Option<(FileId, TypeItemId)> {
+        if let Some(qualifier) = qualifier {
+            let lookup_item = |import: &ResolvedImport| import.lookup_class(name);
+            let lookup_prim = || prim.exports.lookup_class(name);
+            self.lookup_qualified(qualifier, lookup_item, lookup_prim)
+        } else {
+            let lookup_item = |import: &ResolvedImport| import.lookup_class(name);
+            let lookup_prim = || prim.exports.lookup_class(name);
+            None.or_else(|| self.locals.lookup_class(name))
                 .or_else(|| self.lookup_unqualified(lookup_item))
                 .or_else(|| self.lookup_prim_import(lookup_item, lookup_prim))
         }
@@ -166,6 +205,23 @@ impl ResolvedModule {
             }
         }
 
+        // If an unqualified Prim import exists, use its import list;
+        if let Some(prim_imports) = self.unqualified.get("Prim") {
+            for prim_import in prim_imports {
+                if prim_import.contains_term(file_id, item_id) {
+                    return true;
+                }
+            }
+        }
+
+        // if a qualified Prim import exists, use its import list;
+        if let Some(prim_import) = self.qualified.get("Prim")
+            && prim_import.contains_term(file_id, item_id)
+        {
+            return true;
+        }
+
+        // if there are no Prim imports, use the export list.
         if prim.exports.contains_term(file_id, item_id) {
             return true;
         }
@@ -181,6 +237,7 @@ type ResolvedImportsQualified = FxHashMap<SmolStr, ResolvedImport>;
 pub struct ResolvedLocals {
     terms: FxHashMap<SmolStr, (FileId, TermItemId)>,
     types: FxHashMap<SmolStr, (FileId, TypeItemId)>,
+    classes: FxHashMap<SmolStr, (FileId, TypeItemId)>,
 }
 
 impl ResolvedLocals {
@@ -203,6 +260,14 @@ impl ResolvedLocals {
     pub fn iter_types(&self) -> impl Iterator<Item = (&SmolStr, FileId, TypeItemId)> {
         self.types.iter().map(|(k, (f, i))| (k, *f, *i))
     }
+
+    pub fn lookup_class(&self, name: &str) -> Option<(FileId, TypeItemId)> {
+        self.classes.get(name).copied()
+    }
+
+    pub fn iter_classes(&self) -> impl Iterator<Item = (&SmolStr, FileId, TypeItemId)> {
+        self.classes.iter().map(|(k, (f, i))| (k, *f, *i))
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -215,6 +280,7 @@ pub enum ExportSource {
 pub struct ResolvedExports {
     terms: FxHashMap<SmolStr, (FileId, TermItemId, ExportSource)>,
     types: FxHashMap<SmolStr, (FileId, TypeItemId, ExportSource)>,
+    classes: FxHashMap<SmolStr, (FileId, TypeItemId, ExportSource)>,
 }
 
 impl ResolvedExports {
@@ -237,6 +303,14 @@ impl ResolvedExports {
     pub fn iter_types(&self) -> impl Iterator<Item = (&SmolStr, FileId, TypeItemId)> {
         self.types.iter().map(|(k, (f, i, _))| (k, *f, *i))
     }
+
+    pub fn lookup_class(&self, name: &str) -> Option<(FileId, TypeItemId)> {
+        self.classes.get(name).copied().map(|(f, i, _)| (f, i))
+    }
+
+    pub fn iter_classes(&self) -> impl Iterator<Item = (&SmolStr, FileId, TypeItemId)> {
+        self.classes.iter().map(|(k, (f, i, _))| (k, *f, *i))
+    }
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -247,13 +321,15 @@ pub struct ResolvedImport {
     pub exported: bool,
     terms: FxHashMap<SmolStr, (FileId, TermItemId, ImportKind)>,
     types: FxHashMap<SmolStr, (FileId, TypeItemId, ImportKind)>,
+    classes: FxHashMap<SmolStr, (FileId, TypeItemId, ImportKind)>,
 }
 
 impl ResolvedImport {
     fn new(id: ImportId, file: FileId, kind: ImportKind, exported: bool) -> ResolvedImport {
         let terms = FxHashMap::default();
         let types = FxHashMap::default();
-        ResolvedImport { id, file, kind, exported, terms, types }
+        let classes = FxHashMap::default();
+        ResolvedImport { id, file, kind, exported, terms, types, classes }
     }
 
     pub fn lookup_term(&self, name: &str) -> Option<(FileId, TermItemId, ImportKind)> {
@@ -276,6 +352,14 @@ impl ResolvedImport {
 
     pub fn iter_types(&self) -> impl Iterator<Item = (&SmolStr, FileId, TypeItemId, ImportKind)> {
         self.types.iter().map(|(k, (f, i, d))| (k, *f, *i, *d))
+    }
+
+    pub fn lookup_class(&self, name: &str) -> Option<(FileId, TypeItemId, ImportKind)> {
+        self.classes.get(name).copied()
+    }
+
+    pub fn iter_classes(&self) -> impl Iterator<Item = (&SmolStr, FileId, TypeItemId, ImportKind)> {
+        self.classes.iter().map(|(k, (f, i, d))| (k, *f, *i, *d))
     }
 }
 

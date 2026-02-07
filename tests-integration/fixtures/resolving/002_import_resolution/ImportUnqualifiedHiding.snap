@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/resolving/generated.rs
+assertion_line: 12
 expression: report
 ---
 module ImportUnqualifiedHiding
@@ -16,6 +17,8 @@ Types:
   - LibTy is Implicit
   - TypeOnly is Implicit
 
+Classes:
+
 Qualified Imports:
 
 Exported Terms:
@@ -28,9 +31,13 @@ Exported Types:
   - LibTy
   - TypeOnly
 
+Exported Classes:
+
 Local Terms:
 
 Local Types:
+
+Local Classes:
 
 Class Members:
 

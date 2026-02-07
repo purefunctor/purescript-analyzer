@@ -97,6 +97,21 @@ macro_rules! has_token {
     };
 }
 
+macro_rules! has_token_set {
+    ($kind:ident $(|$name:ident() -> $set:expr)+) => {
+        impl $kind {
+            $(
+                pub fn $name(&self) -> Option<crate::SyntaxToken> {
+                    self.syntax()
+                        .children_with_tokens()
+                        .filter_map(|element| element.into_token())
+                        .find(|token| $set.contains(token.kind()))
+                }
+            )+
+        }
+    };
+}
+
 macro_rules! has_tokens {
     ($kind:ident $(|$name:ident() -> $token:ident)+) => {
         impl $kind {

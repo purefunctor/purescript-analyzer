@@ -267,19 +267,16 @@ pub fn check(source: &str) -> JsValue {
 
         let mut errors = Vec::new();
         for error in &checked.errors {
+            let message = |id| checked.error_messages[id].as_str();
             let (kind, message) = match &error.kind {
                 checking::error::ErrorKind::CannotUnify { t1, t2 } => {
-                    let t1_pretty = pretty::print_global(engine, *t1);
-                    let t2_pretty = pretty::print_global(engine, *t2);
-                    ("CannotUnify".to_string(), format!("{t1_pretty} ~ {t2_pretty}"))
+                    ("CannotUnify".to_string(), format!("{} ~ {}", message(*t1), message(*t2)))
                 }
                 checking::error::ErrorKind::NoInstanceFound { constraint } => {
-                    let c_pretty = pretty::print_global(engine, *constraint);
-                    ("NoInstanceFound".to_string(), c_pretty)
+                    ("NoInstanceFound".to_string(), message(*constraint).to_string())
                 }
                 checking::error::ErrorKind::AmbiguousConstraint { constraint } => {
-                    let c_pretty = pretty::print_global(engine, *constraint);
-                    ("AmbiguousConstraint".to_string(), c_pretty)
+                    ("AmbiguousConstraint".to_string(), message(*constraint).to_string())
                 }
                 _ => (format!("{:?}", error.kind), String::new()),
             };

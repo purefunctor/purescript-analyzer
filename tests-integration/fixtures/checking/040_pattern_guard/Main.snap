@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -9,3 +10,25 @@ foo' :: forall (t1 :: Type). (t1 :: Type) -> Int
 bar' :: forall (t4 :: Type). (t4 :: Type) -> String
 
 Types
+
+Diagnostics
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: _
+  --> 3:1..3:18
+  |
+3 | foo :: Int -> Int
+  | ^~~~~~~~~~~~~~~~~
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: _
+  --> 6:1..6:24
+  |
+6 | bar :: String -> String
+  | ^~~~~~~~~~~~~~~~~~~~~~~
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: _
+  --> 9:1..9:21
+  |
+9 | foo' x | c <- 42 = c
+  | ^~~~~~~~~~~~~~~~~~~~
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: _
+  --> 11:1..11:26
+   |
+11 | bar' s | b <- "hello" = b
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~

@@ -6,38 +6,38 @@ module Main
 
 Expressions:
 
-eqMaybeImpl@Some(Position { line: 8, character: 6 })
-  resolves to top-level name
-eqIntImpl@Some(Position { line: 4, character: 6 })
-  resolves to top-level name
-b@Some(Position { line: 12, character: 11 })
-  resolves to binder Some(Position { line: 12, character: 7 })
+eqMaybeImpl@8:6
+  -> top-level
+eqIntImpl@4:6
+  -> top-level
+b@12:11
+  -> binder@12:7
 
 Types:
 
-a@Some(Position { line: 6, character: 11 })
-  resolves to a constraint variable "a"
-    Some(Position { line: 6, character: 26 })
-b@Some(Position { line: 10, character: 21 })
-  resolves to a constraint variable "b"
-    Some(Position { line: 10, character: 19 })
-a@Some(Position { line: 7, character: 24 })
-  resolves to a constraint variable "a"
-    Some(Position { line: 6, character: 26 })
-b@Some(Position { line: 10, character: 19 })
+a@6:11
+  -> constraint variable "a"
+    6:26
+b@10:21
+  -> constraint variable "b"
+    10:19
+a@7:24
+  -> constraint variable "a"
+    6:26
+b@10:19
   introduces a constraint variable "b"
-a@Some(Position { line: 6, character: 26 })
+a@6:26
   introduces a constraint variable "a"
-a@Some(Position { line: 7, character: 13 })
-  resolves to a constraint variable "a"
-    Some(Position { line: 6, character: 26 })
-b@Some(Position { line: 11, character: 22 })
-  resolves to a constraint variable "b"
-    Some(Position { line: 10, character: 19 })
-b@Some(Position { line: 11, character: 29 })
-  resolves to a constraint variable "b"
-    Some(Position { line: 10, character: 19 })
-p@Some(Position { line: 11, character: 20 })
-  resolves to forall Some(Position { line: 11, character: 17 })
-p@Some(Position { line: 11, character: 27 })
-  resolves to forall Some(Position { line: 11, character: 17 })
+a@7:13
+  -> constraint variable "a"
+    6:26
+b@11:22
+  -> constraint variable "b"
+    10:19
+b@11:29
+  -> constraint variable "b"
+    10:19
+p@11:20
+  -> forall@11:17
+p@11:27
+  -> forall@11:17

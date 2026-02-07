@@ -1,15 +1,17 @@
 [workspace]
 members = [
   "compiler-bin",
+  "compiler-compatibility",
   "compiler-core/*",
   "compiler-lsp/*",
   "compiler-scripts",
   "docs/src/wasm",
+  "purescript-registry",
   "tests-integration",
   "tests-package-set",
 ]
 default-members = [
-  "compiler-core/*", 
+  "compiler-core/*",
   "compiler-lsp/*",
 ]
 resolver = "3"

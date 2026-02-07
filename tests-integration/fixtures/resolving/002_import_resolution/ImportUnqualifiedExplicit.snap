@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/resolving/generated.rs
+assertion_line: 12
 expression: report
 ---
 module ImportUnqualifiedExplicit
@@ -17,6 +18,8 @@ Types:
   - MultiTy is Explicit
   - TypeOnly is Explicit
 
+Classes:
+
 Qualified Imports:
 
 Exported Terms:
@@ -30,9 +33,13 @@ Exported Types:
   - MultiTy
   - TypeOnly
 
+Exported Classes:
+
 Local Terms:
 
 Local Types:
+
+Local Classes:
 
 Class Members:
 

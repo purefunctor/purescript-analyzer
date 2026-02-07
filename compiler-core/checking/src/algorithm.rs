@@ -15,6 +15,8 @@ pub mod constraint;
 /// Implements type class deriving.
 pub mod derive;
 
+pub mod exhaustiveness;
+
 /// Implements type folding for traversals that modify.
 pub mod fold;
 
@@ -44,6 +46,9 @@ pub mod substitute;
 
 /// Implements type inference and checking for [`lowering::ExpressionKind`].
 pub mod term;
+
+/// Implements equation checking and inference shared by value and let bindings.
+pub mod equation;
 
 /// Shared utilities for common type manipulation patterns.
 pub mod toolkit;
@@ -81,9 +86,10 @@ pub fn check_source(queries: &impl ExternalQueries, file_id: FileId) -> QueryRes
 
     check_term_signatures(&mut state, &context)?;
     check_instance_heads(&mut state, &context)?;
-    check_derive_heads(&mut state, &context)?;
+    let derive_results = check_derive_heads(&mut state, &context)?;
     check_value_groups(&mut state, &context)?;
     check_instance_members(&mut state, &context)?;
+    check_derive_members(&mut state, &context, &derive_results)?;
 
     Ok(state.checked)
 }
@@ -277,7 +283,7 @@ where
 fn check_derive_heads<Q>(
     state: &mut state::CheckState,
     context: &state::CheckContext<Q>,
-) -> QueryResult<()>
+) -> QueryResult<Vec<derive::DeriveHeadResult>>
 where
     Q: ExternalQueries,
 {
@@ -285,6 +291,8 @@ where
         Scc::Base(item) | Scc::Recursive(item) => slice::from_ref(item),
         Scc::Mutual(items) => items.as_slice(),
     });
+
+    let mut results = vec![];
 
     for &item_id in items {
         let Some(TermItemIr::Derive { newtype, constraints, arguments, resolution }) =
@@ -311,9 +319,25 @@ where
             is_newtype: *newtype,
         };
 
-        derive::check_derive(state, context, check_derive)?;
+        if let Some(result) = derive::check_derive_head(state, context, check_derive)? {
+            results.push(result);
+        }
     }
 
+    Ok(results)
+}
+
+fn check_derive_members<Q>(
+    state: &mut state::CheckState,
+    context: &state::CheckContext<Q>,
+    derive_results: &[derive::DeriveHeadResult],
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    for result in derive_results {
+        derive::check_derive_member(state, context, result)?;
+    }
     Ok(())
 }
 
@@ -396,6 +420,11 @@ pub fn check_prim(queries: &impl ExternalQueries, file_id: FileId) -> QueryResul
         prim_type.unwrap_or_else(|| unreachable!("invariant violated: {name} not in Prim"))
     };
 
+    let lookup_class = |name: &str| {
+        let prim_class = resolved.exports.lookup_class(name);
+        prim_class.unwrap_or_else(|| unreachable!("invariant violated: {name} not in Prim"))
+    };
+
     let type_core = {
         let (file_id, item_id) = lookup_type("Type");
         queries.intern_type(Type::Constructor(file_id, item_id))
@@ -431,10 +460,12 @@ pub fn check_prim(queries: &impl ExternalQueries, file_id: FileId) -> QueryResul
     insert_type("String", type_core);
     insert_type("Char", type_core);
     insert_type("Boolean", type_core);
-    insert_type("Partial", constraint_core);
     insert_type("Constraint", type_core);
     insert_type("Symbol", type_core);
     insert_type("Row", type_to_type_core);
+
+    let (_, partial_id) = lookup_class("Partial");
+    checked_module.types.insert(partial_id, constraint_core);
 
     let mut insert_roles = |name: &str, roles: &[Role]| {
         let (_, item_id) = lookup_type(name);

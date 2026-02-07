@@ -1,0 +1,39 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+impl3 ::
+  forall (m :: Type -> Type) (a :: Type) (b :: Type).
+    Fn3 @Type @Type @Type @Type
+      (forall (a' :: Type) (b' :: Type).
+        (m :: Type -> Type) ((a' :: Type) -> (b' :: Type)) ->
+        (m :: Type -> Type) (a' :: Type) ->
+        (m :: Type -> Type) (b' :: Type))
+      (forall (a' :: Type) (b' :: Type).
+        ((a' :: Type) -> (b' :: Type)) ->
+        (m :: Type -> Type) (a' :: Type) ->
+        (m :: Type -> Type) (b' :: Type))
+      ((a :: Type) -> (m :: Type -> Type) (b :: Type))
+      ((m :: Type -> Type) (b :: Type))
+test ::
+  forall (m :: Type -> Type) (a :: Type) (b :: Type).
+    Apply (m :: Type -> Type) =>
+    Functor (m :: Type -> Type) =>
+    ((a :: Type) -> (m :: Type -> Type) (b :: Type)) -> (m :: Type -> Type) (b :: Type)
+impl2 ::
+  forall (f :: Type -> Type) (a :: Type).
+    Fn2 @Type @Type @Type
+      (forall (b :: Type).
+        ((a :: Type) -> (b :: Type) -> (b :: Type)) ->
+        (b :: Type) ->
+        (f :: Type -> Type) (a :: Type) ->
+        (b :: Type))
+      ((f :: Type -> Type) (a :: Type))
+      Int
+test2 ::
+  forall (f :: Type -> Type) (a :: Type).
+    Foldable (f :: Type -> Type) => (f :: Type -> Type) (a :: Type) -> Int
+
+Types

@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/resolving/generated.rs
+assertion_line: 12
 expression: report
 ---
 module ImportedClass
@@ -9,6 +10,8 @@ Unqualified Imports:
 Terms:
 
 Types:
+
+Classes:
   - Show is Explicit
   - Eq is Explicit
 
@@ -18,9 +21,13 @@ Exported Terms:
 
 Exported Types:
 
+Exported Classes:
+
 Local Terms:
 
 Local Types:
+
+Local Classes:
 
 Class Members:
   - Show.show (imported)

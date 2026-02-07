@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/resolving/generated.rs
+assertion_line: 12
 expression: report
 ---
 module DuplicateLocal
@@ -14,11 +15,15 @@ Exported Terms:
 Exported Types:
   - Data
 
+Exported Classes:
+
 Local Terms:
   - value
 
 Local Types:
   - Data
+
+Local Classes:
 
 Class Members:
 

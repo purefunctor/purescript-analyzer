@@ -511,7 +511,7 @@ where
     });
 
     let mut unsolved_kinds = unsolved_kinds.collect_vec();
-    unsolved_kinds.sort_by_key(|&(_, id)| (state.unification.get(id).domain, id));
+    unsolved_kinds.sort_by_key(|&(_, id)| (state.unification.get(id).depth, id));
 
     let reference_type = unsolved_kinds.iter().fold(reference_type, |reference, &(kind, _)| {
         state.storage.intern(Type::KindApplication(reference, kind))
@@ -608,7 +608,8 @@ where
 
     // Now that all items in the SCC are processed, the kind should be fully resolved
     if !is_binary_operator_type(state, kind) {
-        state.insert_error(ErrorKind::InvalidTypeOperator { id: kind });
+        let kind_message = state.render_local_type(context, kind);
+        state.insert_error(ErrorKind::InvalidTypeOperator { kind_message });
     }
 
     // Generalize and store the kind
@@ -696,10 +697,18 @@ where
         let surface_bindings = state.surface_bindings.get_type(item_id);
         let surface_bindings = surface_bindings.as_deref().unwrap_or_default();
 
-        let signature =
-            inspect::inspect_signature_core(state, context, stored_kind, surface_bindings)?;
+        let signature = inspect::inspect_signature(state, context, stored_kind, surface_bindings)?;
 
-        if variables.len() != signature.arguments.len() {
+        // The kind signature may have more function arrows than the
+        // definition has parameters when the result kind is itself a
+        // function kind. For example:
+        //
+        //   type C2 :: forall k. (k -> Type) -> (k -> Type) -> k -> Type
+        //   type C2 a z = Coproduct a z
+        //
+        // The kind decomposes into 3 arrows but the synonym only has 2
+        // parameters. The excess arrows belong to the result kind.
+        if variables.len() > signature.arguments.len() {
             state.insert_error(ErrorKind::TypeSignatureVariableMismatch {
                 id: signature_id,
                 expected: 0,
@@ -713,11 +722,12 @@ where
             return Ok(None);
         };
 
-        let variables = variables.iter();
-        let arguments = signature.arguments.iter();
+        let parameter_count = variables.len();
+        let (matched_arguments, excess_arguments) = signature.arguments.split_at(parameter_count);
 
         let kinds = variables
-            .zip(arguments)
+            .iter()
+            .zip(matched_arguments.iter())
             .map(|(variable, &argument)| {
                 // Use contravariant subtyping for type variables:
                 //
@@ -746,10 +756,14 @@ where
             .collect::<QueryResult<Vec<_>>>()?;
 
         let kind_variables = signature.variables;
-        let result_kind = signature.result;
+
+        // Fold excess arguments back into the result kind.
+        let result_kind = excess_arguments.iter().rfold(signature.result, |result, &argument| {
+            state.storage.intern(Type::Function(argument, result))
+        });
         let type_variables = kinds.into_iter().map(|(id, visible, name, kind)| {
             let level = state.type_scope.bind_forall(id, kind);
-            ForallBinder { visible, name, level, kind }
+            ForallBinder { visible, implicit: false, name, level, kind }
         });
 
         let type_variables = type_variables.collect_vec();
@@ -769,7 +783,7 @@ where
             let visible = variable.visible;
             let name = variable.name.clone().unwrap_or(MISSING_NAME);
             let level = state.type_scope.bind_forall(variable.id, kind);
-            Ok(ForallBinder { visible, name, level, kind })
+            Ok(ForallBinder { visible, implicit: false, name, level, kind })
         });
 
         let type_variables = type_variables.collect::<QueryResult<Vec<_>>>()?;
@@ -1021,11 +1035,8 @@ fn check_roles(
         if is_foreign || declared >= inferred {
             *validated = declared;
         } else {
-            state.insert_error(ErrorKind::InvalidRoleDeclaration {
-                type_id,
-                parameter_index: index,
-                declared,
-                inferred,
+            state.with_error_step(ErrorStep::TypeDeclaration(type_id), |state| {
+                state.insert_error(ErrorKind::InvalidRoleDeclaration { index, declared, inferred });
             });
         }
     }

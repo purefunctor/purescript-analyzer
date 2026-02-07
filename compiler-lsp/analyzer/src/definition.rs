@@ -129,8 +129,21 @@ fn definition_import(
 
     let goto_type = |engine: &QueryEngine, files: &Files, name: &str| {
         let name = name.trim_start_matches("(").trim_end_matches(")");
-        let (f_id, t_id) =
-            import_resolved.exports.lookup_type(name).ok_or(AnalyzerError::NonFatal)?;
+        let (f_id, t_id) = import_resolved
+            .exports
+            .lookup_type(name)
+            .or_else(|| import_resolved.exports.lookup_class(name))
+            .ok_or(AnalyzerError::NonFatal)?;
+        definition_file_type(engine, files, f_id, t_id)
+    };
+
+    let goto_class = |engine: &QueryEngine, files: &Files, name: &str| {
+        let name = name.trim_start_matches("(").trim_end_matches(")");
+        let (f_id, t_id) = import_resolved
+            .exports
+            .lookup_class(name)
+            .or_else(|| import_resolved.exports.lookup_type(name))
+            .ok_or(AnalyzerError::NonFatal)?;
         definition_file_type(engine, files, f_id, t_id)
     };
 
@@ -143,7 +156,7 @@ fn definition_import(
         cst::ImportItem::ImportClass(cst) => {
             let token = cst.name_token().ok_or(AnalyzerError::NonFatal)?;
             let name = token.text();
-            goto_type(engine, files, name)
+            goto_class(engine, files, name)
         }
         cst::ImportItem::ImportType(cst) => {
             let token = cst.name_token().ok_or(AnalyzerError::NonFatal)?;

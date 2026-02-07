@@ -1,0 +1,34 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Just :: forall (a :: Type). (a :: Type) -> Maybe (a :: Type)
+Nothing :: forall (a :: Type). Maybe (a :: Type)
+test :: Partial => Maybe Int -> Int
+test' :: Partial => Maybe Int -> Int
+
+Types
+Maybe :: Type -> Type
+
+Data
+Maybe
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+Maybe = [Representational]
+
+Diagnostics
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: Nothing
+  --> 5:10..6:18
+  |
+5 | test a = case a of
+  |          ^~~~~~~~~
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: Nothing
+  --> 8:9..9:18
+  |
+8 | test' = case _ of
+  |         ^~~~~~~~~

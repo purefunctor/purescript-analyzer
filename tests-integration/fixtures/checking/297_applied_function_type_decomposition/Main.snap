@@ -1,0 +1,63 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Just :: forall (a :: Type). (a :: Type) -> Maybe (a :: Type)
+Nothing :: forall (a :: Type). Maybe (a :: Type)
+foldMap ::
+  forall (f :: Type -> Type) (a :: Type) (m :: Type).
+    Foldable (f :: Type -> Type) =>
+    ((a :: Type) -> (m :: Type)) -> (f :: Type -> Type) (a :: Type) -> (m :: Type)
+foldMapWithIndex ::
+  forall (i :: Type) (f :: Type -> Type) (a :: Type) (m :: Type).
+    FoldableWithIndex (i :: Type) (f :: Type -> Type) =>
+    ((i :: Type) -> (a :: Type) -> (m :: Type)) -> (f :: Type -> Type) (a :: Type) -> (m :: Type)
+foldlWithIndex ::
+  forall (i :: Type) (f :: Type -> Type) (a :: Type) (b :: Type).
+    FoldableWithIndex (i :: Type) (f :: Type -> Type) =>
+    ((i :: Type) -> (b :: Type) -> (a :: Type) -> (b :: Type)) ->
+    (b :: Type) ->
+    (f :: Type -> Type) (a :: Type) ->
+    (b :: Type)
+foldrWithIndex ::
+  forall (i :: Type) (f :: Type -> Type) (a :: Type) (b :: Type).
+    FoldableWithIndex (i :: Type) (f :: Type -> Type) =>
+    ((i :: Type) -> (a :: Type) -> (b :: Type) -> (b :: Type)) ->
+    (b :: Type) ->
+    (f :: Type -> Type) (a :: Type) ->
+    (b :: Type)
+NonEmpty ::
+  forall (f :: Type -> Type) (a :: Type).
+    (a :: Type) -> (f :: Type -> Type) (a :: Type) -> NonEmpty (f :: Type -> Type) (a :: Type)
+
+Types
+Maybe :: Type -> Type
+Foldable :: (Type -> Type) -> Constraint
+FoldableWithIndex :: Type -> (Type -> Type) -> Constraint
+NonEmpty :: (Type -> Type) -> Type -> Type
+
+Data
+Maybe
+  Quantified = :0
+  Kind = :0
+
+NonEmpty
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+Maybe = [Representational]
+NonEmpty = [Representational, Nominal]
+
+Classes
+class Foldable (&0 :: Type -> Type)
+class Foldable (&1 :: Type -> Type) <= FoldableWithIndex (&0 :: Type) (&1 :: Type -> Type)
+
+Instances
+instance Foldable (&0 :: Type -> Type) => Foldable (NonEmpty (&0 :: Type -> Type) :: Type -> Type)
+  chain: 0
+instance FoldableWithIndex (&0 :: Type) (&1 :: Type -> Type) => FoldableWithIndex (Maybe (&0 :: Type) :: Type) (NonEmpty (&1 :: Type -> Type) :: Type -> Type)
+  chain: 0

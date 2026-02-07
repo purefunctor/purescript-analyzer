@@ -455,3 +455,187 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_213_row_constraint_multiple_main() { run_test("213_row_constraint_multiple", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_214_row_nub_left_bias_main() { run_test("214_row_nub_left_bias", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_215_do_bind_error_main() { run_test("215_do_bind_error", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_216_ado_bind_error_main() { run_test("216_ado_bind_error", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_217_do_monad_error_main() { run_test("217_do_monad_error", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_218_ado_monad_error_main() { run_test("218_ado_monad_error", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_219_do_mixed_monad_error_main() { run_test("219_do_mixed_monad_error", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_220_do_let_premature_solve_main() { run_test("220_do_let_premature_solve", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_221_do_let_annotation_solve_main() { run_test("221_do_let_annotation_solve", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_222_ado_let_premature_solve_main() { run_test("222_ado_let_premature_solve", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_223_ado_let_annotation_solve_main() { run_test("223_ado_let_annotation_solve", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_224_record_shrinking_main() { run_test("224_record_shrinking", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_225_record_binder_additional_property_main() { run_test("225_record_binder_additional_property", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_226_record_binder_additional_property_nested_main() { run_test("226_record_binder_additional_property_nested", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_227_record_expression_exact_match_main() { run_test("227_record_expression_exact_match", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_228_record_expression_missing_field_main() { run_test("228_record_expression_missing_field", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_229_record_expression_additional_field_main() { run_test("229_record_expression_additional_field", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_230_record_expression_missing_and_additional_main() { run_test("230_record_expression_missing_and_additional", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_231_record_expression_nested_additional_main() { run_test("231_record_expression_nested_additional", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_232_instance_head_nil_kind_application_main() { run_test("232_instance_head_nil_kind_application", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_233_record_instance_matching_main() { run_test("233_record_instance_matching", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_234_record_instance_open_row_main() { run_test("234_record_instance_open_row", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_235_instance_head_invalid_row_main() { run_test("235_instance_head_invalid_row", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_236_category_function_instance_main() { run_test("236_category_function_instance", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_237_bound_variable_unification_main() { run_test("237_bound_variable_unification", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_238_function_application_subtype_main() { run_test("238_function_application_subtype", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_245_do_notation_panic_main() { run_test("245_do_notation_panic", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_246_do_bind_only_main() { run_test("246_do_bind_only", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_247_do_discard_not_in_scope_main() { run_test("247_do_discard_not_in_scope", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_248_do_empty_block_main() { run_test("248_do_empty_block", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_249_do_final_bind_main() { run_test("249_do_final_bind", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_250_do_final_let_main() { run_test("250_do_final_let", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_251_lookup_implicit_panic_main() { run_test("251_lookup_implicit_panic", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_252_invalid_type_application_basic_main() { run_test("252_invalid_type_application_basic", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_253_invalid_type_application_too_many_main() { run_test("253_invalid_type_application_too_many", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_254_higher_rank_elaboration_main() { run_test("254_higher_rank_elaboration", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_255_exhaustive_basic_main() { run_test("255_exhaustive_basic", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_256_exhaustive_multiple_main() { run_test("256_exhaustive_multiple", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_257_exhaustive_tuple_main() { run_test("257_exhaustive_tuple", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_258_redundant_patterns_main() { run_test("258_redundant_patterns", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_259_exhaustive_boolean_partial_main() { run_test("259_exhaustive_boolean_partial", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_260_exhaustive_integer_partial_main() { run_test("260_exhaustive_integer_partial", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_261_exhaustive_number_partial_main() { run_test("261_exhaustive_number_partial", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_262_exhaustive_char_partial_main() { run_test("262_exhaustive_char_partial", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_263_exhaustive_string_partial_main() { run_test("263_exhaustive_string_partial", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_264_equation_exhaustive_basic_main() { run_test("264_equation_exhaustive_basic", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_265_equation_redundant_main() { run_test("265_equation_redundant", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_266_equation_guarded_main() { run_test("266_equation_guarded", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_267_equation_multiple_arguments_main() { run_test("267_equation_multiple_arguments", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_268_let_equation_exhaustive_main() { run_test("268_let_equation_exhaustive", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_269_instance_equation_exhaustive_main() { run_test("269_instance_equation_exhaustive", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_270_record_constructor_exhaustive_main() { run_test("270_record_constructor_exhaustive", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_271_array_exhaustive_main() { run_test("271_array_exhaustive", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_272_array_nested_constructor_main() { run_test("272_array_nested_constructor", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_273_class_member_instantiation_main() { run_test("273_class_member_instantiation", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_274_givens_retained_main() { run_test("274_givens_retained", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_275_givens_scoped_main() { run_test("275_givens_scoped", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_276_where_clause_outer_scope_main() { run_test("276_where_clause_outer_scope", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_277_keyword_as_variable_main() { run_test("277_keyword_as_variable", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_278_partial_case_nested_main() { run_test("278_partial_case_nested", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_279_partial_let_where_main() { run_test("279_partial_let_where", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_280_partial_case_variable_main() { run_test("280_partial_case_variable", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_281_sectioned_constraint_generation_main() { run_test("281_sectioned_constraint_generation", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_282_higher_rank_unification_main() { run_test("282_higher_rank_unification", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_283_type_operator_synonym_expansion_main() { run_test("283_type_operator_synonym_expansion", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_284_type_operator_synonym_with_binders_main() { run_test("284_type_operator_synonym_with_binders", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_285_derive_newtype_higher_kinded_main() { run_test("285_derive_newtype_higher_kinded", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_286_invalid_vector_newtype_derive_main() { run_test("286_invalid_vector_newtype_derive", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_287_lambda_partial_main() { run_test("287_lambda_partial", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_288_unsafe_partial_application_main() { run_test("288_unsafe_partial_application", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_289_custom_constraint_discharge_main() { run_test("289_custom_constraint_discharge", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_290_apply_constraint_discharge_main() { run_test("290_apply_constraint_discharge", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_291_compose_constraint_discharge_main() { run_test("291_compose_constraint_discharge", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_292_higher_rank_constraint_discharge_main() { run_test("292_higher_rank_constraint_discharge", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_293_exhaustive_guards_otherwise_true_main() { run_test("293_exhaustive_guards_otherwise_true", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_294_exhaustive_operator_constructor_main() { run_test("294_exhaustive_operator_constructor", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_295_superclass_entailment_where_binding_main() { run_test("295_superclass_entailment_where_binding", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_296_type_operator_synonym_in_application_main() { run_test("296_type_operator_synonym_in_application", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_297_applied_function_type_decomposition_main() { run_test("297_applied_function_type_decomposition", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_298_operator_alias_class_method_main() { run_test("298_operator_alias_class_method", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_299_derive_mutual_visibility_same_module_main() { run_test("299_derive_mutual_visibility_same_module", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_300_instance_shift_variables_main() { run_test("300_instance_shift_variables", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_301_coercible_symmetry_main() { run_test("301_coercible_symmetry", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_302_coercible_function_decomposition_main() { run_test("302_coercible_function_decomposition", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_303_instance_given_constraint_main() { run_test("303_instance_given_constraint", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_305_type_operator_unification_main() { run_test("305_type_operator_unification", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_306_kind_application_instance_matching_main() { run_test("306_kind_application_instance_matching", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_307_where_let_interaction_main() { run_test("307_where_let_interaction", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_308_let_constraint_scoping_main() { run_test("308_let_constraint_scoping", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_309_synonym_function_result_kind_main() { run_test("309_synonym_function_result_kind", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_310_synonym_forall_expansion_main() { run_test("310_synonym_forall_expansion", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_311_prim_qualified_main() { run_test("311_prim_qualified", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_312_prim_qualified_override_main() { run_test("312_prim_qualified_override", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_313_guarded_constraint_propagation_main() { run_test("313_guarded_constraint_propagation", "Main"); }

@@ -1,0 +1,30 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Box ::
+  forall (f :: Type -> Type) (a :: Type).
+    (f :: Type -> Type) (a :: Type) -> Box (f :: Type -> Type) (a :: Type)
+test :: forall (f :: Type -> Type). Wrap (f :: Type -> Type) Int -> Wrap (f :: Type -> Type) Int
+
+Types
+Box :: (Type -> Type) -> Type -> Type
+Wrap :: (Type -> Type) -> Type -> Type
+
+Synonyms
+Wrap = forall (f :: Type -> Type). Box (f :: Type -> Type)
+  Quantified = :0
+  Kind = :0
+  Type = :1
+
+
+Data
+Box
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+Box = [Representational, Nominal]

@@ -1,0 +1,51 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+parallel ::
+  forall (f :: Type -> Type) (m :: Type -> Type).
+    Parallel (f :: Type -> Type) (m :: Type -> Type) => (m :: Type -> Type) ~> (f :: Type -> Type)
+sequential ::
+  forall (f :: Type -> Type) (m :: Type -> Type).
+    Parallel (f :: Type -> Type) (m :: Type -> Type) => (f :: Type -> Type) ~> (m :: Type -> Type)
+ReaderT ::
+  forall (r :: Type) (m :: Type -> Type) (a :: Type).
+    ((r :: Type) -> (m :: Type -> Type) (a :: Type)) ->
+    ReaderT (r :: Type) (m :: Type -> Type) (a :: Type)
+mapReaderT ::
+  forall (r :: Type) (m :: Type -> Type) (n :: Type -> Type) (a :: Type) (b :: Type).
+    ((m :: Type -> Type) (a :: Type) -> (n :: Type -> Type) (b :: Type)) ->
+    ReaderT (r :: Type) (m :: Type -> Type) (a :: Type) ->
+    ReaderT (r :: Type) (n :: Type -> Type) (b :: Type)
+
+Types
+Transform :: (Type -> Type) -> (Type -> Type) -> Type
+~> :: (Type -> Type) -> (Type -> Type) -> Type
+Parallel :: (Type -> Type) -> (Type -> Type) -> Constraint
+ReaderT :: Type -> (Type -> Type) -> Type -> Type
+
+Synonyms
+Transform = forall (f :: Type -> Type) (g :: Type -> Type) (a :: Type).
+  (f :: Type -> Type) (a :: Type) -> (g :: Type -> Type) (a :: Type)
+  Quantified = :0
+  Kind = :0
+  Type = :2
+
+
+Data
+ReaderT
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+ReaderT = [Representational, Representational, Nominal]
+
+Classes
+class Functor (&1 :: Type -> Type), Functor (&0 :: Type -> Type) <= Parallel (&0 :: Type -> Type) (&1 :: Type -> Type)
+
+Instances
+instance Parallel (&1 :: Type -> Type) (&2 :: Type -> Type) => Parallel (ReaderT (&0 :: Type) (&1 :: Type -> Type) :: Type -> Type) (ReaderT (&0 :: Type) (&2 :: Type -> Type) :: Type -> Type)
+  chain: 0

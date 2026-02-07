@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -12,5 +13,9 @@ Nominal :: Type -> Type
 Roles
 Nominal = [Nominal]
 
-Errors
-NoInstanceFound { Coercible @Type (Nominal Int) (Nominal String) } at [TermDeclaration(Idx::<TermItem>(1))]
+Diagnostics
+error[NoInstanceFound]: No instance found for: Coercible @Type (Nominal Int) (Nominal String)
+  --> 12:1..12:56
+   |
+12 | coerceNominalDifferent :: Nominal Int -> Nominal String
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

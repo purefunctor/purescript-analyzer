@@ -109,7 +109,7 @@ pub struct SubstituteBindings<'a> {
 impl SubstituteBindings<'_> {
     /// Substitutes bound and implicit variables using a level-based mapping.
     ///
-    /// This is used to specialize class superclasses with instance arguments.
+    /// This is used to specialise class superclasses with instance arguments.
     /// For example, when deriving `Traversable (Compose f g)`, the superclass
     /// `Functor t` becomes `Functor (Compose f g)` by binding `t`'s level to
     /// `Compose f g`.

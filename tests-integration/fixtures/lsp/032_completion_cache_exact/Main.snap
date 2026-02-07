@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/lsp/generated.rs
+assertion_line: 12
 expression: report
 ---
 Completion at Position { line: 2, character: 14 }
@@ -138,26 +139,26 @@ type Qual1 = Data.Maybe.
 │  Text        │   (import Prim.TypeError as Data.Maybe)  │  Prim.TypeError     │  Prim.TypeError.Text        │  Data.Maybe.Text        │  20:13..20:24           │  1:0..1:0                             │
 │              │                                          │                     │                             │                         │  Data.Maybe.Text        │  import Prim.TypeError as Data.Maybe  │
 ├──────────────┼──────────────────────────────────────────┼─────────────────────┼─────────────────────────────┼─────────────────────────┼─────────────────────────┼───────────────────────────────────────┤
-│  Warn        │   (import Prim.TypeError as Data.Maybe)  │  Prim.TypeError     │  Prim.TypeError.Warn        │  Data.Maybe.Warn        │  20:13..20:24           │  1:0..1:0                             │
-│              │                                          │                     │                             │                         │  Data.Maybe.Warn        │  import Prim.TypeError as Data.Maybe  │
+│  Above       │   (import Prim.TypeError as Data.Maybe)  │  Prim.TypeError     │  Prim.TypeError.Above       │  Data.Maybe.Above       │  20:13..20:24           │  1:0..1:0                             │
+│              │                                          │                     │                             │                         │  Data.Maybe.Above       │  import Prim.TypeError as Data.Maybe  │
 ├──────────────┼──────────────────────────────────────────┼─────────────────────┼─────────────────────────────┼─────────────────────────┼─────────────────────────┼───────────────────────────────────────┤
 │  Beside      │   (import Prim.TypeError as Data.Maybe)  │  Prim.TypeError     │  Prim.TypeError.Beside      │  Data.Maybe.Beside      │  20:13..20:24           │  1:0..1:0                             │
 │              │                                          │                     │                             │                         │  Data.Maybe.Beside      │  import Prim.TypeError as Data.Maybe  │
 ├──────────────┼──────────────────────────────────────────┼─────────────────────┼─────────────────────────────┼─────────────────────────┼─────────────────────────┼───────────────────────────────────────┤
-│  Fail        │   (import Prim.TypeError as Data.Maybe)  │  Prim.TypeError     │  Prim.TypeError.Fail        │  Data.Maybe.Fail        │  20:13..20:24           │  1:0..1:0                             │
-│              │                                          │                     │                             │                         │  Data.Maybe.Fail        │  import Prim.TypeError as Data.Maybe  │
+│  Quote       │   (import Prim.TypeError as Data.Maybe)  │  Prim.TypeError     │  Prim.TypeError.Quote       │  Data.Maybe.Quote       │  20:13..20:24           │  1:0..1:0                             │
+│              │                                          │                     │                             │                         │  Data.Maybe.Quote       │  import Prim.TypeError as Data.Maybe  │
 ├──────────────┼──────────────────────────────────────────┼─────────────────────┼─────────────────────────────┼─────────────────────────┼─────────────────────────┼───────────────────────────────────────┤
 │  QuoteLabel  │   (import Prim.TypeError as Data.Maybe)  │  Prim.TypeError     │  Prim.TypeError.QuoteLabel  │  Data.Maybe.QuoteLabel  │  20:13..20:24           │  1:0..1:0                             │
 │              │                                          │                     │                             │                         │  Data.Maybe.QuoteLabel  │  import Prim.TypeError as Data.Maybe  │
 ├──────────────┼──────────────────────────────────────────┼─────────────────────┼─────────────────────────────┼─────────────────────────┼─────────────────────────┼───────────────────────────────────────┤
-│  Above       │   (import Prim.TypeError as Data.Maybe)  │  Prim.TypeError     │  Prim.TypeError.Above       │  Data.Maybe.Above       │  20:13..20:24           │  1:0..1:0                             │
-│              │                                          │                     │                             │                         │  Data.Maybe.Above       │  import Prim.TypeError as Data.Maybe  │
-├──────────────┼──────────────────────────────────────────┼─────────────────────┼─────────────────────────────┼─────────────────────────┼─────────────────────────┼───────────────────────────────────────┤
-│  Quote       │   (import Prim.TypeError as Data.Maybe)  │  Prim.TypeError     │  Prim.TypeError.Quote       │  Data.Maybe.Quote       │  20:13..20:24           │  1:0..1:0                             │
-│              │                                          │                     │                             │                         │  Data.Maybe.Quote       │  import Prim.TypeError as Data.Maybe  │
-├──────────────┼──────────────────────────────────────────┼─────────────────────┼─────────────────────────────┼─────────────────────────┼─────────────────────────┼───────────────────────────────────────┤
 │  Doc         │   (import Prim.TypeError as Data.Maybe)  │  Prim.TypeError     │  Prim.TypeError.Doc         │  Data.Maybe.Doc         │  20:13..20:24           │  1:0..1:0                             │
 │              │                                          │                     │                             │                         │  Data.Maybe.Doc         │  import Prim.TypeError as Data.Maybe  │
+├──────────────┼──────────────────────────────────────────┼─────────────────────┼─────────────────────────────┼─────────────────────────┼─────────────────────────┼───────────────────────────────────────┤
+│  Fail        │   (import Prim.TypeError as Data.Maybe)  │  Prim.TypeError     │  Prim.TypeError.Fail        │  Data.Maybe.Fail        │  20:13..20:24           │  1:0..1:0                             │
+│              │                                          │                     │                             │                         │  Data.Maybe.Fail        │  import Prim.TypeError as Data.Maybe  │
+├──────────────┼──────────────────────────────────────────┼─────────────────────┼─────────────────────────────┼─────────────────────────┼─────────────────────────┼───────────────────────────────────────┤
+│  Warn        │   (import Prim.TypeError as Data.Maybe)  │  Prim.TypeError     │  Prim.TypeError.Warn        │  Data.Maybe.Warn        │  20:13..20:24           │  1:0..1:0                             │
+│              │                                          │                     │                             │                         │  Data.Maybe.Warn        │  import Prim.TypeError as Data.Maybe  │
 ├──────────────┼──────────────────────────────────────────┼─────────────────────┼─────────────────────────────┼─────────────────────────┼─────────────────────────┼───────────────────────────────────────┤
 │  Maybe       │   (import Data.Maybe as Data.Maybe)      │  Data.Maybe         │  Data.Maybe.Maybe           │  Data.Maybe.Maybe       │  20:13..20:24           │  1:0..1:0                             │
 │              │                                          │                     │                             │                         │  Data.Maybe.Maybe       │  import Data.Maybe as Data.Maybe      │
@@ -186,26 +187,26 @@ type Qual2 = Data.Maybe.
 │  Text        │   (import Prim.TypeError as Data.Maybe)  │  Prim.TypeError     │  Prim.TypeError.Text        │  Data.Maybe.Text        │  23:13..23:24           │  1:0..1:0                             │
 │              │                                          │                     │                             │                         │  Data.Maybe.Text        │  import Prim.TypeError as Data.Maybe  │
 ├──────────────┼──────────────────────────────────────────┼─────────────────────┼─────────────────────────────┼─────────────────────────┼─────────────────────────┼───────────────────────────────────────┤
-│  Warn        │   (import Prim.TypeError as Data.Maybe)  │  Prim.TypeError     │  Prim.TypeError.Warn        │  Data.Maybe.Warn        │  23:13..23:24           │  1:0..1:0                             │
-│              │                                          │                     │                             │                         │  Data.Maybe.Warn        │  import Prim.TypeError as Data.Maybe  │
+│  Above       │   (import Prim.TypeError as Data.Maybe)  │  Prim.TypeError     │  Prim.TypeError.Above       │  Data.Maybe.Above       │  23:13..23:24           │  1:0..1:0                             │
+│              │                                          │                     │                             │                         │  Data.Maybe.Above       │  import Prim.TypeError as Data.Maybe  │
 ├──────────────┼──────────────────────────────────────────┼─────────────────────┼─────────────────────────────┼─────────────────────────┼─────────────────────────┼───────────────────────────────────────┤
 │  Beside      │   (import Prim.TypeError as Data.Maybe)  │  Prim.TypeError     │  Prim.TypeError.Beside      │  Data.Maybe.Beside      │  23:13..23:24           │  1:0..1:0                             │
 │              │                                          │                     │                             │                         │  Data.Maybe.Beside      │  import Prim.TypeError as Data.Maybe  │
 ├──────────────┼──────────────────────────────────────────┼─────────────────────┼─────────────────────────────┼─────────────────────────┼─────────────────────────┼───────────────────────────────────────┤
-│  Fail        │   (import Prim.TypeError as Data.Maybe)  │  Prim.TypeError     │  Prim.TypeError.Fail        │  Data.Maybe.Fail        │  23:13..23:24           │  1:0..1:0                             │
-│              │                                          │                     │                             │                         │  Data.Maybe.Fail        │  import Prim.TypeError as Data.Maybe  │
+│  Quote       │   (import Prim.TypeError as Data.Maybe)  │  Prim.TypeError     │  Prim.TypeError.Quote       │  Data.Maybe.Quote       │  23:13..23:24           │  1:0..1:0                             │
+│              │                                          │                     │                             │                         │  Data.Maybe.Quote       │  import Prim.TypeError as Data.Maybe  │
 ├──────────────┼──────────────────────────────────────────┼─────────────────────┼─────────────────────────────┼─────────────────────────┼─────────────────────────┼───────────────────────────────────────┤
 │  QuoteLabel  │   (import Prim.TypeError as Data.Maybe)  │  Prim.TypeError     │  Prim.TypeError.QuoteLabel  │  Data.Maybe.QuoteLabel  │  23:13..23:24           │  1:0..1:0                             │
 │              │                                          │                     │                             │                         │  Data.Maybe.QuoteLabel  │  import Prim.TypeError as Data.Maybe  │
 ├──────────────┼──────────────────────────────────────────┼─────────────────────┼─────────────────────────────┼─────────────────────────┼─────────────────────────┼───────────────────────────────────────┤
-│  Above       │   (import Prim.TypeError as Data.Maybe)  │  Prim.TypeError     │  Prim.TypeError.Above       │  Data.Maybe.Above       │  23:13..23:24           │  1:0..1:0                             │
-│              │                                          │                     │                             │                         │  Data.Maybe.Above       │  import Prim.TypeError as Data.Maybe  │
-├──────────────┼──────────────────────────────────────────┼─────────────────────┼─────────────────────────────┼─────────────────────────┼─────────────────────────┼───────────────────────────────────────┤
-│  Quote       │   (import Prim.TypeError as Data.Maybe)  │  Prim.TypeError     │  Prim.TypeError.Quote       │  Data.Maybe.Quote       │  23:13..23:24           │  1:0..1:0                             │
-│              │                                          │                     │                             │                         │  Data.Maybe.Quote       │  import Prim.TypeError as Data.Maybe  │
-├──────────────┼──────────────────────────────────────────┼─────────────────────┼─────────────────────────────┼─────────────────────────┼─────────────────────────┼───────────────────────────────────────┤
 │  Doc         │   (import Prim.TypeError as Data.Maybe)  │  Prim.TypeError     │  Prim.TypeError.Doc         │  Data.Maybe.Doc         │  23:13..23:24           │  1:0..1:0                             │
 │              │                                          │                     │                             │                         │  Data.Maybe.Doc         │  import Prim.TypeError as Data.Maybe  │
+├──────────────┼──────────────────────────────────────────┼─────────────────────┼─────────────────────────────┼─────────────────────────┼─────────────────────────┼───────────────────────────────────────┤
+│  Fail        │   (import Prim.TypeError as Data.Maybe)  │  Prim.TypeError     │  Prim.TypeError.Fail        │  Data.Maybe.Fail        │  23:13..23:24           │  1:0..1:0                             │
+│              │                                          │                     │                             │                         │  Data.Maybe.Fail        │  import Prim.TypeError as Data.Maybe  │
+├──────────────┼──────────────────────────────────────────┼─────────────────────┼─────────────────────────────┼─────────────────────────┼─────────────────────────┼───────────────────────────────────────┤
+│  Warn        │   (import Prim.TypeError as Data.Maybe)  │  Prim.TypeError     │  Prim.TypeError.Warn        │  Data.Maybe.Warn        │  23:13..23:24           │  1:0..1:0                             │
+│              │                                          │                     │                             │                         │  Data.Maybe.Warn        │  import Prim.TypeError as Data.Maybe  │
 ├──────────────┼──────────────────────────────────────────┼─────────────────────┼─────────────────────────────┼─────────────────────────┼─────────────────────────┼───────────────────────────────────────┤
 │  Maybe       │   (import Data.Maybe as Data.Maybe)      │  Data.Maybe         │  Data.Maybe.Maybe           │  Data.Maybe.Maybe       │  23:13..23:24           │  1:0..1:0                             │
 │              │                                          │                     │                             │                         │  Data.Maybe.Maybe       │  import Data.Maybe as Data.Maybe      │

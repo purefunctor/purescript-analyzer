@@ -1,0 +1,14 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+unsafeCoerce :: forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type)
+test ::
+  forall (t6 :: Type) (t :: Type) (r :: Type).
+    (t :: Type) ->
+    (forall (v :: (t6 :: Type)). Proxy @(t6 :: Type) (v :: (t6 :: Type)) -> (r :: Type)) ->
+    (r :: Type)
+
+Types

@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -34,5 +35,9 @@ Instances
 instance Functor (Box :: Type -> Type)
   chain: 0
 
-Errors
-NoInstanceFound { Show (~&1 :: Type) } at [TermDeclaration(Idx::<TermItem>(3))]
+Diagnostics
+error[NoInstanceFound]: No instance found for: Show (~&1 :: Type)
+  --> 11:1..16:16
+   |
+11 | instance Functor Box where
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~

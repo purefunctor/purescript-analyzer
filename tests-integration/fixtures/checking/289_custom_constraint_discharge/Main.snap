@@ -1,0 +1,23 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+constrained :: MyConstraint => Int
+removeConstraint :: forall (a :: Type). (MyConstraint => (a :: Type)) -> (a :: Type)
+test :: Int
+test' :: Int
+
+Types
+MyConstraint :: Constraint
+
+Classes
+class MyConstraint
+
+Diagnostics
+error[NoInstanceFound]: No instance found for: MyConstraint
+  --> 9:1..9:55
+  |
+9 | removeConstraint :: forall a. (MyConstraint => a) -> a
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

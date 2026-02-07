@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/resolving/generated.rs
+assertion_line: 12
 expression: report
 ---
 module ImportQualifiedImplicit
@@ -23,6 +24,8 @@ L Types:
   - TypeOnly is Implicit
   - HideTy is Implicit
 
+L Classes:
+
 Exported Terms:
   - MkHideTy
   - Ctor3
@@ -38,9 +41,13 @@ Exported Types:
   - TypeOnly
   - HideTy
 
+Exported Classes:
+
 Local Terms:
 
 Local Types:
+
+Local Classes:
 
 Class Members:
 

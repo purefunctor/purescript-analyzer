@@ -93,6 +93,22 @@ fn build_symbol_list(
                 container_name: None,
             });
         }
+
+        for (name, _, type_id) in resolved.locals.iter_classes() {
+            if !name.to_lowercase().starts_with(query) {
+                continue;
+            }
+            let location = common::file_type_location(engine, uri.clone(), file_id, type_id)?;
+            symbols.push(SymbolInformation {
+                name: name.to_string(),
+                kind: SymbolKind::CLASS,
+                tags: None,
+                #[allow(deprecated)]
+                deprecated: None,
+                location,
+                container_name: None,
+            });
+        }
     }
 
     Ok(symbols)
