@@ -631,3 +631,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_308_let_constraint_scoping_main() { run_test("308_let_constraint_scoping", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_309_synonym_function_result_kind_main() { run_test("309_synonym_function_result_kind", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_310_synonym_forall_expansion_main() { run_test("310_synonym_forall_expansion", "Main"); }
