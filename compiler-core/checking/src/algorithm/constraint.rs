@@ -8,8 +8,8 @@ use compiler_solved::*;
 use functional_dependency::{Fd, get_all_determined};
 
 use std::collections::{HashSet, VecDeque};
-use std::iter;
 use std::sync::Arc;
+use std::{iter, mem};
 
 use building_types::QueryResult;
 use files::FileId;
@@ -18,6 +18,7 @@ use itertools::Itertools;
 use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::algorithm::fold::{FoldAction, TypeFold, fold_type};
+use crate::algorithm::state::implication::ImplicationId;
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::visit::{
     CollectFileReferences, HasLabeledRole, TypeVisitor, VisitAction, visit_type,
@@ -119,6 +120,72 @@ where
     crate::debug_fields!(state, context, { ?residual = residual.len() });
 
     Ok(residual)
+}
+
+#[tracing::instrument(skip_all, name = "solve_implication")]
+pub fn solve_implication<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+) -> QueryResult<Vec<TypeId>>
+where
+    Q: ExternalQueries,
+{
+    let implication = state.implications.current();
+    solve_implication_id(state, context, implication, &[])
+}
+
+/// Recursively solves an implication and its children.
+fn solve_implication_id<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    implication: ImplicationId,
+    inherited: &[TypeId],
+) -> QueryResult<Vec<TypeId>>
+where
+    Q: ExternalQueries,
+{
+    let (wanted, given, children) = {
+        let node = &mut state.implications[implication];
+        (mem::take(&mut node.wanted), mem::take(&mut node.given), node.children.clone())
+    };
+
+    let all_given = {
+        let inherited = inherited.iter().copied();
+        let given = given.iter().copied();
+        inherited.chain(given).collect_vec()
+    };
+
+    crate::debug_fields!(state, context, {
+        ?implication = implication,
+        ?wanted = wanted.len(),
+        ?given = given.len(),
+        ?inherited = inherited.len(),
+        ?children = children.len(),
+    });
+
+    // Solve this implication's children with all_given.
+    for child in &children {
+        let residual = solve_implication_id(state, context, *child, &all_given)?;
+
+        crate::debug_fields!(state, context, {
+            ?child = child,
+            ?residual = residual.len(),
+        });
+
+        // TODO: partition_by_skolem_escape once skolems are introduced.
+        state.implications[implication].wanted.extend(residual);
+    }
+
+    // Solve this implication's wanted constraints with all_given.
+    let remaining = mem::take(&mut state.implications[implication].wanted);
+    let wanted: VecDeque<TypeId> = wanted.into_iter().chain(remaining).collect();
+    let residuals = solve_constraints(state, context, wanted, &all_given)?;
+
+    let implication = &mut state.implications[implication];
+    implication.given = given;
+    implication.wanted = Vec::clone(&residuals).into();
+
+    Ok(residuals)
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]

@@ -16,8 +16,7 @@ use lowering::{GroupedModule, LoweredModule, TypeItemIr};
 
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::{kind, substitute, transfer, unification};
-use crate::core::debruijn;
-use crate::core::{Saturation, Synonym, Type, TypeId};
+use crate::core::{Saturation, Synonym, Type, TypeId, debruijn};
 use crate::error::ErrorKind;
 use crate::{CheckedModule, ExternalQueries};
 

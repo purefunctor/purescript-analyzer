@@ -34,7 +34,7 @@ pub fn emit_constraint(
 ) {
     let class_type = state.storage.intern(Type::Constructor(class_file, class_id));
     let constraint = state.storage.intern(Type::Application(class_type, type_id));
-    state.constraints.push_wanted(constraint);
+    state.push_wanted(constraint);
 }
 
 /// Emits wanted constraints for the superclasses of the class being derived.
@@ -73,7 +73,7 @@ where
 
     for &(superclass, _) in class_info.superclasses.iter() {
         let specialised = substitute::SubstituteBindings::on(state, &bindings, superclass);
-        state.constraints.push_wanted(specialised);
+        state.push_wanted(specialised);
     }
 
     Ok(())

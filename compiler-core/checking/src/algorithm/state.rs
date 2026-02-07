@@ -1,14 +1,15 @@
 pub mod unification;
-use itertools::Itertools;
 pub use unification::*;
 
-use std::collections::VecDeque;
-use std::mem;
+pub mod implication;
+pub use implication::*;
+
 use std::sync::Arc;
 
 use building_types::QueryResult;
 use files::FileId;
 use indexing::{IndexedModule, TermItemId, TypeItemId};
+use itertools::Itertools;
 use lowering::{
     BinderId, GraphNodeId, GroupedModule, ImplicitBindingId, LetBindingNameGroupId, LoweredModule,
     RecordPunId, TermOperatorId, TypeItemIr, TypeOperatorId, TypeVariableBindingId,
@@ -264,31 +265,6 @@ impl SurfaceBindings {
     }
 }
 
-/// Collects wanted and given constraints.
-#[derive(Default)]
-pub struct ConstraintContext {
-    pub wanted: VecDeque<TypeId>,
-    pub given: Vec<TypeId>,
-}
-
-impl ConstraintContext {
-    pub fn push_wanted(&mut self, constraint: TypeId) {
-        self.wanted.push_back(constraint);
-    }
-
-    pub fn extend_wanted(&mut self, constraints: &[TypeId]) {
-        self.wanted.extend(constraints);
-    }
-
-    pub fn push_given(&mut self, constraint: TypeId) {
-        self.given.push(constraint);
-    }
-
-    pub fn take(&mut self) -> (VecDeque<TypeId>, Vec<TypeId>) {
-        (mem::take(&mut self.wanted), mem::take(&mut self.given))
-    }
-}
-
 /// The core state structure threaded through the [`algorithm`].
 ///
 /// [`algorithm`]: crate::algorithm
@@ -307,8 +283,9 @@ pub struct CheckState {
     /// Tracks surface variables for rebinding, see struct documentation.
     pub surface_bindings: SurfaceBindings,
 
-    /// Collects wanted/given type class constraints.
-    pub constraints: ConstraintContext,
+    /// Stores implication scopes for constraint solving.
+    pub implications: Implications,
+
     /// Collects unification variables and solutions.
     pub unification: UnificationContext,
     /// The in-progress binding group; used for recursive declarations.
@@ -1043,24 +1020,46 @@ impl CheckState {
         result
     }
 
-    pub fn with_local_givens<T>(&mut self, action: impl FnOnce(&mut Self) -> T) -> T {
-        let length = self.constraints.given.len();
+    pub fn with_implication<T>(&mut self, action: impl FnOnce(&mut Self) -> T) -> T {
+        let child = self.push_implication();
         let result = action(self);
-        self.constraints.given.drain(length..);
+        self.pop_implication(child);
         result
+    }
+
+    pub fn push_implication(&mut self) -> ImplicationId {
+        self.implications.push()
+    }
+
+    pub fn pop_implication(&mut self, implication: ImplicationId) {
+        self.implications.pop(implication);
+    }
+
+    pub fn current_implication(&self) -> ImplicationId {
+        self.implications.current()
+    }
+
+    pub fn current_implication_mut(&mut self) -> &mut implication::Implication {
+        self.implications.current_mut()
+    }
+
+    pub fn push_wanted(&mut self, constraint: TypeId) {
+        self.current_implication_mut().wanted.push_back(constraint);
+    }
+
+    pub fn extend_wanted(&mut self, constraints: &[TypeId]) {
+        self.current_implication_mut().wanted.extend(constraints.iter().copied());
+    }
+
+    pub fn push_given(&mut self, constraint: TypeId) {
+        self.current_implication_mut().given.push(constraint);
     }
 
     pub fn solve_constraints<Q>(&mut self, context: &CheckContext<Q>) -> QueryResult<Vec<TypeId>>
     where
         Q: ExternalQueries,
     {
-        let (wanted, given) = self.constraints.take();
-        let residuals = constraint::solve_constraints(self, context, wanted, &given);
-
-        let after_solve = mem::replace(&mut self.constraints.given, given);
-        debug_assert!(after_solve.is_empty(), "invariant violated: non-empty givens");
-
-        residuals
+        constraint::solve_implication(self, context)
     }
 
     pub fn report_exhaustiveness(&mut self, exhaustiveness: ExhaustivenessReport) {

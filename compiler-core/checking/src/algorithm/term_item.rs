@@ -8,6 +8,7 @@ use lowering::TermItemIr;
 
 use crate::ExternalQueries;
 use crate::algorithm::kind::synonym;
+use crate::algorithm::safety::safe_loop;
 use crate::algorithm::state::{CheckContext, CheckState, InstanceHeadBinding};
 use crate::algorithm::{
     constraint, equation, inspect, kind, quantify, substitute, term, transfer, unification,
@@ -273,7 +274,7 @@ where
     Q: ExternalQueries,
 {
     state.with_error_step(ErrorStep::TermDeclaration(input.item_id), |state| {
-        state.with_local_givens(|state| {
+        state.with_implication(|state| {
             let _span = tracing::debug_span!("check_value_group").entered();
             check_value_group_core(context, state, input)
         })
@@ -463,7 +464,7 @@ where
     Q: ExternalQueries,
 {
     state.with_error_step(ErrorStep::TermDeclaration(input.instance_id), |state| {
-        state.with_local_givens(|state| check_instance_member_group_core(state, context, input))
+        state.with_implication(|state| check_instance_member_group_core(state, context, input))
     })
 }
 
@@ -505,7 +506,7 @@ where
 
     for (constraint_type, _) in instance_constraints {
         let local_constraint = transfer::localize(state, context, *constraint_type);
-        state.constraints.push_given(local_constraint);
+        state.push_given(local_constraint);
     }
 
     let specialised_type = if let Some(class_member_type) = class_member_type {
@@ -523,13 +524,14 @@ where
     // The specialised type may have constraints like `Show a => (a -> b) -> f a -> f b`.
     // We push `Show a` as a given and use the body `(a -> b) -> f a -> f b` for checking.
     let specialised_type = specialised_type.map(|mut t| {
-        while let normalized = state.normalize_type(t)
-            && let Type::Constrained(constraint, constrained) = &state.storage[normalized]
-        {
-            state.constraints.push_given(*constraint);
-            t = *constrained;
+        safe_loop! {
+            let normalized = state.normalize_type(t);
+            let Type::Constrained(constraint, constrained) = state.storage[normalized] else {
+                break t;
+            };
+            state.push_given(constraint);
+            t = constrained;
         }
-        t
     });
 
     if let Some(signature_id) = &member.signature {

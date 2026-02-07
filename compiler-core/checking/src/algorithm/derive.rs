@@ -94,7 +94,7 @@ where
     Q: ExternalQueries,
 {
     state.with_error_step(ErrorStep::TermDeclaration(input.item_id), |state| {
-        state.with_local_givens(|state| check_derive_head_core(state, context, input))
+        state.with_implication(|state| check_derive_head_core(state, context, input))
     })
 }
 
@@ -297,7 +297,7 @@ where
     Q: ExternalQueries,
 {
     state.with_error_step(ErrorStep::TermDeclaration(result.item_id), |state| {
-        state.with_local_givens(|state| check_derive_member_core(state, context, result))
+        state.with_implication(|state| check_derive_member_core(state, context, result))
     })
 }
 
@@ -310,7 +310,7 @@ where
     Q: ExternalQueries,
 {
     for &constraint in &result.constraints {
-        state.constraints.push_given(constraint);
+        state.push_given(constraint);
     }
 
     match &result.strategy {
@@ -359,7 +359,7 @@ where
             generate_delegate_constraint(state, context.prim.t, *derived_type, *class);
         }
         DeriveStrategy::NewtypeDeriveConstraint { delegate_constraint } => {
-            state.constraints.push_wanted(*delegate_constraint);
+            state.push_wanted(*delegate_constraint);
         }
         DeriveStrategy::HeadOnly => {
             tools::emit_superclass_constraints(
@@ -393,10 +393,10 @@ fn generate_delegate_constraint(
 
     let class_type = state.storage.intern(Type::Constructor(class.0, class.1));
     let given_constraint = state.storage.intern(Type::Application(class_type, skolem_type));
-    state.constraints.push_given(given_constraint);
+    state.push_given(given_constraint);
 
     let wanted_constraint = state.storage.intern(Type::Application(class_type, applied_type));
-    state.constraints.push_wanted(wanted_constraint);
+    state.push_wanted(wanted_constraint);
 }
 
 fn try_peel_trailing_skolems(

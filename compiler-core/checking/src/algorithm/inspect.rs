@@ -107,7 +107,7 @@ where
             }
 
             Type::Constrained(constraint, constrained) => {
-                state.constraints.push_given(constraint);
+                state.push_given(constraint);
                 current_id = constrained;
             }
 

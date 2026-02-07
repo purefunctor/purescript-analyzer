@@ -138,7 +138,7 @@ pub fn collect_constraints(state: &mut CheckState, mut type_id: TypeId) -> TypeI
     safe_loop! {
         type_id = state.normalize_type(type_id);
         if let Type::Constrained(constraint, constrained) = state.storage[type_id] {
-            state.constraints.push_wanted(constraint);
+            state.push_wanted(constraint);
             type_id = constrained;
         } else {
             break type_id;
@@ -156,7 +156,7 @@ pub fn collect_given_constraints(state: &mut CheckState, mut type_id: TypeId) ->
     safe_loop! {
         type_id = state.normalize_type(type_id);
         if let Type::Constrained(constraint, constrained) = state.storage[type_id] {
-            state.constraints.push_given(constraint);
+            state.push_given(constraint);
             type_id = constrained;
         } else {
             break type_id;

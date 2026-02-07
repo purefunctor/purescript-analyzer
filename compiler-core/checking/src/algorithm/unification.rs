@@ -137,7 +137,7 @@ where
         }
 
         (Type::Constrained(constraint, inner), _) if mode == ElaborationMode::Yes => {
-            state.constraints.push_wanted(constraint);
+            state.push_wanted(constraint);
             subtype_with_mode(state, context, inner, t2, mode)
         }
 
