@@ -900,8 +900,8 @@ fn can_unify(state: &mut CheckState, t1: TypeId, t2: TypeId) -> CanUnify {
                 .and_also(|| can_unify(state, t1_result, t2_result))
         }
 
-        // Function(a, b) and Application(Application(head, a), b) can potentially unify
-        // when head resolves to the Function constructor.
+        // Function(a, b) and Application(Application(f, a), b) can
+        // unify when `f` resolves to the Function constructor.
         (&Type::Function(..), &Type::Application(..))
         | (&Type::Application(..), &Type::Function(..)) => Unify,
 
@@ -1101,10 +1101,9 @@ where
             }
         }
 
-        // Given constraints are valid by construction (from signatures and
-        // superclass elaboration). When a unification variable makes a position
-        // stuck, it is safe to emit an equality rather than requiring functional
-        // dependencies to cover it — the given constraint is authoritative.
+        // Given constraints are valid by construction. When a unification
+        // variable makes a position stuck, it's safe to emit an equality
+        // rather than require functional dependencies to cover it.
         let equalities = stuck_positions.iter().map(|&index| {
             let wanted = wanted.arguments[index];
             let given = given.arguments[index];
