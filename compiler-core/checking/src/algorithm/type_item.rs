@@ -723,8 +723,7 @@ where
         };
 
         let parameter_count = variables.len();
-        let (matched_arguments, excess_arguments) =
-            signature.arguments.split_at(parameter_count);
+        let (matched_arguments, excess_arguments) = signature.arguments.split_at(parameter_count);
 
         let kinds = variables
             .iter()

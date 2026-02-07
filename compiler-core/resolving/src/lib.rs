@@ -62,6 +62,26 @@ pub struct ResolvedModule {
 }
 
 impl ResolvedModule {
+    fn lookup_qualified<ItemId, LookupFn, DefaultFn>(
+        &self,
+        qualifier: &str,
+        lookup: LookupFn,
+        default: DefaultFn,
+    ) -> Option<(FileId, ItemId)>
+    where
+        LookupFn: FnOnce(&ResolvedImport) -> Option<(FileId, ItemId, ImportKind)>,
+        DefaultFn: FnOnce() -> Option<(FileId, ItemId)>,
+    {
+        if let Some(import) = self.qualified.get(qualifier) {
+            let (file, id, kind) = lookup(import)?;
+            if matches!(kind, ImportKind::Hidden) { None } else { Some((file, id)) }
+        } else if qualifier == "Prim" {
+            default()
+        } else {
+            None
+        }
+    }
+
     fn lookup_unqualified<ItemId, LookupFn>(&self, lookup: LookupFn) -> Option<(FileId, ItemId)>
     where
         LookupFn: Fn(&ResolvedImport) -> Option<(FileId, ItemId, ImportKind)>,
@@ -103,9 +123,9 @@ impl ResolvedModule {
         name: &str,
     ) -> Option<(FileId, TermItemId)> {
         if let Some(qualifier) = qualifier {
-            let import = self.qualified.get(qualifier)?;
-            let (file, id, kind) = import.lookup_term(name)?;
-            if matches!(kind, ImportKind::Hidden) { None } else { Some((file, id)) }
+            let lookup_item = |import: &ResolvedImport| import.lookup_term(name);
+            let lookup_prim = || prim.exports.lookup_term(name);
+            self.lookup_qualified(qualifier, lookup_item, lookup_prim)
         } else {
             let lookup_item = |import: &ResolvedImport| import.lookup_term(name);
             let lookup_prim = || prim.exports.lookup_term(name);
@@ -122,9 +142,9 @@ impl ResolvedModule {
         name: &str,
     ) -> Option<(FileId, TypeItemId)> {
         if let Some(qualifier) = qualifier {
-            let import = self.qualified.get(qualifier)?;
-            let (file, id, kind) = import.lookup_type(name)?;
-            if matches!(kind, ImportKind::Hidden) { None } else { Some((file, id)) }
+            let lookup_item = |import: &ResolvedImport| import.lookup_type(name);
+            let lookup_prim = || prim.exports.lookup_type(name);
+            self.lookup_qualified(qualifier, lookup_item, lookup_prim)
         } else {
             let lookup_item = |import: &ResolvedImport| import.lookup_type(name);
             let lookup_prim = || prim.exports.lookup_type(name);
@@ -141,9 +161,9 @@ impl ResolvedModule {
         name: &str,
     ) -> Option<(FileId, TypeItemId)> {
         if let Some(qualifier) = qualifier {
-            let import = self.qualified.get(qualifier)?;
-            let (file, id, kind) = import.lookup_class(name)?;
-            if matches!(kind, ImportKind::Hidden) { None } else { Some((file, id)) }
+            let lookup_item = |import: &ResolvedImport| import.lookup_class(name);
+            let lookup_prim = || prim.exports.lookup_class(name);
+            self.lookup_qualified(qualifier, lookup_item, lookup_prim)
         } else {
             let lookup_item = |import: &ResolvedImport| import.lookup_class(name);
             let lookup_prim = || prim.exports.lookup_class(name);
@@ -185,6 +205,23 @@ impl ResolvedModule {
             }
         }
 
+        // If an unqualified Prim import exists, use its import list;
+        if let Some(prim_imports) = self.unqualified.get("Prim") {
+            for prim_import in prim_imports {
+                if prim_import.contains_term(file_id, item_id) {
+                    return true;
+                }
+            }
+        }
+
+        // if a qualified Prim import exists, use its import list;
+        if let Some(prim_import) = self.qualified.get("Prim")
+            && prim_import.contains_term(file_id, item_id)
+        {
+            return true;
+        }
+
+        // if there are no Prim imports, use the export list.
         if prim.exports.contains_term(file_id, item_id) {
             return true;
         }

@@ -633,3 +633,7 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_309_synonym_function_result_kind_main() { run_test("309_synonym_function_result_kind", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_310_synonym_forall_expansion_main() { run_test("310_synonym_forall_expansion", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_311_prim_qualified_main() { run_test("311_prim_qualified", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_312_prim_qualified_override_main() { run_test("312_prim_qualified_override", "Main"); }
