@@ -1,0 +1,28 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Test :: State -> Test
+
+Types
+State :: Type
+Test :: Type
+
+Data
+Test
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+State = []
+Test = []
+
+Instances
+instance Eq (State :: Type)
+  chain: 0
+
+Derived
+derive Eq (Test :: Type)

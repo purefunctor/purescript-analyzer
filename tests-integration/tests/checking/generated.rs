@@ -643,3 +643,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_314_derive_newtype_function_main() { run_test("314_derive_newtype_function", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_315_operator_chain_mixed_fixity_main() { run_test("315_operator_chain_mixed_fixity", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_316_synonym_derive_main() { run_test("316_synonym_derive", "Main"); }

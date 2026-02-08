@@ -20,7 +20,7 @@ use crate::ExternalQueries;
 use crate::algorithm::derive::variance::VarianceConfig;
 use crate::algorithm::safety::safe_loop;
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::{kind, term_item, toolkit, transfer};
+use crate::algorithm::{kind, normalise, term_item, toolkit, transfer};
 use crate::core::{Type, TypeId, Variable, debruijn};
 use crate::error::{ErrorKind, ErrorStep};
 
@@ -273,6 +273,9 @@ where
         state.insert_error(ErrorKind::InvalidNewtypeDeriveSkolemArguments);
         return Ok(None);
     };
+
+    // Make sure that the constraint solver sees the synonym expansion.
+    let inner_type = normalise::normalise_expand_type(state, context, inner_type)?;
 
     let delegate_constraint = {
         let class_type = state.storage.intern(Type::Constructor(input.class_file, input.class_id));
