@@ -12,7 +12,7 @@ use building_types::QueryResult;
 use files::FileId;
 use indexing::TypeItemId;
 use itertools::Itertools;
-use lowering::{GroupedModule, LoweredModule, TypeItemIr};
+use lowering::GroupedModule;
 
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::{kind, substitute, transfer, unification};
@@ -363,16 +363,6 @@ enum DiscoveredSynonym {
     Additional { synonym: Synonym, arguments: Arc<[TypeId]>, additional: Vec<TypeId> },
 }
 
-fn resolve_operator_target(
-    lowered: &LoweredModule,
-    item_id: TypeItemId,
-) -> Option<(FileId, TypeItemId)> {
-    let TypeItemIr::Operator { resolution, .. } = lowered.info.get_type_item(item_id)? else {
-        return None;
-    };
-    *resolution
-}
-
 fn discover_synonym_application<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -463,10 +453,10 @@ where
 
         Type::OperatorApplication(operator_file_id, operator_item_id, left, right) => {
             let resolution = if operator_file_id == context.id {
-                resolve_operator_target(&context.lowered, operator_item_id)
+                kind::operator::resolve_type_operator_target(&context.lowered, operator_item_id)
             } else {
                 let lowered = context.queries.lowered(operator_file_id)?;
-                resolve_operator_target(&lowered, operator_item_id)
+                kind::operator::resolve_type_operator_target(&lowered, operator_item_id)
             };
 
             let Some((file_id, item_id)) = resolution else {
@@ -577,65 +567,4 @@ where
             })
         }
     })
-}
-
-/// Normalises a type operator application to constructor application form.
-fn expand_type_operator<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    type_id: TypeId,
-) -> QueryResult<TypeId>
-where
-    Q: ExternalQueries,
-{
-    let Type::OperatorApplication(file_id, item_id, left, right) = state.storage[type_id] else {
-        return Ok(type_id);
-    };
-
-    let resolution = if file_id == context.id {
-        context.lowered.info.get_type_item(item_id).and_then(|ir| match ir {
-            TypeItemIr::Operator { resolution, .. } => *resolution,
-            _ => None,
-        })
-    } else {
-        context.queries.lowered(file_id)?.info.get_type_item(item_id).and_then(|ir| match ir {
-            TypeItemIr::Operator { resolution, .. } => *resolution,
-            _ => None,
-        })
-    };
-
-    let Some((file_id, item_id)) = resolution else {
-        return Ok(type_id);
-    };
-
-    let constructor = state.storage.intern(Type::Constructor(file_id, item_id));
-    let left = state.storage.intern(Type::Application(constructor, left));
-    let right = state.storage.intern(Type::Application(left, right));
-
-    Ok(right)
-}
-
-pub fn normalize_expand_type<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    mut type_id: TypeId,
-) -> QueryResult<TypeId>
-where
-    Q: ExternalQueries,
-{
-    const EXPANSION_LIMIT: u32 = 1_000_000;
-
-    for _ in 0..EXPANSION_LIMIT {
-        let normalized_id = state.normalize_type(type_id);
-        let expanded_id = expand_type_operator(state, context, normalized_id)?;
-        let expanded_id = expand_type_synonym(state, context, expanded_id)?;
-
-        if expanded_id == type_id {
-            return Ok(type_id);
-        }
-
-        type_id = expanded_id;
-    }
-
-    unreachable!("critical violation: limit reached in normalize_expand_type")
 }

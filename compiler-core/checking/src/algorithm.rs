@@ -29,6 +29,9 @@ pub mod inspect;
 /// Implements kind inference and checking for [`lowering::TypeKind`].
 pub mod kind;
 
+/// Implements type normalisation for unification variables, operators, synonyms.
+pub mod normalise;
+
 /// Implements surface-generic operator chain inference.
 pub mod operator;
 

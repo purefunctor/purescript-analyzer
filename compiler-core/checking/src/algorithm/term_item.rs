@@ -7,11 +7,11 @@ use itertools::Itertools;
 use lowering::TermItemIr;
 
 use crate::ExternalQueries;
-use crate::algorithm::kind::synonym;
 use crate::algorithm::safety::safe_loop;
 use crate::algorithm::state::{CheckContext, CheckState, InstanceHeadBinding};
 use crate::algorithm::{
-    constraint, equation, inspect, kind, quantify, substitute, term, transfer, unification,
+    constraint, equation, inspect, kind, normalise, quantify, substitute, term, transfer,
+    unification,
 };
 use crate::core::{Instance, InstanceKind, Type, TypeId, Variable, debruijn};
 use crate::error::{ErrorKind, ErrorStep};
@@ -231,7 +231,7 @@ where
     let mut current = class_kind;
 
     for _ in 0..FUEL {
-        current = synonym::normalize_expand_type(state, context, current)?;
+        current = normalise::normalise_expand_type(state, context, current)?;
         match state.storage[current] {
             Type::Forall(ref binder, inner) => {
                 let binder_level = binder.level;
