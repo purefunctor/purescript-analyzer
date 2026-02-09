@@ -645,3 +645,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_315_operator_chain_mixed_fixity_main() { run_test("315_operator_chain_mixed_fixity", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_316_synonym_derive_main() { run_test("316_synonym_derive", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_317_higher_rank_fields_main() { run_test("317_higher_rank_fields", "Main"); }

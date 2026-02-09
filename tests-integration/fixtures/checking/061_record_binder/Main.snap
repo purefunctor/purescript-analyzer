@@ -6,20 +6,20 @@ expression: report
 Terms
 test1 :: { x :: Int, y :: Int } -> Int
 test1' ::
-  forall (t12 :: Type) (t13 :: Row Type) (t14 :: Type).
-    { x :: (t14 :: Type), y :: (t12 :: Type) | (t13 :: Row Type) } -> (t14 :: Type)
+  forall (t8 :: Type) (t9 :: Row Type) (t10 :: Type).
+    { x :: (t10 :: Type), y :: (t8 :: Type) | (t9 :: Row Type) } -> (t10 :: Type)
 test2 :: { x :: Int, y :: String } -> { x :: Int, y :: String }
 test2' ::
-  forall (t20 :: Type) (t21 :: Type) (t22 :: Row Type).
-    { x :: (t20 :: Type), y :: (t21 :: Type) | (t22 :: Row Type) } ->
-    { x :: (t20 :: Type), y :: (t21 :: Type) }
+  forall (t12 :: Type) (t13 :: Type) (t14 :: Row Type).
+    { x :: (t12 :: Type), y :: (t13 :: Type) | (t14 :: Row Type) } ->
+    { x :: (t12 :: Type), y :: (t13 :: Type) }
 test3 :: { age :: Int, name :: String } -> String
 test3' ::
-  forall (t30 :: Type) (t31 :: Row Type) (t32 :: Type).
-    { age :: (t30 :: Type), name :: (t32 :: Type) | (t31 :: Row Type) } -> (t32 :: Type)
+  forall (t18 :: Type) (t19 :: Row Type) (t20 :: Type).
+    { age :: (t18 :: Type), name :: (t20 :: Type) | (t19 :: Row Type) } -> (t20 :: Type)
 nested :: { inner :: { x :: Int } } -> Int
 nested' ::
-  forall (t40 :: Row Type) (t41 :: Row Type) (t42 :: Type).
-    { inner :: { x :: (t42 :: Type) | (t40 :: Row Type) } | (t41 :: Row Type) } -> (t42 :: Type)
+  forall (t23 :: Row Type) (t24 :: Row Type) (t25 :: Type).
+    { inner :: { x :: (t25 :: Type) | (t23 :: Row Type) } | (t24 :: Row Type) } -> (t25 :: Type)
 
 Types

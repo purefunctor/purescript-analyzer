@@ -151,7 +151,7 @@ where
             let t2_core = state.storage[t2_argument].clone();
 
             if let (Type::Row(t1_row), Type::Row(t2_row)) = (t1_core, t2_core) {
-                subtype_record_rows(state, context, &t1_row, &t2_row, mode)
+                subtype_rows(state, context, &t1_row, &t2_row, mode)
             } else {
                 unify(state, context, t1, t2)
             }
@@ -479,14 +479,14 @@ pub fn promote_type(
     aux(state, &c, solve_depth, solution)
 }
 
-/// Checks that `t1_row` is a subtype of `t2_row`, generated errors for
+/// Checks that `t1_row` is a subtype of `t2_row`, generating errors for
 /// additional or missing fields. This is used for record subtyping.
 ///
 /// * This algorithm partitions row fields into common, t1-only, and t2-only fields.
 /// * If t1_row is closed and t2_row is non-empty, [`ErrorKind::PropertyIsMissing`]
 /// * If t2_row is closed and t1_row is non-empty, [`ErrorKind::AdditionalProperty`]
 #[tracing::instrument(skip_all, name = "subtype_rows")]
-fn subtype_record_rows<Q>(
+fn subtype_rows<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     t1_row: &RowType,
@@ -501,10 +501,7 @@ where
         context,
         t1_row,
         t2_row,
-        |state, context, left, right| {
-            Ok(subtype_with_mode(state, context, left, right, mode)?
-                && subtype_with_mode(state, context, right, left, mode)?)
-        },
+        |state, context, left, right| subtype_with_mode(state, context, left, right, mode),
     )?;
 
     if !ok {
