@@ -208,6 +208,20 @@ where
             unify(state, context, t1_left, t2_left)? && unify(state, context, t1_right, t2_right)?
         }
 
+        (Type::Forall(t1_binder, t1_inner), Type::Forall(t2_binder, t2_inner)) => {
+            let t1 = {
+                let v = Variable::Skolem(t1_binder.level, t1_binder.kind);
+                let t = state.storage.intern(Type::Variable(v));
+                substitute::SubstituteBound::on(state, t1_binder.level, t, t1_inner)
+            };
+            let t2 = {
+                let v = Variable::Skolem(t2_binder.level, t2_binder.kind);
+                let t = state.storage.intern(Type::Variable(v));
+                substitute::SubstituteBound::on(state, t2_binder.level, t, t2_inner)
+            };
+            unify(state, context, t1, t2)?
+        }
+
         (Type::Function(t1_argument, t1_result), Type::Function(t2_argument, t2_result)) => {
             unify(state, context, t1_argument, t2_argument)?
                 && unify(state, context, t1_result, t2_result)?
