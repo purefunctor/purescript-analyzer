@@ -11,7 +11,7 @@ Types
 Given :: Type -> Constraint
 
 Classes
-class Given (&0 :: Type)
+class Given (a :: Type)
 
 Diagnostics
 error[NoInstanceFound]: No instance found for: Given Int

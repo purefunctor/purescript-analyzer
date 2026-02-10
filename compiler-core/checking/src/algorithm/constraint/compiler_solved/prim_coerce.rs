@@ -412,15 +412,15 @@ fn decompose_kind_for_coercion(
         kind_id = state.normalize_type(kind_id);
 
         let forall = match &state.storage[kind_id] {
-            Type::Forall(binder, inner) => Some((binder.kind, binder.level, *inner)),
+            Type::Forall(binder, inner) => Some((binder.kind, binder.variable.clone(), *inner)),
             Type::Function(domain, _) => return Some((type_id, *domain)),
             _ => return None,
         };
 
-        if let Some((binder_kind, binder_level, inner_kind)) = forall {
+        if let Some((binder_kind, binder_variable, inner_kind)) = forall {
             let fresh_kind = state.fresh_skolem_kinded(binder_kind);
             type_id = state.storage.intern(Type::KindApplication(type_id, fresh_kind));
-            kind_id = substitute::SubstituteBound::on(state, binder_level, fresh_kind, inner_kind);
+            kind_id = substitute::SubstituteBound::on(state, binder_variable, fresh_kind, inner_kind);
         }
     }
 }

@@ -28,15 +28,15 @@ Roles
 Box = [Representational]
 
 Classes
-class Show (&0 :: Type)
-class Functor (&0 :: Type -> Type)
+class Show (a :: Type)
+class Functor (f :: Type -> Type)
 
 Instances
 instance Functor (Box :: Type -> Type)
   chain: 0
 
 Diagnostics
-error[NoInstanceFound]: No instance found for: Show (~&1 :: Type)
+error[NoInstanceFound]: No instance found for: Show (~a :: Type)
   --> 11:1..16:16
    |
 11 | instance Functor Box where

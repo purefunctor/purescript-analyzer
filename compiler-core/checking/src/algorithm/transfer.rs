@@ -164,9 +164,9 @@ fn traverse<'a, Q: ExternalQueries>(source: &mut TraversalSource<'a, Q>, id: Typ
                 let kind = traverse(source, kind);
                 Type::Variable(Variable::Skolem(level, kind))
             }
-            Variable::Bound(level, kind) => {
+            Variable::Bound(name, kind) => {
                 let kind = traverse(source, kind);
-                Type::Variable(Variable::Bound(level, kind))
+                Type::Variable(Variable::Bound(name, kind))
             }
             free @ Variable::Free(_) => Type::Variable(free),
         },

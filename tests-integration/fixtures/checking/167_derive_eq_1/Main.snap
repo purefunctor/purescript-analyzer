@@ -81,29 +81,29 @@ Either' = [Representational]
 NoEq = [Representational]
 
 Derived
-derive Eq1 (&0 :: Type -> Type) => Eq1 (Wrap @Type (&0 :: Type -> Type) :: Type -> Type)
-derive forall (&0 :: Type). (Eq1 (&1 :: Type -> Type), Eq ((&2 :: (&0 :: Type) -> Type) (&3 :: (&0 :: Type)))) => Eq (Compose @Type @(&0 :: Type) (&1 :: Type -> Type) (&2 :: (&0 :: Type) -> Type) (&3 :: (&0 :: Type)) :: Type)
-derive Eq1 (&0 :: Type -> Type) => Eq1 (Compose @Type @Type (&0 :: Type -> Type) (&1 :: Type -> Type) :: Type -> Type)
-derive Eq (&0 :: Type) => Eq (Id (&0 :: Type) :: Type)
-derive Eq (&0 :: Type) => Eq (Either' (&0 :: Type) :: Type)
+derive Eq1 (f :: Type -> Type) => Eq1 (Wrap @Type (f :: Type -> Type) :: Type -> Type)
+derive forall (t41 :: Type). (Eq1 (f :: Type -> Type), Eq ((g :: (t41 :: Type) -> Type) (a :: (t41 :: Type)))) => Eq (Compose @Type @(t41 :: Type) (f :: Type -> Type) (g :: (t41 :: Type) -> Type) (a :: (t41 :: Type)) :: Type)
+derive Eq1 (f :: Type -> Type) => Eq1 (Compose @Type @Type (f :: Type -> Type) (g :: Type -> Type) :: Type -> Type)
+derive Eq (a :: Type) => Eq (Id (a :: Type) :: Type)
+derive Eq (a :: Type) => Eq (Either' (a :: Type) :: Type)
 derive Eq1 (Either' :: Type -> Type)
 derive Eq1 (NoEq :: Type -> Type)
 derive Eq1 (Id :: Type -> Type)
-derive Eq (&0 :: Type) => Eq (Pair (&0 :: Type) :: Type)
+derive Eq (a :: Type) => Eq (Pair (a :: Type) :: Type)
 derive Eq1 (Pair :: Type -> Type)
-derive Eq (&0 :: Type) => Eq (Mixed (&0 :: Type) :: Type)
+derive Eq (a :: Type) => Eq (Mixed (a :: Type) :: Type)
 derive Eq1 (Mixed :: Type -> Type)
-derive Eq (&0 :: Type) => Eq (Rec (&0 :: Type) :: Type)
+derive Eq (a :: Type) => Eq (Rec (a :: Type) :: Type)
 derive Eq1 (Rec :: Type -> Type)
-derive (Eq1 (&0 :: Type -> Type), Eq (&1 :: Type)) => Eq (Wrap @Type (&0 :: Type -> Type) (&1 :: Type) :: Type)
+derive (Eq1 (f :: Type -> Type), Eq (a :: Type)) => Eq (Wrap @Type (f :: Type -> Type) (a :: Type) :: Type)
 
 Diagnostics
-error[NoInstanceFound]: No instance found for: Eq ((&1 :: Type -> Type) (~&0 :: Type))
+error[NoInstanceFound]: No instance found for: Eq ((g :: Type -> Type) (~_ :: Type))
   --> 35:1..35:43
    |
 35 | derive instance Eq1 f => Eq1 (Compose f g)
    | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-error[NoInstanceFound]: No instance found for: Eq (NoEq (~&0 :: Type))
+error[NoInstanceFound]: No instance found for: Eq (NoEq (~_ :: Type))
   --> 45:1..45:25
    |
 45 | derive instance Eq1 NoEq

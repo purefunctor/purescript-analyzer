@@ -47,32 +47,32 @@ U = [Representational]
 V = [Representational, Representational]
 
 Derived
-derive Eq1 (&0 :: Type -> Type) => Eq (V @Type (&0 :: Type -> Type) (&1 :: Int -> Type) :: Type)
-derive Ord1 (&0 :: Type -> Type) => Ord (V @Type (&0 :: Type -> Type) (&1 :: Int -> Type) :: Type)
-derive Eq1 (&0 :: Type -> Type) => Eq (T @Type (&0 :: Type -> Type) (&1 :: Type -> Type) :: Type)
-derive Ord1 (&0 :: Type -> Type) => Ord (T @Type (&0 :: Type -> Type) (&1 :: Type -> Type) :: Type)
-derive Eq (&0 :: Type) => Eq (Maybe (&0 :: Type) :: Type)
-derive Ord (&0 :: Type) => Ord (Maybe (&0 :: Type) :: Type)
-derive Eq1 (&0 :: Type -> Type) => Eq (U (&0 :: Type -> Type) :: Type)
-derive Ord1 (&0 :: Type -> Type) => Ord (U (&0 :: Type -> Type) :: Type)
+derive Eq1 (f :: Type -> Type) => Eq (V @Type (f :: Type -> Type) (g :: Int -> Type) :: Type)
+derive Ord1 (f :: Type -> Type) => Ord (V @Type (f :: Type -> Type) (g :: Int -> Type) :: Type)
+derive Eq1 (f :: Type -> Type) => Eq (T @Type (f :: Type -> Type) (g :: Type -> Type) :: Type)
+derive Ord1 (f :: Type -> Type) => Ord (T @Type (f :: Type -> Type) (g :: Type -> Type) :: Type)
+derive Eq (a :: Type) => Eq (Maybe (a :: Type) :: Type)
+derive Ord (a :: Type) => Ord (Maybe (a :: Type) :: Type)
+derive Eq1 (f :: Type -> Type) => Eq (U (f :: Type -> Type) :: Type)
+derive Ord1 (f :: Type -> Type) => Ord (U (f :: Type -> Type) :: Type)
 
 Diagnostics
-error[NoInstanceFound]: No instance found for: Eq ((&1 :: Type -> Type) Int)
+error[NoInstanceFound]: No instance found for: Eq ((g :: Type -> Type) Int)
   --> 8:1..8:38
   |
 8 | derive instance (Eq1 f) => Eq (T f g)
   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-error[NoInstanceFound]: No instance found for: Ord ((&1 :: Type -> Type) Int)
+error[NoInstanceFound]: No instance found for: Ord ((g :: Type -> Type) Int)
   --> 9:1..9:40
   |
 9 | derive instance (Ord1 f) => Ord (T f g)
   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-error[NoInstanceFound]: No instance found for: Eq ((&1 :: Int -> Type) 42)
+error[NoInstanceFound]: No instance found for: Eq ((g :: Int -> Type) 42)
   --> 23:1..23:38
    |
 23 | derive instance (Eq1 f) => Eq (V f g)
    | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-error[NoInstanceFound]: No instance found for: Ord ((&1 :: Int -> Type) 42)
+error[NoInstanceFound]: No instance found for: Ord ((g :: Int -> Type) 42)
   --> 24:1..24:40
    |
 24 | derive instance (Ord1 f) => Ord (V f g)

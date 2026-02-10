@@ -120,10 +120,10 @@ where
         }
 
         (_, Type::Forall(ref binder, inner)) => {
-            let v = Variable::Skolem(binder.level, binder.kind);
+            let v = Variable::Skolem(binder.variable.clone(), binder.kind);
             let t = state.storage.intern(Type::Variable(v));
 
-            let inner = substitute::SubstituteBound::on(state, binder.level, t, inner);
+            let inner = substitute::SubstituteBound::on(state, binder.variable.clone(), t, inner);
             subtype_with_mode(state, context, t1, inner, mode)
         }
 
@@ -131,7 +131,7 @@ where
             let k = state.normalize_type(binder.kind);
             let t = state.fresh_unification_kinded(k);
 
-            let inner = substitute::SubstituteBound::on(state, binder.level, t, inner);
+            let inner = substitute::SubstituteBound::on(state, binder.variable.clone(), t, inner);
             subtype_with_mode(state, context, inner, t2, mode)
         }
 
@@ -209,16 +209,25 @@ where
         }
 
         (Type::Forall(t1_binder, t1_inner), Type::Forall(t2_binder, t2_inner)) => {
-            let t1 = {
-                let v = Variable::Skolem(t1_binder.level, t1_binder.kind);
-                let t = state.storage.intern(Type::Variable(v));
-                substitute::SubstituteBound::on(state, t1_binder.level, t, t1_inner)
+            unify(state, context, t1_binder.kind, t2_binder.kind)?;
+
+            let (t1_name, t2_name) = state.fresh_name_unify(&t1_binder.text, &t2_binder.text);
+
+            let t1_skolem = {
+                let skolem = Variable::Skolem(t1_name, t1_binder.kind);
+                state.storage.intern(Type::Variable(skolem))
             };
-            let t2 = {
-                let v = Variable::Skolem(t2_binder.level, t2_binder.kind);
-                let t = state.storage.intern(Type::Variable(v));
-                substitute::SubstituteBound::on(state, t2_binder.level, t, t2_inner)
+
+            let t2_skolem = {
+                let skolem = Variable::Skolem(t2_name, t2_binder.kind);
+                state.storage.intern(Type::Variable(skolem))
             };
+
+            let t1 =
+                substitute::SubstituteBound::on(state, t1_binder.variable, t1_skolem, t1_inner);
+            let t2 =
+                substitute::SubstituteBound::on(state, t2_binder.variable, t2_skolem, t2_inner);
+
             unify(state, context, t1, t2)?
         }
 
@@ -256,10 +265,10 @@ where
         (Type::Row(t1_row), Type::Row(t2_row)) => unify_rows(state, context, t1_row, t2_row)?,
 
         (
-            Type::Variable(Variable::Bound(t1_level, t1_kind)),
-            Type::Variable(Variable::Bound(t2_level, t2_kind)),
+            Type::Variable(Variable::Bound(t1_name, t1_kind)),
+            Type::Variable(Variable::Bound(t2_name, t2_kind)),
         ) => {
-            if t1_level == t2_level {
+            if t1_name == t2_name {
                 unify(state, context, t1_kind, t2_kind)?
             } else {
                 false
@@ -467,17 +476,18 @@ pub fn promote_type(
                 // Without the third rule, `c` at level 2 >= C(1) would be
                 // rejected as escaping, breaking `?a := forall c. Maybe c`.
                 match variable {
-                    Variable::Bound(level, kind) => {
-                        if level.0 >= c.solve_depth.0 {
-                            // S <= level
+                    Variable::Bound(name, kind) => {
+                        let bound_depth = name.depth;
+                        if bound_depth.0 >= c.solve_depth.0 {
+                            // S <= depth
                             return aux(s, c, depth, *kind);
                         }
                         let unification = s.unification.get(c.unification_id);
-                        if level.0 >= unification.depth.0 {
-                            // C <= level < S
+                        if bound_depth.0 >= unification.depth.0 {
+                            // C <= depth < S
                             return false;
                         }
-                        // level < C
+                        // depth < C
                         aux(s, c, depth, *kind)
                     }
                     Variable::Skolem(_, kind) => aux(s, c, depth, *kind),

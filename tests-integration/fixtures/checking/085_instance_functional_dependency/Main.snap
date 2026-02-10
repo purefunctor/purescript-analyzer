@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -11,7 +12,7 @@ Types
 Convert :: Type -> Type -> Constraint
 
 Classes
-class Convert (&0 :: Type) (&1 :: Type)
+class Convert (a :: Type) (b :: Type)
 
 Instances
 instance Convert (Int :: Type) (String :: Type)

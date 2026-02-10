@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -26,5 +27,5 @@ Roles
 Ordering = []
 
 Classes
-class Eq (&0 :: Type)
-class Eq (&0 :: Type) <= Ord (&0 :: Type)
+class Eq (a :: Type)
+class Eq (a :: Type) <= Ord (a :: Type)

@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -30,10 +31,10 @@ Roles
 Proxy = [Phantom]
 
 Classes
-class TypeEq (&3 :: (&0 :: Type)) (&4 :: (&1 :: Type)) (&5 :: (&2 :: Type))
+class TypeEq (a :: (t1 :: Type)) (b :: (t2 :: Type)) (r :: (t3 :: Type))
 
 Instances
-instance forall (&0 :: Type). TypeEq ((&1 :: (&0 :: Type)) :: (&0 :: Type)) ((&1 :: (&0 :: Type)) :: (&0 :: Type)) (True :: Boolean)
+instance forall (t19 :: Type). TypeEq ((a :: (t19 :: Type)) :: (t19 :: Type)) ((a :: (t19 :: Type)) :: (t19 :: Type)) (True :: Boolean)
   chain: 0
-instance forall (&0 :: Type) (&1 :: Type). TypeEq ((&2 :: (&0 :: Type)) :: (&0 :: Type)) ((&3 :: (&1 :: Type)) :: (&1 :: Type)) (False :: Boolean)
+instance forall (t24 :: Type) (t23 :: Type). TypeEq ((a :: (t23 :: Type)) :: (t23 :: Type)) ((b :: (t24 :: Type)) :: (t24 :: Type)) (False :: Boolean)
   chain: 1

@@ -16,7 +16,7 @@ use lowering::{
 };
 use resolving::ResolvedModule;
 use rustc_hash::FxHashMap;
-use smol_str::ToSmolStr;
+use smol_str::{SmolStr, ToSmolStr};
 use stabilizing::StabilizedModule;
 use sugar::{Bracketed, Sectioned};
 
@@ -24,9 +24,21 @@ use crate::algorithm::exhaustiveness::{
     ExhaustivenessReport, Pattern, PatternConstructor, PatternId, PatternKind, PatternStorage,
 };
 use crate::algorithm::{constraint, transfer};
-use crate::core::{Type, TypeId, TypeInterner, Variable, debruijn, pretty};
+use crate::core::{Name, Type, TypeId, TypeInterner, Variable, debruijn, pretty};
 use crate::error::{CheckError, ErrorKind, ErrorStep};
 use crate::{CheckedModule, ExternalQueries, TypeErrorMessageId};
+
+/// Produces globally unique [`Name`] values.
+pub struct Names {
+    next: u32,
+    file: FileId,
+}
+
+impl Names {
+    pub fn new(file: FileId) -> Names {
+        Names { next: 0, file }
+    }
+}
 
 #[derive(Copy, Clone, Debug)]
 pub struct OperatorBranchTypes {
@@ -40,27 +52,33 @@ pub struct OperatorBranchTypes {
 pub struct TypeScope {
     pub bound: debruijn::Bound,
     pub kinds: debruijn::BoundMap<TypeId>,
+    pub names: FxHashMap<debruijn::Level, Name>,
     pub operator_node: FxHashMap<TypeOperatorId, OperatorBranchTypes>,
 }
 
 impl TypeScope {
-    pub fn bind_forall(&mut self, id: TypeVariableBindingId, kind: TypeId) -> debruijn::Level {
+    pub fn bind_forall(&mut self, id: TypeVariableBindingId, kind: TypeId, name: Name) -> Name {
         let variable = debruijn::Variable::Forall(id);
         let level = self.bound.bind(variable);
         self.kinds.insert(level, kind);
-        level
+        let result = name.clone();
+        self.names.insert(level, name);
+        result
     }
 
-    pub fn bind_core(&mut self, kind: TypeId) -> debruijn::Level {
+    pub fn bind_core(&mut self, kind: TypeId, name: Name) -> Name {
         let variable = debruijn::Variable::Core;
         let level = self.bound.bind(variable);
         self.kinds.insert(level, kind);
-        level
+        let result = name.clone();
+        self.names.insert(level, name);
+        result
     }
 
-    pub fn lookup_forall(&self, id: TypeVariableBindingId) -> Option<debruijn::Level> {
+    pub fn lookup_forall(&self, id: TypeVariableBindingId) -> Option<Name> {
         let variable = debruijn::Variable::Forall(id);
-        self.bound.level_of(variable)
+        let level = self.bound.level_of(variable)?;
+        self.names.get(&level).cloned()
     }
 
     pub fn lookup_forall_kind(&self, id: TypeVariableBindingId) -> Option<TypeId> {
@@ -74,20 +92,20 @@ impl TypeScope {
         node: GraphNodeId,
         id: ImplicitBindingId,
         kind: TypeId,
-    ) -> debruijn::Level {
+        name: Name,
+    ) -> Name {
         let variable = debruijn::Variable::Implicit { node, id };
         let level = self.bound.level_of(variable).unwrap_or_else(|| self.bound.bind(variable));
         self.kinds.insert(level, kind);
-        level
+        let result = name.clone();
+        self.names.insert(level, name);
+        result
     }
 
-    pub fn lookup_implicit(
-        &self,
-        node: GraphNodeId,
-        id: ImplicitBindingId,
-    ) -> Option<debruijn::Level> {
+    pub fn lookup_implicit(&self, node: GraphNodeId, id: ImplicitBindingId) -> Option<Name> {
         let variable = debruijn::Variable::Implicit { node, id };
-        self.bound.level_of(variable)
+        let level = self.bound.level_of(variable)?;
+        self.names.get(&level).cloned()
     }
 
     pub fn lookup_implicit_kind(&self, node: GraphNodeId, id: ImplicitBindingId) -> Option<TypeId> {
@@ -99,6 +117,15 @@ impl TypeScope {
     pub fn unbind(&mut self, level: debruijn::Level) {
         self.bound.unbind(level);
         self.kinds.unbind(level);
+        self.names.retain(|&l, _| l < level);
+    }
+
+    /// Finds the level for a given [`Name`] and unbinds from that level.
+    pub fn unbind_name(&mut self, name: &Name) {
+        let level = self.names.iter().find_map(|(&level, n)| (n == name).then_some(level));
+        if let Some(level) = level {
+            self.unbind(level);
+        }
     }
 
     /// Unbinds variables starting from a level and returns captured implicit bindings.
@@ -112,8 +139,9 @@ impl TypeScope {
         for (level, variable) in self.bound.iter_from(level) {
             if let debruijn::Variable::Implicit { node, id } = variable
                 && let Some(&kind) = self.kinds.get(level)
+                && let Some(name) = self.names.get(&level).cloned()
             {
-                implicits.push(InstanceHeadBinding { node, id, kind });
+                implicits.push(InstanceHeadBinding { node, id, kind, name });
             }
         }
 
@@ -195,6 +223,7 @@ pub struct InstanceHeadBinding {
     pub node: GraphNodeId,
     pub id: ImplicitBindingId,
     pub kind: TypeId,
+    pub name: Name,
 }
 
 /// Tracks type variables declared in surface syntax.
@@ -268,7 +297,6 @@ impl SurfaceBindings {
 /// The core state structure threaded through the [`algorithm`].
 ///
 /// [`algorithm`]: crate::algorithm
-#[derive(Default)]
 pub struct CheckState {
     /// Interns and stores all types created during checking.
     pub storage: TypeInterner,
@@ -299,6 +327,28 @@ pub struct CheckState {
 
     /// Interns patterns for exhaustiveness checking.
     pub patterns: PatternStorage,
+
+    /// Produces fresh [`Name`] values for bound type variables.
+    pub names: Names,
+}
+
+impl CheckState {
+    pub fn new(file_id: FileId) -> CheckState {
+        CheckState {
+            storage: Default::default(),
+            checked: Default::default(),
+            type_scope: Default::default(),
+            term_scope: Default::default(),
+            surface_bindings: Default::default(),
+            implications: Default::default(),
+            unification: Default::default(),
+            binding_group: Default::default(),
+            check_steps: Default::default(),
+            defer_synonym_expansion: Default::default(),
+            patterns: Default::default(),
+            names: Names::new(file_id),
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -1111,6 +1161,42 @@ impl CheckState {
     }
 }
 
+/// Functions for creating fresh [`Name`] values.
+impl CheckState {
+    pub fn fresh_name(&mut self, text: &SmolStr) -> Name {
+        let unique = self.names.next;
+        self.names.next += 1;
+        let file = self.names.file;
+        let text = SmolStr::clone(text);
+        let depth = self.type_scope.size();
+        Name { unique, file, text, depth }
+    }
+
+    pub fn fresh_name_str(&mut self, text: &str) -> Name {
+        let unique = self.names.next;
+        self.names.next += 1;
+        let file = self.names.file;
+        let text = SmolStr::new(text);
+        let depth = self.type_scope.size();
+        Name { unique, file, text, depth }
+    }
+
+    pub fn fresh_name_unify(&mut self, left: &SmolStr, right: &SmolStr) -> (Name, Name) {
+        let unique = self.names.next;
+        self.names.next += 1;
+        let file = self.names.file;
+        let depth = self.type_scope.size();
+        (
+            Name { unique, file, text: SmolStr::clone(left), depth },
+            Name { unique, file, text: SmolStr::clone(right), depth },
+        )
+    }
+
+    pub fn name_text<'a>(&self, name: &'a Name) -> &'a str {
+        name.text.as_str()
+    }
+}
+
 /// Functions for creating unification variables.
 impl CheckState {
     /// Creates a fresh unification variable with the provided depth and kind.
@@ -1144,9 +1230,8 @@ impl CheckState {
 
     /// Creates a fresh skolem variable with the provided kind.
     pub fn fresh_skolem_kinded(&mut self, kind: TypeId) -> TypeId {
-        let domain = self.type_scope.size();
-        let level = debruijn::Level(domain.0);
-        let skolem = Variable::Skolem(level, kind);
+        let name = self.fresh_name_str("_");
+        let skolem = Variable::Skolem(name, kind);
         self.storage.intern(Type::Variable(skolem))
     }
 }

@@ -10,7 +10,7 @@ Types
 C :: Type -> Constraint
 
 Classes
-class C (&0 :: Type)
+class C (a :: Type)
 
 Instances
 instance C (Boolean :: Type)

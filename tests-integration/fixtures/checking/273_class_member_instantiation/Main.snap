@@ -43,5 +43,5 @@ Roles
 Unit = []
 
 Classes
-class Monoid (&0 :: Type)
-class Semigroup (&0 :: Type)
+class Monoid (a :: Type)
+class Semigroup (a :: Type)

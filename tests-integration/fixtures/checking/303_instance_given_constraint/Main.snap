@@ -44,8 +44,8 @@ Roles
 ReaderT = [Representational, Representational, Nominal]
 
 Classes
-class Functor (&1 :: Type -> Type), Functor (&0 :: Type -> Type) <= Parallel (&0 :: Type -> Type) (&1 :: Type -> Type)
+class Functor (m :: Type -> Type), Functor (f :: Type -> Type) <= Parallel (f :: Type -> Type) (m :: Type -> Type)
 
 Instances
-instance Parallel (&1 :: Type -> Type) (&2 :: Type -> Type) => Parallel (ReaderT (&0 :: Type) (&1 :: Type -> Type) :: Type -> Type) (ReaderT (&0 :: Type) (&2 :: Type -> Type) :: Type -> Type)
+instance Parallel (f :: Type -> Type) (m :: Type -> Type) => Parallel (ReaderT (e :: Type) (f :: Type -> Type) :: Type -> Type) (ReaderT (e :: Type) (m :: Type -> Type) :: Type -> Type)
   chain: 0

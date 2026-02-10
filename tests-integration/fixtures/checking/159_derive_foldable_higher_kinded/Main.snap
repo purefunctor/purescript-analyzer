@@ -32,11 +32,11 @@ Wrap = [Representational, Nominal]
 WrapNoFoldable = [Representational, Nominal]
 
 Derived
-derive Foldable (&0 :: Type -> Type) => Foldable (Wrap @Type (&0 :: Type -> Type) :: Type -> Type)
-derive Foldable (WrapNoFoldable @Type (&0 :: Type -> Type) :: Type -> Type)
+derive Foldable (f :: Type -> Type) => Foldable (Wrap @Type (f :: Type -> Type) :: Type -> Type)
+derive Foldable (WrapNoFoldable @Type (f :: Type -> Type) :: Type -> Type)
 
 Diagnostics
-error[NoInstanceFound]: No instance found for: Foldable (&0 :: Type -> Type)
+error[NoInstanceFound]: No instance found for: Foldable (f :: Type -> Type)
   --> 9:1..9:44
   |
 9 | derive instance Foldable (WrapNoFoldable f)

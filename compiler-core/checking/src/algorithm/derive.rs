@@ -387,11 +387,7 @@ fn generate_delegate_constraint(
     class: (FileId, TypeItemId),
 ) {
     // Introduce a fresh skolem `~a` for the last type parameter.
-    let skolem_level = state.type_scope.size().0;
-    let skolem_level = debruijn::Level(skolem_level);
-
-    let skolem_type = Variable::Skolem(skolem_level, prim_type);
-    let skolem_type = state.storage.intern(Type::Variable(skolem_type));
+    let skolem_type = state.fresh_skolem_kinded(prim_type);
 
     // Given `Eq ~a`, prove `Eq (Identity ~a)`.
     let applied_type = state.storage.intern(Type::Application(derived_type, skolem_type));

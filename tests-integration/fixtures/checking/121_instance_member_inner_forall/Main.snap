@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -25,7 +26,7 @@ Roles
 Box = [Representational]
 
 Classes
-class Functor (&0 :: Type -> Type)
+class Functor (f :: Type -> Type)
 
 Instances
 instance Functor (Box :: Type -> Type)

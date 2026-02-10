@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -36,5 +37,5 @@ Maybe = [Representational]
 
 Derived
 derive Functor (Identity :: Type -> Type)
-derive Functor (Const @Type (&0 :: Type) :: Type -> Type)
+derive Functor (Const @Type (e :: Type) :: Type -> Type)
 derive Functor (Maybe :: Type -> Type)

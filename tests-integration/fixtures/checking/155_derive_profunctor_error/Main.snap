@@ -33,17 +33,17 @@ derive Profunctor (WrongFirst :: Type -> Type -> Type)
 derive Profunctor (WrongSecond :: Type -> Type -> Type)
 
 Diagnostics
-error[CovariantOccurrence]: Type variable occurs in covariant position: (~&0 :: Type)
+error[CovariantOccurrence]: Type variable occurs in covariant position: (~a :: Type)
   --> 7:1..7:38
   |
 7 | derive instance Profunctor WrongFirst
   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-error[ContravariantOccurrence]: Type variable occurs in contravariant position: (~&1 :: Type)
+error[ContravariantOccurrence]: Type variable occurs in contravariant position: (~b :: Type)
   --> 11:1..11:39
    |
 11 | derive instance Profunctor WrongSecond
    | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-error[CovariantOccurrence]: Type variable occurs in covariant position: (~&0 :: Type)
+error[CovariantOccurrence]: Type variable occurs in covariant position: (~a :: Type)
   --> 11:1..11:39
    |
 11 | derive instance Profunctor WrongSecond

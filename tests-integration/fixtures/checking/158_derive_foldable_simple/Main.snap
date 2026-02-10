@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -37,4 +38,4 @@ Const = [Representational, Phantom]
 Derived
 derive Foldable (Identity :: Type -> Type)
 derive Foldable (Maybe :: Type -> Type)
-derive Foldable (Const @Type (&0 :: Type) :: Type -> Type)
+derive Foldable (Const @Type (e :: Type) :: Type -> Type)

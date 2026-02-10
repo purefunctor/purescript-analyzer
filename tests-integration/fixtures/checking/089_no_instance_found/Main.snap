@@ -22,7 +22,7 @@ Roles
 Foo = []
 
 Classes
-class Eq (&0 :: Type)
+class Eq (a :: Type)
 
 Diagnostics
 error[NoInstanceFound]: No instance found for: Eq Foo

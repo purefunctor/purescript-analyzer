@@ -16,7 +16,7 @@ use lowering::GroupedModule;
 
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::{kind, substitute, transfer, unification};
-use crate::core::{Saturation, Synonym, Type, TypeId, debruijn};
+use crate::core::{Saturation, Synonym, Type, TypeId};
 use crate::error::ErrorKind;
 use crate::{CheckedModule, ExternalQueries};
 
@@ -314,13 +314,13 @@ where
         }
 
         Type::Forall(ref binder, inner) => {
-            let binder_level = binder.level;
+            let binder_variable = binder.variable.clone();
             let binder_kind = binder.kind;
 
             let k = state.normalize_type(binder_kind);
             let t = state.fresh_unification_kinded(k);
 
-            let function_k = substitute::SubstituteBound::on(state, binder_level, t, inner);
+            let function_k = substitute::SubstituteBound::on(state, binder_variable, t, inner);
             infer_synonym_application_argument(state, context, function_k, argument)
         }
 
@@ -497,37 +497,14 @@ fn instantiate_saturated(state: &mut CheckState, synonym: Synonym, arguments: &[
     let count = synonym.quantified_variables.0 as usize + synonym.kind_variables.0 as usize;
     let mut instantiated = state.normalize_type(synonym.synonym_type);
 
-    // Synonym bodies are originally bound starting at level 0. When expanding
-    // in a non-empty scope, we shift their levels up by the current scope size
-    // size to avoid conflicts.
-    //
-    // First, without shifting
-    //
-    // ```purescript
-    // type Transform f:0 g:1 = forall a:2. f a -> g a
-    //
-    // instance Parallel (ReaderT e:0 f:1) (ReaderT e:0 m:2) where
-    //   -- parallel :: m:2 ~> f:1
-    //   --          :: forall a:2. m a -> f a
-    // ```
-    //
-    // Then, with shifting
-    //
-    // ```purescript
-    // instance Parallel (ReaderT e:0 f:1) (ReaderT e:0 m:2) where
-    //   -- parallel :: m:2 ~> f:1
-    //   --          :: forall a:5. m a -> f a
-    // ```
-    let debruijn::Size(scope_size) = state.type_scope.size();
-    instantiated = substitute::ShiftBound::on(state, instantiated, scope_size);
-
     for _ in 0..count {
         if let Type::Forall(ref binder, inner) = state.storage[instantiated] {
-            let binder_level = binder.level;
+            let binder_variable = binder.variable.clone();
             let binder_kind = binder.kind;
 
             let unification = state.fresh_unification_kinded(binder_kind);
-            instantiated = substitute::SubstituteBound::on(state, binder_level, unification, inner);
+            instantiated =
+                substitute::SubstituteBound::on(state, binder_variable, unification, inner);
         } else {
             break;
         }
@@ -535,7 +512,8 @@ fn instantiate_saturated(state: &mut CheckState, synonym: Synonym, arguments: &[
 
     for &argument in arguments {
         if let Type::Forall(ref binder, inner) = state.storage[instantiated] {
-            instantiated = substitute::SubstituteBound::on(state, binder.level, argument, inner);
+            instantiated =
+                substitute::SubstituteBound::on(state, binder.variable.clone(), argument, inner);
         } else {
             break;
         }

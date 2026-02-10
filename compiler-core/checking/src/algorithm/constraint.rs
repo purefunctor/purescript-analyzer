@@ -23,8 +23,8 @@ use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::visit::{
     CollectFileReferences, HasLabeledRole, TypeVisitor, VisitAction, visit_type,
 };
-use crate::algorithm::{toolkit, transfer, unification};
-use crate::core::{self, Class, Instance, InstanceKind, Variable, debruijn};
+use crate::algorithm::{substitute, toolkit, transfer, unification};
+use crate::core::{self, Class, Instance, InstanceKind, Name, Variable};
 use crate::{CheckedModule, ExternalQueries, Type, TypeId};
 
 #[tracing::instrument(skip_all, name = "solve_constraints")]
@@ -286,11 +286,9 @@ where
             return Ok(());
         }
 
-        let initial_level = class_info.quantified_variables.0 + class_info.kind_variables.0;
-        let mut bindings = FxHashMap::default();
-        for (index, &argument) in arguments.iter().enumerate() {
-            let level = debruijn::Level(initial_level + index as u32);
-            bindings.insert(level, argument);
+        let mut bindings: substitute::NameToType = FxHashMap::default();
+        for (name, &argument) in class_info.type_variable_names.iter().zip(arguments.iter()) {
+            bindings.insert(name.clone(), argument);
         }
 
         for &(superclass, _) in class_info.superclasses.iter() {
@@ -389,6 +387,7 @@ where
     Class {
         superclasses,
         type_variable_kinds,
+        type_variable_names: class.type_variable_names.clone(),
         quantified_variables: class.quantified_variables,
         kind_variables: class.kind_variables,
     }
@@ -555,7 +554,7 @@ enum MatchInstance {
 fn match_type<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    bindings: &mut FxHashMap<debruijn::Level, TypeId>,
+    bindings: &mut FxHashMap<Name, TypeId>,
     equalities: &mut Vec<(TypeId, TypeId)>,
     wanted: TypeId,
     given: TypeId,
@@ -574,8 +573,8 @@ where
     let given_core = &state.storage[given];
 
     match (wanted_core, given_core) {
-        (_, Type::Variable(Variable::Bound(level, _))) => {
-            if let Some(&bound) = bindings.get(level) {
+        (_, Type::Variable(Variable::Bound(name, _))) => {
+            if let Some(&bound) = bindings.get(name) {
                 match can_unify(state, wanted, bound) {
                     CanUnify::Equal => MatchType::Match,
                     CanUnify::Apart => MatchType::Apart,
@@ -585,7 +584,7 @@ where
                     }
                 }
             } else {
-                bindings.insert(*level, wanted);
+                bindings.insert(name.clone(), wanted);
                 MatchType::Match
             }
         }
@@ -664,7 +663,7 @@ where
 fn match_row_type<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    bindings: &mut FxHashMap<debruijn::Level, TypeId>,
+    bindings: &mut FxHashMap<Name, TypeId>,
     equalities: &mut Vec<(TypeId, TypeId)>,
     wanted_row: core::RowType,
     given_row: core::RowType,
@@ -783,10 +782,10 @@ where
         (Type::Unification(_), _) => MatchType::Stuck,
 
         (
-            Type::Variable(Variable::Bound(w_level, w_kind)),
-            Type::Variable(Variable::Bound(g_level, g_kind)),
+            Type::Variable(Variable::Bound(w_name, w_kind)),
+            Type::Variable(Variable::Bound(g_name, g_kind)),
         ) => {
-            if w_level == g_level {
+            if w_name == g_name {
                 match_given_type(state, context, *w_kind, *g_kind)
             } else {
                 MatchType::Apart
@@ -794,10 +793,10 @@ where
         }
 
         (
-            Type::Variable(Variable::Skolem(w_level, w_kind)),
-            Type::Variable(Variable::Skolem(g_level, g_kind)),
+            Type::Variable(Variable::Skolem(w_name, w_kind)),
+            Type::Variable(Variable::Skolem(g_name, g_kind)),
         ) => {
-            if w_level == g_level {
+            if w_name == g_name {
                 match_given_type(state, context, *w_kind, *g_kind)
             } else {
                 MatchType::Apart
@@ -921,8 +920,9 @@ fn can_unify(state: &mut CheckState, t1: TypeId, t2: TypeId) -> CanUnify {
         ) => can_unify(state, t1_constraint, t2_constraint)
             .and_also(|| can_unify(state, t1_body, t2_body)),
 
-        (&Type::Forall(_, t1_body), &Type::Forall(_, t2_body)) => {
-            can_unify(state, t1_body, t2_body)
+        (&Type::Forall(ref t1_binder, t1_body), &Type::Forall(ref t2_binder, t2_body)) => {
+            can_unify(state, t1_binder.kind, t2_binder.kind)
+                .and_also(|| can_unify(state, t1_body, t2_body))
         }
 
         (
@@ -956,10 +956,10 @@ fn can_unify(state: &mut CheckState, t1: TypeId, t2: TypeId) -> CanUnify {
         }
 
         (
-            &Type::Variable(Variable::Bound(t1_level, t1_kind)),
-            &Type::Variable(Variable::Bound(t2_level, t2_kind)),
+            &Type::Variable(Variable::Bound(ref t1_name, t1_kind)),
+            &Type::Variable(Variable::Bound(ref t2_name, t2_kind)),
         ) => {
-            if t1_level == t2_level {
+            if t1_name == t2_name {
                 can_unify(state, t1_kind, t2_kind)
             } else {
                 Apart
@@ -967,10 +967,10 @@ fn can_unify(state: &mut CheckState, t1: TypeId, t2: TypeId) -> CanUnify {
         }
 
         (
-            &Type::Variable(Variable::Skolem(t1_level, t1_kind)),
-            &Type::Variable(Variable::Skolem(t2_level, t2_kind)),
+            &Type::Variable(Variable::Skolem(ref t1_name, t1_kind)),
+            &Type::Variable(Variable::Skolem(ref t2_name, t2_kind)),
         ) => {
-            if t1_level == t2_level {
+            if t1_name == t2_name {
                 can_unify(state, t1_kind, t2_kind)
             } else {
                 Apart
@@ -1030,10 +1030,10 @@ where
         }
     }
 
-    let mut argument_levels = FxHashSet::default();
+    let mut argument_names = FxHashSet::default();
     for &(argument, _) in &instance.arguments {
         let localized = transfer::localize(state, context, argument);
-        CollectBoundLevels::on(state, localized, &mut argument_levels);
+        CollectBoundNames::on(state, localized, &mut argument_names);
     }
 
     let mut constraint_variables = FxHashMap::default();
@@ -1042,10 +1042,10 @@ where
         CollectBoundVariables::on(state, localized, &mut constraint_variables);
     }
 
-    for (level, kind) in constraint_variables {
-        if !argument_levels.contains(&level) && !bindings.contains_key(&level) {
+    for (name, kind) in constraint_variables {
+        if !argument_names.contains(&name) && !bindings.contains_key(&name) {
             let unification = state.fresh_unification_kinded(kind);
-            bindings.insert(level, unification);
+            bindings.insert(name, unification);
         }
     }
 
@@ -1186,13 +1186,13 @@ where
 }
 
 struct ApplyBindings<'a> {
-    bindings: &'a FxHashMap<debruijn::Level, TypeId>,
+    bindings: &'a FxHashMap<Name, TypeId>,
 }
 
 impl<'a> ApplyBindings<'a> {
     fn on(
         state: &mut CheckState,
-        bindings: &'a FxHashMap<debruijn::Level, TypeId>,
+        bindings: &'a FxHashMap<Name, TypeId>,
         type_id: TypeId,
     ) -> TypeId {
         fold_type(state, type_id, &mut ApplyBindings { bindings })
@@ -1202,8 +1202,8 @@ impl<'a> ApplyBindings<'a> {
 impl TypeFold for ApplyBindings<'_> {
     fn transform(&mut self, _state: &mut CheckState, id: TypeId, t: &Type) -> FoldAction {
         match t {
-            Type::Variable(Variable::Bound(level, _)) => {
-                let id = self.bindings.get(level).copied().unwrap_or(id);
+            Type::Variable(Variable::Bound(name, _)) => {
+                let id = self.bindings.get(name).copied().unwrap_or(id);
                 FoldAction::Replace(id)
             }
             _ => FoldAction::Continue,
@@ -1211,21 +1211,21 @@ impl TypeFold for ApplyBindings<'_> {
     }
 }
 
-/// Collects all bound variable levels from a type.
-struct CollectBoundLevels<'a> {
-    levels: &'a mut FxHashSet<debruijn::Level>,
+/// Collects all bound variable names from a type.
+struct CollectBoundNames<'a> {
+    names: &'a mut FxHashSet<Name>,
 }
 
-impl<'a> CollectBoundLevels<'a> {
-    fn on(state: &mut CheckState, type_id: TypeId, levels: &'a mut FxHashSet<debruijn::Level>) {
-        visit_type(state, type_id, &mut CollectBoundLevels { levels });
+impl<'a> CollectBoundNames<'a> {
+    fn on(state: &mut CheckState, type_id: TypeId, names: &'a mut FxHashSet<Name>) {
+        visit_type(state, type_id, &mut CollectBoundNames { names });
     }
 }
 
-impl TypeVisitor for CollectBoundLevels<'_> {
+impl TypeVisitor for CollectBoundNames<'_> {
     fn visit(&mut self, _state: &mut CheckState, _id: TypeId, t: &Type) -> VisitAction {
-        if let Type::Variable(Variable::Bound(level, _)) = t {
-            self.levels.insert(*level);
+        if let Type::Variable(Variable::Bound(name, _)) = t {
+            self.names.insert(name.clone());
         }
         VisitAction::Continue
     }
@@ -1233,23 +1233,19 @@ impl TypeVisitor for CollectBoundLevels<'_> {
 
 /// Collects all bound variables with their kinds from a type.
 struct CollectBoundVariables<'a> {
-    variables: &'a mut FxHashMap<debruijn::Level, TypeId>,
+    variables: &'a mut FxHashMap<Name, TypeId>,
 }
 
 impl<'a> CollectBoundVariables<'a> {
-    fn on(
-        state: &mut CheckState,
-        type_id: TypeId,
-        variables: &'a mut FxHashMap<debruijn::Level, TypeId>,
-    ) {
+    fn on(state: &mut CheckState, type_id: TypeId, variables: &'a mut FxHashMap<Name, TypeId>) {
         visit_type(state, type_id, &mut CollectBoundVariables { variables });
     }
 }
 
 impl TypeVisitor for CollectBoundVariables<'_> {
     fn visit(&mut self, _state: &mut CheckState, _id: TypeId, t: &Type) -> VisitAction {
-        if let Type::Variable(Variable::Bound(level, kind)) = t {
-            self.variables.insert(*level, *kind);
+        if let Type::Variable(Variable::Bound(name, kind)) = t {
+            self.variables.insert(name.clone(), *kind);
         }
         VisitAction::Continue
     }

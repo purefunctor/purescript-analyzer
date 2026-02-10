@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -36,8 +37,8 @@ Box = [Representational]
 Maybe = [Representational]
 
 Classes
-class Show (&0 :: Type)
-class Functor (&0 :: Type -> Type)
+class Show (a :: Type)
+class Functor (f :: Type -> Type)
 
 Instances
 instance Functor (Box :: Type -> Type)

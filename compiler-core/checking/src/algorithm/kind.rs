@@ -13,7 +13,7 @@ use crate::ExternalQueries;
 use crate::algorithm::safety::safe_loop;
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::{substitute, transfer, unification};
-use crate::core::{ForallBinder, RowField, RowType, Type, TypeId, Variable};
+use crate::core::{ForallBinder, RowField, RowType, Type, TypeId, Variable, debruijn};
 use crate::error::{ErrorKind, ErrorStep};
 
 const MISSING_NAME: SmolStr = SmolStr::new_static("<MissingName>");
@@ -134,6 +134,8 @@ where
         }
 
         lowering::TypeKind::Forall { bindings, inner } => {
+            let unbind_level = debruijn::Level(state.type_scope.size().0);
+
             let binders = bindings
                 .iter()
                 .map(|binding| check_type_variable_binding(state, context, binding))
@@ -155,8 +157,8 @@ where
 
             let k = context.prim.t;
 
-            if let Some(binder) = binders.first() {
-                state.type_scope.unbind(binder.level);
+            if !binders.is_empty() {
+                state.type_scope.unbind(unbind_level);
             }
 
             Ok((t, k))
@@ -215,7 +217,8 @@ where
             }
 
             Some(lowering::TypeVariableResolution::Implicit(implicit)) => {
-                Ok(infer_implicit_variable(state, context, implicit))
+                let text = name.clone().unwrap_or(MISSING_NAME);
+                Ok(infer_implicit_variable(state, context, implicit, text))
             }
 
             None => {
@@ -257,14 +260,14 @@ fn infer_forall_variable(
     state: &mut CheckState,
     forall: TypeVariableBindingId,
 ) -> (TypeId, TypeId) {
-    let level =
+    let name =
         state.type_scope.lookup_forall(forall).expect("invariant violated: TypeScope::bind_forall");
     let k = state
         .type_scope
         .lookup_forall_kind(forall)
         .expect("invariant violated: TypeScope::bind_forall");
 
-    let variable = Variable::Bound(level, k);
+    let variable = Variable::Bound(name, k);
     let t = state.storage.intern(Type::Variable(variable));
 
     (t, k)
@@ -274,16 +277,18 @@ fn infer_implicit_variable<Q: ExternalQueries>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     implicit: &lowering::ImplicitTypeVariable,
+    text: SmolStr,
 ) -> (TypeId, TypeId) {
     let (t, k) = if implicit.binding {
         let kind = state.fresh_unification(context);
+        let name = state.fresh_name(&text);
 
-        let level = state.type_scope.bind_implicit(implicit.node, implicit.id, kind);
-        let variable = Variable::Bound(level, kind);
+        let name = state.type_scope.bind_implicit(implicit.node, implicit.id, kind, name);
+        let variable = Variable::Bound(name, kind);
 
         (state.storage.intern(Type::Variable(variable)), kind)
     } else {
-        let level = state
+        let name = state
             .type_scope
             .lookup_implicit(implicit.node, implicit.id)
             .expect("invariant violated: TypeScope::bind_implicit");
@@ -292,7 +297,7 @@ fn infer_implicit_variable<Q: ExternalQueries>(
             .lookup_implicit_kind(implicit.node, implicit.id)
             .expect("invariant violated: TypeScope::bind_implicit");
 
-        let variable = Variable::Bound(level, kind);
+        let variable = Variable::Bound(name, kind);
         (state.storage.intern(Type::Variable(variable)), kind)
     };
 
@@ -388,14 +393,14 @@ where
         }
 
         Type::Forall(ref binder, function_k) => {
-            let binder_level = binder.level;
+            let binder_variable = binder.variable.clone();
             let binder_kind = binder.kind;
 
             let k = state.normalize_type(binder_kind);
             let t = state.fresh_unification_kinded(k);
 
             let function_t = state.storage.intern(Type::KindApplication(function_t, t));
-            let function_k = substitute::SubstituteBound::on(state, binder_level, t, function_k);
+            let function_k = substitute::SubstituteBound::on(state, binder_variable, t, function_k);
 
             infer_surface_app_kind(state, context, (function_t, function_k), argument)
         }
@@ -472,9 +477,9 @@ where
             let function_kind = state.normalize_type(function_kind);
             match state.storage[function_kind] {
                 Type::Forall(ref binder, inner) => {
-                    let binder_level = binder.level;
+                    let binder_variable = binder.variable.clone();
                     let argument = state.normalize_type(argument);
-                    substitute::SubstituteBound::on(state, binder_level, argument, inner)
+                    substitute::SubstituteBound::on(state, binder_variable, argument, inner)
                 }
                 _ => unknown,
             }
@@ -578,12 +583,12 @@ fn instantiate_kind_applications(
             break;
         };
 
-        let binder_level = binder.level;
+        let binder_variable = binder.variable.clone();
         let binder_kind = state.normalize_type(binder.kind);
 
         let argument_type = state.fresh_unification_kinded(binder_kind);
         t = state.storage.intern(Type::KindApplication(t, argument_type));
-        k = substitute::SubstituteBound::on(state, binder_level, argument_type, inner_kind);
+        k = substitute::SubstituteBound::on(state, binder_variable, argument_type, inner_kind);
     }
 
     (t, k)
@@ -628,7 +633,7 @@ where
     Q: ExternalQueries,
 {
     let visible = binding.visible;
-    let name = binding.name.clone().unwrap_or(MISSING_NAME);
+    let text = binding.name.clone().unwrap_or(MISSING_NAME);
 
     let kind = if let Some(id) = binding.kind {
         let (kind, _) = check_surface_kind(state, context, id, context.prim.t)?;
@@ -637,8 +642,9 @@ where
         state.fresh_unification_type(context)
     };
 
-    let level = state.type_scope.bind_forall(binding.id, kind);
-    Ok(ForallBinder { visible, implicit: false, name, level, kind })
+    let name = state.fresh_name(&text);
+    state.type_scope.bind_forall(binding.id, kind, name.clone());
+    Ok(ForallBinder { visible, implicit: false, text, variable: name, kind })
 }
 
 pub(crate) fn lookup_file_type<Q>(

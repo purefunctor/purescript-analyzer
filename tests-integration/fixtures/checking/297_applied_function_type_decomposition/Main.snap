@@ -53,11 +53,11 @@ Maybe = [Representational]
 NonEmpty = [Representational, Nominal]
 
 Classes
-class Foldable (&0 :: Type -> Type)
-class Foldable (&1 :: Type -> Type) <= FoldableWithIndex (&0 :: Type) (&1 :: Type -> Type)
+class Foldable (f :: Type -> Type)
+class Foldable (f :: Type -> Type) <= FoldableWithIndex (i :: Type) (f :: Type -> Type)
 
 Instances
-instance Foldable (&0 :: Type -> Type) => Foldable (NonEmpty (&0 :: Type -> Type) :: Type -> Type)
+instance Foldable (f :: Type -> Type) => Foldable (NonEmpty (f :: Type -> Type) :: Type -> Type)
   chain: 0
-instance FoldableWithIndex (&0 :: Type) (&1 :: Type -> Type) => FoldableWithIndex (Maybe (&0 :: Type) :: Type) (NonEmpty (&1 :: Type -> Type) :: Type -> Type)
+instance FoldableWithIndex (i :: Type) (f :: Type -> Type) => FoldableWithIndex (Maybe (i :: Type) :: Type) (NonEmpty (f :: Type -> Type) :: Type -> Type)
   chain: 0

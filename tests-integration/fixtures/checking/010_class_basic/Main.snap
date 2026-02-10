@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -9,4 +10,4 @@ Types
 Show :: Type -> Constraint
 
 Classes
-class Show (&0 :: Type)
+class Show (a :: Type)

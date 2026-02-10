@@ -32,14 +32,14 @@ Vector = [Phantom, Representational]
 InvalidVector = [Representational, Phantom]
 
 Classes
-class Empty (&0 :: Type -> Type)
+class Empty (f :: Type -> Type)
 
 Instances
 instance Empty (Array :: Type -> Type)
   chain: 0
 
 Derived
-derive forall (&0 :: Type). Empty (Vector @(&0 :: Type) (&1 :: (&0 :: Type)) :: Type -> Type)
+derive forall (t9 :: Type). Empty (Vector @(t9 :: Type) (n :: (t9 :: Type)) :: Type -> Type)
 
 Diagnostics
 error[InvalidNewtypeDeriveSkolemArguments]: Cannot derive newtype instance where skolemised arguments do not appear trailing in the inner type.

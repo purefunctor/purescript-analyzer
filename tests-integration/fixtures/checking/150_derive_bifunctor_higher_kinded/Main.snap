@@ -48,16 +48,16 @@ WrapBoth = [Representational, Representational, Nominal, Nominal]
 WrapBothNoConstraint = [Representational, Representational, Nominal, Nominal]
 
 Derived
-derive (Functor (&0 :: Type -> Type), Functor (&1 :: Type -> Type)) => Bifunctor (WrapBoth @Type @Type (&0 :: Type -> Type) (&1 :: Type -> Type) :: Type -> Type -> Type)
-derive Bifunctor (WrapBothNoConstraint @Type @Type (&0 :: Type -> Type) (&1 :: Type -> Type) :: Type -> Type -> Type)
+derive (Functor (f :: Type -> Type), Functor (g :: Type -> Type)) => Bifunctor (WrapBoth @Type @Type (f :: Type -> Type) (g :: Type -> Type) :: Type -> Type -> Type)
+derive Bifunctor (WrapBothNoConstraint @Type @Type (f :: Type -> Type) (g :: Type -> Type) :: Type -> Type -> Type)
 
 Diagnostics
-error[NoInstanceFound]: No instance found for: Functor (&0 :: Type -> Type)
+error[NoInstanceFound]: No instance found for: Functor (f :: Type -> Type)
   --> 10:1..10:53
    |
 10 | derive instance Bifunctor (WrapBothNoConstraint f g)
    | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-error[NoInstanceFound]: No instance found for: Functor (&1 :: Type -> Type)
+error[NoInstanceFound]: No instance found for: Functor (g :: Type -> Type)
   --> 10:1..10:53
    |
 10 | derive instance Bifunctor (WrapBothNoConstraint f g)

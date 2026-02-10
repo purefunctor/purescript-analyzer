@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -13,8 +14,8 @@ Types
 Program :: forall (t0 :: Type) (t1 :: Type). (t0 :: Type) -> (t1 :: Type) -> Constraint
 
 Classes
-class Program (&2 :: (&0 :: Type)) (&3 :: (&1 :: Type))
+class Program (n :: (t0 :: Type)) (m :: (t1 :: Type))
 
 Instances
-instance (Add (&0 :: Int) 1 (&2 :: Int), Add (&2 :: Int) 1 (&1 :: Int)) => Program ((&0 :: Int) :: Int) ((&1 :: Int) :: Int)
+instance (Add (n :: Int) 1 (n1 :: Int), Add (n1 :: Int) 1 (n2 :: Int)) => Program ((n :: Int) :: Int) ((n2 :: Int) :: Int)
   chain: 0

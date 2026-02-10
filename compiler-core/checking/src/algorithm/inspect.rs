@@ -7,7 +7,7 @@ use crate::ExternalQueries;
 use crate::algorithm::safety::safe_loop;
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::{normalise, substitute};
-use crate::core::{ForallBinder, Type, TypeId, Variable, debruijn};
+use crate::core::{ForallBinder, Type, TypeId, Variable};
 
 pub struct InspectSignature {
     pub variables: Vec<ForallBinder>,
@@ -68,32 +68,28 @@ where
     //
     //   transform :: forall f g. NaturalTransformation f g
     //
-    // With De Bruijn levels, `transform`'s type becomes:
-    //
-    //   transform :: forall f:0 g:1. NaturalTransformation f g
-    //
     // Synonym expansion can reveal additional quantifiers:
     //
-    //   transform :: forall f:0 g:1. forall a:2. f a -> g a
+    //   transform :: forall f g. forall a. f a -> g a
     //
-    // The following algorithm is designed to handle level
-    // adjustments relative to the current scope level.
+    // The following algorithm rebinds each quantifier's variable
+    // name to a fresh name in the current scope.
     let mut surface_bindings = surface_bindings.iter();
     let mut variables = vec![];
     let mut current_id = type_id;
 
-    let mut bindings = substitute::LevelToType::default();
+    let mut bindings = substitute::NameToType::default();
 
     safe_loop! {
         current_id = normalise::normalise_expand_type(state, context, current_id)?;
 
-        // In the example, after the Forall case has peeled f:0, g:1, and the
-        // synonym-expanded a:2, the accumulated bindings are the following:
+        // In the example, after the Forall case has peeled f, g, and the
+        // synonym-expanded a, the accumulated bindings are the following:
         //
-        //   { 0 -> f', 1 -> g', 2 -> 'a }
+        //   { old_f -> f', old_g -> g', old_a -> a' }
         //
-        // We're at a monomorphic type at this point, f:0 a:2 -> g:1 a:2, so
-        // we can now proceed with applying the substitutions and continuing.
+        // We're at a monomorphic type at this point, so we can now proceed
+        // with applying the substitutions and continuing.
         if !matches!(state.storage[current_id], Type::Forall(..)) && !bindings.is_empty() {
             current_id = substitute::SubstituteBindings::on(state, &bindings, current_id);
             bindings.clear();
@@ -101,31 +97,32 @@ where
         }
 
         match state.storage[current_id] {
-            // Bind each ForallBinder relative to the current scope, recording the
-            // level substitution for later. In the example, this accumulates the
-            // following substitutions before we hit the Function type:
-            //
-            //   { 0 -> f', 1 -> g', 2 -> 'a }
-            //
+            // Bind each ForallBinder relative to the current scope, recording
+            // the name substitution for later.
             Type::Forall(ref binder, inner) => {
                 let mut binder = ForallBinder::clone(binder);
 
-                let new_level = if !binder.implicit
-                    && let Some(&binding_id) = surface_bindings.next()
-                {
-                    state.type_scope.bound.bind(debruijn::Variable::Forall(binding_id))
+                let old_name = binder.variable.clone();
+                let new_name = state.fresh_name(&binder.text);
+
+                if !binder.implicit && let Some(&binding_id) = surface_bindings.next() {
+                    state.type_scope.bind_forall(binding_id, binder.kind, new_name.clone());
                 } else {
-                    state.type_scope.bound.bind(debruijn::Variable::Core)
-                };
+                    state.type_scope.bind_core(binder.kind, new_name.clone());
+                }
 
-                let old_level = binder.level;
-                binder.level = new_level;
-                state.type_scope.kinds.insert(new_level, binder.kind);
+                binder.variable = new_name.clone();
 
-                let variable = Type::Variable(Variable::Bound(new_level, binder.kind));
+                // Substitute the binder's kind through existing bindings so that
+                // references to earlier forall variables use the fresh Names.
+                if !bindings.is_empty() {
+                    binder.kind = substitute::SubstituteBindings::on(state, &bindings, binder.kind);
+                }
+
+                let variable = Type::Variable(Variable::Bound(new_name, binder.kind));
                 let variable = state.storage.intern(variable);
 
-                bindings.insert(old_level, variable);
+                bindings.insert(old_name, variable);
                 variables.push(binder);
                 current_id = inner;
             }
@@ -153,7 +150,7 @@ where
 {
     let mut arguments = vec![];
     let mut current_id = type_id;
-    let mut bindings = substitute::LevelToType::default();
+    let mut bindings = substitute::NameToType::default();
 
     safe_loop! {
         current_id = normalise::normalise_expand_type(state, context, current_id)?;
@@ -166,16 +163,22 @@ where
 
         match state.storage[current_id] {
             Type::Forall(ref binder, inner) => {
-                let old_level = binder.level;
-                let kind = binder.kind;
+                let old_name = binder.variable.clone();
+                let mut kind = binder.kind;
 
-                let new_level = state.type_scope.bound.bind(debruijn::Variable::Core);
-                state.type_scope.kinds.insert(new_level, kind);
+                let text = binder.text.clone();
+                let name = state.fresh_name(&text);
 
-                let variable = Type::Variable(Variable::Bound(new_level, kind));
+                state.type_scope.bind_core(kind, name.clone());
+
+                if !bindings.is_empty() {
+                    kind = substitute::SubstituteBindings::on(state, &bindings, kind);
+                }
+
+                let variable = Type::Variable(Variable::Bound(name, kind));
                 let variable = state.storage.intern(variable);
 
-                bindings.insert(old_level, variable);
+                bindings.insert(old_name, variable);
                 current_id = inner;
             }
 

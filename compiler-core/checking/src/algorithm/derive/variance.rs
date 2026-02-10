@@ -12,7 +12,7 @@ use crate::algorithm::derive::{self, tools};
 use crate::algorithm::safety::safe_loop;
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::{substitute, toolkit};
-use crate::core::{RowType, Type, TypeId, Variable, debruijn};
+use crate::core::{Name, RowType, Type, TypeId, Variable};
 use crate::error::ErrorKind;
 
 /// Variance of a type position.
@@ -32,9 +32,9 @@ impl Variance {
 }
 
 /// A derived type parameter with its expected variance and wrapper class.
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 struct DerivedParameter {
-    level: debruijn::Level,
+    name: Name,
     /// Expected variance for this parameter.
     expected: Variance,
     /// The class to emit when this parameter appears wrapped in a type application.
@@ -42,8 +42,8 @@ struct DerivedParameter {
 }
 
 impl DerivedParameter {
-    fn new(level: debruijn::Level, (expected, class): ParameterConfig) -> DerivedParameter {
-        DerivedParameter { level, expected, class }
+    fn new(name: Name, (expected, class): ParameterConfig) -> DerivedParameter {
+        DerivedParameter { name, expected, class }
     }
 }
 
@@ -59,8 +59,8 @@ enum DerivedSkolems {
 }
 
 impl DerivedSkolems {
-    fn get(&self, level: debruijn::Level) -> Option<&DerivedParameter> {
-        self.iter().find(|p| p.level == level)
+    fn get(&self, name: &Name) -> Option<&DerivedParameter> {
+        self.iter().find(|p| p.name == *name)
     }
 
     fn iter(&self) -> impl Iterator<Item = &DerivedParameter> {
@@ -133,36 +133,36 @@ where
     let type_arguments = toolkit::extract_all_applications(state, derived_type);
     let mut arguments_iter = type_arguments.into_iter();
     let mut current_id = constructor_type;
-    let mut levels = vec![];
+    let mut names = vec![];
 
     safe_loop! {
         current_id = state.normalize_type(current_id);
         match &state.storage[current_id] {
             Type::Forall(binder, inner) => {
-                let binder_level = binder.level;
+                let binder_variable = binder.variable.clone();
                 let binder_kind = binder.kind;
                 let inner = *inner;
 
                 let argument_type = arguments_iter.next().unwrap_or_else(|| {
-                    levels.push(binder_level);
-                    let skolem = Variable::Skolem(binder_level, binder_kind);
+                    names.push(binder_variable.clone());
+                    let skolem = Variable::Skolem(binder_variable.clone(), binder_kind);
                     state.storage.intern(Type::Variable(skolem))
                 });
 
-                current_id = substitute::SubstituteBound::on(state, binder_level, argument_type, inner);
+                current_id = substitute::SubstituteBound::on(state, binder_variable, argument_type, inner);
             }
             _ => break,
         }
     }
 
-    // The last N levels correspond to the N derived parameters.
-    let skolems = match (config, &levels[..]) {
+    // The last N names correspond to the N derived parameters.
+    let skolems = match (config, &names[..]) {
         (VarianceConfig::Single(config), [.., a]) => {
-            DerivedSkolems::Single(DerivedParameter::new(*a, *config))
+            DerivedSkolems::Single(DerivedParameter::new(a.clone(), *config))
         }
         (VarianceConfig::Pair(a_config, b_config), [.., a, b]) => DerivedSkolems::Pair(
-            DerivedParameter::new(*a, *a_config),
-            DerivedParameter::new(*b, *b_config),
+            DerivedParameter::new(a.clone(), *a_config),
+            DerivedParameter::new(b.clone(), *b_config),
         ),
         _ => {
             let type_message = state.render_local_type(context, derived_type);
@@ -199,8 +199,8 @@ fn check_variance_field<Q>(
     let type_id = state.normalize_type(type_id);
 
     match state.storage[type_id].clone() {
-        Type::Variable(Variable::Skolem(level, _)) => {
-            if let Some(parameter) = skolems.get(level)
+        Type::Variable(Variable::Skolem(name, _)) => {
+            if let Some(parameter) = skolems.get(&name)
                 && variance != parameter.expected
             {
                 let type_message = state.render_local_type(context, type_id);
@@ -224,7 +224,7 @@ fn check_variance_field<Q>(
                 check_variance_field(state, context, argument, variance, skolems);
             } else {
                 for parameter in skolems.iter() {
-                    if contains_skolem_level(state, argument, parameter.level) {
+                    if contains_skolem_name(state, argument, &parameter.name) {
                         if variance != parameter.expected {
                             let type_message = state.render_local_type(context, type_id);
                             if variance == Variance::Covariant {
@@ -259,30 +259,30 @@ fn check_variance_field<Q>(
     }
 }
 
-/// Checks if a type contains a specific Skolem level.
-fn contains_skolem_level(state: &mut CheckState, type_id: TypeId, target: debruijn::Level) -> bool {
+/// Checks if a type contains a specific Skolem name.
+fn contains_skolem_name(state: &mut CheckState, type_id: TypeId, target: &Name) -> bool {
     let type_id = state.normalize_type(type_id);
 
     match state.storage[type_id].clone() {
-        Type::Variable(Variable::Skolem(level, _)) => level == target,
+        Type::Variable(Variable::Skolem(name, _)) => name == *target,
 
         Type::Application(function, argument) | Type::KindApplication(function, argument) => {
-            contains_skolem_level(state, function, target)
-                || contains_skolem_level(state, argument, target)
+            contains_skolem_name(state, function, target)
+                || contains_skolem_name(state, argument, target)
         }
 
         Type::Function(argument, result) => {
-            contains_skolem_level(state, argument, target)
-                || contains_skolem_level(state, result, target)
+            contains_skolem_name(state, argument, target)
+                || contains_skolem_name(state, result, target)
         }
 
         Type::Row(RowType { ref fields, tail }) => {
-            fields.iter().any(|f| contains_skolem_level(state, f.id, target))
-                || tail.is_some_and(|t| contains_skolem_level(state, t, target))
+            fields.iter().any(|f| contains_skolem_name(state, f.id, target))
+                || tail.is_some_and(|t| contains_skolem_name(state, t, target))
         }
 
         Type::Forall(_, inner) | Type::Constrained(_, inner) | Type::Kinded(inner, _) => {
-            contains_skolem_level(state, inner, target)
+            contains_skolem_name(state, inner, target)
         }
 
         _ => false,

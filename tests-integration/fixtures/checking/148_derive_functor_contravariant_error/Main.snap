@@ -37,11 +37,11 @@ Cont = [Representational, Representational]
 
 Derived
 derive Functor (Predicate :: Type -> Type)
-derive Functor (Reader (&0 :: Type) :: Type -> Type)
-derive Functor (Cont (&0 :: Type) :: Type -> Type)
+derive Functor (Reader (r :: Type) :: Type -> Type)
+derive Functor (Cont (r :: Type) :: Type -> Type)
 
 Diagnostics
-error[ContravariantOccurrence]: Type variable occurs in contravariant position: (~&0 :: Type)
+error[ContravariantOccurrence]: Type variable occurs in contravariant position: (~a :: Type)
   --> 6:1..6:34
   |
 6 | derive instance Functor Predicate

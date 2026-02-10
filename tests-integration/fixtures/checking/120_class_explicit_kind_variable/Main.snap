@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -11,7 +12,7 @@ Types
 TypeEq :: forall (k :: Type). Type -> Type -> (k :: Type) -> Constraint
 
 Classes
-class TypeEq (&1 :: Type) (&2 :: Type) (&3 :: (&0 :: Type))
+class TypeEq (a :: Type) (b :: Type) (r :: (k :: Type))
 
 Instances
 instance TypeEq (Int :: Type) (Int :: Type) (Int :: Type)

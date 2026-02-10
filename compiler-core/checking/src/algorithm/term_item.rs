@@ -13,7 +13,7 @@ use crate::algorithm::{
     constraint, equation, inspect, kind, normalise, quantify, substitute, term, transfer,
     unification,
 };
-use crate::core::{Instance, InstanceKind, Type, TypeId, Variable, debruijn};
+use crate::core::{Instance, InstanceKind, Name, Type, TypeId, Variable, debruijn};
 use crate::error::{ErrorKind, ErrorStep};
 
 #[derive(Clone)]
@@ -193,8 +193,8 @@ where
 
         instance.constraints = constraints.collect();
 
-        let kind_variables = instance.kind_variables.iter().map(|&k| {
-            transfer::globalize(state, context, k)
+        let kind_variables = instance.kind_variables.iter().map(|(name, k)| {
+            (name.clone(), transfer::globalize(state, context, *k))
         });
 
         instance.kind_variables = kind_variables.collect();
@@ -234,11 +234,12 @@ where
         current = normalise::normalise_expand_type(state, context, current)?;
         match state.storage[current] {
             Type::Forall(ref binder, inner) => {
-                let binder_level = binder.level;
+                let binder_variable = binder.variable.clone();
                 let binder_kind = binder.kind;
 
                 let replacement = state.fresh_unification_kinded(binder_kind);
-                current = substitute::SubstituteBound::on(state, binder_level, replacement, inner);
+                current =
+                    substitute::SubstituteBound::on(state, binder_variable, replacement, inner);
             }
 
             Type::Function(argument_kind, result_kind) => {
@@ -354,7 +355,7 @@ pub struct CheckInstanceMembers<'a> {
     pub class_id: TypeItemId,
     pub instance_arguments: &'a [(TypeId, TypeId)],
     pub instance_constraints: &'a [(TypeId, TypeId)],
-    pub kind_variables: &'a [TypeId],
+    pub kind_variables: &'a [(Name, TypeId)],
 }
 
 /// Checks instance member declarations.
@@ -439,7 +440,7 @@ pub struct CheckInstanceMemberGroup<'a> {
     class_id: TypeItemId,
     instance_arguments: &'a [(TypeId, TypeId)],
     instance_constraints: &'a [(TypeId, TypeId)],
-    kind_variables: &'a [TypeId],
+    kind_variables: &'a [(Name, TypeId)],
 }
 
 /// Checks an instance member group against its specialised class member type.
@@ -493,13 +494,19 @@ where
     let size = state.type_scope.size();
 
     // Bind kind variables generalised after instance head checking.
-    for &kind_variable in kind_variables {
-        let kind = transfer::localize(state, context, kind_variable);
-        state.type_scope.bind_core(kind);
+    for (name, kind_variable) in kind_variables {
+        let kind = transfer::localize(state, context, *kind_variable);
+        let name = state.fresh_name(&name.text);
+        state.type_scope.bind_core(kind, name);
     }
 
     for binding in instance_bindings {
-        state.type_scope.bind_implicit(binding.node, binding.id, binding.kind);
+        state.type_scope.bind_implicit(
+            binding.node,
+            binding.id,
+            binding.kind,
+            binding.name.clone(),
+        );
     }
 
     let class_member_type = lookup_class_member(state, context, member.resolution)?;
@@ -639,8 +646,7 @@ where
     // instance Functor (Vector s:0 n:1) where
     //   -- map :: forall f:2 a:3 b:4. (a -> b) -> f a -> f b
     // ```
-    let debruijn::Size(scope_size) = state.type_scope.size();
-    specialised = substitute::ShiftBound::on(state, specialised, scope_size);
+    // With globally unique Names, shifting is no longer needed.
 
     let mut kind_variables = 0..kind_variables;
     let mut arguments = arguments.into_iter();
@@ -648,7 +654,7 @@ where
     while let normalized = state.normalize_type(specialised)
         && let Type::Forall(binder, inner) = &state.storage[normalized]
     {
-        let binder_level = binder.level;
+        let binder_variable = binder.variable.clone();
         let binder_kind = binder.kind;
         let inner = *inner;
 
@@ -658,11 +664,11 @@ where
             let _ = unification::unify(state, context, binder_kind, argument_kind);
             argument_type
         } else {
-            let skolem = Variable::Skolem(binder_level, binder_kind);
+            let skolem = Variable::Skolem(binder_variable.clone(), binder_kind);
             state.storage.intern(Type::Variable(skolem))
         };
 
-        specialised = substitute::SubstituteBound::on(state, binder_level, replacement, inner);
+        specialised = substitute::SubstituteBound::on(state, binder_variable, replacement, inner);
     }
 
     specialised = state.normalize_type(specialised);

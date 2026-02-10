@@ -30,7 +30,7 @@ Roles
 WrapBoth = [Representational, Representational, Nominal, Nominal]
 
 Derived
-derive Bifunctor (WrapBoth @Type @Type (&0 :: Type -> Type) (&1 :: Type -> Type) :: Type -> Type -> Type)
+derive Bifunctor (WrapBoth @Type @Type (f :: Type -> Type) (g :: Type -> Type) :: Type -> Type -> Type)
 
 Diagnostics
 error[DeriveMissingFunctor]: Deriving Functor requires Data.Functor to be in scope

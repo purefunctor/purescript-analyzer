@@ -104,13 +104,13 @@ pub fn fold_type<F: TypeFold>(state: &mut CheckState, id: TypeId, folder: &mut F
         }
         Type::Unification(_) => id,
         Type::Variable(variable) => match variable {
-            Variable::Bound(level, kind) => {
+            Variable::Bound(name, kind) => {
                 let kind = fold_type(state, kind, folder);
-                state.storage.intern(Type::Variable(Variable::Bound(level, kind)))
+                state.storage.intern(Type::Variable(Variable::Bound(name, kind)))
             }
-            Variable::Skolem(level, kind) => {
+            Variable::Skolem(name, kind) => {
                 let kind = fold_type(state, kind, folder);
-                state.storage.intern(Type::Variable(Variable::Skolem(level, kind)))
+                state.storage.intern(Type::Variable(Variable::Skolem(name, kind)))
             }
             Variable::Free(_) => id,
         },

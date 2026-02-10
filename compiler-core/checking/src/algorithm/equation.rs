@@ -182,7 +182,7 @@ where
     let _ = constraints(state, context, ConstraintsPolicy::Report)?;
 
     if let Some(variable) = signature.variables.first() {
-        state.type_scope.unbind(variable.level);
+        state.type_scope.unbind_name(&variable.variable);
     }
 
     Ok(())

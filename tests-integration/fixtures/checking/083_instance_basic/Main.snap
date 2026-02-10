@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -9,8 +10,8 @@ Types
 Eq :: Type -> Constraint
 
 Classes
-class Eq (&0 :: Type)
+class Eq (a :: Type)
 
 Instances
-instance Eq (&0 :: Type) => Eq (Array (&0 :: Type) :: Type)
+instance Eq (a :: Type) => Eq (Array (a :: Type) :: Type)
   chain: 0

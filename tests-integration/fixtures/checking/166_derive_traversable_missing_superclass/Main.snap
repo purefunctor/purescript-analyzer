@@ -28,15 +28,15 @@ Roles
 Compose = [Representational, Representational, Nominal]
 
 Derived
-derive (Traversable (&0 :: Type -> Type), Traversable (&1 :: Type -> Type)) => Traversable (Compose @Type @Type (&0 :: Type -> Type) (&1 :: Type -> Type) :: Type -> Type)
+derive (Traversable (f :: Type -> Type), Traversable (g :: Type -> Type)) => Traversable (Compose @Type @Type (f :: Type -> Type) (g :: Type -> Type) :: Type -> Type)
 
 Diagnostics
-error[NoInstanceFound]: No instance found for: Functor (Compose @Type @Type (&0 :: Type -> Type) (&1 :: Type -> Type))
+error[NoInstanceFound]: No instance found for: Functor (Compose @Type @Type (f :: Type -> Type) (g :: Type -> Type))
   --> 7:1..7:76
   |
 7 | derive instance (Traversable f, Traversable g) => Traversable (Compose f g)
   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-error[NoInstanceFound]: No instance found for: Foldable (Compose @Type @Type (&0 :: Type -> Type) (&1 :: Type -> Type))
+error[NoInstanceFound]: No instance found for: Foldable (Compose @Type @Type (f :: Type -> Type) (g :: Type -> Type))
   --> 7:1..7:76
   |
 7 | derive instance (Traversable f, Traversable g) => Traversable (Compose f g)

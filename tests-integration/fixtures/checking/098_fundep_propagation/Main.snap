@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -37,13 +38,13 @@ Z = []
 S = [Nominal]
 
 Classes
-class IsZero (&2 :: (&0 :: Type)) (&3 :: (&1 :: Type))
-class And (&3 :: (&0 :: Type)) (&4 :: (&1 :: Type)) (&5 :: (&2 :: Type))
+class IsZero (n :: (t1 :: Type)) (r :: (t2 :: Type))
+class And (a :: (t3 :: Type)) (b :: (t4 :: Type)) (r :: (t5 :: Type))
 
 Instances
 instance IsZero (Z :: Type) (True :: Boolean)
   chain: 0
-instance IsZero (S (&0 :: Type) :: Type) (False :: Boolean)
+instance IsZero (S (n :: Type) :: Type) (False :: Boolean)
   chain: 0
 instance And (True :: Boolean) (True :: Boolean) (True :: Boolean)
   chain: 0

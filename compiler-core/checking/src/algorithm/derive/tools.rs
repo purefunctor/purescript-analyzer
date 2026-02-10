@@ -10,11 +10,11 @@ use rustc_hash::FxHashMap;
 use crate::ExternalQueries;
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::{constraint, quantify, transfer};
-use crate::core::{Instance, InstanceKind, Type, TypeId, debruijn};
+use crate::core::{Instance, InstanceKind, Type, TypeId};
 use crate::error::ErrorKind;
 
 mod substitute {
-    pub use crate::algorithm::substitute::SubstituteBindings;
+    pub use crate::algorithm::substitute::{NameToType, SubstituteBindings};
 }
 
 /// Elaborated derive instance after kind inference.
@@ -64,11 +64,9 @@ where
         return Ok(());
     }
 
-    let initial_level = class_info.quantified_variables.0 + class_info.kind_variables.0;
-    let mut bindings = FxHashMap::default();
-    for (index, &(argument_type, _)) in arguments.iter().enumerate() {
-        let level = debruijn::Level(initial_level + index as u32);
-        bindings.insert(level, argument_type);
+    let mut bindings: substitute::NameToType = FxHashMap::default();
+    for (name, &(argument_type, _)) in class_info.type_variable_names.iter().zip(arguments) {
+        bindings.insert(name.clone(), argument_type);
     }
 
     for &(superclass, _) in class_info.superclasses.iter() {

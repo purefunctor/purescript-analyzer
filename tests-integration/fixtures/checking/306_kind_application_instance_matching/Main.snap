@@ -23,5 +23,5 @@ Roles
 Endo = [Representational, Nominal]
 
 Instances
-instance forall (&0 :: Type). Newtype (Endo @(&0 :: Type) (&1 :: (&0 :: Type) -> (&0 :: Type) -> Type) (&2 :: (&0 :: Type)) :: Type) ((&1 :: (&0 :: Type) -> (&0 :: Type) -> Type) (&2 :: (&0 :: Type)) (&2 :: (&0 :: Type)) :: Type)
+instance forall (t4 :: Type). Newtype (Endo @(t4 :: Type) (c :: (t4 :: Type) -> (t4 :: Type) -> Type) (a :: (t4 :: Type)) :: Type) ((c :: (t4 :: Type) -> (t4 :: Type) -> Type) (a :: (t4 :: Type)) (a :: (t4 :: Type)) :: Type)
   chain: 0

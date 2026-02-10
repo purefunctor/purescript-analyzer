@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -12,7 +13,7 @@ Types
 Chain :: forall (t1 :: Type). Type -> (t1 :: Type) -> Type -> Constraint
 
 Classes
-class Chain (&1 :: Type) (&2 :: (&0 :: Type)) (&3 :: Type)
+class Chain (a :: Type) (b :: (t1 :: Type)) (c :: Type)
 
 Instances
 instance Chain (Int :: Type) (String :: Type) (Boolean :: Type)

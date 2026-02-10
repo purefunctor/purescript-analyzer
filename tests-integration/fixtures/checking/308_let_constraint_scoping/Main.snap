@@ -11,7 +11,7 @@ Types
 MyClass :: Type -> Constraint
 
 Classes
-class MyClass (&0 :: Type)
+class MyClass (a :: Type)
 
 Instances
 instance MyClass (Int :: Type)

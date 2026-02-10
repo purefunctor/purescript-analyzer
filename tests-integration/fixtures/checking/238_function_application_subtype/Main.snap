@@ -15,7 +15,7 @@ Types
 Category :: forall (k :: Type). ((k :: Type) -> (k :: Type) -> Type) -> Constraint
 
 Classes
-class Category (&1 :: (&0 :: Type) -> (&0 :: Type) -> Type)
+class Category (a :: (k :: Type) -> (k :: Type) -> Type)
 
 Instances
 instance Category (Function :: Type -> Type -> Type)

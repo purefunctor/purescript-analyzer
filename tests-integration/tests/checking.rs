@@ -7,7 +7,9 @@ use std::num::NonZeroU32;
 use analyzer::{QueryEngine, prim};
 use checking::algorithm::state::{CheckContext, CheckState, UnificationState};
 use checking::algorithm::{quantify, unification};
-use checking::core::{ForallBinder, RowField, RowType, Type, TypeId, Variable, debruijn, pretty};
+use checking::core::{
+    ForallBinder, Name, RowField, RowType, Type, TypeId, Variable, debruijn, pretty,
+};
 use files::{FileId, Files};
 use itertools::Itertools;
 use lowering::TypeVariableBindingId;
@@ -19,21 +21,21 @@ struct ContextState<'r> {
 
 impl<'a> ContextState<'a> {
     fn new(engine: &'a QueryEngine, id: FileId) -> ContextState<'a> {
-        let mut state = CheckState::default();
+        let mut state = CheckState::new(id);
         let context = CheckContext::new(engine, &mut state, id).unwrap();
         ContextState { state, context }
     }
 }
 
 trait CheckStateExt {
-    fn bound_variable(&mut self, index: u32, kind: TypeId) -> TypeId;
+    fn bound_variable(&mut self, name: Name, kind: TypeId) -> TypeId;
 
     fn function(&mut self, argument: TypeId, result: TypeId) -> TypeId;
 }
 
 impl CheckStateExt for CheckState {
-    fn bound_variable(&mut self, index: u32, kind: TypeId) -> TypeId {
-        let var = Variable::Bound(debruijn::Level(index), kind);
+    fn bound_variable(&mut self, name: Name, kind: TypeId) -> TypeId {
+        let var = Variable::Bound(name, kind);
         self.storage.intern(Type::Variable(var))
     }
 
@@ -63,8 +65,18 @@ fn test_solve_simple() {
     let ContextState { ref context, ref mut state } = ContextState::new(&engine, id);
 
     // [a :: Int, b :: String]
-    state.type_scope.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_1), context.prim.int);
-    state.type_scope.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_2), context.prim.string);
+    let name_a = state.fresh_name_str("a");
+    state.type_scope.bind_forall(
+        TypeVariableBindingId::new(FAKE_NONZERO_1),
+        context.prim.int,
+        name_a,
+    );
+    let name_b = state.fresh_name_str("b");
+    state.type_scope.bind_forall(
+        TypeVariableBindingId::new(FAKE_NONZERO_2),
+        context.prim.string,
+        name_b,
+    );
 
     let unification = state.fresh_unification_type(context);
     let Type::Unification(unification_id) = state.storage[unification] else {
@@ -91,16 +103,26 @@ fn test_solve_bound() {
     let ContextState { ref context, ref mut state } = ContextState::new(&engine, id);
 
     // [a :: Int, b :: String]
-    state.type_scope.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_1), context.prim.int);
-    state.type_scope.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_2), context.prim.string);
+    let name_a = state.fresh_name_str("a");
+    state.type_scope.bind_forall(
+        TypeVariableBindingId::new(FAKE_NONZERO_1),
+        context.prim.int,
+        name_a.clone(),
+    );
+    let name_b = state.fresh_name_str("b");
+    state.type_scope.bind_forall(
+        TypeVariableBindingId::new(FAKE_NONZERO_2),
+        context.prim.string,
+        name_b.clone(),
+    );
 
     let unification = state.fresh_unification_type(context);
     let Type::Unification(unification_id) = state.storage[unification] else {
         unreachable!("invariant violated");
     };
 
-    let bound_b = state.bound_variable(0, context.prim.int);
-    let bound_a = state.bound_variable(1, context.prim.string);
+    let bound_b = state.bound_variable(name_a, context.prim.int);
+    let bound_a = state.bound_variable(name_b, context.prim.string);
     let b_to_a = state.function(bound_b, bound_a);
 
     unification::solve(state, context, unification_id, b_to_a).unwrap();
@@ -123,7 +145,12 @@ fn test_solve_escaping_variable() {
     let ContextState { ref context, ref mut state } = ContextState::new(&engine, id);
 
     // [a :: Int]
-    state.type_scope.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_1), context.prim.int);
+    let name_a = state.fresh_name_str("a");
+    state.type_scope.bind_forall(
+        TypeVariableBindingId::new(FAKE_NONZERO_1),
+        context.prim.int,
+        name_a,
+    );
 
     // ?u created at depth C = 1
     let unification = state.fresh_unification_type(context);
@@ -132,10 +159,15 @@ fn test_solve_escaping_variable() {
     };
 
     // [a :: Int, b :: String] S = 2
-    state.type_scope.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_2), context.prim.string);
+    let name_b = state.fresh_name_str("b");
+    state.type_scope.bind_forall(
+        TypeVariableBindingId::new(FAKE_NONZERO_2),
+        context.prim.string,
+        name_b.clone(),
+    );
 
     // b is at level 1 which is C(1) <= level(1) < S(2)
-    let bound_b = state.bound_variable(1, context.prim.string);
+    let bound_b = state.bound_variable(name_b, context.prim.string);
 
     let solve_result = unification::solve(state, context, unification_id, bound_b).unwrap();
     assert!(solve_result.is_none(), "should reject: b escapes the scope where ?u was created");
@@ -147,7 +179,12 @@ fn test_solve_promotion() {
     let ContextState { ref context, ref mut state } = ContextState::new(&engine, id);
 
     // [a :: Int]
-    state.type_scope.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_1), context.prim.int);
+    let name_a = state.fresh_name_str("a");
+    state.type_scope.bind_forall(
+        TypeVariableBindingId::new(FAKE_NONZERO_1),
+        context.prim.int,
+        name_a,
+    );
 
     let unification_a = state.fresh_unification_type(context);
     let Type::Unification(unification_id) = state.storage[unification_a] else {
@@ -155,7 +192,12 @@ fn test_solve_promotion() {
     };
 
     // [a :: Int, b :: String]
-    state.type_scope.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_2), context.prim.string);
+    let name_b = state.fresh_name_str("b");
+    state.type_scope.bind_forall(
+        TypeVariableBindingId::new(FAKE_NONZERO_2),
+        context.prim.string,
+        name_b,
+    );
 
     let unification_a_b = state.fresh_unification_type(context);
     unification::solve(state, context, unification_id, unification_a_b).unwrap();
@@ -213,10 +255,20 @@ fn test_quantify_ordering() {
     let (engine, id) = empty_engine();
     let ContextState { ref context, ref mut state } = ContextState::new(&engine, id);
 
-    state.type_scope.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_1), context.prim.t);
+    let name_a = state.fresh_name_str("_");
+    state.type_scope.bind_forall(
+        TypeVariableBindingId::new(FAKE_NONZERO_1),
+        context.prim.t,
+        name_a,
+    );
     let unification_a = state.fresh_unification_type(context);
 
-    state.type_scope.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_2), context.prim.t);
+    let name_b = state.fresh_name_str("_");
+    state.type_scope.bind_forall(
+        TypeVariableBindingId::new(FAKE_NONZERO_2),
+        context.prim.t,
+        name_b,
+    );
     let unification_b = state.fresh_unification_type(context);
 
     let function = state.storage.intern(Type::Function(unification_b, unification_a));
@@ -275,22 +327,24 @@ fn test_quantify_multiple_scoped() {
 
 fn make_forall_a_to_a(context: &CheckContext<QueryEngine>, state: &mut CheckState) -> TypeId {
     let fake_id = TypeVariableBindingId::new(FAKE_NONZERO_1);
+    let unbind_level = debruijn::Level(state.type_scope.size().0);
 
-    let level = state.type_scope.bind_forall(fake_id, context.prim.t);
+    let fresh = state.fresh_name_str("a");
+    let name = state.type_scope.bind_forall(fake_id, context.prim.t, fresh);
 
-    let bound_a = state.bound_variable(0, context.prim.t);
+    let bound_a = state.bound_variable(name.clone(), context.prim.t);
     let a_to_a = state.function(bound_a, bound_a);
 
     let binder = ForallBinder {
         visible: false,
         implicit: false,
-        name: "a".into(),
-        level,
+        text: "a".into(),
+        variable: name,
         kind: context.prim.t,
     };
     let forall_a_to_a = state.storage.intern(Type::Forall(binder, a_to_a));
 
-    state.type_scope.unbind(level);
+    state.type_scope.unbind(unbind_level);
 
     forall_a_to_a
 }
@@ -343,13 +397,22 @@ fn test_subtype_nested_forall() {
     let ContextState { ref context, ref mut state } = ContextState::new(&engine, id);
 
     // Create ∀a. ∀b. (a -> b -> a)
-    let level_a =
-        state.type_scope.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_1), context.prim.t);
-    let level_b =
-        state.type_scope.bind_forall(TypeVariableBindingId::new(FAKE_NONZERO_2), context.prim.t);
+    let unbind_level = debruijn::Level(state.type_scope.size().0);
+    let fresh_a = state.fresh_name_str("a");
+    let name_a = state.type_scope.bind_forall(
+        TypeVariableBindingId::new(FAKE_NONZERO_1),
+        context.prim.t,
+        fresh_a,
+    );
+    let fresh_b = state.fresh_name_str("b");
+    let name_b = state.type_scope.bind_forall(
+        TypeVariableBindingId::new(FAKE_NONZERO_2),
+        context.prim.t,
+        fresh_b,
+    );
 
-    let bound_a = state.bound_variable(1, context.prim.t);
-    let bound_b = state.bound_variable(0, context.prim.t);
+    let bound_a = state.bound_variable(name_a.clone(), context.prim.t);
+    let bound_b = state.bound_variable(name_b.clone(), context.prim.t);
     let b_to_a = state.function(bound_b, bound_a);
     let a_to_b_to_a = state.function(bound_a, b_to_a);
 
@@ -357,25 +420,24 @@ fn test_subtype_nested_forall() {
         ForallBinder {
             visible: false,
             implicit: false,
-            name: "b".into(),
-            level: level_b,
+            text: "b".into(),
+            variable: name_b,
             kind: context.prim.t,
         },
         a_to_b_to_a,
     ));
-    state.type_scope.unbind(level_b);
 
     let forall_a_b = state.storage.intern(Type::Forall(
         ForallBinder {
             visible: false,
             implicit: false,
-            name: "a".into(),
-            level: level_a,
+            text: "a".into(),
+            variable: name_a,
             kind: context.prim.t,
         },
         forall_b,
     ));
-    state.type_scope.unbind(level_a);
+    state.type_scope.unbind(unbind_level);
 
     // ∀a. ∀b. (a -> b -> a) <: (Int -> String -> Int) should pass (LHS foralls get instantiated)
     let string_to_int = state.function(context.prim.string, context.prim.int);

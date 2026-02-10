@@ -22,5 +22,5 @@ Roles
 Wrap = [Phantom, Representational, Nominal]
 
 Instances
-instance Functor (&1 :: Type -> Type) => Functor (Wrap @Type (&0 :: Type) (&1 :: Type -> Type) :: Type -> Type)
+instance Functor (w :: Type -> Type) => Functor (Wrap @Type (e :: Type) (w :: Type -> Type) :: Type -> Type)
   chain: 0

@@ -15,11 +15,11 @@ Make :: Type -> Type -> Constraint
 Convert :: Type -> Type -> Constraint
 
 Classes
-class Make (&0 :: Type) (&1 :: Type)
-class Convert (&0 :: Type) (&1 :: Type)
+class Make (a :: Type) (b :: Type)
+class Convert (a :: Type) (b :: Type)
 
 Instances
-instance Make ({ | (&0 :: Row Type) } :: Type) ({ | (&0 :: Row Type) } :: Type)
+instance Make ({ | (r :: Row Type) } :: Type) ({ | (r :: Row Type) } :: Type)
   chain: 0
-instance Convert ({ | (&0 :: Row Type) } :: Type) ({ converted :: { | (&0 :: Row Type) } } :: Type)
+instance Convert ({ | (r :: Row Type) } :: Type) ({ converted :: { | (r :: Row Type) } } :: Type)
   chain: 0

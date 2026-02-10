@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -19,4 +20,4 @@ Roles
 Mu = [Representational]
 
 Derived
-derive Show ((&0 :: Type -> Type) (Mu (&0 :: Type -> Type))) => Show (Mu (&0 :: Type -> Type) :: Type)
+derive Show ((f :: Type -> Type) (Mu (f :: Type -> Type))) => Show (Mu (f :: Type -> Type) :: Type)

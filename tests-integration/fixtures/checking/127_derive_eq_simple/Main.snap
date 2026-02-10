@@ -33,7 +33,7 @@ NoEq = []
 ContainsNoEq = []
 
 Derived
-derive forall (&0 :: Type). Eq (Proxy @(&0 :: Type) (&1 :: (&0 :: Type)) :: Type)
+derive forall (t1 :: Type). Eq (Proxy @(t1 :: Type) (a :: (t1 :: Type)) :: Type)
 derive Eq (ContainsNoEq :: Type)
 
 Diagnostics

@@ -20,7 +20,7 @@ Roles
 Proxy = [Phantom]
 
 Classes
-class T (&1 :: (&0 :: Type))
+class T (a :: (k :: Type))
 
 Instances
 instance T (( a :: Int ) :: Row Type)

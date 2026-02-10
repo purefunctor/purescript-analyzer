@@ -101,11 +101,11 @@ pub fn instantiate_forall(state: &mut CheckState, mut type_id: TypeId) -> TypeId
     safe_loop! {
         type_id = state.normalize_type(type_id);
         if let Type::Forall(ref binder, inner) = state.storage[type_id] {
-            let binder_level = binder.level;
+            let binder_variable = binder.variable.clone();
             let binder_kind = binder.kind;
 
             let unification = state.fresh_unification_kinded(binder_kind);
-            type_id = substitute::SubstituteBound::on(state, binder_level, unification, inner);
+            type_id = substitute::SubstituteBound::on(state, binder_variable, unification, inner);
         } else {
             break type_id;
         }
@@ -121,12 +121,12 @@ pub fn skolemise_forall(state: &mut CheckState, mut type_id: TypeId) -> TypeId {
     safe_loop! {
         type_id = state.normalize_type(type_id);
         if let Type::Forall(ref binder, inner) = state.storage[type_id] {
-            let binder_level = binder.level;
+            let binder_variable = binder.variable.clone();
             let binder_kind = binder.kind;
 
-            let v = Variable::Skolem(binder_level, binder_kind);
+            let v = Variable::Skolem(binder_variable.clone(), binder_kind);
             let t = state.storage.intern(Type::Variable(v));
-            type_id = substitute::SubstituteBound::on(state, binder_level, t, inner);
+            type_id = substitute::SubstituteBound::on(state, binder_variable, t, inner);
         } else {
             break type_id;
         }
@@ -197,18 +197,18 @@ pub fn instantiate_with_arguments(
         type_id = state.normalize_type(type_id);
         match &state.storage[type_id] {
             Type::Forall(binder, inner) => {
-                let binder_level = binder.level;
+                let binder_variable = binder.variable.clone();
                 let binder_kind = binder.kind;
                 let inner = *inner;
 
                 let argument_type = arguments_iter.next().unwrap_or_else(|| {
                     skolemised += 1;
-                    let skolem = Variable::Skolem(binder_level, binder_kind);
+                    let skolem = Variable::Skolem(binder_variable.clone(), binder_kind);
                     state.storage.intern(Type::Variable(skolem))
                 });
 
                 type_id =
-                    substitute::SubstituteBound::on(state, binder_level, argument_type, inner);
+                    substitute::SubstituteBound::on(state, binder_variable, argument_type, inner);
             }
             _ => break,
         }

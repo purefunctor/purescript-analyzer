@@ -81,7 +81,7 @@ use crate::core::{Role, Type, TypeId};
 use crate::{CheckedModule, ExternalQueries};
 
 pub fn check_source(queries: &impl ExternalQueries, file_id: FileId) -> QueryResult<CheckedModule> {
-    let mut state = state::CheckState::default();
+    let mut state = state::CheckState::new(file_id);
     let context = state::CheckContext::new(queries, &mut state, file_id)?;
 
     check_type_signatures(&mut state, &context)?;

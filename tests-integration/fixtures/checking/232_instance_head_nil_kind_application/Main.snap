@@ -10,8 +10,8 @@ ListToRow :: RowList Type -> Constraint
 ListToRow2 :: RowList Type -> RowList Type -> Constraint
 
 Classes
-class ListToRow (&0 :: RowList Type)
-class ListToRow2 (&0 :: RowList Type) (&1 :: RowList Type)
+class ListToRow (xs :: RowList Type)
+class ListToRow2 (xs :: RowList Type) (ys :: RowList Type)
 
 Instances
 instance ListToRow (Nil @Type :: RowList Type)

@@ -19,10 +19,10 @@ Roles
 Identity = [Representational]
 
 Derived
-derive Show (Identity (&0 :: Type) :: Type)
+derive Show (Identity (a :: Type) :: Type)
 
 Diagnostics
-error[NoInstanceFound]: No instance found for: Show (&0 :: Type)
+error[NoInstanceFound]: No instance found for: Show (a :: Type)
   --> 7:1..7:42
   |
 7 | derive newtype instance Show (Identity a)

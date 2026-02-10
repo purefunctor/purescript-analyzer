@@ -377,12 +377,11 @@ pub fn report_checked(engine: &QueryEngine, id: FileId) -> String {
 
         class_line.push_str(name);
 
-        // Print class type variables with their kinds
-        // level = quantified_variables + kind_variables + index (matches localize_class)
-        for (index, &kind) in class.type_variable_kinds.iter().enumerate() {
-            let level = class.quantified_variables.0 + class.kind_variables.0 + index as u32;
+        // Print class type variables with their kinds.
+        for (name, &kind) in class.type_variable_names.iter().zip(class.type_variable_kinds.iter())
+        {
             let kind_str = pretty::print_global(engine, kind);
-            class_line.push_str(&format!(" (&{level} :: {kind_str})"));
+            class_line.push_str(&format!(" ({} :: {kind_str})", name.text));
         }
 
         writeln!(snapshot, "class {class_line}").unwrap();
@@ -500,16 +499,18 @@ fn format_instance_head(
     head
 }
 
-fn format_forall_prefix(engine: &QueryEngine, kind_variables: &[checking::core::TypeId]) -> String {
+fn format_forall_prefix(
+    engine: &QueryEngine,
+    kind_variables: &[(checking::core::Name, checking::core::TypeId)],
+) -> String {
     if kind_variables.is_empty() {
         return String::new();
     }
     let binders: Vec<_> = kind_variables
         .iter()
-        .enumerate()
-        .map(|(i, kind)| {
+        .map(|(name, kind)| {
             let kind_str = pretty::print_global(engine, *kind);
-            format!("(&{i} :: {kind_str})")
+            format!("({} :: {kind_str})", name.text)
         })
         .collect();
     format!("forall {}. ", binders.join(" "))

@@ -66,15 +66,15 @@ Roles
 Tuple = [Representational, Representational]
 
 Classes
-class Functor (&0 :: Type -> Type)
-class Functor (&0 :: Type -> Type) <= Apply (&0 :: Type -> Type)
-class Apply (&0 :: Type -> Type) <= Applicative (&0 :: Type -> Type)
-class Applicative (&0 :: Type -> Type) <= Discard (&0 :: Type -> Type)
-class Applicative (&0 :: Type -> Type) <= Bind (&0 :: Type -> Type)
-class Bind (&0 :: Type -> Type) <= Monad (&0 :: Type -> Type)
+class Functor (f :: Type -> Type)
+class Functor (f :: Type -> Type) <= Apply (f :: Type -> Type)
+class Apply (f :: Type -> Type) <= Applicative (f :: Type -> Type)
+class Applicative (m :: Type -> Type) <= Discard (m :: Type -> Type)
+class Applicative (m :: Type -> Type) <= Bind (m :: Type -> Type)
+class Bind (m :: Type -> Type) <= Monad (m :: Type -> Type)
 
 Diagnostics
-error[NoInstanceFound]: No instance found for: Discard (&0 :: Type -> Type)
+error[NoInstanceFound]: No instance found for: Discard (m :: Type -> Type)
   --> 44:1..44:44
    |
 44 | testDoDiscard :: forall m. Monad m => m Int

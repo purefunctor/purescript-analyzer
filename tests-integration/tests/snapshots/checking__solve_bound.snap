@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking.rs
+assertion_line: 138
 expression: snapshot
 ---
-(&0 :: Int) -> (&1 :: String) :: Type
+(a :: Int) -> (b :: String) :: Type

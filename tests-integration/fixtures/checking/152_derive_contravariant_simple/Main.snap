@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -34,4 +35,4 @@ Op = [Representational, Representational]
 Derived
 derive Contravariant (Predicate :: Type -> Type)
 derive Contravariant (Comparison :: Type -> Type)
-derive Contravariant (Op (&0 :: Type) :: Type -> Type)
+derive Contravariant (Op (a :: Type) :: Type -> Type)

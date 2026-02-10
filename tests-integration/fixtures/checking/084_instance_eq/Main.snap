@@ -11,7 +11,7 @@ Types
 Eq :: Type -> Constraint
 
 Classes
-class Eq (&0 :: Type)
+class Eq (a :: Type)
 
 Instances
 instance Eq (Int :: Type)

@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -38,5 +39,5 @@ NestedConstraint = forall (a :: Type) (b :: Type). Show (b :: Type) => (a :: Typ
 
 
 Classes
-class Show (&0 :: Type)
-class Eq (&0 :: Type)
+class Show (a :: Type)
+class Eq (a :: Type)

@@ -28,4 +28,4 @@ Roles
 Proxy = [Phantom]
 
 Classes
-class IsSymbol (&0 :: Symbol)
+class IsSymbol (sym :: Symbol)

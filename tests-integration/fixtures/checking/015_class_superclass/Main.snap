@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -18,5 +19,5 @@ Functor :: (Type -> Type) -> Constraint
 Applicative :: (Type -> Type) -> Constraint
 
 Classes
-class Functor (&0 :: Type -> Type)
-class Functor (&0 :: Type -> Type) <= Applicative (&0 :: Type -> Type)
+class Functor (f :: Type -> Type)
+class Functor (f :: Type -> Type) <= Applicative (f :: Type -> Type)

@@ -13,8 +13,8 @@ Read :: Type -> Constraint
 Show :: Type -> Constraint
 
 Classes
-class Read (&0 :: Type)
-class Show (&0 :: Type)
+class Read (a :: Type)
+class Show (a :: Type)
 
 Diagnostics
 error[AmbiguousConstraint]: Ambiguous constraint: Show ?5[:0]

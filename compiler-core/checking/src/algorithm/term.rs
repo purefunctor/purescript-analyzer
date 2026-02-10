@@ -1517,12 +1517,12 @@ where
     let function_t = state.normalize_type(function_t);
     match state.storage[function_t] {
         Type::Forall(ref binder, inner) => {
-            let binder_level = binder.level;
+            let binder_variable = binder.variable.clone();
             let binder_kind = binder.kind;
 
             let (argument_type, _) =
                 kind::check_surface_kind(state, context, argument, binder_kind)?;
-            Ok(substitute::SubstituteBound::on(state, binder_level, argument_type, inner))
+            Ok(substitute::SubstituteBound::on(state, binder_variable, argument_type, inner))
         }
 
         _ => Ok(context.prim.unknown),
@@ -1593,12 +1593,12 @@ where
 
         // Instantiation rule, like `toolkit::instantiate_forall`
         Type::Forall(ref binder, inner) => {
-            let binder_level = binder.level;
+            let binder_variable = binder.variable.clone();
             let binder_kind = binder.kind;
 
             let unification = state.fresh_unification_kinded(binder_kind);
             let function_t =
-                substitute::SubstituteBound::on(state, binder_level, unification, inner);
+                substitute::SubstituteBound::on(state, binder_variable, unification, inner);
             check_function_application_core(state, context, function_t, argument_id, check_argument)
         }
 
@@ -1784,7 +1784,7 @@ where
         equation::patterns(state, context, origin, &name.equations)?;
 
         if let Some(variable) = signature.variables.first() {
-            state.type_scope.unbind(variable.level);
+            state.type_scope.unbind_name(&variable.variable);
         }
     } else {
         equation::infer_equations_core(state, context, name_type, &name.equations)?;

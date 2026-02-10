@@ -16,11 +16,11 @@ Clone :: Type -> Type -> Constraint
 Nest :: Type -> Type -> Constraint
 
 Classes
-class Clone (&0 :: Type) (&1 :: Type)
-class Nest (&0 :: Type) (&1 :: Type)
+class Clone (a :: Type) (b :: Type)
+class Nest (a :: Type) (b :: Type)
 
 Instances
-instance Clone ({ | (&0 :: Row Type) } :: Type) ({ | (&0 :: Row Type) } :: Type)
+instance Clone ({ | (r :: Row Type) } :: Type) ({ | (r :: Row Type) } :: Type)
   chain: 0
-instance Nest ({ | (&0 :: Row Type) } :: Type) ({ inner :: { | (&0 :: Row Type) }, outer :: Int } :: Type)
+instance Nest ({ | (r :: Row Type) } :: Type) ({ inner :: { | (r :: Row Type) }, outer :: Int } :: Type)
   chain: 0

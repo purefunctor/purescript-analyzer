@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -36,5 +37,5 @@ Choice = [Representational, Representational]
 
 Derived
 derive Profunctor (Fn :: Type -> Type -> Type)
-derive Profunctor (ConstR @Type (&0 :: Type) :: Type -> Type -> Type)
+derive Profunctor (ConstR @Type (r :: Type) :: Type -> Type -> Type)
 derive Profunctor (Choice :: Type -> Type -> Type)

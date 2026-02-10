@@ -18,8 +18,8 @@ Types
 BuildRecord :: Row Type -> Row Type -> Constraint
 
 Classes
-class BuildRecord (&0 :: Row Type) (&1 :: Row Type)
+class BuildRecord (row :: Row Type) (subrow :: Row Type)
 
 Instances
-instance BuildRecord ((&0 :: Row Type) :: Row Type) ((&1 :: Row Type) :: Row Type)
+instance BuildRecord ((row :: Row Type) :: Row Type) ((subrow :: Row Type) :: Row Type)
   chain: 0

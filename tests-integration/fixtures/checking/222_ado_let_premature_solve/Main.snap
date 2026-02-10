@@ -28,7 +28,7 @@ Effect = [Nominal]
 Unit = []
 
 Classes
-class Semiring (&0 :: Type)
+class Semiring (a :: Type)
 
 Instances
 instance Semiring (Int :: Type)

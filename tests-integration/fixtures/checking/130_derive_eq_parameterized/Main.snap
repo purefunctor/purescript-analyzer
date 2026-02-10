@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -19,4 +20,4 @@ Roles
 Maybe = [Representational]
 
 Derived
-derive Eq (&0 :: Type) => Eq (Maybe (&0 :: Type) :: Type)
+derive Eq (a :: Type) => Eq (Maybe (a :: Type) :: Type)

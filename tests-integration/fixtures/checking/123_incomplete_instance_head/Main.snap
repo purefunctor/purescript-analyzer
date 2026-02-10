@@ -13,7 +13,7 @@ Types
 Pair :: Type -> Type -> Constraint
 
 Classes
-class Pair (&0 :: Type) (&1 :: Type)
+class Pair (a :: Type) (b :: Type)
 
 Instances
 instance Pair (Int :: Type) (String :: Type)

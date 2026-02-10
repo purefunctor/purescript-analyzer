@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -13,7 +14,7 @@ Types
 Semiring :: Type -> Constraint
 
 Classes
-class Semiring (&0 :: Type)
+class Semiring (a :: Type)
 
 Instances
 instance Semiring (Int :: Type)

@@ -23,8 +23,8 @@ Semigroupoid :: forall (k :: Type). ((k :: Type) -> (k :: Type) -> Type) -> Cons
 Category :: forall (k :: Type). ((k :: Type) -> (k :: Type) -> Type) -> Constraint
 
 Classes
-class Semigroupoid (&1 :: (&0 :: Type) -> (&0 :: Type) -> Type)
-class Semigroupoid @(&0 :: Type) (&1 :: (&0 :: Type) -> (&0 :: Type) -> Type) <= Category (&1 :: (&0 :: Type) -> (&0 :: Type) -> Type)
+class Semigroupoid (a :: (k :: Type) -> (k :: Type) -> Type)
+class Semigroupoid @(k :: Type) (a :: (k :: Type) -> (k :: Type) -> Type) <= Category (a :: (k :: Type) -> (k :: Type) -> Type)
 
 Instances
 instance Semigroupoid (Function :: Type -> Type -> Type)

@@ -21,7 +21,7 @@ Roles
 Wrapper = [Representational]
 
 Classes
-class Empty (&0 :: Type -> Type)
+class Empty (f :: Type -> Type)
 
 Instances
 instance Empty (Array :: Type -> Type)

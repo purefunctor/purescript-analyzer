@@ -11,4 +11,4 @@ Types
 Given :: Type -> Constraint
 
 Classes
-class Given (&0 :: Type)
+class Given (a :: Type)
