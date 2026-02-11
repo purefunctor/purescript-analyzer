@@ -368,10 +368,11 @@ where
                 };
                 state.with_term_group(context, [*id], |state| {
                     if let Some(item) = term_item::check_value_group(state, context, value_group)? {
-                        term_item::commit_value_group(state, context, *id, item)?;
+                        term_item::commit_inferred_value_group(state, context, *id, item)?;
                     }
                     Ok(())
                 })?;
+                term_item::commit_checked_value_group(state, context, *id)?;
             }
             Scc::Mutual(mutual) => {
                 let value_groups =
@@ -400,13 +401,17 @@ where
                         }
                     }
                     for (item_id, group) in groups {
-                        term_item::commit_value_group(state, context, item_id, group)?;
+                        term_item::commit_inferred_value_group(state, context, item_id, group)?;
                     }
                     Ok(())
                 })?;
 
-                for value_group in with_signature {
-                    term_item::check_value_group(state, context, value_group)?;
+                for value_group in &with_signature {
+                    term_item::check_value_group(state, context, *value_group)?;
+                }
+
+                for value_group in &with_signature {
+                    term_item::commit_checked_value_group(state, context, value_group.item_id)?;
                 }
             }
         }

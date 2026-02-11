@@ -1,0 +1,66 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+unsafeCoerce :: forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type)
+Query ::
+  forall (input :: Type) (a :: Type).
+    (input :: Type) -> (a :: Type) -> Query (input :: Type) (a :: Type)
+HM ::
+  forall (t7 :: Type) (state :: Type) (m :: (t7 :: Type) -> Type) (a :: (t7 :: Type)).
+    (state :: Type) ->
+    (m :: (t7 :: Type) -> Type) (a :: (t7 :: Type)) ->
+    HM @(t7 :: Type) (state :: Type) (m :: (t7 :: Type) -> Type) (a :: (t7 :: Type))
+mkSpec ::
+  forall (state :: Type) (input :: Type) (m :: Type -> Type).
+    Spec (state :: Type) (input :: Type) (m :: Type -> Type) ->
+    Solid @Type @(Type -> Type) (input :: Type) (m :: Type -> Type)
+unSpec ::
+  forall (input :: Type) (m :: Type -> Type) (a :: Type).
+    (forall (state :: Type).
+      Spec (state :: Type) (input :: Type) (m :: Type -> Type) -> (a :: Type)) ->
+    Solid @Type @(Type -> Type) (input :: Type) (m :: Type -> Type) ->
+    (a :: Type)
+hoist ::
+  forall (input :: Type) (m :: Type -> Type).
+    Solid @Type @(Type -> Type) (input :: Type) (m :: Type -> Type) ->
+    Solid @Type @(Type -> Type) (input :: Type) (m :: Type -> Type)
+
+Types
+Query :: Type -> Type -> Type
+HM :: forall (t7 :: Type). Type -> ((t7 :: Type) -> Type) -> (t7 :: Type) -> Type
+Solid :: forall (t9 :: Type) (t10 :: Type). (t9 :: Type) -> (t10 :: Type) -> Type
+Spec :: Type -> Type -> (Type -> Type) -> Type
+
+Synonyms
+Spec = forall (state :: Type) (input :: Type) (m :: Type -> Type).
+  { eval ::
+      forall (a :: Type).
+        Query (input :: Type) (a :: Type) ->
+        HM @Type (state :: Type) (m :: Type -> Type) (a :: Type)
+  }
+  Quantified = :0
+  Kind = :0
+  Type = :3
+
+
+Data
+Query
+  Quantified = :0
+  Kind = :0
+
+HM
+  Quantified = :1
+  Kind = :0
+
+Solid
+  Quantified = :2
+  Kind = :0
+
+
+Roles
+Query = [Representational, Representational]
+HM = [Representational, Representational, Nominal]
+Solid = [Phantom, Phantom]

@@ -319,6 +319,8 @@ pub struct CheckState {
     /// The in-progress binding group; used for recursive declarations.
     pub binding_group: BindingGroupContext,
 
+    pub equations: FxHashMap<TermItemId, TypeId>,
+
     /// Error context breadcrumbs for [`CheckedModule::errors`].
     pub check_steps: Vec<ErrorStep>,
 
@@ -343,6 +345,7 @@ impl CheckState {
             implications: Default::default(),
             unification: Default::default(),
             binding_group: Default::default(),
+            equations: Default::default(),
             check_steps: Default::default(),
             defer_synonym_expansion: Default::default(),
             patterns: Default::default(),
@@ -1000,7 +1003,7 @@ impl CheckState {
         F: FnOnce(&mut Self) -> T,
     {
         for item in group {
-            if !self.checked.terms.contains_key(&item) {
+            if !self.checked.terms.contains_key(&item) && !self.equations.contains_key(&item) {
                 let t = self.fresh_unification_type(context);
                 self.binding_group.terms.insert(item, t);
             }

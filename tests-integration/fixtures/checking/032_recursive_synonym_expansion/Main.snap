@@ -68,3 +68,33 @@ error[RecursiveSynonymExpansion]: Recursive type synonym expansion
    |
 14 | testH :: H -> H
    |               ^
+error[RecursiveSynonymExpansion]: Recursive type synonym expansion
+  --> 9:11..9:12
+  |
+9 | testF x = x
+  |           ^
+error[RecursiveSynonymExpansion]: Recursive type synonym expansion
+  --> 9:11..9:12
+  |
+9 | testF x = x
+  |           ^
+error[RecursiveSynonymExpansion]: Recursive type synonym expansion
+  --> 12:11..12:12
+   |
+12 | testG x = x
+   |           ^
+error[RecursiveSynonymExpansion]: Recursive type synonym expansion
+  --> 12:11..12:12
+   |
+12 | testG x = x
+   |           ^
+error[RecursiveSynonymExpansion]: Recursive type synonym expansion
+  --> 15:11..15:12
+   |
+15 | testH x = x
+   |           ^
+error[RecursiveSynonymExpansion]: Recursive type synonym expansion
+  --> 15:11..15:12
+   |
+15 | testH x = x
+   |           ^

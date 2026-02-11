@@ -47,7 +47,7 @@ where
         };
 
         match item {
-            TermItemIr::Foreign { signature } | TermItemIr::ValueGroup { signature, .. } => {
+            TermItemIr::Foreign { signature } => {
                 let Some(signature) = signature else { return Ok(()) };
 
                 let signature_variables = inspect::collect_signature_variables(context, *signature);
@@ -64,6 +64,19 @@ where
 
                 let global_type = transfer::globalize(state, context, quantified_type);
                 state.checked.terms.insert(item_id, global_type);
+            }
+            TermItemIr::ValueGroup { signature, .. } => {
+                let Some(signature) = signature else { return Ok(()) };
+
+                let signature_variables = inspect::collect_signature_variables(context, *signature);
+                state.surface_bindings.insert_term(item_id, signature_variables);
+
+                let (inferred_type, _) =
+                    kind::check_surface_kind(state, context, *signature, context.prim.t)?;
+
+                crate::debug_fields!(state, context, { inferred_type = inferred_type });
+
+                state.equations.insert(item_id, inferred_type);
             }
             TermItemIr::Operator { resolution, .. } => {
                 let Some((file_id, term_id)) = *resolution else { return Ok(()) };
@@ -310,8 +323,30 @@ where
     }
 }
 
+pub fn commit_checked_value_group<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    item_id: TermItemId,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    let Some(inferred_type) = state.equations.remove(&item_id) else {
+        return Ok(());
+    };
+
+    let quantified_type = quantify::quantify(state, inferred_type)
+        .map(|(quantified_type, _)| quantified_type)
+        .unwrap_or(inferred_type);
+
+    let global_type = transfer::globalize(state, context, quantified_type);
+    state.checked.terms.insert(item_id, global_type);
+
+    Ok(())
+}
+
 /// Generalises an [`InferredValueGroup`].
-pub fn commit_value_group<Q>(
+pub fn commit_inferred_value_group<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     item_id: TermItemId,
