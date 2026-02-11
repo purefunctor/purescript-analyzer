@@ -351,7 +351,12 @@ where
     Q: ExternalQueries,
 {
     for (item_id, pending_type) in state.pending_terms.drain().collect_vec() {
-        let local_type = pending_type.into();
+        let local_type = match pending_type {
+            PendingTermType::Immediate(id) => id,
+            PendingTermType::Deferred(id) => {
+                quantify::quantify(state, id).map(|(id, _)| id).unwrap_or(id)
+            }
+        };
         let global_type = transfer::globalize(state, context, local_type);
         state.checked.terms.insert(item_id, global_type);
     }
