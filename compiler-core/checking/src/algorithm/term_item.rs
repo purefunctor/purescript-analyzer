@@ -61,7 +61,6 @@ where
                     .unwrap_or(inferred_type);
 
                 crate::debug_fields!(state, context, { quantified_type = quantified_type });
-
                 state.pending_terms.insert(item_id, PendingTermType::Immediate(quantified_type));
             }
             TermItemIr::ValueGroup { signature, .. } => {
@@ -74,14 +73,14 @@ where
                     kind::check_surface_kind(state, context, *signature, context.prim.t)?;
 
                 crate::debug_fields!(state, context, { inferred_type = inferred_type });
-
                 state.pending_terms.insert(item_id, PendingTermType::Deferred(inferred_type));
             }
             TermItemIr::Operator { resolution, .. } => {
                 let Some((file_id, term_id)) = *resolution else { return Ok(()) };
-                let id = term::lookup_file_term(state, context, file_id, term_id)?;
+                let inferred_type = term::lookup_file_term(state, context, file_id, term_id)?;
 
-                state.pending_terms.insert(item_id, PendingTermType::Deferred(id));
+                crate::debug_fields!(state, context, { inferred_type = inferred_type });
+                state.pending_terms.insert(item_id, PendingTermType::Deferred(inferred_type));
             }
             _ => (),
         }
