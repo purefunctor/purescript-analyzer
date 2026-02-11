@@ -1,0 +1,27 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+ForceTypeType :: forall (f :: Type -> Type). ForceTypeType (f :: Type -> Type)
+knownInEquation ::
+  forall (m :: Type -> Type).
+    Component @(Type -> Type) (m :: Type -> Type) ->
+    Component @(Type -> Type) (m :: Type -> Type) ->
+    Int
++++ :: forall (m :: ???). Component @??? (m :: ???) -> Component @??? (m :: ???) -> Int
+
+Types
+Component :: forall (k :: Type). (k :: Type) -> Type
+ForceTypeType :: (Type -> Type) -> Type
+
+Data
+ForceTypeType
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+Component = [Nominal]
+ForceTypeType = [Phantom]

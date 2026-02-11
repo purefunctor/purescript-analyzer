@@ -657,3 +657,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_321_higher_rank_record_literal_main() { run_test("321_higher_rank_record_literal", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_322_phantom_kind_inference_main() { run_test("322_phantom_kind_inference", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_323_operator_deferred_generalise_main() { run_test("323_operator_deferred_generalise", "Main"); }
