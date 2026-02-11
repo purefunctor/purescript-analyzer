@@ -94,6 +94,8 @@ pub fn check_source(queries: &impl ExternalQueries, file_id: FileId) -> QueryRes
     check_instance_members(&mut state, &context)?;
     check_derive_members(&mut state, &context, &derive_results)?;
 
+    term_item::commit_pending_terms(&mut state, &context);
+
     Ok(state.checked)
 }
 

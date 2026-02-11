@@ -319,7 +319,7 @@ pub fn quantify_instance(state: &mut CheckState, instance: &mut Instance) -> Opt
 
     let kind_variables = substitutions.values().cloned();
     let kind_variables = kind_variables.sorted_by_key(|(name, _)| name.unique);
-    let kind_variables = kind_variables.map(|(name, kind)| (name, kind)).collect_vec();
+    let kind_variables = kind_variables.collect_vec();
 
     let arguments = instance.arguments.iter().map(|&(t, k)| {
         let t = SubstituteUnification::on(&substitutions, state, t);

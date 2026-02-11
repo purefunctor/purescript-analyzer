@@ -294,6 +294,21 @@ impl SurfaceBindings {
     }
 }
 
+#[derive(Clone, Copy)]
+pub enum PendingTermType {
+    Immediate(TypeId),
+    Deferred(TypeId),
+}
+
+impl From<PendingTermType> for TypeId {
+    fn from(value: PendingTermType) -> Self {
+        match value {
+            PendingTermType::Immediate(id) => id,
+            PendingTermType::Deferred(id) => id,
+        }
+    }
+}
+
 /// The core state structure threaded through the [`algorithm`].
 ///
 /// [`algorithm`]: crate::algorithm
@@ -319,7 +334,9 @@ pub struct CheckState {
     /// The in-progress binding group; used for recursive declarations.
     pub binding_group: BindingGroupContext,
 
-    pub equations: FxHashMap<TermItemId, TypeId>,
+    /// Stores terms whose signatures have been kind-checked that still need
+    /// additional unification before moving into [`CheckedModule::terms`].
+    pub pending_terms: FxHashMap<TermItemId, PendingTermType>,
 
     /// Error context breadcrumbs for [`CheckedModule::errors`].
     pub check_steps: Vec<ErrorStep>,
@@ -345,7 +362,7 @@ impl CheckState {
             implications: Default::default(),
             unification: Default::default(),
             binding_group: Default::default(),
-            equations: Default::default(),
+            pending_terms: Default::default(),
             check_steps: Default::default(),
             defer_synonym_expansion: Default::default(),
             patterns: Default::default(),
@@ -1003,7 +1020,7 @@ impl CheckState {
         F: FnOnce(&mut Self) -> T,
     {
         for item in group {
-            if !self.checked.terms.contains_key(&item) && !self.equations.contains_key(&item) {
+            if !self.checked.terms.contains_key(&item) && !self.pending_terms.contains_key(&item) {
                 let t = self.fresh_unification_type(context);
                 self.binding_group.terms.insert(item, t);
             }

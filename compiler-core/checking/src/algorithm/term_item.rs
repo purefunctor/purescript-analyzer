@@ -8,7 +8,7 @@ use lowering::TermItemIr;
 
 use crate::ExternalQueries;
 use crate::algorithm::safety::safe_loop;
-use crate::algorithm::state::{CheckContext, CheckState, InstanceHeadBinding};
+use crate::algorithm::state::{CheckContext, CheckState, InstanceHeadBinding, PendingTermType};
 use crate::algorithm::{
     constraint, equation, inspect, kind, normalise, quantify, substitute, term, transfer,
     unification,
@@ -26,7 +26,7 @@ pub struct InferredValueGroup {
 ///
 /// This function checks the term signatures for [`TermItemIr::Foreign`],
 /// [`TermItemIr::ValueGroup`], and [`TermItemIr::Operator`], inserting
-/// them into [`CheckState::checked`] upon completion.
+/// them into [`CheckState::pending_terms`] as [`PendingTermType`] entries.
 ///
 /// For [`TermItemIr::ValueGroup`] specifically, it also invokes the
 /// [`inspect::collect_signature_variables`] function to collect type
@@ -62,8 +62,7 @@ where
 
                 crate::debug_fields!(state, context, { quantified_type = quantified_type });
 
-                let global_type = transfer::globalize(state, context, quantified_type);
-                state.checked.terms.insert(item_id, global_type);
+                state.pending_terms.insert(item_id, PendingTermType::Immediate(quantified_type));
             }
             TermItemIr::ValueGroup { signature, .. } => {
                 let Some(signature) = signature else { return Ok(()) };
@@ -76,14 +75,13 @@ where
 
                 crate::debug_fields!(state, context, { inferred_type = inferred_type });
 
-                state.equations.insert(item_id, inferred_type);
+                state.pending_terms.insert(item_id, PendingTermType::Deferred(inferred_type));
             }
             TermItemIr::Operator { resolution, .. } => {
                 let Some((file_id, term_id)) = *resolution else { return Ok(()) };
                 let id = term::lookup_file_term(state, context, file_id, term_id)?;
 
-                let global_type = transfer::globalize(state, context, id);
-                state.checked.terms.insert(item_id, global_type);
+                state.pending_terms.insert(item_id, PendingTermType::Deferred(id));
             }
             _ => (),
         }
@@ -331,7 +329,8 @@ pub fn commit_checked_value_group<Q>(
 where
     Q: ExternalQueries,
 {
-    let Some(inferred_type) = state.equations.remove(&item_id) else {
+    let Some(PendingTermType::Deferred(inferred_type)) = state.pending_terms.remove(&item_id)
+    else {
         return Ok(());
     };
 
@@ -343,6 +342,19 @@ where
     state.checked.terms.insert(item_id, global_type);
 
     Ok(())
+}
+
+/// Commits remaining pending term entries (foreign/operator) from
+/// [`CheckState::pending_terms`] into [`CheckedModule::terms`].
+pub fn commit_pending_terms<Q>(state: &mut CheckState, context: &CheckContext<Q>)
+where
+    Q: ExternalQueries,
+{
+    for (item_id, pending_type) in state.pending_terms.drain().collect_vec() {
+        let local_type = pending_type.into();
+        let global_type = transfer::globalize(state, context, local_type);
+        state.checked.terms.insert(item_id, global_type);
+    }
 }
 
 /// Generalises an [`InferredValueGroup`].

@@ -1468,8 +1468,8 @@ where
     let term_id = if file_id == context.id {
         if let Some(&k) = state.binding_group.terms.get(&term_id) {
             k
-        } else if let Some(&k) = state.equations.get(&term_id) {
-            k
+        } else if let Some(&k) = state.pending_terms.get(&term_id) {
+            k.into()
         } else if let Some(&k) = state.checked.terms.get(&term_id) {
             transfer::localize(state, context, k)
         } else {

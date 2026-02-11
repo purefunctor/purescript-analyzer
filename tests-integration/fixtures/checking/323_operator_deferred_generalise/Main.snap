@@ -10,7 +10,11 @@ knownInEquation ::
     Component @(Type -> Type) (m :: Type -> Type) ->
     Component @(Type -> Type) (m :: Type -> Type) ->
     Int
-+++ :: forall (m :: ???). Component @??? (m :: ???) -> Component @??? (m :: ???) -> Int
++++ ::
+  forall (m :: Type -> Type).
+    Component @(Type -> Type) (m :: Type -> Type) ->
+    Component @(Type -> Type) (m :: Type -> Type) ->
+    Int
 
 Types
 Component :: forall (k :: Type). (k :: Type) -> Type
