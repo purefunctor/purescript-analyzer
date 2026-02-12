@@ -7,11 +7,11 @@ Terms
 test1 :: Array Int -> { x :: Int, y :: Int }
 test1' :: forall (t6 :: Type). Array (t6 :: Type) -> { x :: (t6 :: Type), y :: (t6 :: Type) }
 test2 :: forall (a :: Type). Array (a :: Type) -> Array (a :: Type)
-test2' :: forall (t21 :: Type). Array (t21 :: Type) -> Array (t21 :: Type)
+test2' :: forall (t20 :: Type). Array (t20 :: Type) -> Array (t20 :: Type)
 test3 :: Array Int -> Int
 test3' :: Array Int -> Int
 nested :: Array (Array Int) -> Int
-nested' :: forall (t53 :: Type). Array (Array (t53 :: Type)) -> (t53 :: Type)
+nested' :: forall (t52 :: Type). Array (Array (t52 :: Type)) -> (t52 :: Type)
 
 Types
 

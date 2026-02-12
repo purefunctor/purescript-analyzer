@@ -75,11 +75,11 @@ rowToListThree ::
     RowToList @Type ( a :: Int, b :: String, c :: Boolean ) (list :: RowList Type) =>
     Proxy @(RowList Type) (list :: RowList Type)
 solveUnion ::
-  forall (t147 :: Type).
+  forall (t145 :: Type).
     { deriveUnion :: Proxy @(Row Type) ( a :: Int, b :: String )
     , deriveUnionLeft :: Proxy @(Row Type) ( a :: Int )
     , deriveUnionRight :: Proxy @(Row Type) ( b :: String )
-    , unionBothEmpty :: Proxy @(Row (t147 :: Type)) ()
+    , unionBothEmpty :: Proxy @(Row (t145 :: Type)) ()
     , unionEmptyLeft :: Proxy @(Row Type) ( a :: Int )
     , unionEmptyRight :: Proxy @(Row Type) ( a :: Int )
     , unionMultiple :: Proxy @(Row Type) ( a :: Int, b :: String, c :: Boolean )
@@ -91,18 +91,18 @@ solveCons ::
   , nestedCons :: Proxy @(Row Type) ( a :: Int, b :: String )
   }
 solveLacks ::
-  forall (t160 :: Type) (t161 :: (t160 :: Type)) (t164 :: Type) (t166 :: (t164 :: Type)).
-    { lacksEmpty :: Proxy @(t164 :: Type) (t166 :: (t164 :: Type))
-    , lacksSimple :: Proxy @(t160 :: Type) (t161 :: (t160 :: Type))
+  forall (t158 :: Type) (t159 :: (t158 :: Type)) (t162 :: Type) (t164 :: (t162 :: Type)).
+    { lacksEmpty :: Proxy @(t162 :: Type) (t164 :: (t162 :: Type))
+    , lacksSimple :: Proxy @(t158 :: Type) (t159 :: (t158 :: Type))
     }
 solveNub ::
-  forall (t175 :: Type).
-    { nubEmpty :: Proxy @(Row (t175 :: Type)) ()
+  forall (t173 :: Type).
+    { nubEmpty :: Proxy @(Row (t173 :: Type)) ()
     , nubNoDuplicates :: Proxy @(Row Type) ( a :: Int, b :: String )
     }
 solveRowToList ::
-  forall (t183 :: Type).
-    { rowToListEmpty :: Proxy @(RowList (t183 :: Type)) (Nil @(t183 :: Type))
+  forall (t181 :: Type).
+    { rowToListEmpty :: Proxy @(RowList (t181 :: Type)) (Nil @(t181 :: Type))
     , rowToListMultiple ::
         Proxy @(RowList Type) (Cons @Type "a" Int (Cons @Type "b" String (Nil @Type)))
     , rowToListSimple :: Proxy @(RowList Type) (Cons @Type "a" Int (Nil @Type))

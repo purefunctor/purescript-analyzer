@@ -10,6 +10,11 @@ Types
 
 Diagnostics
 error[AdditionalProperty]: Additional properties not allowed: y
+  --> 4:17..4:31
+  |
+4 | test = { outer: { x: 1, y: 2 } }
+  |                 ^~~~~~~~~~~~~~
+error[AdditionalProperty]: Additional properties not allowed: y
   --> 4:8..4:33
   |
 4 | test = { outer: { x: 1, y: 2 } }

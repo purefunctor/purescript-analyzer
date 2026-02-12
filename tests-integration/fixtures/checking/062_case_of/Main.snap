@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -13,7 +14,7 @@ test1' :: Maybe Int -> Int
 test2 :: Maybe Int -> Maybe Int -> Int
 test2' :: Maybe Int -> Maybe Int -> Int
 test3 :: Either Int String -> Int
-test3' :: forall (t46 :: Type). Either Int (t46 :: Type) -> Int
+test3' :: forall (t43 :: Type). Either Int (t43 :: Type) -> Int
 test4 :: Tuple (Maybe Int) (Maybe Int) -> Int
 test4' :: Tuple (Maybe Int) (Maybe Int) -> Int
 

@@ -19,14 +19,14 @@ test1 :: forall (a :: Type). Monoid (a :: Type) => Unit -> (a :: Type)
 test2 :: forall (t22 :: Type) (t23 :: Type). Monoid (t23 :: Type) => (t22 :: Type) -> (t23 :: Type)
 test3 :: forall (t24 :: Type). Monoid (t24 :: Type) => (t24 :: Type)
 test4 ::
-  forall (t32 :: Type -> Type) (t33 :: Type).
-    Monoid (t33 :: Type) => (t32 :: Type -> Type) (t33 :: Type)
+  forall (t31 :: Type -> Type) (t32 :: Type).
+    Monoid (t32 :: Type) => (t31 :: Type -> Type) (t32 :: Type)
 test5 ::
-  forall (t37 :: Type -> Type) (t40 :: Type).
-    Semigroup (t40 :: Type) =>
-    (t37 :: Type -> Type) (t40 :: Type) ->
-    (t37 :: Type -> Type) (t40 :: Type) ->
-    (t37 :: Type -> Type) (t40 :: Type)
+  forall (t36 :: Type -> Type) (t39 :: Type).
+    Semigroup (t39 :: Type) =>
+    (t36 :: Type -> Type) (t39 :: Type) ->
+    (t36 :: Type -> Type) (t39 :: Type) ->
+    (t36 :: Type -> Type) (t39 :: Type)
 
 Types
 Unit :: Type

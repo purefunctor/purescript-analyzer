@@ -6,7 +6,6 @@ use smol_str::SmolStr;
 
 use crate::ExternalQueries;
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::unification::ElaborationMode;
 use crate::algorithm::{
     binder, equation, exhaustiveness, inspect, kind, normalise, operator, substitute, toolkit,
     transfer, unification,
@@ -19,82 +18,118 @@ use crate::error::{ErrorKind, ErrorStep};
 pub fn check_expression<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    expr_id: lowering::ExpressionId,
+    expression: lowering::ExpressionId,
     expected: TypeId,
 ) -> QueryResult<TypeId>
 where
     Q: ExternalQueries,
 {
-    crate::trace_fields!(state, context, { expected = expected });
-    state.with_error_step(ErrorStep::CheckingExpression(expr_id), |state| {
-        let inferred = infer_expression_quiet(state, context, expr_id)?;
-        let _ = unification::subtype(state, context, inferred, expected)?;
-        crate::trace_fields!(state, context, { inferred = inferred, expected = expected });
-        Ok(inferred)
+    state.with_error_step(ErrorStep::CheckingExpression(expression), |state| {
+        crate::trace_fields!(state, context, { expected = expected });
+        check_expression_quiet(state, context, expression, expected)
     })
 }
 
-fn check_expression_argument<Q>(
+fn check_expression_quiet<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    expr_id: lowering::ExpressionId,
+    expression: lowering::ExpressionId,
     expected: TypeId,
 ) -> QueryResult<TypeId>
 where
     Q: ExternalQueries,
 {
-    state.with_error_step(ErrorStep::CheckingExpression(expr_id), |state| {
-        let inferred = infer_expression_quiet(state, context, expr_id)?;
-        // Instantiate the inferred type when the expected type is not
-        // polymorphic, so constraints are collected as wanted rather
-        // than leaking into unification. Skipped for higher-rank
-        // arguments where constraints must match structurally.
-        let expected = state.normalize_type(expected);
-        if matches!(state.storage[expected], Type::Constrained(..)) {
-            // Peel constraints from expected as givens so they can
-            // discharge wanted constraints from the inferred type
-            // e.g. unsafePartial discharging Partial
-            let expected = toolkit::collect_given_constraints(state, expected);
-            let inferred = toolkit::instantiate_constrained(state, inferred);
-            unification::subtype_with_mode(
-                state,
-                context,
-                inferred,
-                expected,
-                ElaborationMode::No,
-            )?;
-            crate::trace_fields!(state, context, { inferred = inferred, expected = expected });
-            Ok(inferred)
-        } else if matches!(state.storage[expected], Type::Forall(..)) {
-            // Higher-rank expected type. Skolemise forall and collect
-            // given constraints on the expected side, then instantiate and
-            // collect wanted constraints on the inferred side, before
-            // comparing the unwrapped body types.
-            let expected = toolkit::skolemise_forall(state, expected);
-            let expected = toolkit::collect_given_constraints(state, expected);
-            let inferred = toolkit::instantiate_constrained(state, inferred);
-            unification::subtype_with_mode(
-                state,
-                context,
-                inferred,
-                expected,
-                ElaborationMode::No,
-            )?;
-            crate::trace_fields!(state, context, { inferred = inferred, expected = expected });
-            Ok(inferred)
+    // TODO: move normalisation to toolkit
+    let expected = normalise::normalise_expand_type(state, context, expected)?;
+    let expected = toolkit::skolemise_forall(state, expected);
+    let expected = toolkit::collect_given_constraints(state, expected);
+    if let Some(section_result) = context.sectioned.expressions.get(&expression) {
+        check_sectioned_expression(state, context, expression, section_result, expected)
+    } else {
+        check_expression_core(state, context, expression, expected)
+    }
+}
+
+fn check_sectioned_expression<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    expression: lowering::ExpressionId,
+    section_result: &sugar::SectionResult,
+    expected: TypeId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let mut current = expected;
+    let mut parameters = vec![];
+
+    for &section_id in section_result.iter() {
+        let decomposed =
+            toolkit::decompose_function(state, context, current, toolkit::SynthesiseFunction::Yes)?;
+        if let Some((argument_type, result_type)) = decomposed {
+            state.term_scope.bind_section(section_id, argument_type);
+            parameters.push(argument_type);
+            current = result_type;
         } else {
+            let parameter = state.fresh_unification_type(context);
+            state.term_scope.bind_section(section_id, parameter);
+            parameters.push(parameter);
+        }
+    }
+
+    let result_type = infer_expression_core(state, context, expression)?;
+    let result_type = toolkit::instantiate_constrained(state, result_type);
+
+    let _ = unification::subtype(state, context, result_type, current)?;
+
+    let function_type = state.make_function(&parameters, result_type);
+    Ok(function_type)
+}
+
+fn check_expression_core<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    expression: lowering::ExpressionId,
+    expected: TypeId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let Some(kind) = context.lowered.info.get_expression_kind(expression) else {
+        return Ok(context.prim.unknown);
+    };
+
+    match kind {
+        lowering::ExpressionKind::Lambda { binders, expression } => {
+            check_lambda(state, context, binders, *expression, expected)
+        }
+        lowering::ExpressionKind::IfThenElse { if_, then, else_ } => {
+            check_if_then_else(state, context, *if_, *then, *else_, expected)
+        }
+        lowering::ExpressionKind::CaseOf { trunk, branches } => {
+            check_case_of(state, context, trunk, branches, expected)
+        }
+        lowering::ExpressionKind::LetIn { bindings, expression } => {
+            check_let_in(state, context, bindings, *expression, expected)
+        }
+        lowering::ExpressionKind::Parenthesized { parenthesized } => {
+            let Some(parenthesized) = parenthesized else { return Ok(context.prim.unknown) };
+            check_expression(state, context, *parenthesized, expected)
+        }
+        lowering::ExpressionKind::Array { array } => check_array(state, context, array, expected),
+        lowering::ExpressionKind::Record { record } => {
+            check_record(state, context, record, expected)
+        }
+        _ => {
+            let inferred = infer_expression_quiet(state, context, expression)?;
             let inferred = toolkit::instantiate_constrained(state, inferred);
-            unification::subtype_with_mode(
-                state,
-                context,
-                inferred,
-                expected,
-                ElaborationMode::No,
-            )?;
+
+            let _ = unification::subtype(state, context, inferred, expected)?;
+
             crate::trace_fields!(state, context, { inferred = inferred, expected = expected });
             Ok(inferred)
         }
-    })
+    }
 }
 
 /// Infers the type of an expression.
@@ -102,13 +137,13 @@ where
 pub fn infer_expression<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    expr_id: lowering::ExpressionId,
+    expression: lowering::ExpressionId,
 ) -> QueryResult<TypeId>
 where
     Q: ExternalQueries,
 {
-    state.with_error_step(ErrorStep::InferringExpression(expr_id), |state| {
-        let inferred = infer_expression_quiet(state, context, expr_id)?;
+    state.with_error_step(ErrorStep::InferringExpression(expression), |state| {
+        let inferred = infer_expression_quiet(state, context, expression)?;
         crate::trace_fields!(state, context, { inferred = inferred });
         Ok(inferred)
     })
@@ -117,22 +152,22 @@ where
 fn infer_expression_quiet<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    expr_id: lowering::ExpressionId,
+    expression: lowering::ExpressionId,
 ) -> QueryResult<TypeId>
 where
     Q: ExternalQueries,
 {
-    if let Some(section_result) = context.sectioned.expressions.get(&expr_id) {
-        infer_sectioned_expression(state, context, expr_id, section_result)
+    if let Some(section_result) = context.sectioned.expressions.get(&expression) {
+        infer_sectioned_expression(state, context, expression, section_result)
     } else {
-        infer_expression_core(state, context, expr_id)
+        infer_expression_core(state, context, expression)
     }
 }
 
 fn infer_sectioned_expression<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    expr_id: lowering::ExpressionId,
+    expression: lowering::ExpressionId,
     section_result: &sugar::SectionResult,
 ) -> QueryResult<TypeId>
 where
@@ -146,7 +181,7 @@ where
 
     let parameter_types = parameter_types.collect_vec();
 
-    let result_type = infer_expression_core(state, context, expr_id)?;
+    let result_type = infer_expression_core(state, context, expression)?;
     let result_type = toolkit::instantiate_constrained(state, result_type);
 
     Ok(state.make_function(&parameter_types, result_type))
@@ -155,14 +190,14 @@ where
 fn infer_expression_core<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    expr_id: lowering::ExpressionId,
+    expression: lowering::ExpressionId,
 ) -> QueryResult<TypeId>
 where
     Q: ExternalQueries,
 {
     let unknown = context.prim.unknown;
 
-    let Some(kind) = context.lowered.info.get_expression_kind(expr_id) else {
+    let Some(kind) = context.lowered.info.get_expression_kind(expression) else {
         return Ok(unknown);
     };
 
@@ -178,7 +213,7 @@ where
         }
 
         lowering::ExpressionKind::OperatorChain { .. } => {
-            let (_, inferred_type) = operator::infer_operator_chain(state, context, expr_id)?;
+            let (_, inferred_type) = operator::infer_operator_chain(state, context, expression)?;
             Ok(inferred_type)
         }
 
@@ -251,7 +286,7 @@ where
         }
 
         lowering::ExpressionKind::Section => {
-            if let Some(type_id) = state.term_scope.lookup_section(expr_id) {
+            if let Some(type_id) = state.term_scope.lookup_section(expression) {
                 Ok(type_id)
             } else {
                 Ok(unknown)
@@ -391,6 +426,249 @@ where
     } else {
         Ok(function_type)
     }
+}
+
+fn check_lambda<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    binders: &[lowering::BinderId],
+    expression: Option<lowering::ExpressionId>,
+    expected: TypeId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let mut arguments = vec![];
+    let mut remaining = expected;
+
+    for &binder_id in binders.iter() {
+        let decomposed = toolkit::decompose_function(
+            state,
+            context,
+            remaining,
+            toolkit::SynthesiseFunction::Yes,
+        )?;
+        if let Some((argument, result)) = decomposed {
+            let _ = binder::check_binder(state, context, binder_id, argument)?;
+            arguments.push(argument);
+            remaining = result;
+        } else {
+            let argument_type = state.fresh_unification_type(context);
+            let _ = binder::check_binder(state, context, binder_id, argument_type)?;
+            arguments.push(argument_type);
+        }
+    }
+
+    let result_type = if let Some(body) = expression {
+        check_expression(state, context, body, remaining)?
+    } else {
+        state.fresh_unification_type(context)
+    };
+
+    let function_type = state.make_function(&arguments, result_type);
+
+    let exhaustiveness =
+        exhaustiveness::check_lambda_patterns(state, context, &arguments, binders)?;
+
+    let has_missing = exhaustiveness.missing.is_some();
+    state.report_exhaustiveness(exhaustiveness);
+
+    if has_missing {
+        state.push_wanted(context.prim.partial);
+    }
+
+    Ok(function_type)
+}
+
+fn check_if_then_else<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    if_: Option<lowering::ExpressionId>,
+    then: Option<lowering::ExpressionId>,
+    else_: Option<lowering::ExpressionId>,
+    expected: TypeId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    if let Some(if_) = if_ {
+        check_expression(state, context, if_, context.prim.boolean)?;
+    }
+
+    if let Some(then) = then {
+        check_expression(state, context, then, expected)?;
+    }
+
+    if let Some(else_) = else_ {
+        check_expression(state, context, else_, expected)?;
+    }
+
+    Ok(expected)
+}
+
+fn check_case_of<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    trunk: &[lowering::ExpressionId],
+    branches: &[lowering::CaseBranch],
+    expected: TypeId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let mut trunk_types = vec![];
+    for trunk in trunk.iter() {
+        let trunk_type = infer_expression(state, context, *trunk)?;
+        trunk_types.push(trunk_type);
+    }
+
+    for branch in branches.iter() {
+        for (binder, trunk) in branch.binders.iter().zip(&trunk_types) {
+            let _ = binder::check_binder(state, context, *binder, *trunk)?;
+        }
+        if let Some(guarded) = &branch.guarded_expression {
+            check_guarded_expression(state, context, guarded, expected)?;
+        }
+    }
+
+    let exhaustiveness =
+        exhaustiveness::check_case_patterns(state, context, &trunk_types, branches)?;
+
+    let has_missing = exhaustiveness.missing.is_some();
+    state.report_exhaustiveness(exhaustiveness);
+
+    if has_missing {
+        state.push_wanted(context.prim.partial);
+    }
+
+    Ok(expected)
+}
+
+fn check_let_in<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    bindings: &[lowering::LetBindingChunk],
+    expression: Option<lowering::ExpressionId>,
+    expected: TypeId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    check_let_chunks(state, context, bindings)?;
+
+    let Some(expression) = expression else {
+        return Ok(context.prim.unknown);
+    };
+
+    check_expression(state, context, expression, expected)
+}
+
+fn check_array<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    array: &[lowering::ExpressionId],
+    expected: TypeId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let normalised = state.normalize_type(expected);
+    if let Type::Application(constructor, element_type) = state.storage[normalised] {
+        let constructor = state.normalize_type(constructor);
+        if constructor == context.prim.array {
+            for expression in array.iter() {
+                check_expression(state, context, *expression, element_type)?;
+            }
+            return Ok(expected);
+        }
+    }
+
+    // Fallback: infer then subtype.
+    let inferred = infer_array(state, context, array)?;
+    let _ = unification::subtype(state, context, inferred, expected)?;
+    Ok(inferred)
+}
+
+fn check_record<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    record: &[lowering::ExpressionRecordItem],
+    expected: TypeId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let normalised = state.normalize_type(expected);
+    if let Type::Application(constructor, row_type) = state.storage[normalised] {
+        let constructor = state.normalize_type(constructor);
+        if constructor == context.prim.record {
+            let row_type = state.normalize_type(row_type);
+            if let Type::Row(ref row) = state.storage[row_type] {
+                let expected_fields = row.fields.clone();
+
+                let mut fields = vec![];
+
+                for field in record.iter() {
+                    match field {
+                        lowering::ExpressionRecordItem::RecordField { name, value } => {
+                            let Some(name) = name else { continue };
+                            let Some(value) = value else { continue };
+
+                            let label = SmolStr::clone(name);
+
+                            // Look up whether this field has an expected type.
+                            let expected_field_type =
+                                expected_fields.iter().find(|f| f.label == label).map(|f| f.id);
+
+                            let id = if let Some(expected_type) = expected_field_type {
+                                check_expression(state, context, *value, expected_type)?
+                            } else {
+                                let id = infer_expression(state, context, *value)?;
+                                let id = toolkit::instantiate_forall(state, id);
+                                toolkit::collect_constraints(state, id)
+                            };
+
+                            fields.push(RowField { label, id });
+                        }
+                        lowering::ExpressionRecordItem::RecordPun { name, resolution } => {
+                            let Some(name) = name else { continue };
+                            let Some(resolution) = resolution else { continue };
+
+                            let label = SmolStr::clone(name);
+
+                            let expected_field_type =
+                                expected_fields.iter().find(|f| f.label == label).map(|f| f.id);
+
+                            let id = lookup_term_variable(state, context, *resolution)?;
+
+                            let id = if let Some(expected_type) = expected_field_type {
+                                let _ = unification::subtype(state, context, id, expected_type)?;
+                                id
+                            } else {
+                                let id = toolkit::instantiate_forall(state, id);
+                                toolkit::collect_constraints(state, id)
+                            };
+
+                            fields.push(RowField { label, id });
+                        }
+                    }
+                }
+
+                let row_type = RowType::from_unsorted(fields, None);
+                let row_type = state.storage.intern(Type::Row(row_type));
+                let record_type =
+                    state.storage.intern(Type::Application(context.prim.record, row_type));
+
+                let _ = unification::subtype(state, context, record_type, expected)?;
+                return Ok(record_type);
+            }
+        }
+    }
+
+    // Fallback: infer then subtype.
+    let inferred = infer_record(state, context, record)?;
+    let _ = unification::subtype(state, context, inferred, expected)?;
+    Ok(inferred)
 }
 
 fn infer_case_of<Q>(
@@ -1647,13 +1925,7 @@ pub fn check_function_term_application<Q>(
 where
     Q: ExternalQueries,
 {
-    check_function_application_core(
-        state,
-        context,
-        function_t,
-        expression_id,
-        check_expression_argument,
-    )
+    check_function_application_core(state, context, function_t, expression_id, check_expression)
 }
 
 pub(crate) fn check_let_chunks<Q>(

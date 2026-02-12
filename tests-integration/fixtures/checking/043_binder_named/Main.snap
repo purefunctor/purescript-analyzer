@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -7,9 +8,9 @@ foo :: Int -> Int
 bar :: String -> String
 baz :: Int -> Int
 qux :: Int
-foo' :: forall (t3 :: Type). (t3 :: Type) -> (t3 :: Type)
-bar' :: forall (t6 :: Type). (t6 :: Type) -> (t6 :: Type)
-baz' :: forall (t9 :: Type). (t9 :: Type) -> (t9 :: Type)
+foo' :: forall (t2 :: Type). (t2 :: Type) -> (t2 :: Type)
+bar' :: forall (t5 :: Type). (t5 :: Type) -> (t5 :: Type)
+baz' :: forall (t8 :: Type). (t8 :: Type) -> (t8 :: Type)
 qux' :: Int
 
 Types

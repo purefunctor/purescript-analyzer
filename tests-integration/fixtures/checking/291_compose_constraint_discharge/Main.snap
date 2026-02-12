@@ -18,8 +18,8 @@ test ::
   forall (a :: Type) (b :: Type).
     (Array (a :: Type) -> Maybe (b :: Type)) -> Maybe (a :: Type) -> (b :: Type)
 test' ::
-  forall (t25 :: Type) (t30 :: Type).
-    (Array (t30 :: Type) -> Maybe (t25 :: Type)) -> Maybe (t30 :: Type) -> (t25 :: Type)
+  forall (t24 :: Type) (t29 :: Type).
+    (Array (t29 :: Type) -> Maybe (t24 :: Type)) -> Maybe (t29 :: Type) -> (t24 :: Type)
 
 Types
 Maybe :: Type -> Type
