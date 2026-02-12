@@ -28,30 +28,30 @@ pub struct CheckResult {
 
 /// Checks all packages in the packages directory and returns diagnostics.
 ///
-/// `packages_dir` should point to the directory containing unpacked packages.
-/// `target_package` is the specific package to report diagnostics for (others are loaded as deps).
-pub fn check_package(packages_dir: &Path, target_package: &str) -> CheckResult {
+/// `packages` should point to the directory containing unpacked packages.
+/// `target_package` is the specific package to report diagnostics for.
+pub fn check_package(packages: &Path, target_package: &str) -> CheckResult {
     let _span =
         tracing::info_span!(target: "compiler_compatibility", "check_package", target_package)
             .entered();
 
-    let (engine, files, file_ids) = loader::load_packages(packages_dir);
+    let (engine, files, file_ids) = loader::load_packages(packages);
 
-    let target_directory = find_package_dir(packages_dir, target_package);
+    let target_directory = find_package_dir(packages, target_package);
     let target_files = if let Some(directory) = &target_directory {
         loader::filter_package_files(&files, &file_ids, directory)
     } else {
         vec![]
     };
 
-    let mut results = Vec::new();
+    let mut results = vec![];
     let mut total_errors = 0;
     let mut total_warnings = 0;
 
     tracing::info!(target: "compiler_compatibility", count = target_files.len());
 
     for id in target_files {
-        let relative_path = compute_relative_path(&files, id, packages_dir);
+        let relative_path = compute_relative_path(&files, id, packages);
         let file_result = check_file(&engine, &files, id, &relative_path);
 
         total_errors += file_result.error_count;
