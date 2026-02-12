@@ -142,7 +142,7 @@ where
             // Non-nullary constructors are instantiated during application.
             let inferred_type = if arguments.is_empty() {
                 constructor_t = toolkit::instantiate_forall(state, constructor_t);
-                toolkit::collect_constraints(state, constructor_t)
+                toolkit::collect_wanteds(state, constructor_t)
             } else {
                 for &argument in arguments.iter() {
                     constructor_t = binder::check_constructor_binder_application(

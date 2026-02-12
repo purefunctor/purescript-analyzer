@@ -62,7 +62,7 @@ where
                 // Peel constraints from the expected type as givens,
                 // so operator arguments like `unsafePartial $ expr`
                 // can discharge constraints like Partial properly.
-                let expected_type = toolkit::collect_given_constraints(state, expected_type);
+                let expected_type = toolkit::collect_givens(state, expected_type);
                 E::check_surface(state, context, *type_id, expected_type)
             }
         },
@@ -112,7 +112,7 @@ where
     };
 
     let operator_type = toolkit::instantiate_forall(state, operator_type);
-    let operator_type = toolkit::collect_constraints(state, operator_type);
+    let operator_type = toolkit::collect_wanteds(state, operator_type);
 
     let synthesise = toolkit::SynthesiseFunction::Yes;
 
@@ -133,7 +133,7 @@ where
     if let OperatorKindMode::Check { expected_type } = mode {
         // Peel constraints from the expected type as givens,
         // so operator result constraints can be discharged.
-        let expected_type = toolkit::collect_given_constraints(state, expected_type);
+        let expected_type = toolkit::collect_givens(state, expected_type);
         let _ = unification::subtype(state, context, result_type, expected_type)?;
     }
 

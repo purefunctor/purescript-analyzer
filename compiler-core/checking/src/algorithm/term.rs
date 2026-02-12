@@ -39,10 +39,9 @@ fn check_expression_quiet<Q>(
 where
     Q: ExternalQueries,
 {
-    // TODO: move normalisation to toolkit
     let expected = toolkit::normalise_expand_type(state, context, expected)?;
     let expected = toolkit::skolemise_forall(state, expected);
-    let expected = toolkit::collect_given_constraints(state, expected);
+    let expected = toolkit::collect_givens(state, expected);
     if let Some(section_result) = context.sectioned.expressions.get(&expression) {
         check_sectioned_expression(state, context, expression, section_result, expected)
     } else {
@@ -625,7 +624,7 @@ where
                             } else {
                                 let id = infer_expression(state, context, *value)?;
                                 let id = toolkit::instantiate_forall(state, id);
-                                toolkit::collect_constraints(state, id)
+                                toolkit::collect_wanteds(state, id)
                             };
 
                             fields.push(RowField { label, id });
@@ -646,7 +645,7 @@ where
                                 id
                             } else {
                                 let id = toolkit::instantiate_forall(state, id);
-                                toolkit::collect_constraints(state, id)
+                                toolkit::collect_wanteds(state, id)
                             };
 
                             fields.push(RowField { label, id });
@@ -1306,7 +1305,7 @@ where
 
                 // Instantiate to avoid polymorphic types in record fields.
                 let id = toolkit::instantiate_forall(state, id);
-                let id = toolkit::collect_constraints(state, id);
+                let id = toolkit::collect_wanteds(state, id);
 
                 fields.push(RowField { label, id });
             }
@@ -1319,7 +1318,7 @@ where
 
                 // Instantiate to avoid polymorphic types in record fields.
                 let id = toolkit::instantiate_forall(state, id);
-                let id = toolkit::collect_constraints(state, id);
+                let id = toolkit::collect_wanteds(state, id);
 
                 fields.push(RowField { label, id });
             }

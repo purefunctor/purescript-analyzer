@@ -135,7 +135,7 @@ pub fn skolemise_forall(state: &mut CheckState, mut type_id: TypeId) -> TypeId {
 }
 
 /// Collects [`Type::Constrained`] as wanted constraints.
-pub fn collect_constraints(state: &mut CheckState, mut type_id: TypeId) -> TypeId {
+pub fn collect_wanteds(state: &mut CheckState, mut type_id: TypeId) -> TypeId {
     safe_loop! {
         type_id = state.normalize_type(type_id);
         if let Type::Constrained(constraint, constrained) = state.storage[type_id] {
@@ -153,7 +153,7 @@ pub fn collect_constraints(state: &mut CheckState, mut type_id: TypeId) -> TypeI
 /// a wanted. Used when the expected type carries constraints that should
 /// discharge wanted constraints from the inferred type e.g. `unsafePartial`
 /// discharging `Partial`.
-pub fn collect_given_constraints(state: &mut CheckState, mut type_id: TypeId) -> TypeId {
+pub fn collect_givens(state: &mut CheckState, mut type_id: TypeId) -> TypeId {
     safe_loop! {
         type_id = state.normalize_type(type_id);
         if let Type::Constrained(constraint, constrained) = state.storage[type_id] {
@@ -168,7 +168,7 @@ pub fn collect_given_constraints(state: &mut CheckState, mut type_id: TypeId) ->
 /// [`instantiate_forall`] then [`collect_constraints`].
 pub fn instantiate_constrained(state: &mut CheckState, type_id: TypeId) -> TypeId {
     let type_id = instantiate_forall(state, type_id);
-    collect_constraints(state, type_id)
+    collect_wanteds(state, type_id)
 }
 
 /// Instantiates [`Type::Forall`] with the provided arguments.
