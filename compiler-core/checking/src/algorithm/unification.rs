@@ -231,6 +231,22 @@ where
             unify(state, context, t1, t2)?
         }
 
+        (Type::Forall(binder, inner), _) => {
+            let name = state.fresh_name(&binder.text);
+            let skolem = Variable::Skolem(name, binder.kind);
+            let skolem = state.storage.intern(Type::Variable(skolem));
+            let inner = substitute::SubstituteBound::on(state, binder.variable, skolem, inner);
+            unify(state, context, inner, t2)?
+        }
+
+        (_, Type::Forall(binder, inner)) => {
+            let name = state.fresh_name(&binder.text);
+            let skolem = Variable::Skolem(name, binder.kind);
+            let skolem = state.storage.intern(Type::Variable(skolem));
+            let inner = substitute::SubstituteBound::on(state, binder.variable, skolem, inner);
+            unify(state, context, t1, inner)?
+        }
+
         (Type::Function(t1_argument, t1_result), Type::Function(t2_argument, t2_result)) => {
             unify(state, context, t1_argument, t2_argument)?
                 && unify(state, context, t1_result, t2_result)?
