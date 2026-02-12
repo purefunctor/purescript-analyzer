@@ -26,11 +26,10 @@ coverage-html:
 
 [doc("Run integration tests with snapshot diffing: checking|lowering|resolving|lsp")]
 @t *args="":
-  cargo run -q -p compiler-scripts -- "$@"
+  cargo run -q -p compiler-scripts --release -- "$@"
 
-[doc("Shorthand for 'just t checking'")]
-@tc *args="":
-  cargo run -q -p compiler-scripts -- checking "$@"
+@c *args="":
+  cargo run -q -p compiler-compatibility --release -- "$@"
 
 [doc("Apply clippy fixes and format")]
 fix:
