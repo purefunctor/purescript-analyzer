@@ -62,12 +62,12 @@ fn prime_dependencies(
         let layer_files: Vec<FileId> = layer_files.collect();
         let package_names: Vec<&str> = dependency_packages.iter().map(|s| s.as_str()).collect();
 
-        tracing::info!(
+        tracing::debug!(
             target: "compiler_compatibility",
             layer = layer_index,
             file_count = layer_files.len(),
             packages = ?package_names,
-            "Processing"
+            "Priming"
         );
 
         // Prime each file in parallel through the full query pipeline.
@@ -108,7 +108,7 @@ pub fn check_package(packages: &Path, target_package: &str, resolved: &ResolvedS
 
     let layers = module_topological_layers(&engine, &target_files);
 
-    tracing::info!(
+    tracing::debug!(
         target: "compiler_compatibility",
         layer_count = layers.len(),
         layers = ?layers.iter().map(|layer| layer.len()).collect::<Vec<_>>(),
@@ -117,11 +117,11 @@ pub fn check_package(packages: &Path, target_package: &str, resolved: &ResolvedS
 
     {
         for (layer_index, layer) in layers.iter().enumerate() {
-            tracing::info!(
+            tracing::debug!(
                 target: "compiler_compatibility",
                 layer = layer_index,
                 file_count = layer.len(),
-                "Processing"
+                "Priming"
             );
             layer.par_iter().for_each(|&id| {
                 let snapshot = engine.snapshot();

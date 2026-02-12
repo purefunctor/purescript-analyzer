@@ -46,7 +46,7 @@ struct Cli {
     #[arg(
         long,
         value_name = "LevelFilter",
-        default_value = "debug",
+        default_value = "off",
         help = "Log level for checking crate traces"
     )]
     log_level: LevelFilter,
@@ -93,7 +93,7 @@ fn main() -> error::Result<()> {
         storage::verify_tarball(&tarball, &published.hash, name, version)?;
         unpacker::unpack_tarball(&tarball, &layout.packages)?;
 
-        tracing::info!(target: "compiler_compatibility", name, version, "Unpacked");
+        tracing::debug!(target: "compiler_compatibility", name, version, "Unpacked");
     }
 
     tracing::info!(target: "compiler_compatibility", directory = %layout.packages.display(), "Finished unpacking");
