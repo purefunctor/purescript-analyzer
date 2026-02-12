@@ -2,7 +2,7 @@ mod compat;
 mod error;
 mod layout;
 mod loader;
-mod registry;
+mod repositories;
 mod resolver;
 mod storage;
 mod trace;
@@ -11,8 +11,8 @@ mod unpacker;
 
 use std::path::PathBuf;
 
+use registry::{FsRegistry, RegistryReader};
 use clap::Parser;
-use purescript_registry::RegistryReader;
 use tracing::level_filters::LevelFilter;
 
 #[derive(Parser, Debug)]
@@ -59,12 +59,13 @@ fn main() -> error::Result<()> {
     let tracing_handle = trace::init_tracing(stdout_level, cli.log_level, cli.trace_output);
 
     let layout = layout::Layout::new(&cli.output);
-    let registry = registry::Registry::new(layout.clone());
 
-    registry.ensure_repos(cli.update)?;
+    repositories::ensure_repositories(&layout.registry, cli.update)?;
+
+    let reader = FsRegistry::new(layout.registry.clone());
 
     if cli.list_sets {
-        let sets = registry.reader().list_package_sets()?;
+        let sets = reader.list_package_sets()?;
         for set in sets {
             println!("{}", set);
         }
@@ -76,26 +77,26 @@ fn main() -> error::Result<()> {
         return Ok(());
     }
 
-    let package_set = registry.reader().read_package_set(cli.package_set.as_deref())?;
+    let package_set = reader.read_package_set(cli.package_set.as_deref())?;
     tracing::info!(target: "compiler_compatibility", version = %package_set.version, "Using package set");
 
-    let resolved = resolver::resolve(&cli.packages, &package_set, registry.reader())?;
+    let resolved = resolver::resolve(&cli.packages, &package_set, &reader)?;
     tracing::info!(target: "compiler_compatibility", count = resolved.packages.len(), "Resolved packages");
 
     for (name, version) in &resolved.packages {
-        let metadata = registry.reader().read_metadata(name)?;
+        let metadata = reader.read_metadata(name)?;
         let published = metadata.published.get(version).ok_or_else(|| {
             error::CompatError::ManifestNotFound { name: name.clone(), version: version.clone() }
         })?;
 
         let tarball = storage::fetch_tarball(name, version, &layout, cli.no_cache)?;
         storage::verify_tarball(&tarball, &published.hash, name, version)?;
-        unpacker::unpack_tarball(&tarball, &layout.packages_dir)?;
+        unpacker::unpack_tarball(&tarball, &layout.packages)?;
 
         tracing::info!(target: "compiler_compatibility", name, version, "Unpacked");
     }
 
-    tracing::info!(target: "compiler_compatibility", directory = %layout.packages_dir.display(), "Finished unpacking");
+    tracing::info!(target: "compiler_compatibility", directory = %layout.packages.display(), "Finished unpacking");
 
     for package in &cli.packages {
         let _span =
@@ -106,7 +107,7 @@ fn main() -> error::Result<()> {
             tracing_handle.begin_package(package).expect("failed to start package trace capture");
         let log_file = guard.path().to_path_buf();
 
-        let result = compat::check_package(&layout.packages_dir, package);
+        let result = compat::check_package(&layout.packages, package);
 
         drop(guard);
 

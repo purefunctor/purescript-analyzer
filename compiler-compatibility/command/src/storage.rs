@@ -23,7 +23,7 @@ pub fn fetch_tarball(
         return Ok(tarball_path);
     }
 
-    fs::create_dir_all(&layout.cache_tarballs_dir)?;
+    fs::create_dir_all(&layout.cache_tarballs)?;
 
     let url = tarball_url(name, version);
     let response = reqwest::blocking::get(&url)?;

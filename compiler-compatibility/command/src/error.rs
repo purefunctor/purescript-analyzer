@@ -15,7 +15,7 @@ pub enum CompatError {
     Semver(#[from] semver::Error),
 
     #[error("registry: {0}")]
-    Registry(#[from] purescript_registry::RegistryError),
+    Registry(#[from] registry::RegistryError),
 
     #[error("package set missing package: {0}")]
     MissingFromPackageSet(String),
