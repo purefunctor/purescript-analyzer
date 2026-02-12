@@ -30,6 +30,7 @@ pub struct InferredValueGroup {
 /// For [`TermItemIr::ValueGroup`] specifically, it also invokes the
 /// [`inspect::collect_signature_variables`] function to collect type
 /// variables that need to be rebound during [`check_value_group`].
+#[tracing::instrument(skip_all, name = "check_term_signature")]
 pub fn check_term_signature<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -39,8 +40,6 @@ where
     Q: ExternalQueries,
 {
     state.with_error_step(ErrorStep::TermDeclaration(item_id), |state| {
-        let _span = tracing::debug_span!("check_term_signature").entered();
-
         let Some(item) = context.lowered.info.get_term_item(item_id) else {
             return Ok(());
         };
@@ -110,6 +109,7 @@ pub struct CheckInstance<'a> {
 /// upon completion.
 ///
 /// [`core::Instance`]: crate::core::Instance
+#[tracing::instrument(skip_all, name = "check_instance")]
 pub fn check_instance<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -120,8 +120,6 @@ where
 {
     let CheckInstance { item_id, constraints, arguments, resolution } = input;
     state.with_error_step(ErrorStep::TermDeclaration(item_id), |state| {
-        let _span = tracing::debug_span!("check_instance").entered();
-
         let Some((class_file, class_item)) = *resolution else {
             return Ok(());
         };
@@ -275,6 +273,7 @@ pub struct CheckValueGroup<'a> {
 ///
 /// This function optionally returns [`InferredValueGroup`]
 /// for value declarations that do not have a signature.
+#[tracing::instrument(skip_all, name = "check_value_group")]
 pub fn check_value_group<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -284,10 +283,7 @@ where
     Q: ExternalQueries,
 {
     state.with_error_step(ErrorStep::TermDeclaration(input.item_id), |state| {
-        state.with_implication(|state| {
-            let _span = tracing::debug_span!("check_value_group").entered();
-            check_value_group_core(context, state, input)
-        })
+        state.with_implication(|state| check_value_group_core(context, state, input))
     })
 }
 
@@ -360,6 +356,7 @@ where
 }
 
 /// Generalises an [`InferredValueGroup`].
+#[tracing::instrument(skip_all, name = "commit_inferred_value_group")]
 pub fn commit_inferred_value_group<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -378,7 +375,6 @@ where
     };
 
     state.with_error_step(ErrorStep::TermDeclaration(item_id), |state| {
-        let _span = tracing::debug_span!("commit_value_group").entered();
         for constraint in result.ambiguous {
             let constraint = state.render_local_type(context, constraint);
             state.insert_error(ErrorKind::AmbiguousConstraint { constraint });
@@ -505,6 +501,7 @@ pub struct CheckInstanceMemberGroup<'a> {
 /// The signature type of a member group must unify with the specialised
 /// type of the class member. The signature cannot be more general than
 /// the specialised type. See tests 118 and 125 for a demonstration.
+#[tracing::instrument(skip_all, name = "check_instance_member_group")]
 pub fn check_instance_member_group<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -536,8 +533,6 @@ where
         kind_variables,
         ..
     } = input;
-
-    let _span = tracing::debug_span!("check_instance_member_group").entered();
 
     // Save the current size of the environment for unbinding.
     let size = state.type_scope.size();

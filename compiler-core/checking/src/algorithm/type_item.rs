@@ -64,6 +64,7 @@ pub enum CheckedTypeItem {
 /// - [`check_data_definition`]
 /// - [`check_synonym_definition`]
 /// - [`check_class_definition`]
+#[tracing::instrument(skip_all, name = "check_type_item")]
 pub fn check_type_item<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -73,8 +74,6 @@ where
     Q: ExternalQueries,
 {
     state.with_error_step(ErrorStep::TypeDeclaration(item_id), |state| {
-        let _span = tracing::debug_span!("check_type_item").entered();
-
         let Some(item) = context.lowered.info.get_type_item(item_id) else {
             return Ok(None);
         };
@@ -686,6 +685,7 @@ where
 /// To enable scoped type variables, this function also populates the
 /// [`CheckState::surface_bindings`] with the kind variables found in
 /// the signature.
+#[tracing::instrument(skip_all, name = "check_type_signature")]
 pub fn check_type_signature<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -695,8 +695,6 @@ where
     Q: ExternalQueries,
 {
     state.with_error_step(ErrorStep::TypeDeclaration(item_id), |state| {
-        let _span = tracing::debug_span!("check_type_signature").entered();
-
         let Some(item) = context.lowered.info.get_type_item(item_id) else {
             return Ok(());
         };
@@ -957,6 +955,7 @@ where
     Ok(())
 }
 
+#[tracing::instrument(skip_all, name = "check_constructor_arguments")]
 fn check_constructor_arguments<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -965,7 +964,6 @@ fn check_constructor_arguments<Q>(
 where
     Q: ExternalQueries,
 {
-    let _span = tracing::debug_span!("check_constructor_arguments").entered();
     let mut constructors = vec![];
 
     for item_id in context.indexed.pairs.data_constructors(item_id) {
@@ -986,6 +984,7 @@ where
     Ok(constructors)
 }
 
+#[tracing::instrument(skip_all, name = "infer_constructor_argument")]
 fn infer_constructor_argument<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -995,7 +994,6 @@ where
     Q: ExternalQueries,
 {
     state.with_error_step(ErrorStep::ConstructorArgument(argument), |state| {
-        let _span = tracing::debug_span!("infer_constructor_argument").entered();
         let (inferred_type, _) =
             kind::check_surface_kind(state, context, argument, context.prim.t)?;
         Ok(inferred_type)
