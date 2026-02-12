@@ -86,6 +86,7 @@ pub fn check_source(queries: &impl ExternalQueries, file_id: FileId) -> QueryRes
 
     check_type_signatures(&mut state, &context)?;
     check_type_definitions(&mut state, &context)?;
+    type_item::commit_pending_types(&mut state, &context);
 
     check_term_signatures(&mut state, &context)?;
     check_instance_heads(&mut state, &context)?;

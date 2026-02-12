@@ -10,7 +10,7 @@ use smol_str::SmolStr;
 
 use crate::ExternalQueries;
 use crate::algorithm::safety::safe_loop;
-use crate::algorithm::state::{CheckContext, CheckState, CheckedConstructor};
+use crate::algorithm::state::{CheckContext, CheckState, CheckedConstructor, PendingType};
 use crate::algorithm::{inspect, kind, quantify, transfer, unification};
 use crate::core::{
     Class, DataLike, ForallBinder, Operator, Role, Synonym, Type, TypeId, Variable, debruijn,
@@ -399,6 +399,14 @@ where
     {
         let type_id = transfer::globalize(state, context, quantified_type);
         state.checked.types.insert(item_id, type_id);
+    } else if inferred_kind.is_none()
+        && let Some(PendingType::Deferred(deferred_kind)) = state.pending_types.remove(&item_id)
+    {
+        let quantified_type = quantify::quantify(state, deferred_kind)
+            .map(|(quantified_type, _)| quantified_type)
+            .unwrap_or(deferred_kind);
+        let type_id = transfer::globalize(state, context, quantified_type);
+        state.checked.types.insert(item_id, type_id);
     }
 
     let synonym_type = type_variables.iter().rfold(synonym_type, |inner, binder| {
@@ -455,6 +463,23 @@ where
         else {
             return Ok(());
         };
+
+        let kind_variables = debruijn::Size(kind_variable_count);
+
+        let data_like = DataLike { quantified_variables, kind_variables };
+        state.checked.data.insert(item_id, data_like);
+
+        let type_id = transfer::globalize(state, context, quantified_type);
+        state.checked.types.insert(item_id, type_id);
+    } else if let Some(PendingType::Deferred(deferred_kind)) =
+        state.pending_types.remove(&item_id)
+    {
+        let (quantified_type, quantified_variables) =
+            if let Some(result) = quantify::quantify(state, deferred_kind) {
+                result
+            } else {
+                (deferred_kind, debruijn::Size(0))
+            };
 
         let kind_variables = debruijn::Size(kind_variable_count);
 
@@ -554,6 +579,13 @@ where
     {
         let type_id = transfer::globalize(state, context, quantified_type);
         state.checked.types.insert(item_id, type_id);
+    } else if inferred_kind.is_none()
+        && let Some(PendingType::Deferred(deferred_kind)) = state.pending_types.remove(&item_id)
+    {
+        let quantified_type =
+            quantify::quantify(state, deferred_kind).map(|(qt, _)| qt).unwrap_or(deferred_kind);
+        let type_id = transfer::globalize(state, context, quantified_type);
+        state.checked.types.insert(item_id, type_id);
     }
 
     let mut class = {
@@ -628,6 +660,24 @@ where
     Ok(())
 }
 
+/// Commits remaining pending type entries from [`CheckState::pending_types`]
+/// into [`CheckedModule::types`].
+pub fn commit_pending_types<Q>(state: &mut CheckState, context: &CheckContext<Q>)
+where
+    Q: ExternalQueries,
+{
+    for (item_id, pending_kind) in state.pending_types.drain().collect_vec() {
+        let local_type = match pending_kind {
+            PendingType::Immediate(id) => id,
+            PendingType::Deferred(id) => {
+                quantify::quantify(state, id).map(|(id, _)| id).unwrap_or(id)
+            }
+        };
+        let global_type = transfer::globalize(state, context, local_type);
+        state.checked.types.insert(item_id, global_type);
+    }
+}
+
 /// Checks the kind signature of a type item.
 ///
 /// This function also generalises the type and inserts it directly to
@@ -653,11 +703,7 @@ where
         };
 
         match item {
-            TypeItemIr::DataGroup { signature, .. }
-            | TypeItemIr::NewtypeGroup { signature, .. }
-            | TypeItemIr::SynonymGroup { signature, .. }
-            | TypeItemIr::ClassGroup { signature, .. }
-            | TypeItemIr::Foreign { signature, .. } => {
+            TypeItemIr::Foreign { signature, .. } => {
                 let Some(signature) = signature else {
                     return Ok(());
                 };
@@ -668,10 +714,28 @@ where
                 let (inferred_type, _) =
                     kind::check_surface_kind(state, context, *signature, context.prim.t)?;
 
-                if let Some((quantified_type, _)) = quantify::quantify(state, inferred_type) {
-                    let type_id = transfer::globalize(state, context, quantified_type);
-                    state.checked.types.insert(item_id, type_id);
-                }
+                let quantified_type = quantify::quantify(state, inferred_type)
+                    .map(|(quantified_type, _)| quantified_type)
+                    .unwrap_or(inferred_type);
+
+                state.pending_types.insert(item_id, PendingType::Immediate(quantified_type));
+            }
+
+            TypeItemIr::DataGroup { signature, .. }
+            | TypeItemIr::NewtypeGroup { signature, .. }
+            | TypeItemIr::SynonymGroup { signature, .. }
+            | TypeItemIr::ClassGroup { signature, .. } => {
+                let Some(signature) = signature else {
+                    return Ok(());
+                };
+
+                let signature_variables = inspect::collect_signature_variables(context, *signature);
+                state.surface_bindings.insert_type(item_id, signature_variables);
+
+                let (inferred_type, _) =
+                    kind::check_surface_kind(state, context, *signature, context.prim.t)?;
+
+                state.pending_types.insert(item_id, PendingType::Deferred(inferred_type));
             }
 
             TypeItemIr::Operator { .. } => {}

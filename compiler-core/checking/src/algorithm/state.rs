@@ -295,16 +295,16 @@ impl SurfaceBindings {
 }
 
 #[derive(Clone, Copy)]
-pub enum PendingTermType {
+pub enum PendingType {
     Immediate(TypeId),
     Deferred(TypeId),
 }
 
-impl From<PendingTermType> for TypeId {
-    fn from(value: PendingTermType) -> Self {
+impl From<PendingType> for TypeId {
+    fn from(value: PendingType) -> Self {
         match value {
-            PendingTermType::Immediate(id) => id,
-            PendingTermType::Deferred(id) => id,
+            PendingType::Immediate(id) => id,
+            PendingType::Deferred(id) => id,
         }
     }
 }
@@ -336,7 +336,11 @@ pub struct CheckState {
 
     /// Stores terms whose signatures have been kind-checked that still need
     /// additional unification before moving into [`CheckedModule::terms`].
-    pub pending_terms: FxHashMap<TermItemId, PendingTermType>,
+    pub pending_terms: FxHashMap<TermItemId, PendingType>,
+
+    /// Stores types whose signatures have been kind-checked that still need
+    /// additional unification before moving into [`CheckedModule::types`].
+    pub pending_types: FxHashMap<TypeItemId, PendingType>,
 
     /// Error context breadcrumbs for [`CheckedModule::errors`].
     pub check_steps: Vec<ErrorStep>,
@@ -363,6 +367,7 @@ impl CheckState {
             unification: Default::default(),
             binding_group: Default::default(),
             pending_terms: Default::default(),
+            pending_types: Default::default(),
             check_steps: Default::default(),
             defer_synonym_expansion: Default::default(),
             patterns: Default::default(),
@@ -1052,6 +1057,9 @@ impl CheckState {
             if self.checked.types.contains_key(&item_id) {
                 return false;
             }
+            if self.pending_types.contains_key(&item_id) {
+                return false;
+            }
             true
         });
 
@@ -1077,8 +1085,10 @@ impl CheckState {
             );
 
             let kind = self.binding_group.lookup_type(item_id).or_else(|| {
-                let kind = self.checked.types.get(&item_id)?;
-                Some(transfer::localize(self, context, *kind))
+                self.pending_types.get(&item_id).map(|&k| TypeId::from(k)).or_else(|| {
+                    let kind = self.checked.types.get(&item_id)?;
+                    Some(transfer::localize(self, context, *kind))
+                })
             });
 
             let kind = kind.expect("invariant violated: expected kind for operator target");

@@ -8,7 +8,7 @@ use lowering::TermItemIr;
 
 use crate::ExternalQueries;
 use crate::algorithm::safety::safe_loop;
-use crate::algorithm::state::{CheckContext, CheckState, InstanceHeadBinding, PendingTermType};
+use crate::algorithm::state::{CheckContext, CheckState, InstanceHeadBinding, PendingType};
 use crate::algorithm::{
     constraint, equation, inspect, kind, normalise, quantify, substitute, term, transfer,
     unification,
@@ -61,7 +61,7 @@ where
                     .unwrap_or(inferred_type);
 
                 crate::debug_fields!(state, context, { quantified_type = quantified_type });
-                state.pending_terms.insert(item_id, PendingTermType::Immediate(quantified_type));
+                state.pending_terms.insert(item_id, PendingType::Immediate(quantified_type));
             }
             TermItemIr::ValueGroup { signature, .. } => {
                 let Some(signature) = signature else { return Ok(()) };
@@ -73,14 +73,14 @@ where
                     kind::check_surface_kind(state, context, *signature, context.prim.t)?;
 
                 crate::debug_fields!(state, context, { inferred_type = inferred_type });
-                state.pending_terms.insert(item_id, PendingTermType::Deferred(inferred_type));
+                state.pending_terms.insert(item_id, PendingType::Deferred(inferred_type));
             }
             TermItemIr::Operator { resolution, .. } => {
                 let Some((file_id, term_id)) = *resolution else { return Ok(()) };
                 let inferred_type = term::lookup_file_term(state, context, file_id, term_id)?;
 
                 crate::debug_fields!(state, context, { inferred_type = inferred_type });
-                state.pending_terms.insert(item_id, PendingTermType::Deferred(inferred_type));
+                state.pending_terms.insert(item_id, PendingType::Deferred(inferred_type));
             }
             _ => (),
         }
@@ -328,8 +328,7 @@ pub fn commit_checked_value_group<Q>(
 where
     Q: ExternalQueries,
 {
-    let Some(PendingTermType::Deferred(inferred_type)) = state.pending_terms.remove(&item_id)
-    else {
+    let Some(PendingType::Deferred(inferred_type)) = state.pending_terms.remove(&item_id) else {
         return Ok(());
     };
 
@@ -343,16 +342,16 @@ where
     Ok(())
 }
 
-/// Commits remaining pending term entries (foreign/operator) from
-/// [`CheckState::pending_terms`] into [`CheckedModule::terms`].
+/// Commits remaining pending term entries from [`CheckState::pending_terms`]
+/// into [`CheckedModule::terms`].
 pub fn commit_pending_terms<Q>(state: &mut CheckState, context: &CheckContext<Q>)
 where
     Q: ExternalQueries,
 {
     for (item_id, pending_type) in state.pending_terms.drain().collect_vec() {
         let local_type = match pending_type {
-            PendingTermType::Immediate(id) => id,
-            PendingTermType::Deferred(id) => {
+            PendingType::Immediate(id) => id,
+            PendingType::Deferred(id) => {
                 quantify::quantify(state, id).map(|(id, _)| id).unwrap_or(id)
             }
         };
