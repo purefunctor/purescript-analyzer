@@ -7,8 +7,8 @@ use smol_str::SmolStr;
 use crate::ExternalQueries;
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::{
-    binder, equation, exhaustiveness, inspect, kind, normalise, operator, substitute, toolkit,
-    transfer, unification,
+    binder, equation, exhaustiveness, inspect, kind, operator, substitute, toolkit, transfer,
+    unification,
 };
 use crate::core::{RowField, RowType, Type, TypeId};
 use crate::error::{ErrorKind, ErrorStep};
@@ -40,7 +40,7 @@ where
     Q: ExternalQueries,
 {
     // TODO: move normalisation to toolkit
-    let expected = normalise::normalise_expand_type(state, context, expected)?;
+    let expected = toolkit::normalise_expand_type(state, context, expected)?;
     let expected = toolkit::skolemise_forall(state, expected);
     let expected = toolkit::collect_given_constraints(state, expected);
     if let Some(section_result) = context.sectioned.expressions.get(&expression) {
@@ -1837,7 +1837,7 @@ where
     F: FnOnce(&mut CheckState, &CheckContext<Q>, A, TypeId) -> QueryResult<TypeId>,
 {
     crate::trace_fields!(state, context, { function = function_t });
-    let function_t = normalise::normalise_expand_type(state, context, function_t)?;
+    let function_t = toolkit::normalise_expand_type(state, context, function_t)?;
     match state.storage[function_t] {
         // Check that `argument_id :: argument_type`
         Type::Function(argument_type, result_type) => {

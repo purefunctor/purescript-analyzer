@@ -5,7 +5,7 @@ use itertools::{EitherOrBoth, Itertools};
 
 use crate::ExternalQueries;
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::{kind, normalise, substitute};
+use crate::algorithm::{kind, substitute, toolkit};
 use crate::core::{RowField, RowType, Type, TypeId, Variable, debruijn};
 use crate::error::ErrorKind;
 
@@ -88,8 +88,8 @@ pub fn subtype_with_mode<Q>(
 where
     Q: ExternalQueries,
 {
-    let t1 = normalise::normalise_expand_type(state, context, t1)?;
-    let t2 = normalise::normalise_expand_type(state, context, t2)?;
+    let t1 = toolkit::normalise_expand_type(state, context, t1)?;
+    let t2 = toolkit::normalise_expand_type(state, context, t2)?;
 
     crate::debug_fields!(state, context, { t1 = t1, t2 = t2, ?mode = mode });
 
@@ -144,8 +144,8 @@ where
             Type::Application(t1_function, t1_argument),
             Type::Application(t2_function, t2_argument),
         ) if t1_function == context.prim.record && t2_function == context.prim.record => {
-            let t1_argument = normalise::normalise_expand_type(state, context, t1_argument)?;
-            let t2_argument = normalise::normalise_expand_type(state, context, t2_argument)?;
+            let t1_argument = toolkit::normalise_expand_type(state, context, t1_argument)?;
+            let t2_argument = toolkit::normalise_expand_type(state, context, t2_argument)?;
 
             let t1_core = state.storage[t1_argument].clone();
             let t2_core = state.storage[t2_argument].clone();
@@ -171,8 +171,8 @@ pub fn unify<Q>(
 where
     Q: ExternalQueries,
 {
-    let t1 = normalise::normalise_expand_type(state, context, t1)?;
-    let t2 = normalise::normalise_expand_type(state, context, t2)?;
+    let t1 = toolkit::normalise_expand_type(state, context, t1)?;
+    let t2 = toolkit::normalise_expand_type(state, context, t2)?;
 
     crate::debug_fields!(state, context, { t1 = t1, t2 = t2 });
 

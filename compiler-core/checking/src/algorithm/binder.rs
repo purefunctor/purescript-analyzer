@@ -7,7 +7,7 @@ use smol_str::SmolStr;
 use crate::ExternalQueries;
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::unification::ElaborationMode;
-use crate::algorithm::{binder, kind, normalise, operator, term, toolkit, unification};
+use crate::algorithm::{binder, kind, operator, term, toolkit, unification};
 use crate::core::{RowField, RowType, Type, TypeId};
 use crate::error::{ErrorKind, ErrorStep};
 
@@ -389,14 +389,14 @@ fn extract_expected_row<Q>(
 where
     Q: ExternalQueries,
 {
-    let expected_type = normalise::normalise_expand_type(state, context, expected_type)?;
+    let expected_type = toolkit::normalise_expand_type(state, context, expected_type)?;
     let &Type::Application(function, argument) = &state.storage[expected_type] else {
         return Ok(None);
     };
     if function != context.prim.record {
         return Ok(None);
     }
-    let row = normalise::normalise_expand_type(state, context, argument)?;
+    let row = toolkit::normalise_expand_type(state, context, argument)?;
     let Type::Row(row) = &state.storage[row] else {
         return Ok(None);
     };
@@ -416,7 +416,7 @@ where
 {
     let pattern_items = collect_pattern_items(record);
 
-    let expected_type = normalise::normalise_expand_type(state, context, expected_type)?;
+    let expected_type = toolkit::normalise_expand_type(state, context, expected_type)?;
 
     let expected_row = if let &Type::Application(function, _) = &state.storage[expected_type]
         && function == context.prim.record

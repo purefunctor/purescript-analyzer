@@ -12,7 +12,7 @@ use sugar::OperatorTree;
 use crate::ExternalQueries;
 use crate::algorithm::exhaustiveness::{PatternConstructor, PatternId};
 use crate::algorithm::state::{CheckContext, CheckState, OperatorBranchTypes};
-use crate::algorithm::{normalise, toolkit};
+use crate::algorithm::toolkit;
 use crate::core::{Type, TypeId};
 
 pub fn convert_binder<Q>(
@@ -136,7 +136,7 @@ fn try_build_record_constructor<Q>(
 where
     Q: ExternalQueries,
 {
-    let expanded_t = normalise::normalise_expand_type(state, context, t)?;
+    let expanded_t = toolkit::normalise_expand_type(state, context, t)?;
 
     let (constructor, arguments) = toolkit::extract_type_application(state, expanded_t);
 

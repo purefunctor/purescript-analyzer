@@ -6,7 +6,7 @@ use lowering::TypeVariableBindingId;
 use crate::ExternalQueries;
 use crate::algorithm::safety::safe_loop;
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::{normalise, substitute};
+use crate::algorithm::{substitute, toolkit};
 use crate::core::{ForallBinder, Type, TypeId, Variable};
 
 pub struct InspectSignature {
@@ -81,7 +81,7 @@ where
     let mut bindings = substitute::NameToType::default();
 
     safe_loop! {
-        current_id = normalise::normalise_expand_type(state, context, current_id)?;
+        current_id = toolkit::normalise_expand_type(state, context, current_id)?;
 
         // In the example, after the Forall case has peeled f, g, and the
         // synonym-expanded a, the accumulated bindings are the following:
@@ -153,7 +153,7 @@ where
     let mut bindings = substitute::NameToType::default();
 
     safe_loop! {
-        current_id = normalise::normalise_expand_type(state, context, current_id)?;
+        current_id = toolkit::normalise_expand_type(state, context, current_id)?;
 
         if !matches!(state.storage[current_id], Type::Forall(..)) && !bindings.is_empty() {
             current_id = substitute::SubstituteBindings::on(state, &bindings, current_id);

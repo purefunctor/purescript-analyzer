@@ -10,8 +10,7 @@ use crate::ExternalQueries;
 use crate::algorithm::safety::safe_loop;
 use crate::algorithm::state::{CheckContext, CheckState, InstanceHeadBinding, PendingType};
 use crate::algorithm::{
-    constraint, equation, inspect, kind, normalise, quantify, substitute, term, transfer,
-    unification,
+    constraint, equation, inspect, kind, quantify, substitute, term, toolkit, transfer, unification,
 };
 use crate::core::{Instance, InstanceKind, Name, Type, TypeId, Variable, debruijn};
 use crate::error::{ErrorKind, ErrorStep};
@@ -241,7 +240,7 @@ where
     let mut current = class_kind;
 
     for _ in 0..FUEL {
-        current = normalise::normalise_expand_type(state, context, current)?;
+        current = toolkit::normalise_expand_type(state, context, current)?;
         match state.storage[current] {
             Type::Forall(ref binder, inner) => {
                 let binder_variable = binder.variable.clone();
