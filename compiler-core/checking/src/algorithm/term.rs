@@ -2060,10 +2060,19 @@ where
             state.type_scope.unbind_name(&variable.variable);
         }
     } else {
-        equation::infer_equations_core(state, context, name_type, &name.equations)?;
+        // Keep simple let bindings e.g. `bind = ibind` polymorphic.
+        if let [equation] = name.equations.as_ref()
+            && equation.binders.is_empty()
+            && let Some(guarded) = &equation.guarded
+        {
+            let inferred_type = infer_guarded_expression(state, context, guarded)?;
+            state.term_scope.bind_let(id, inferred_type);
+        } else {
+            equation::infer_equations_core(state, context, name_type, &name.equations)?;
 
-        let origin = equation::ExhaustivenessOrigin::FromType(name_type);
-        equation::patterns(state, context, origin, &name.equations)?;
+            let origin = equation::ExhaustivenessOrigin::FromType(name_type);
+            equation::patterns(state, context, origin, &name.equations)?;
+        }
     }
 
     Ok(())

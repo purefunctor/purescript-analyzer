@@ -1,0 +1,91 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+imap ::
+  forall (ix :: Type) (f :: (ix :: Type) -> (ix :: Type) -> Type -> Type) (a :: Type) (b :: Type)
+    (x :: (ix :: Type)) (y :: (ix :: Type)).
+    IxFunctor (f :: (ix :: Type) -> (ix :: Type) -> Type -> Type) =>
+    ((a :: Type) -> (b :: Type)) ->
+    (f :: (ix :: Type) -> (ix :: Type) -> Type -> Type)
+      (x :: (ix :: Type))
+      (y :: (ix :: Type))
+      (a :: Type) ->
+    (f :: (ix :: Type) -> (ix :: Type) -> Type -> Type)
+      (x :: (ix :: Type))
+      (y :: (ix :: Type))
+      (b :: Type)
+iapply ::
+  forall (ix :: Type) (m :: (ix :: Type) -> (ix :: Type) -> Type -> Type) (a :: Type) (b :: Type)
+    (x :: (ix :: Type)) (y :: (ix :: Type)) (z :: (ix :: Type)).
+    IxApply (m :: (ix :: Type) -> (ix :: Type) -> Type -> Type) =>
+    (m :: (ix :: Type) -> (ix :: Type) -> Type -> Type)
+      (x :: (ix :: Type))
+      (y :: (ix :: Type))
+      ((a :: Type) -> (b :: Type)) ->
+    (m :: (ix :: Type) -> (ix :: Type) -> Type -> Type)
+      (y :: (ix :: Type))
+      (z :: (ix :: Type))
+      (a :: Type) ->
+    (m :: (ix :: Type) -> (ix :: Type) -> Type -> Type)
+      (x :: (ix :: Type))
+      (z :: (ix :: Type))
+      (b :: Type)
+ipure ::
+  forall (ix :: Type) (m :: (ix :: Type) -> (ix :: Type) -> Type -> Type) (a :: Type)
+    (x :: (ix :: Type)).
+    IxApplicative (m :: (ix :: Type) -> (ix :: Type) -> Type -> Type) =>
+    (a :: Type) ->
+    (m :: (ix :: Type) -> (ix :: Type) -> Type -> Type)
+      (x :: (ix :: Type))
+      (x :: (ix :: Type))
+      (a :: Type)
+ibind ::
+  forall (ix :: Type) (m :: (ix :: Type) -> (ix :: Type) -> Type -> Type) (a :: Type) (b :: Type)
+    (x :: (ix :: Type)) (y :: (ix :: Type)) (z :: (ix :: Type)).
+    IxBind (m :: (ix :: Type) -> (ix :: Type) -> Type -> Type) =>
+    (m :: (ix :: Type) -> (ix :: Type) -> Type -> Type)
+      (x :: (ix :: Type))
+      (y :: (ix :: Type))
+      (a :: Type) ->
+    ((a :: Type) ->
+    (m :: (ix :: Type) -> (ix :: Type) -> Type -> Type)
+      (y :: (ix :: Type))
+      (z :: (ix :: Type))
+      (b :: Type)) ->
+    (m :: (ix :: Type) -> (ix :: Type) -> Type -> Type)
+      (x :: (ix :: Type))
+      (z :: (ix :: Type))
+      (b :: Type)
+iap ::
+  forall (t33 :: Type) (m :: (t33 :: Type) -> (t33 :: Type) -> Type -> Type) (a :: Type) (b :: Type)
+    (x :: (t33 :: Type)) (y :: (t33 :: Type)) (z :: (t33 :: Type)).
+    IxMonad @(t33 :: Type) (m :: (t33 :: Type) -> (t33 :: Type) -> Type -> Type) =>
+    (m :: (t33 :: Type) -> (t33 :: Type) -> Type -> Type)
+      (x :: (t33 :: Type))
+      (y :: (t33 :: Type))
+      ((a :: Type) -> (b :: Type)) ->
+    (m :: (t33 :: Type) -> (t33 :: Type) -> Type -> Type)
+      (y :: (t33 :: Type))
+      (z :: (t33 :: Type))
+      (a :: Type) ->
+    (m :: (t33 :: Type) -> (t33 :: Type) -> Type -> Type)
+      (x :: (t33 :: Type))
+      (z :: (t33 :: Type))
+      (b :: Type)
+
+Types
+IxFunctor :: forall (ix :: Type). ((ix :: Type) -> (ix :: Type) -> Type -> Type) -> Constraint
+IxApply :: forall (ix :: Type). ((ix :: Type) -> (ix :: Type) -> Type -> Type) -> Constraint
+IxApplicative :: forall (ix :: Type). ((ix :: Type) -> (ix :: Type) -> Type -> Type) -> Constraint
+IxBind :: forall (ix :: Type). ((ix :: Type) -> (ix :: Type) -> Type -> Type) -> Constraint
+IxMonad :: forall (ix :: Type). ((ix :: Type) -> (ix :: Type) -> Type -> Type) -> Constraint
+
+Classes
+class IxFunctor (f :: (ix :: Type) -> (ix :: Type) -> Type -> Type)
+class IxFunctor @(ix :: Type) (m :: (ix :: Type) -> (ix :: Type) -> Type -> Type) <= IxApply (m :: (ix :: Type) -> (ix :: Type) -> Type -> Type)
+class IxApply @(ix :: Type) (m :: (ix :: Type) -> (ix :: Type) -> Type -> Type) <= IxApplicative (m :: (ix :: Type) -> (ix :: Type) -> Type -> Type)
+class IxApply @(ix :: Type) (m :: (ix :: Type) -> (ix :: Type) -> Type -> Type) <= IxBind (m :: (ix :: Type) -> (ix :: Type) -> Type -> Type)
+class IxApplicative @(ix :: Type) (m :: (ix :: Type) -> (ix :: Type) -> Type -> Type), IxBind @(ix :: Type) (m :: (ix :: Type) -> (ix :: Type) -> Type -> Type) <= IxMonad (m :: (ix :: Type) -> (ix :: Type) -> Type -> Type)
