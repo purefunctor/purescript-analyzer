@@ -471,8 +471,7 @@ where
 
         let type_id = transfer::globalize(state, context, quantified_type);
         state.checked.types.insert(item_id, type_id);
-    } else if let Some(PendingType::Deferred(deferred_kind)) =
-        state.pending_types.remove(&item_id)
+    } else if let Some(PendingType::Deferred(deferred_kind)) = state.pending_types.remove(&item_id)
     {
         let (quantified_type, quantified_variables) =
             if let Some(result) = quantify::quantify(state, deferred_kind) {
