@@ -11,8 +11,8 @@ mod unpacker;
 
 use std::path::PathBuf;
 
-use registry::{FsRegistry, RegistryReader};
 use clap::Parser;
+use registry::{FsRegistry, RegistryReader};
 use tracing::level_filters::LevelFilter;
 
 #[derive(Parser, Debug)]
@@ -107,7 +107,7 @@ fn main() -> error::Result<()> {
             tracing_handle.begin_package(package).expect("failed to start package trace capture");
         let log_file = guard.path().to_path_buf();
 
-        let result = compat::check_package(&layout.packages, package);
+        let result = compat::check_package(&layout.packages, package, &resolved);
 
         drop(guard);
 

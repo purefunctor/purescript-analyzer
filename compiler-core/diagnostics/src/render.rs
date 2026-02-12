@@ -62,6 +62,15 @@ fn span_location(
 }
 
 pub fn format_rustc(diagnostics: &[Diagnostic], content: &str) -> String {
+    format_rustc_inner(diagnostics, content, None)
+}
+
+/// Renders diagnostics in rustc style with a file path in the `-->` lines.
+pub fn format_rustc_with_path(diagnostics: &[Diagnostic], content: &str, path: &str) -> String {
+    format_rustc_inner(diagnostics, content, Some(path))
+}
+
+fn format_rustc_inner(diagnostics: &[Diagnostic], content: &str, path: Option<&str>) -> String {
     let line_index = LineIndex::new(content);
     let mut output = String::new();
 
@@ -81,10 +90,17 @@ pub fn format_rustc(diagnostics: &[Diagnostic], content: &str) -> String {
             let display_end_line = end_line + 1;
             let display_end_col = end_col + 1;
 
-            output.push_str(&format!(
-                "  --> {}:{}..{}:{}\n",
-                display_start_line, display_start_col, display_end_line, display_end_col
-            ));
+            if let Some(path) = path {
+                output.push_str(&format!(
+                    "  --> {path}:{}:{}..{}:{}\n",
+                    display_start_line, display_start_col, display_end_line, display_end_col
+                ));
+            } else {
+                output.push_str(&format!(
+                    "  --> {}:{}..{}:{}\n",
+                    display_start_line, display_start_col, display_end_line, display_end_col
+                ));
+            }
 
             if let Some(line) = line_text(&line_index, content, start_line) {
                 let line_num_width = display_start_line.to_string().len();
@@ -108,10 +124,17 @@ pub fn format_rustc(diagnostics: &[Diagnostic], content: &str) -> String {
                 let display_end_line = end_line + 1;
                 let display_end_col = end_col + 1;
 
-                output.push_str(&format!(
-                    "    --> {}:{}..{}:{}\n",
-                    display_start_line, display_start_col, display_end_line, display_end_col
-                ));
+                if let Some(path) = path {
+                    output.push_str(&format!(
+                        "    --> {path}:{}:{}..{}:{}\n",
+                        display_start_line, display_start_col, display_end_line, display_end_col
+                    ));
+                } else {
+                    output.push_str(&format!(
+                        "    --> {}:{}..{}:{}\n",
+                        display_start_line, display_start_col, display_end_line, display_end_col
+                    ));
+                }
 
                 if let Some(line) = line_text(&line_index, content, start_line) {
                     let line_num_width = display_start_line.to_string().len();

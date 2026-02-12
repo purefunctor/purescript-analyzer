@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 registry = { path = "../registry" }
 analyzer = { path = "../../compiler-lsp/analyzer" }
+building-types = { path = "../../compiler-core/building-types" }
 files = { path = "../../compiler-core/files" }
 diagnostics = { path = "../../compiler-core/diagnostics" }
 clap = { version = "4", features = ["derive"] }
@@ -23,4 +24,7 @@ base64 = "0.22.1"
 glob = "0.3"
 url = "2"
 line-index = "0.1"
+petgraph = "0.8"
+rayon = "1"
 rowan = "0.16"
+tracing-tree = "0.4.1"

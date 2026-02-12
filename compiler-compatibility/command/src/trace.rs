@@ -11,6 +11,7 @@ use tracing_subscriber::filter::{LevelFilter, Targets};
 use tracing_subscriber::fmt::MakeWriter;
 use tracing_subscriber::fmt::format::FmtSpan;
 use tracing_subscriber::layer::SubscriberExt;
+use tracing_tree::HierarchicalLayer;
 
 struct RouterState {
     writer: Option<BufWriter<File>>,
@@ -135,10 +136,14 @@ pub fn init_tracing(
 ) -> TracingHandle {
     let router = CheckingLogsRouter::new();
 
-    let stdout_filter = Targets::new()
+    let stderr_filter = Targets::new()
         .with_target("compiler_compatibility", stdout_level)
         .with_default(LevelFilter::OFF);
-    let stdout_layer = tracing_subscriber::fmt::layer().with_filter(stdout_filter);
+    let stderr_layer = HierarchicalLayer::new(2)
+        .with_writer(io::stderr)
+        .with_targets(true)
+        .with_indent_lines(true)
+        .with_filter(stderr_filter);
 
     let file_filter =
         Targets::new().with_target("checking", checking_level).with_default(LevelFilter::OFF);
@@ -148,7 +153,7 @@ pub fn init_tracing(
         .with_span_events(FmtSpan::CLOSE)
         .with_filter(file_filter);
 
-    let subscriber = tracing_subscriber::registry().with(stdout_layer).with(file_layer);
+    let subscriber = tracing_subscriber::registry().with(stderr_layer).with(file_layer);
 
     tracing::subscriber::set_global_default(subscriber)
         .expect("failed to set global tracing subscriber");
