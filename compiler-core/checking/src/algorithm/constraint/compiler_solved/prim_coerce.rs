@@ -9,7 +9,7 @@ use crate::algorithm::constraint::{self, MatchInstance};
 use crate::algorithm::safety::safe_loop;
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::{derive, kind, substitute, toolkit};
-use crate::core::Role;
+use crate::core::{Role, Variable};
 use crate::{ExternalQueries, Type, TypeId};
 
 enum NewtypeCoercionResult {
@@ -39,6 +39,10 @@ where
 
     if is_unification_head(state, left) || is_unification_head(state, right) {
         return Ok(Some(MatchInstance::Stuck));
+    }
+
+    if try_refl(state, context, left, right)? {
+        return Ok(Some(MatchInstance::Match { constraints: vec![], equalities: vec![] }));
     }
 
     let newtype_result = try_newtype_coercion(state, context, left, right)?;
@@ -422,6 +426,119 @@ fn decompose_kind_for_coercion(
             type_id = state.storage.intern(Type::KindApplication(type_id, fresh_kind));
             kind_id = substitute::SubstituteBound::on(state, binder_variable, fresh_kind, inner_kind);
         }
+    }
+}
+
+fn try_refl<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    t1: TypeId,
+    t2: TypeId,
+) -> QueryResult<bool>
+where
+    Q: ExternalQueries,
+{
+    let t1 = toolkit::normalise_expand_type(state, context, t1)?;
+    let t2 = toolkit::normalise_expand_type(state, context, t2)?;
+
+    if t1 == t2 {
+        return Ok(true);
+    }
+
+    match (&state.storage[t1], &state.storage[t2]) {
+        (
+            &Type::Application(t1_function, t1_argument),
+            &Type::Application(t2_function, t2_argument),
+        )
+        | (
+            &Type::Constrained(t1_function, t1_argument),
+            &Type::Constrained(t2_function, t2_argument),
+        )
+        | (
+            &Type::KindApplication(t1_function, t1_argument),
+            &Type::KindApplication(t2_function, t2_argument),
+        )
+        | (&Type::Kinded(t1_function, t1_argument), &Type::Kinded(t2_function, t2_argument)) => {
+            Ok(try_refl(state, context, t1_function, t2_function)?
+                && try_refl(state, context, t1_argument, t2_argument)?)
+        }
+
+        (&Type::Function(t1_argument, t1_result), &Type::Function(t2_argument, t2_result)) => {
+            Ok(try_refl(state, context, t1_argument, t2_argument)?
+                && try_refl(state, context, t1_result, t2_result)?)
+        }
+
+        (&Type::Forall(ref t1_binder, t1_inner), &Type::Forall(ref t2_binder, t2_inner)) => {
+            Ok(try_refl(state, context, t1_binder.kind, t2_binder.kind)?
+                && try_refl(state, context, t1_inner, t2_inner)?)
+        }
+
+        (
+            &Type::OperatorApplication(t1_file, t1_item, t1_left, t1_right),
+            &Type::OperatorApplication(t2_file, t2_item, t2_left, t2_right),
+        ) => Ok((t1_file, t1_item) == (t2_file, t2_item)
+            && try_refl(state, context, t1_left, t2_left)?
+            && try_refl(state, context, t1_right, t2_right)?),
+
+        (
+            Type::SynonymApplication(_, t1_file, t1_item, t1_arguments),
+            Type::SynonymApplication(_, t2_file, t2_item, t2_arguments),
+        ) => {
+            let equal = (t1_file, t1_item) == (t2_file, t2_item)
+                && t1_arguments.len() == t2_arguments.len();
+
+            if !equal {
+                return Ok(false);
+            }
+
+            let t1_arguments = Arc::clone(t1_arguments);
+            let t2_arguments = Arc::clone(t2_arguments);
+
+            for (&t1_argument, &t2_argument) in
+                std::iter::zip(t1_arguments.iter(), t2_arguments.iter())
+            {
+                if !try_refl(state, context, t1_argument, t2_argument)? {
+                    return Ok(false);
+                }
+            }
+
+            Ok(true)
+        }
+
+        (Type::Row(t1_row), Type::Row(t2_row)) => {
+            if t1_row.fields.len() != t2_row.fields.len() {
+                return Ok(false);
+            }
+
+            let t1_row = t1_row.clone();
+            let t2_row = t2_row.clone();
+
+            for (t1_field, t2_field) in std::iter::zip(t1_row.fields.iter(), t2_row.fields.iter()) {
+                if t1_field.label != t2_field.label
+                    || !try_refl(state, context, t1_field.id, t2_field.id)?
+                {
+                    return Ok(false);
+                }
+            }
+
+            match (t1_row.tail, t2_row.tail) {
+                (Some(t1_tail), Some(t2_tail)) => try_refl(state, context, t1_tail, t2_tail),
+                (None, None) => Ok(true),
+                _ => Ok(false),
+            }
+        }
+
+        (
+            &Type::Variable(Variable::Bound(ref t1_name, t1_kind)),
+            &Type::Variable(Variable::Bound(ref t2_name, t2_kind)),
+        ) => Ok(t1_name == t2_name && try_refl(state, context, t1_kind, t2_kind)?),
+
+        (
+            &Type::Variable(Variable::Skolem(ref t1_name, t1_kind)),
+            &Type::Variable(Variable::Skolem(ref t2_name, t2_kind)),
+        ) => Ok(t1_name == t2_name && try_refl(state, context, t1_kind, t2_kind)?),
+
+        _ => Ok(false),
     }
 }
 
