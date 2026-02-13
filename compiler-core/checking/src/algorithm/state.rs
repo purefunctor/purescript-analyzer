@@ -1287,6 +1287,13 @@ impl CheckState {
                         break id;
                     }
                 }
+                Type::Row(ref row) if row.fields.is_empty() => {
+                    if let Some(tail) = row.tail {
+                        id = tail;
+                    } else {
+                        break id;
+                    }
+                }
                 _ => break id,
             }
         };

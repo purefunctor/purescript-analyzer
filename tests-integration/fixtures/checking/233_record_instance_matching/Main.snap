@@ -19,7 +19,7 @@ class Make (a :: Type) (b :: Type)
 class Convert (a :: Type) (b :: Type)
 
 Instances
-instance Make ({ | (r :: Row Type) } :: Type) ({ | (r :: Row Type) } :: Type)
+instance Make ({| (r :: Row Type) } :: Type) ({| (r :: Row Type) } :: Type)
   chain: 0
-instance Convert ({ | (r :: Row Type) } :: Type) ({ converted :: { | (r :: Row Type) } } :: Type)
+instance Convert ({| (r :: Row Type) } :: Type) ({ converted :: {| (r :: Row Type) } } :: Type)
   chain: 0

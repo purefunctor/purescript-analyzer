@@ -20,7 +20,7 @@ class Clone (a :: Type) (b :: Type)
 class Nest (a :: Type) (b :: Type)
 
 Instances
-instance Clone ({ | (r :: Row Type) } :: Type) ({ | (r :: Row Type) } :: Type)
+instance Clone ({| (r :: Row Type) } :: Type) ({| (r :: Row Type) } :: Type)
   chain: 0
-instance Nest ({ | (r :: Row Type) } :: Type) ({ inner :: { | (r :: Row Type) }, outer :: Int } :: Type)
+instance Nest ({| (r :: Row Type) } :: Type) ({ inner :: {| (r :: Row Type) }, outer :: Int } :: Type)
   chain: 0
