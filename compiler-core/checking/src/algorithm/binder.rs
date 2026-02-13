@@ -60,6 +60,28 @@ where
     })
 }
 
+pub fn requires_instantiation<Q>(context: &CheckContext<Q>, binder_id: lowering::BinderId) -> bool
+where
+    Q: ExternalQueries,
+{
+    let Some(kind) = context.lowered.info.get_binder_kind(binder_id) else {
+        return false;
+    };
+    match kind {
+        lowering::BinderKind::Variable { .. } | lowering::BinderKind::Wildcard => false,
+        lowering::BinderKind::Named { binder, .. } => {
+            binder.is_some_and(|id| requires_instantiation(context, id))
+        }
+        lowering::BinderKind::Parenthesized { parenthesized } => {
+            parenthesized.is_some_and(|id| requires_instantiation(context, id))
+        }
+        lowering::BinderKind::Typed { binder, .. } => {
+            binder.is_some_and(|id| requires_instantiation(context, id))
+        }
+        _ => true,
+    }
+}
+
 fn binder_core<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,

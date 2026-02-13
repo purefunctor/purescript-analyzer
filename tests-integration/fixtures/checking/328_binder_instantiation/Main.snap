@@ -1,0 +1,54 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Just :: forall (a :: Type). (a :: Type) -> Maybe (a :: Type)
+Nothing :: forall (a :: Type). Maybe (a :: Type)
+MkId :: (forall (a :: Type). (a :: Type) -> (a :: Type)) -> Id
+identity :: forall (a :: Type). Maybe ((a :: Type) -> (a :: Type))
+test :: Partial => Int
+test2 :: Id -> Boolean
+test3 :: Partial => Int
+test4 :: Id -> Boolean
+
+Types
+Maybe :: Type -> Type
+Id :: Type
+
+Data
+Maybe
+  Quantified = :0
+  Kind = :0
+
+Id
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+Maybe = [Representational]
+Id = []
+
+Diagnostics
+error[CannotUnify]: Cannot unify 'Boolean' with 'Int'
+  --> 11:31..11:35
+   |
+11 |   Just f -> let _ = f 42 in f true
+   |                               ^~~~
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: Nothing
+  --> 10:8..11:35
+   |
+10 | test = case identity of
+   |        ^~~~~~~~~~~~~~~~
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: Nothing
+  --> 19:3..20:28
+   |
+19 |   let (Just f) = identity
+   |   ^~~~~~~~~~~~~~~~~~~~~~~
+error[CannotUnify]: Cannot unify 'Boolean' with 'Int'
+  --> 20:24..20:28
+   |
+20 |   in let _ = f 42 in f true
+   |                        ^~~~

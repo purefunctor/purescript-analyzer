@@ -667,3 +667,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_326_let_retain_polymorphism_main() { run_test("326_let_retain_polymorphism", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_327_qualified_do_main() { run_test("327_qualified_do", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_328_binder_instantiation_main() { run_test("328_binder_instantiation", "Main"); }

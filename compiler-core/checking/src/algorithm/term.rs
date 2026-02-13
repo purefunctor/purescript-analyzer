@@ -505,6 +505,25 @@ where
     Ok(expected)
 }
 
+fn instantiate_trunk_types<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    trunk_types: &mut [TypeId],
+    branches: &[lowering::CaseBranch],
+) where
+    Q: ExternalQueries,
+{
+    for (position, trunk_type) in trunk_types.iter_mut().enumerate() {
+        let should_instantiate = branches.iter().any(|branch| {
+            let binder = branch.binders.get(position);
+            binder.is_some_and(|&binder_id| binder::requires_instantiation(context, binder_id))
+        });
+        if should_instantiate {
+            *trunk_type = toolkit::instantiate_forall(state, *trunk_type);
+        }
+    }
+}
+
 fn check_case_of<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -520,6 +539,8 @@ where
         let trunk_type = infer_expression(state, context, *trunk)?;
         trunk_types.push(trunk_type);
     }
+
+    instantiate_trunk_types(state, context, &mut trunk_types, branches);
 
     for branch in branches.iter() {
         for (binder, trunk) in branch.binders.iter().zip(&trunk_types) {
@@ -686,6 +707,8 @@ where
         let trunk_type = infer_expression(state, context, *trunk)?;
         trunk_types.push(trunk_type);
     }
+
+    instantiate_trunk_types(state, context, &mut trunk_types, branches);
 
     for branch in branches.iter() {
         for (binder, trunk) in branch.binders.iter().zip(&trunk_types) {
@@ -1963,11 +1986,27 @@ where
 
     let expression_type = infer_where_expression(state, context, where_expression)?;
 
-    let Some(binder) = binder else {
+    let Some(binder) = *binder else {
         return Ok(());
     };
 
-    let _ = binder::check_binder(state, context, *binder, expression_type)?;
+    let expression_type = if binder::requires_instantiation(context, binder) {
+        toolkit::instantiate_forall(state, expression_type)
+    } else {
+        expression_type
+    };
+
+    let binder_type = binder::check_binder(state, context, binder, expression_type)?;
+
+    let exhaustiveness =
+        exhaustiveness::check_lambda_patterns(state, context, &[binder_type], &[binder])?;
+
+    let has_missing = exhaustiveness.missing.is_some();
+    state.report_exhaustiveness(exhaustiveness);
+
+    if has_missing {
+        state.push_wanted(context.prim.partial);
+    }
 
     Ok(())
 }
