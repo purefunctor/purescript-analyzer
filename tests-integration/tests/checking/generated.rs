@@ -665,3 +665,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_325_type_kind_deferred_generalise_main() { run_test("325_type_kind_deferred_generalise", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_326_let_retain_polymorphism_main() { run_test("326_let_retain_polymorphism", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_327_qualified_do_main() { run_test("327_qualified_do", "Main"); }

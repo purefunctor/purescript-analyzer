@@ -333,7 +333,7 @@ fn lower_expression_kind(
         cst::Expression::ExpressionDo(cst) => state.with_scope(|state| {
             let qualifier = cst.qualifier().and_then(|cst| {
                 let token = cst.text()?;
-                let text = token.text();
+                let text = token.text().trim_end_matches('.');
                 Some(SmolStr::from(text))
             });
 
@@ -384,7 +384,7 @@ fn lower_expression_kind(
         cst::Expression::ExpressionAdo(cst) => state.with_scope(|state| {
             let qualifier = cst.qualifier().and_then(|cst| {
                 let token = cst.text()?;
-                let text = token.text();
+                let text = token.text().trim_end_matches('.');
                 Some(SmolStr::from(text))
             });
 
