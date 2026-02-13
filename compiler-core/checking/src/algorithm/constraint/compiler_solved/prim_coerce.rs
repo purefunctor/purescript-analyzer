@@ -30,8 +30,8 @@ where
         return Ok(None);
     };
 
-    let left = state.normalize_type(left);
-    let right = state.normalize_type(right);
+    let left = toolkit::normalise_expand_type(state, context, left)?;
+    let right = toolkit::normalise_expand_type(state, context, right)?;
 
     if left == right {
         return Ok(Some(MatchInstance::Match { constraints: vec![], equalities: vec![] }));
