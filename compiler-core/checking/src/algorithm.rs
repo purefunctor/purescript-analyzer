@@ -81,8 +81,7 @@ pub fn check_source(queries: &impl ExternalQueries, file_id: FileId) -> QueryRes
     let mut state = state::CheckState::new(file_id);
     let context = state::CheckContext::new(queries, &mut state, file_id)?;
 
-    check_type_signatures(&mut state, &context)?;
-    check_type_definitions(&mut state, &context)?;
+    check_types(&mut state, &context)?;
     type_item::commit_pending_types(&mut state, &context);
 
     check_term_signatures(&mut state, &context)?;
@@ -97,50 +96,13 @@ pub fn check_source(queries: &impl ExternalQueries, file_id: FileId) -> QueryRes
     Ok(state.checked)
 }
 
-/// See [`type_item::check_type_signature`]
+/// Checks all type declarations in topological order.
 ///
-/// Kind signatures are acyclic, and can be checked separately from the
-/// type definitions. Checking these early adds better information for
-/// inference, especially for mutually recursive type declarations.
+/// Within [`Scc::Mutual`], kind signatures are checked first so that items with
+/// signatures provide better information when inferring items with no signatures.
 ///
-/// Consider the following example:
-///
-/// ```purescript
-/// data F a = MkF (G a)
-///
-/// data G :: Int -> Type
-/// data G a = MkG (F a)
-/// ```
-///
-/// By checking the kind signature of `G` first, we can avoid allocating
-/// a unification variable for `G` when checking the mutually recursive
-/// declarations of `{F, G}`
-fn check_type_signatures<Q>(
-    state: &mut state::CheckState,
-    context: &state::CheckContext<Q>,
-) -> QueryResult<()>
-where
-    Q: ExternalQueries,
-{
-    for scc in &context.grouped.type_scc {
-        let items = match scc {
-            Scc::Base(id) | Scc::Recursive(id) => slice::from_ref(id),
-            Scc::Mutual(items) => items,
-        };
-        for id in items {
-            type_item::check_type_signature(state, context, *id)?;
-        }
-    }
-    Ok(())
-}
-
-/// See [`type_item::check_type_item`]
-///
-/// This function calls [`state::CheckState::with_type_group`] to insert
-/// placeholder unification variables for recursive binding groups. After
-/// checking a binding group, it calls [`type_item::commit_type_item`] to
-/// generalise the types and add them to [`state::CheckState::checked`].
-fn check_type_definitions<Q>(
+/// See [`type_item::check_type_signature`] and [`type_item::check_type_item`].
+fn check_types<Q>(
     state: &mut state::CheckState,
     context: &state::CheckContext<Q>,
 ) -> QueryResult<()>
@@ -150,11 +112,13 @@ where
     for scc in &context.grouped.type_scc {
         match scc {
             Scc::Base(id) => {
+                type_item::check_type_signature(state, context, *id)?;
                 if let Some(item) = type_item::check_type_item(state, context, *id)? {
                     type_item::commit_type_item(state, context, *id, item)?;
                 }
             }
             Scc::Recursive(id) => {
+                type_item::check_type_signature(state, context, *id)?;
                 state.with_type_group(context, [*id], |state| {
                     if let Some(item) = type_item::check_type_item(state, context, *id)? {
                         type_item::commit_type_item(state, context, *id, item)?;
@@ -163,6 +127,9 @@ where
                 })?;
             }
             Scc::Mutual(mutual) => {
+                for id in mutual {
+                    type_item::check_type_signature(state, context, *id)?;
+                }
                 state.with_type_group(context, mutual, |state| {
                     let mut items = vec![];
                     for &id in mutual {

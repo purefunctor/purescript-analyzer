@@ -685,3 +685,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_335_row_open_lacks_main() { run_test("335_row_open_lacks", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_336_row_open_record_main() { run_test("336_row_open_record", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_337_void_data_main() { run_test("337_void_data", "Main"); }
