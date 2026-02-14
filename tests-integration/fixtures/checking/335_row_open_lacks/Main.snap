@@ -1,0 +1,35 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Proxy :: forall (k :: Type) (a :: (k :: Type)). Proxy @(k :: Type) (a :: (k :: Type))
+lacksOpen ::
+  forall (r :: Row Type).
+    Lacks @Type "missing" ( a :: Int, b :: String | (r :: Row Type) ) =>
+    Proxy @(Row Type) (r :: Row Type) -> Int
+lacksPresent ::
+  forall (r :: Row Type).
+    Lacks @Type "a" ( a :: Int | (r :: Row Type) ) => Proxy @(Row Type) (r :: Row Type) -> Int
+empty :: forall (t13 :: Type). Proxy @(Row (t13 :: Type)) ()
+forceSolve :: { lacksOpen :: Int, lacksPresent :: Int }
+
+Types
+Proxy :: forall (k :: Type). (k :: Type) -> Type
+
+Data
+Proxy
+  Quantified = :0
+  Kind = :1
+
+
+Roles
+Proxy = [Phantom]
+
+Diagnostics
+error[NoInstanceFound]: No instance found for: Lacks @Type "a" ( a :: Int | () )
+  --> 17:1..17:78
+   |
+17 | forceSolve = { lacksOpen: lacksOpen empty, lacksPresent: lacksPresent empty }
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

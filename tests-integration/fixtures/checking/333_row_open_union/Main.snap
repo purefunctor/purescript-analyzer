@@ -1,0 +1,44 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Proxy :: forall (k :: Type) (a :: (k :: Type)). Proxy @(k :: Type) (a :: (k :: Type))
+unsafeCoerce :: forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type)
+openLeft ::
+  forall (r :: Row Type) (u :: Row Type).
+    Union @Type ( a :: Int | (r :: Row Type) ) ( b :: String ) (u :: Row Type) =>
+    Proxy @(Row Type) (u :: Row Type)
+openRight ::
+  forall (r :: Row Type) (u :: Row Type).
+    Union @Type ( a :: Int ) ( b :: String | (r :: Row Type) ) (u :: Row Type) =>
+    Proxy @(Row Type) (u :: Row Type)
+backwardLeft ::
+  forall (l :: Row Type) (r :: Row Type).
+    Union @Type (l :: Row Type) ( b :: String ) ( a :: Int, b :: String | (r :: Row Type) ) =>
+    Proxy @(Row Type) (l :: Row Type)
+backwardRight ::
+  forall (r :: Row Type) (u :: Row Type).
+    Union @Type ( a :: Int ) (r :: Row Type) ( a :: Int, b :: String | (u :: Row Type) ) =>
+    Proxy @(Row Type) (r :: Row Type)
+forceSolve ::
+  forall (t38 :: Row Type) (t40 :: Row Type) (t43 :: Row Type) (t45 :: Row Type) (t46 :: Row Type).
+    Union (t38 :: Row Type) ( b :: String ) (t46 :: Row Type) =>
+    { backwardLeft :: Proxy @(Row Type) ( a :: Int | (t43 :: Row Type) )
+    , backwardRight :: Proxy @(Row Type) ( b :: String | (t45 :: Row Type) )
+    , openLeft :: Proxy @(Row Type) ( a :: Int | (t46 :: Row Type) )
+    , openRight :: Proxy @(Row Type) ( a :: Int, b :: String | (t40 :: Row Type) )
+    }
+
+Types
+Proxy :: forall (k :: Type). (k :: Type) -> Type
+
+Data
+Proxy
+  Quantified = :0
+  Kind = :1
+
+
+Roles
+Proxy = [Phantom]

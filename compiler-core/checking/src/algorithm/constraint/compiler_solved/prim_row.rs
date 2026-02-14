@@ -3,8 +3,9 @@ use std::iter;
 
 use rustc_hash::FxHashSet;
 
+use crate::ExternalQueries;
 use crate::algorithm::constraint::{self, MatchInstance};
-use crate::algorithm::state::CheckState;
+use crate::algorithm::state::{CheckContext, CheckState};
 use crate::core::{RowField, RowType};
 use crate::{Type, TypeId};
 
@@ -65,7 +66,14 @@ fn subtract_row_fields(
     Some((result, equalities))
 }
 
-pub fn prim_row_union(state: &mut CheckState, arguments: &[TypeId]) -> Option<MatchInstance> {
+pub fn prim_row_union<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    arguments: &[TypeId],
+) -> Option<MatchInstance>
+where
+    Q: ExternalQueries,
+{
     let &[left, right, union] = arguments else {
         return None;
     };
@@ -74,25 +82,61 @@ pub fn prim_row_union(state: &mut CheckState, arguments: &[TypeId]) -> Option<Ma
     let right = state.normalize_type(right);
     let union = state.normalize_type(union);
 
-    let left_row = extract_closed_row(state, left);
-    let right_row = extract_closed_row(state, right);
-    let union_row = extract_closed_row(state, union);
+    let left_row = extract_row(state, left);
+    let right_row = extract_row(state, right);
+    let union_row = extract_row(state, union);
 
     match (left_row, right_row, union_row) {
         (Some(left_row), Some(right_row), _) => {
-            let left_fields = left_row.fields.iter();
-            let right_fields = right_row.fields.iter();
+            if let Some(rest) = left_row.tail {
+                if left_row.fields.is_empty() {
+                    return Some(MatchInstance::Stuck);
+                }
 
-            let union_fields = iter::chain(left_fields, right_fields).cloned().collect();
-            let result = state.storage.intern(Type::Row(RowType::closed(union_fields)));
+                let fresh_tail = state.fresh_unification_kinded(context.prim.row_type);
+
+                let result = state.storage.intern(Type::Row(RowType::from_unsorted(
+                    left_row.fields.to_vec(),
+                    Some(fresh_tail),
+                )));
+
+                let prim_row = &context.prim_row;
+
+                let constraint =
+                    state.storage.intern(Type::Constructor(prim_row.file_id, prim_row.union));
+
+                let constraint = state.storage.intern(Type::Application(constraint, rest));
+                let constraint = state.storage.intern(Type::Application(constraint, right));
+                let constraint = state.storage.intern(Type::Application(constraint, fresh_tail));
+
+                return Some(MatchInstance::Match {
+                    constraints: vec![constraint],
+                    equalities: vec![(union, result)],
+                });
+            }
+
+            let union_fields = {
+                let left = left_row.fields.iter();
+                let right = right_row.fields.iter();
+                iter::chain(left, right).cloned().collect()
+            };
+
+            let result = state
+                .storage
+                .intern(Type::Row(RowType::from_unsorted(union_fields, right_row.tail)));
 
             Some(MatchInstance::Match { constraints: vec![], equalities: vec![(union, result)] })
         }
         (_, Some(right_row), Some(union_row)) => {
+            if right_row.tail.is_some() {
+                return Some(MatchInstance::Stuck);
+            }
             if let Some((remaining, mut equalities)) =
                 subtract_row_fields(state, &union_row.fields, &right_row.fields)
             {
-                let result = state.storage.intern(Type::Row(RowType::closed(remaining)));
+                let result = state
+                    .storage
+                    .intern(Type::Row(RowType::from_unsorted(remaining, union_row.tail)));
                 equalities.push((left, result));
                 Some(MatchInstance::Match { constraints: vec![], equalities })
             } else {
@@ -100,10 +144,15 @@ pub fn prim_row_union(state: &mut CheckState, arguments: &[TypeId]) -> Option<Ma
             }
         }
         (Some(left_row), _, Some(union_row)) => {
+            if left_row.tail.is_some() {
+                return Some(MatchInstance::Stuck);
+            }
             if let Some((remaining, mut equalities)) =
                 subtract_row_fields(state, &union_row.fields, &left_row.fields)
             {
-                let result = state.storage.intern(Type::Row(RowType::closed(remaining)));
+                let result = state
+                    .storage
+                    .intern(Type::Row(RowType::from_unsorted(remaining, union_row.tail)));
                 equalities.push((right, result));
                 Some(MatchInstance::Match { constraints: vec![], equalities })
             } else {
@@ -125,15 +174,15 @@ pub fn prim_row_cons(state: &mut CheckState, arguments: &[TypeId]) -> Option<Mat
     let row = state.normalize_type(row);
 
     let label_symbol = extract_symbol(state, label);
-    let tail_row = extract_closed_row(state, tail);
-    let row_row = extract_closed_row(state, row);
+    let tail_row = extract_row(state, tail);
+    let row_row = extract_row(state, row);
 
     match (label_symbol, tail_row, row_row) {
         (Some(label_value), Some(tail_row), _) => {
             let mut fields = vec![RowField { label: label_value, id: a }];
             fields.extend(tail_row.fields.iter().cloned());
 
-            let result_row = RowType::from_unsorted(fields, None);
+            let result_row = RowType::from_unsorted(fields, tail_row.tail);
             let result = state.storage.intern(Type::Row(result_row));
 
             Some(MatchInstance::Match { constraints: vec![], equalities: vec![(row, result)] })
@@ -152,7 +201,9 @@ pub fn prim_row_cons(state: &mut CheckState, arguments: &[TypeId]) -> Option<Mat
             }
 
             if let Some(field_type) = found_type {
-                let tail_result = state.storage.intern(Type::Row(RowType::closed(remaining)));
+                let tail_result = state
+                    .storage
+                    .intern(Type::Row(RowType::from_unsorted(remaining, row_row.tail)));
                 Some(MatchInstance::Match {
                     constraints: vec![],
                     equalities: vec![(a, field_type), (tail, tail_result)],
@@ -165,7 +216,14 @@ pub fn prim_row_cons(state: &mut CheckState, arguments: &[TypeId]) -> Option<Mat
     }
 }
 
-pub fn prim_row_lacks(state: &mut CheckState, arguments: &[TypeId]) -> Option<MatchInstance> {
+pub fn prim_row_lacks<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    arguments: &[TypeId],
+) -> Option<MatchInstance>
+where
+    Q: ExternalQueries,
+{
     let &[label, row] = arguments else {
         return None;
     };
@@ -185,8 +243,18 @@ pub fn prim_row_lacks(state: &mut CheckState, arguments: &[TypeId]) -> Option<Ma
 
     if has_label {
         Some(MatchInstance::Apart)
-    } else if row_row.tail.is_some() {
-        Some(MatchInstance::Stuck)
+    } else if let Some(tail) = row_row.tail {
+        if row_row.fields.is_empty() {
+            return Some(MatchInstance::Stuck);
+        }
+
+        let prim_row = &context.prim_row;
+
+        let constraint = state.storage.intern(Type::Constructor(prim_row.file_id, prim_row.lacks));
+        let constraint = state.storage.intern(Type::Application(constraint, label));
+        let constraint = state.storage.intern(Type::Application(constraint, tail));
+
+        Some(MatchInstance::Match { constraints: vec![constraint], equalities: vec![] })
     } else {
         Some(MatchInstance::Match { constraints: vec![], equalities: vec![] })
     }

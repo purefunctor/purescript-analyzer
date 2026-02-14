@@ -686,7 +686,9 @@ where
                 result = result.and_also(|| {
                     match_type(state, context, bindings, equalities, wanted.id, given.id)
                 });
-                if matches!(result, MatchType::Apart) {
+                // Given an open wanted row, additional fields from the
+                // given row can be absorbed into the wanted row's tail.
+                if matches!(result, MatchType::Apart) && wanted_row.tail.is_none() {
                     return MatchType::Apart;
                 }
             }
@@ -824,6 +826,51 @@ where
             let given = state.storage.intern(Type::Application(context.prim.function, g_argument));
             let given = state.storage.intern(Type::Application(given, g_result));
             match_given_type(state, context, wanted, given)
+        }
+
+        (Type::Row(wanted_row), Type::Row(given_row)) => {
+            if wanted_row.fields.len() != given_row.fields.len() {
+                return MatchType::Apart;
+            }
+
+            let wanted_fields = Arc::clone(&wanted_row.fields);
+            let given_fields = Arc::clone(&given_row.fields);
+
+            let wanted_tail = wanted_row.tail;
+            let given_tail = given_row.tail;
+
+            let mut result = MatchType::Match;
+            for (wanted_field, given_field) in iter::zip(wanted_fields.iter(), given_fields.iter())
+            {
+                if wanted_field.label != given_field.label {
+                    return MatchType::Apart;
+                }
+                result = result
+                    .and_also(|| match_given_type(state, context, wanted_field.id, given_field.id));
+            }
+
+            match (wanted_tail, given_tail) {
+                (Some(wanted_tail), Some(given_tail)) => {
+                    result.and_also(|| match_given_type(state, context, wanted_tail, given_tail))
+                }
+                (Some(wanted_tail), None) => {
+                    let wanted_tail = state.normalize_type(wanted_tail);
+                    if matches!(state.storage[wanted_tail], Type::Unification(_)) {
+                        result.and_also(|| MatchType::Stuck)
+                    } else {
+                        MatchType::Apart
+                    }
+                }
+                (None, Some(given_tail)) => {
+                    let given_tail = state.normalize_type(given_tail);
+                    if matches!(state.storage[given_tail], Type::Unification(_)) {
+                        result.and_also(|| MatchType::Stuck)
+                    } else {
+                        MatchType::Apart
+                    }
+                }
+                (None, None) => result,
+            }
         }
 
         (
@@ -1162,9 +1209,9 @@ where
             cons => prim_symbol_cons(state, arguments),
         },
         context.prim_row => {
-            union => prim_row_union(state, arguments),
+            union => prim_row_union(state, context, arguments),
             cons => prim_row_cons(state, arguments),
-            lacks => prim_row_lacks(state, arguments),
+            lacks => prim_row_lacks(state, context, arguments),
             nub => prim_row_nub(state, arguments),
         },
         context.prim_row_list => {

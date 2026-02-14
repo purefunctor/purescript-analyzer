@@ -1,0 +1,25 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+unsafeCoerce :: forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type)
+union ::
+  forall (r1 :: Row Type) (r2 :: Row Type) (r3 :: Row Type).
+    Union @Type (r1 :: Row Type) (r2 :: Row Type) (r3 :: Row Type) =>
+    {| (r1 :: Row Type) } -> {| (r2 :: Row Type) } -> {| (r3 :: Row Type) }
+addField ::
+  forall (r :: Row Type).
+    { a :: Int | (r :: Row Type) } -> { a :: Int, b :: String | (r :: Row Type) }
+test :: { a :: Int, b :: String | ( c :: Boolean ) }
+insertX ::
+  forall (r :: Row Type).
+    Lacks @Type "x" (r :: Row Type) => {| (r :: Row Type) } -> { x :: Int | (r :: Row Type) }
+insertOpen ::
+  forall (r :: Row Type).
+    Lacks @Type "x" (r :: Row Type) =>
+    { a :: Int | (r :: Row Type) } -> { a :: Int, x :: Int | (r :: Row Type) }
+test2 :: { a :: Int, x :: Int | ( b :: String ) }
+
+Types

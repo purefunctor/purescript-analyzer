@@ -677,3 +677,11 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_331_record_progressive_labels_main() { run_test("331_record_progressive_labels", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_332_record_equation_labels_main() { run_test("332_record_equation_labels", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_333_row_open_union_main() { run_test("333_row_open_union", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_334_row_open_cons_main() { run_test("334_row_open_cons", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_335_row_open_lacks_main() { run_test("335_row_open_lacks", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_336_row_open_record_main() { run_test("336_row_open_record", "Main"); }
