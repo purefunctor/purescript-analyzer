@@ -119,9 +119,7 @@ fn convert_recursive_group(
 impl ToDiagnostics for ResolvingError {
     fn to_diagnostics(&self, ctx: &DiagnosticsContext<'_>) -> Vec<Diagnostic> {
         match self {
-            ResolvingError::TermImportConflict { .. }
-            | ResolvingError::TypeImportConflict { .. }
-            | ResolvingError::TermExportConflict { .. }
+            ResolvingError::TermExportConflict { .. }
             | ResolvingError::TypeExportConflict { .. }
             | ResolvingError::ExistingTerm { .. }
             | ResolvingError::ExistingType { .. } => {

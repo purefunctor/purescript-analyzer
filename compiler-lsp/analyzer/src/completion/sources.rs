@@ -35,7 +35,8 @@ impl CompletionSource for QualifiedModules {
         let source = context.resolved.qualified.iter();
         let source = source.filter(move |(name, _)| filter.matches(name));
 
-        for (name, import) in source {
+        for (name, imports) in source {
+            let Some(import) = imports.first() else { continue };
             let (parsed, _) = context.engine.parsed(import.file)?;
             let description = parsed.module_name().map(|name| name.to_string());
 
@@ -253,31 +254,33 @@ impl CompletionSource for QualifiedTerms<'_> {
         filter: F,
         items: &mut Vec<CompletionItem>,
     ) -> Result<Self::T, AnalyzerError> {
-        let Some(import) = context.resolved.qualified.get(self.0) else {
+        let Some(imports) = context.resolved.qualified.get(self.0) else {
             return Ok(());
         };
 
-        let source = import.iter_terms().filter(move |(name, _, _, kind)| {
-            filter.matches(name) && !matches!(kind, ImportKind::Hidden)
-        });
+        for import in imports {
+            let source = import.iter_terms().filter(|(name, _, _, kind)| {
+                filter.matches(name) && !matches!(kind, ImportKind::Hidden)
+            });
 
-        for (name, file_id, term_id, _) in source {
-            let (parsed, _) = context.engine.parsed(file_id)?;
-            let description = parsed.module_name().map(|name| name.to_string());
+            for (name, file_id, term_id, _) in source {
+                let (parsed, _) = context.engine.parsed(file_id)?;
+                let description = parsed.module_name().map(|name| name.to_string());
 
-            let mut item = CompletionItemSpec::new(
-                name.to_string(),
-                context.range,
-                CompletionItemKind::VALUE,
-                CompletionResolveData::TermItem(file_id, term_id),
-            );
+                let mut item = CompletionItemSpec::new(
+                    name.to_string(),
+                    context.range,
+                    CompletionItemKind::VALUE,
+                    CompletionResolveData::TermItem(file_id, term_id),
+                );
 
-            item.edit_text(format!("{}.{name}", self.0));
-            if let Some(description) = description {
-                item.label_description(description);
+                item.edit_text(format!("{}.{name}", self.0));
+                if let Some(description) = description {
+                    item.label_description(description);
+                }
+
+                items.push(item.build())
             }
-
-            items.push(item.build())
         }
 
         Ok(())
@@ -296,54 +299,56 @@ impl CompletionSource for QualifiedTypes<'_> {
         filter: F,
         items: &mut Vec<CompletionItem>,
     ) -> Result<Self::T, AnalyzerError> {
-        let Some(import) = context.resolved.qualified.get(self.0) else {
+        let Some(imports) = context.resolved.qualified.get(self.0) else {
             return Ok(());
         };
 
-        let source = import.iter_types().filter(move |(name, _, _, kind)| {
-            filter.matches(name) && !matches!(kind, ImportKind::Hidden)
-        });
+        for import in imports {
+            let source = import.iter_types().filter(|(name, _, _, kind)| {
+                filter.matches(name) && !matches!(kind, ImportKind::Hidden)
+            });
 
-        for (name, file_id, type_id, _) in source {
-            let (parsed, _) = context.engine.parsed(file_id)?;
-            let description = parsed.module_name().map(|name| name.to_string());
+            for (name, file_id, type_id, _) in source {
+                let (parsed, _) = context.engine.parsed(file_id)?;
+                let description = parsed.module_name().map(|name| name.to_string());
 
-            let mut item = CompletionItemSpec::new(
-                name.to_string(),
-                context.range,
-                CompletionItemKind::STRUCT,
-                CompletionResolveData::TypeItem(file_id, type_id),
-            );
+                let mut item = CompletionItemSpec::new(
+                    name.to_string(),
+                    context.range,
+                    CompletionItemKind::STRUCT,
+                    CompletionResolveData::TypeItem(file_id, type_id),
+                );
 
-            item.edit_text(format!("{}.{name}", self.0));
-            if let Some(description) = description {
-                item.label_description(description);
+                item.edit_text(format!("{}.{name}", self.0));
+                if let Some(description) = description {
+                    item.label_description(description);
+                }
+
+                items.push(item.build())
             }
 
-            items.push(item.build())
-        }
+            let source = import.iter_classes().filter(|(name, _, _, kind)| {
+                filter.matches(name) && !matches!(kind, ImportKind::Hidden)
+            });
 
-        let source = import.iter_classes().filter(move |(name, _, _, kind)| {
-            filter.matches(name) && !matches!(kind, ImportKind::Hidden)
-        });
+            for (name, file_id, type_id, _) in source {
+                let (parsed, _) = context.engine.parsed(file_id)?;
+                let description = parsed.module_name().map(|name| name.to_string());
 
-        for (name, file_id, type_id, _) in source {
-            let (parsed, _) = context.engine.parsed(file_id)?;
-            let description = parsed.module_name().map(|name| name.to_string());
+                let mut item = CompletionItemSpec::new(
+                    name.to_string(),
+                    context.range,
+                    CompletionItemKind::STRUCT,
+                    CompletionResolveData::TypeItem(file_id, type_id),
+                );
 
-            let mut item = CompletionItemSpec::new(
-                name.to_string(),
-                context.range,
-                CompletionItemKind::STRUCT,
-                CompletionResolveData::TypeItem(file_id, type_id),
-            );
+                item.edit_text(format!("{}.{name}", self.0));
+                if let Some(description) = description {
+                    item.label_description(description);
+                }
 
-            item.edit_text(format!("{}.{name}", self.0));
-            if let Some(description) = description {
-                item.label_description(description);
+                items.push(item.build())
             }
-
-            items.push(item.build())
         }
 
         Ok(())
@@ -727,7 +732,12 @@ fn suggestions_candidates_qualified<T: SuggestionsHelper>(
     filter: impl Filter,
     items: &mut Vec<CompletionItem>,
 ) -> Result<(), AnalyzerError> {
-    let has_prim = context.resolved.qualified.values().any(|import| import.file == context.prim_id);
+    let has_prim = context
+        .resolved
+        .qualified
+        .values()
+        .flatten()
+        .any(|import| import.file == context.prim_id);
 
     let file_ids = context.files.iter_id().filter(move |&id| {
         let not_self = id != context.current_file;

@@ -423,7 +423,7 @@ fn probe_workspace_imports(
         let resolved = engine.resolved(workspace_file_id)?;
 
         let unqualified = resolved.unqualified.values().flatten();
-        let qualified = resolved.qualified.values();
+        let qualified = resolved.qualified.values().flatten();
         let imports = unqualified.chain(qualified);
 
         for import in imports {
@@ -447,7 +447,7 @@ fn probe_imports_for(
         let resolved = engine.resolved(workspace_file_id)?;
 
         let unqualified = resolved.unqualified.values().flatten();
-        let qualified = resolved.qualified.values();
+        let qualified = resolved.qualified.values().flatten();
         let imports = unqualified.chain(qualified);
 
         for import in imports {

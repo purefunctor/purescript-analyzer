@@ -51,32 +51,34 @@ pub fn report_resolved(engine: &QueryEngine, id: FileId, name: &str) -> String {
 
     writeln!(buffer).unwrap();
     writeln!(buffer, "Qualified Imports:").unwrap();
-    for (name, import) in &resolved.qualified {
-        writeln!(buffer).unwrap();
-        writeln!(buffer, "{name} Terms:").unwrap();
-        for (name, _, _, kind) in import.iter_terms() {
-            if matches!(kind, ImportKind::Hidden) {
-                continue;
+    for (name, imports) in &resolved.qualified {
+        for import in imports {
+            writeln!(buffer).unwrap();
+            writeln!(buffer, "{name} Terms:").unwrap();
+            for (name, _, _, kind) in import.iter_terms() {
+                if matches!(kind, ImportKind::Hidden) {
+                    continue;
+                }
+                writeln!(buffer, "  - {name} is {kind:?}").unwrap();
             }
-            writeln!(buffer, "  - {name} is {kind:?}").unwrap();
-        }
 
-        writeln!(buffer).unwrap();
-        writeln!(buffer, "{name} Types:").unwrap();
-        for (name, _, _, kind) in import.iter_types() {
-            if matches!(kind, ImportKind::Hidden) {
-                continue;
+            writeln!(buffer).unwrap();
+            writeln!(buffer, "{name} Types:").unwrap();
+            for (name, _, _, kind) in import.iter_types() {
+                if matches!(kind, ImportKind::Hidden) {
+                    continue;
+                }
+                writeln!(buffer, "  - {name} is {kind:?}").unwrap();
             }
-            writeln!(buffer, "  - {name} is {kind:?}").unwrap();
-        }
 
-        writeln!(buffer).unwrap();
-        writeln!(buffer, "{name} Classes:").unwrap();
-        for (name, _, _, kind) in import.iter_classes() {
-            if matches!(kind, ImportKind::Hidden) {
-                continue;
+            writeln!(buffer).unwrap();
+            writeln!(buffer, "{name} Classes:").unwrap();
+            for (name, _, _, kind) in import.iter_classes() {
+                if matches!(kind, ImportKind::Hidden) {
+                    continue;
+                }
+                writeln!(buffer, "  - {name} is {kind:?}").unwrap();
             }
-            writeln!(buffer, "  - {name} is {kind:?}").unwrap();
         }
     }
 

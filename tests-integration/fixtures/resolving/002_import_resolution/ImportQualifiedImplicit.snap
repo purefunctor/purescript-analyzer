@@ -10,13 +10,13 @@ Unqualified Imports:
 Qualified Imports:
 
 L Terms:
-  - MkLibTy is Implicit
-  - Ctor2 is Implicit
-  - hideMe is Implicit
   - MkHideTy is Implicit
-  - Ctor3 is Implicit
+  - hideMe is Implicit
   - libFn is Implicit
+  - MkLibTy is Implicit
   - Ctor1 is Implicit
+  - Ctor2 is Implicit
+  - Ctor3 is Implicit
 
 L Types:
   - LibTy is Implicit
@@ -30,9 +30,9 @@ Exported Terms:
   - MkHideTy
   - Ctor3
   - libFn
-  - Ctor2
   - MkLibTy
   - Ctor1
+  - Ctor2
   - hideMe
 
 Exported Types:

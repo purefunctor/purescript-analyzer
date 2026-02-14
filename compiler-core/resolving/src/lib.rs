@@ -69,12 +69,15 @@ impl ResolvedModule {
         default: DefaultFn,
     ) -> Option<(FileId, ItemId)>
     where
-        LookupFn: FnOnce(&ResolvedImport) -> Option<(FileId, ItemId, ImportKind)>,
+        LookupFn: Fn(&ResolvedImport) -> Option<(FileId, ItemId, ImportKind)>,
         DefaultFn: FnOnce() -> Option<(FileId, ItemId)>,
     {
-        if let Some(import) = self.qualified.get(qualifier) {
-            let (file, id, kind) = lookup(import)?;
-            if matches!(kind, ImportKind::Hidden) { None } else { Some((file, id)) }
+        if let Some(imports) = self.qualified.get(qualifier) {
+            let (file_id, item_id, _) = imports
+                .iter()
+                .filter_map(&lookup)
+                .find(|(_, _, kind)| !matches!(kind, ImportKind::Hidden))?;
+            Some((file_id, item_id))
         } else if qualifier == "Prim" {
             default()
         } else {
@@ -199,9 +202,11 @@ impl ResolvedModule {
             }
         }
 
-        for import in self.qualified.values() {
-            if import.contains_term(file_id, item_id) {
-                return true;
+        for imports in self.qualified.values() {
+            for import in imports {
+                if import.contains_term(file_id, item_id) {
+                    return true;
+                }
             }
         }
 
@@ -215,10 +220,12 @@ impl ResolvedModule {
         }
 
         // if a qualified Prim import exists, use its import list;
-        if let Some(prim_import) = self.qualified.get("Prim")
-            && prim_import.contains_term(file_id, item_id)
-        {
-            return true;
+        if let Some(prim_imports) = self.qualified.get("Prim") {
+            for prim_import in prim_imports {
+                if prim_import.contains_term(file_id, item_id) {
+                    return true;
+                }
+            }
         }
 
         // if there are no Prim imports, use the export list.
@@ -231,7 +238,7 @@ impl ResolvedModule {
 }
 
 type ResolvedImportsUnqualified = FxHashMap<SmolStr, Vec<ResolvedImport>>;
-type ResolvedImportsQualified = FxHashMap<SmolStr, ResolvedImport>;
+type ResolvedImportsQualified = FxHashMap<SmolStr, Vec<ResolvedImport>>;
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct ResolvedLocals {
