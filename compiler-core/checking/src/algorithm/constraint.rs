@@ -1209,10 +1209,10 @@ where
             cons => prim_symbol_cons(state, arguments),
         },
         context.prim_row => {
-            union => prim_row_union(state, context, arguments),
-            cons => prim_row_cons(state, arguments),
-            lacks => prim_row_lacks(state, context, arguments),
-            nub => prim_row_nub(state, arguments),
+            union => prim_row_union(state, context, arguments)?,
+            cons => prim_row_cons(state, context, arguments)?,
+            lacks => prim_row_lacks(state, context, arguments)?,
+            nub => prim_row_nub(state, context, arguments)?,
         },
         context.prim_row_list => {
             row_to_list => prim_rowlist_row_to_list(state, context, arguments),
