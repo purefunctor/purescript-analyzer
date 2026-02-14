@@ -1,0 +1,29 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Box :: forall (a :: Type). (a :: Type) -> Box (a :: Type)
+test ::
+  forall (t7 :: Type) (t8 :: Type) (t11 :: Row Type).
+    Box { a :: (t7 :: Type) | ( b :: (t8 :: Type) | (t11 :: Row Type) ) } -> Int
+
+Types
+Box :: Type -> Type
+
+Data
+Box
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+Box = [Representational]
+
+Diagnostics
+warning[RedundantPattern]: Pattern match has redundant patterns: Box ({ a: _, b: _ })
+  --> 5:1..5:21
+  |
+5 | test (Box { a }) = 0
+  | ^~~~~~~~~~~~~~~~~~~~

@@ -669,3 +669,11 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_327_qualified_do_main() { run_test("327_qualified_do", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_328_binder_instantiation_main() { run_test("328_binder_instantiation", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_329_pattern_nothing_first_main() { run_test("329_pattern_nothing_first", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_330_record_subset_labels_main() { run_test("330_record_subset_labels", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_331_record_progressive_labels_main() { run_test("331_record_progressive_labels", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_332_record_equation_labels_main() { run_test("332_record_equation_labels", "Main"); }

@@ -224,6 +224,7 @@ fn algorithm_u_constructor<Q>(
 where
     Q: ExternalQueries,
 {
+    let constructor = canonicalise_record_constructor(state, constructor, matrix);
     let specialised_matrix = specialise_matrix(state, &constructor, matrix);
 
     let Some(specialised_vector) = specialise_vector(state, &constructor, vector) else {
@@ -376,6 +377,7 @@ fn algorithm_m_constructor<Q>(
 where
     Q: ExternalQueries,
 {
+    let constructor = canonicalise_record_constructor(state, constructor, matrix);
     let arity = constructor.arity();
 
     let specialised_matrix = specialise_matrix(state, &constructor, matrix);
@@ -522,6 +524,63 @@ where
     Ok(Some(witness))
 }
 
+/// Computes a canonical [`PatternConstructor::Record`] that includes the union of all
+/// record labels appearing in the first column of the matrix and the given constructor.
+///
+/// Record patterns in PureScript can mention different subsets of the full row type.
+/// For example, `{ a }` and `{ a, b }` both match `{ a :: Int, b :: Int }`, but they
+/// produce record constructors with different arities. The specialisation algorithm
+/// requires all rows to have the same width, so we normalise to a canonical label set
+/// before specialising.
+///
+/// For non-record constructors this function returns the constructor unchanged.
+fn canonicalise_record_constructor(
+    state: &CheckState,
+    constructor: PatternConstructor,
+    matrix: &PatternMatrix,
+) -> PatternConstructor {
+    let PatternConstructor::Record { labels, fields } = &constructor else {
+        return constructor;
+    };
+
+    let mut canonical = {
+        let labels = labels.iter().cloned();
+        let fields = fields.iter().copied();
+        labels.zip(fields).collect_vec()
+    };
+
+    let initial_length = canonical.len();
+
+    for row in matrix {
+        let Some(&first) = row.first() else {
+            continue;
+        };
+
+        let pattern = &state.patterns[first];
+        if let PatternKind::Constructor {
+            constructor: PatternConstructor::Record { labels, fields },
+        } = &pattern.kind
+        {
+            for (label, &field) in iter::zip(labels, fields) {
+                if !canonical.iter().any(|(existing, _)| existing == label) {
+                    let label = SmolStr::clone(label);
+                    canonical.push((label, field));
+                }
+            }
+        }
+    }
+
+    if canonical.len() == initial_length {
+        return constructor;
+    }
+
+    // Subtle: stable sorting by label
+    canonical.sort_by(|(a, _), (b, _)| a.cmp(b));
+
+    let (labels, fields) = canonical.into_iter().unzip();
+    PatternConstructor::Record { labels, fields }
+}
+
 /// Specialises a [`PatternMatrix`] given a [`PatternConstructor`].
 ///
 /// See documentation below for [`specialise_vector`].
@@ -550,13 +609,15 @@ fn specialise_vector(
     expected: &PatternConstructor,
     vector: &PatternVector,
 ) -> Option<PatternVector> {
-    let [first_column, ref tail_columns @ ..] = vector[..] else {
+    let [first_column_id, ref tail_columns @ ..] = vector[..] else {
         unreachable!("invariant violated: specialise_vector processed empty row");
     };
 
-    let first_column = &state.patterns[first_column];
+    // Clone to release any borrow on state.patterns, allowing mutable
+    // access later when allocating wildcard patterns for record padding.
+    let first_pattern = state.patterns[first_column_id].clone();
 
-    if let PatternKind::Wildcard = first_column.kind {
+    if let PatternKind::Wildcard = first_pattern.kind {
         // Expand wildcard to the expected constructor's arity
         match expected {
             PatternConstructor::DataConstructor { fields, .. }
@@ -582,7 +643,7 @@ fn specialise_vector(
         }
     }
 
-    let PatternKind::Constructor { constructor } = &first_column.kind else {
+    let PatternKind::Constructor { constructor } = &first_pattern.kind else {
         return Some(tail_columns.to_vec());
     };
 
@@ -593,15 +654,58 @@ fn specialise_vector(
 
     // Splat fields for constructors with arity
     match constructor {
-        PatternConstructor::DataConstructor { fields, .. }
-        | PatternConstructor::Record { fields, .. } => {
+        PatternConstructor::DataConstructor { fields, .. } => {
             Some(iter::chain(fields, tail_columns).copied().collect())
+        }
+        PatternConstructor::Record { labels: actual_labels, fields: actual_fields } => {
+            specialise_record_fields(state, expected, actual_labels, actual_fields, tail_columns)
         }
         PatternConstructor::Array { fields } => {
             Some(iter::chain(fields, tail_columns).copied().collect())
         }
         _ => Some(tail_columns.to_vec()),
     }
+}
+
+/// Maps the fields of an actual record pattern to the expected (canonical) label set.
+///
+/// When record patterns in different branches mention different subsets of labels,
+/// the actual pattern may have fewer labels than the expected canonical constructor.
+/// This function aligns the actual fields to the expected label positions, inserting
+/// wildcard patterns for any labels present in the expected set but absent from the
+/// actual pattern.
+fn specialise_record_fields(
+    state: &mut CheckState,
+    expected: &PatternConstructor,
+    actual_labels: &[SmolStr],
+    actual_fields: &[PatternId],
+    tail_columns: &[PatternId],
+) -> Option<PatternVector> {
+    let PatternConstructor::Record { labels: expected_labels, fields: expected_fields } = expected
+    else {
+        return Some(
+            iter::chain(actual_fields.iter().copied(), tail_columns.iter().copied()).collect(),
+        );
+    };
+
+    // Fast path: labels match exactly.
+    if actual_labels == expected_labels.as_slice() {
+        return Some(
+            iter::chain(actual_fields.iter().copied(), tail_columns.iter().copied()).collect(),
+        );
+    }
+
+    let mut mapped_fields = Vec::with_capacity(expected_labels.len());
+    for (expected_label, &expected_field) in expected_labels.iter().zip(expected_fields.iter()) {
+        if let Some(position) = actual_labels.iter().position(|label| label == expected_label) {
+            mapped_fields.push(actual_fields[position]);
+        } else {
+            let t = state.patterns[expected_field].t;
+            mapped_fields.push(state.allocate_wildcard(t));
+        }
+    }
+
+    Some(mapped_fields.into_iter().chain(tail_columns.iter().copied()).collect())
 }
 
 fn default_matrix(state: &CheckState, matrix: &PatternMatrix) -> PatternMatrix {
@@ -696,6 +800,17 @@ where
                 constructors.push(constructor.clone());
             }
         }
+    }
+
+    // Canonicalise record constructors to include all labels from the matrix.
+    // Different record patterns may mention different subsets of the row type,
+    // and the specialisation algorithm requires a consistent arity.
+    if let Some(index) =
+        constructors.iter().position(|c| matches!(c, PatternConstructor::Record { .. }))
+    {
+        let record = constructors.remove(index);
+        let canonical = canonicalise_record_constructor(state, record, matrix);
+        constructors.insert(index, canonical);
     }
 
     let missing = collect_missing_constructors(state, context, scrutinee_type, &constructors)?;
