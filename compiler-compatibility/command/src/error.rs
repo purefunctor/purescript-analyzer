@@ -20,9 +20,6 @@ pub enum CompatError {
     #[error("package set missing package: {0}")]
     MissingFromPackageSet(String),
 
-    #[error("version mismatch for {name}: package-set {set_version} not in range {range}")]
-    VersionMismatch { name: String, set_version: String, range: String },
-
     #[error("hash mismatch for {name}@{version}")]
     HashMismatch { name: String, version: String },
 

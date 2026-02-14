@@ -53,7 +53,8 @@ pub enum Location {
 #[derive(Debug, Clone, Deserialize)]
 pub struct Metadata {
     pub location: Location,
-    pub owners: Option<Vec<String>>,
+    #[serde(default)]
+    pub owners: serde_json::Value,
     pub published: HashMap<String, PublishedVersion>,
     #[serde(default)]
     pub unpublished: HashMap<String, UnpublishedVersion>,

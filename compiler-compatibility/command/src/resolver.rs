@@ -36,6 +36,39 @@ pub fn resolve(
     Ok(ResolvedSet { packages: resolved, dependencies })
 }
 
+/// Resolves all packages in the package set.
+///
+/// Unlike `resolve()`, this does not recurse—it iterates all pinned packages
+/// and reads their manifests to extract dependency edges.
+pub fn resolve_all(
+    package_set: &PackageSet,
+    registry: &impl RegistryReader,
+) -> Result<ResolvedSet> {
+    let mut packages = BTreeMap::new();
+    let mut dependencies = BTreeMap::new();
+
+    for (name, version) in &package_set.packages.packages {
+        packages.insert(name.clone(), version.clone());
+
+        let manifests = registry.read_manifest_versions(name)?;
+        let parsed_version: Version = version.parse()?;
+        let manifest = manifests.iter().find(|m| m.version == parsed_version).ok_or_else(|| {
+            CompatError::ManifestNotFound { name: name.clone(), version: version.clone() }
+        })?;
+
+        let dep_names: Vec<String> = manifest
+            .dependencies
+            .keys()
+            .filter(|d| package_set.packages.packages.contains_key(*d))
+            .cloned()
+            .collect();
+
+        dependencies.insert(name.clone(), dep_names);
+    }
+
+    Ok(ResolvedSet { packages, dependencies })
+}
+
 fn resolve_recursive(
     name: &str,
     version: &str,
@@ -59,25 +92,17 @@ fn resolve_recursive(
 
     let mut dependency_names = Vec::new();
 
-    for (dep_name, range) in &manifest.dependencies {
-        let dep_version = package_set
+    for dependency in manifest.dependencies.keys() {
+        let version = package_set
             .packages
             .packages
-            .get(dep_name)
-            .ok_or_else(|| CompatError::MissingFromPackageSet(dep_name.clone()))?;
+            .get(dependency)
+            .ok_or_else(|| CompatError::MissingFromPackageSet(dependency.clone()))?;
 
-        if !version_satisfies_range(dep_version, range)? {
-            return Err(CompatError::VersionMismatch {
-                name: dep_name.clone(),
-                set_version: dep_version.clone(),
-                range: range.clone(),
-            });
-        }
-
-        dependency_names.push(dep_name.clone());
+        dependency_names.push(dependency.clone());
         resolve_recursive(
-            dep_name,
-            dep_version,
+            dependency,
+            version,
             package_set,
             registry,
             resolved,
@@ -173,25 +198,4 @@ pub fn topological_layers<N: Copy + Eq + Ord + std::hash::Hash>(
     }
 
     layers
-}
-
-fn version_satisfies_range(version: &str, range: &str) -> Result<bool> {
-    let parsed_version: Version = version.parse()?;
-    let parts: Vec<&str> = range.split_whitespace().collect();
-
-    if parts.len() != 2 {
-        return Err(CompatError::Other(format!("invalid version range format: {}", range)));
-    }
-
-    let lower = parts[0]
-        .strip_prefix(">=")
-        .ok_or_else(|| CompatError::Other(format!("expected >= prefix in range: {}", range)))?;
-    let upper = parts[1]
-        .strip_prefix('<')
-        .ok_or_else(|| CompatError::Other(format!("expected < prefix in range: {}", range)))?;
-
-    let lower_version: Version = lower.parse()?;
-    let upper_version: Version = upper.parse()?;
-
-    Ok(parsed_version >= lower_version && parsed_version < upper_version)
 }
