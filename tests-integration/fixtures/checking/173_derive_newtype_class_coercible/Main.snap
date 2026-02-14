@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -30,4 +31,4 @@ Wrapper = [Representational]
 
 Derived
 derive Newtype (UserId :: Type) (Int :: Type)
-derive Newtype (Wrapper (&0 :: Type) :: Type) ((&0 :: Type) :: Type)
+derive Newtype (Wrapper (a :: Type) :: Type) ((a :: Type) :: Type)

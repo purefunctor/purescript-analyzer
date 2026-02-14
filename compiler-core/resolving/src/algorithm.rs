@@ -1,8 +1,8 @@
 use building_types::QueryResult;
 use files::FileId;
 use indexing::{
-    ExportKind, ImplicitItems, ImportId, ImportKind, IndexedModule, IndexingImport, TermItemId,
-    TermItemKind, TypeItemId, TypeItemKind,
+    ExportKind, ImplicitItems, ImportKind, IndexedModule, IndexingImport, TermItemId, TermItemKind,
+    TypeItemId, TypeItemKind,
 };
 use smol_str::SmolStr;
 
@@ -56,13 +56,14 @@ fn resolve_imports(
 
         if let Some(alias) = &indexing_import.alias {
             let alias = SmolStr::clone(alias);
-            let resolved_import = state.qualified.entry(alias).or_insert(resolved_import);
+            let imports = state.qualified.entry(alias).or_default();
+            imports.push(resolved_import);
+            let resolved_import = imports.last_mut().unwrap();
             resolve_import(
                 queries,
                 &mut state.errors,
                 &mut state.class,
                 resolved_import,
-                indexing_import_id,
                 indexing_import,
                 import_file_id,
             )?;
@@ -73,7 +74,6 @@ fn resolve_imports(
                 &mut state.errors,
                 &mut state.class,
                 &mut resolved_import,
-                indexing_import_id,
                 indexing_import,
                 import_file_id,
             )?;
@@ -89,7 +89,6 @@ fn resolve_import(
     errors: &mut Vec<ResolvingError>,
     class_members: &mut ResolvedClassMembers,
     resolved: &mut ResolvedImport,
-    indexing_import_id: ImportId,
     indexing_import: &IndexingImport,
     import_file_id: FileId,
 ) -> QueryResult<()> {
@@ -103,9 +102,12 @@ fn resolve_import(
 
     let terms = import_resolved.exports.iter_terms().map(|(name, file, id)| (name, file, id, kind));
     let types = import_resolved.exports.iter_types().map(|(name, file, id)| (name, file, id, kind));
+    let classes =
+        import_resolved.exports.iter_classes().map(|(name, file, id)| (name, file, id, kind));
 
-    add_imported_terms(errors, resolved, indexing_import_id, terms);
-    add_imported_types(errors, resolved, indexing_import_id, types);
+    add_imported_terms(resolved, terms);
+    add_imported_types(resolved, types);
+    add_imported_classes(resolved, classes);
 
     // Adjust import kinds for explicit/hidden imports BEFORE copying class members
     if !matches!(indexing_import.kind, ImportKind::Implicit) {
@@ -123,6 +125,8 @@ fn resolve_import(
                 let Some(implicit) = implicit else { continue };
                 let item = (*file, *id, implicit);
                 resolve_implicit(queries, resolved, indexing_import, item)?;
+            } else if let Some((_, _, kind)) = resolved.classes.get_mut(name) {
+                *kind = indexing_import.kind;
             } else {
                 errors.push(ResolvingError::InvalidImportItem { id });
             };
@@ -130,7 +134,7 @@ fn resolve_import(
     }
 
     // Copy class members AFTER kind adjustments so hidden types are properly filtered
-    for (_, _, type_id, import_kind) in resolved.iter_types() {
+    for (_, _, type_id, import_kind) in resolved.iter_classes() {
         if matches!(import_kind, ImportKind::Hidden) {
             continue;
         }
@@ -178,70 +182,38 @@ fn resolve_implicit(
 }
 
 fn add_imported_terms<'a>(
-    errors: &mut Vec<ResolvingError>,
     resolved: &mut ResolvedImport,
-    indexing_import_id: ImportId,
     terms: impl Iterator<Item = (&'a SmolStr, FileId, TermItemId, ImportKind)>,
 ) {
     let (additional, _) = terms.size_hint();
     resolved.terms.reserve(additional);
-    terms.for_each(|(name, file, id, kind)| {
-        add_imported_term(errors, resolved, indexing_import_id, name, file, id, kind);
-    });
-}
-
-fn add_imported_types<'a>(
-    errors: &mut Vec<ResolvingError>,
-    resolved: &mut ResolvedImport,
-    indexing_import_id: ImportId,
-    terms: impl Iterator<Item = (&'a SmolStr, FileId, TypeItemId, ImportKind)>,
-) {
-    let (additional, _) = terms.size_hint();
-    resolved.terms.reserve(additional);
-    terms.for_each(|(name, file, id, kind)| {
-        add_imported_type(errors, resolved, indexing_import_id, name, file, id, kind);
-    });
-}
-
-fn add_imported_term(
-    errors: &mut Vec<ResolvingError>,
-    resolved: &mut ResolvedImport,
-    indexing_import_id: ImportId,
-    name: &SmolStr,
-    file: FileId,
-    id: TermItemId,
-    kind: ImportKind,
-) {
-    if let Some((existing_file, existing_term, _)) = resolved.terms.get(name) {
-        let duplicate = (file, id, indexing_import_id);
-        let existing = (*existing_file, *existing_term, resolved.id);
-        if duplicate != existing {
-            errors.push(ResolvingError::TermImportConflict { existing, duplicate });
-        }
-    } else {
+    for (name, file, id, kind) in terms {
         let name = SmolStr::clone(name);
         resolved.terms.insert(name, (file, id, kind));
     }
 }
 
-fn add_imported_type(
-    errors: &mut Vec<ResolvingError>,
+fn add_imported_types<'a>(
     resolved: &mut ResolvedImport,
-    indexing_import_id: ImportId,
-    name: &SmolStr,
-    file: FileId,
-    id: TypeItemId,
-    kind: ImportKind,
+    types: impl Iterator<Item = (&'a SmolStr, FileId, TypeItemId, ImportKind)>,
 ) {
-    if let Some((existing_file, existing_term, _)) = resolved.types.get(name) {
-        let duplicate = (file, id, indexing_import_id);
-        let existing = (*existing_file, *existing_term, resolved.id);
-        if duplicate != existing {
-            errors.push(ResolvingError::TypeImportConflict { existing, duplicate });
-        }
-    } else {
+    let (additional, _) = types.size_hint();
+    resolved.types.reserve(additional);
+    for (name, file, id, kind) in types {
         let name = SmolStr::clone(name);
         resolved.types.insert(name, (file, id, kind));
+    }
+}
+
+fn add_imported_classes<'a>(
+    resolved: &mut ResolvedImport,
+    classes: impl Iterator<Item = (&'a SmolStr, FileId, TypeItemId, ImportKind)>,
+) {
+    let (additional, _) = classes.size_hint();
+    resolved.classes.reserve(additional);
+    for (name, file, id, kind) in classes {
+        let name = SmolStr::clone(name);
+        resolved.classes.insert(name, (file, id, kind));
     }
 }
 
@@ -326,6 +298,36 @@ fn add_local_type(
     }
 }
 
+fn add_local_classes<'k>(
+    items: &mut ResolvedLocals,
+    errors: &mut Vec<ResolvingError>,
+    iterator: impl Iterator<Item = (&'k SmolStr, FileId, TypeItemId)>,
+) {
+    let (additional, _) = iterator.size_hint();
+    items.classes.reserve(additional);
+    iterator.for_each(move |(name, file, id)| {
+        add_local_class(items, errors, name, file, id);
+    });
+}
+
+fn add_local_class(
+    items: &mut ResolvedLocals,
+    errors: &mut Vec<ResolvingError>,
+    name: &SmolStr,
+    file: FileId,
+    id: TypeItemId,
+) {
+    if let Some(&existing) = items.classes.get(name) {
+        let duplicate = (file, id);
+        if existing != duplicate {
+            errors.push(ResolvingError::ExistingType { existing, duplicate });
+        }
+    } else {
+        let name = SmolStr::clone(name);
+        items.classes.insert(name, (file, id));
+    }
+}
+
 fn export_module_items(state: &mut State, indexed: &IndexedModule, file: FileId) {
     let local_terms = indexed.items.iter_terms().filter_map(|(id, item)| {
         let name = item.name.as_ref()?;
@@ -334,11 +336,18 @@ fn export_module_items(state: &mut State, indexed: &IndexedModule, file: FileId)
 
     let local_types = indexed.items.iter_types().filter_map(|(id, item)| {
         let name = item.name.as_ref()?;
-        Some((name, file, id))
+        Some((name, file, id, &item.kind))
     });
+
+    let (local_class_items, local_type_items): (Vec<_>, Vec<_>) =
+        local_types.partition(|(_, _, _, kind)| matches!(kind, TypeItemKind::Class { .. }));
+
+    let local_types = local_type_items.into_iter().map(|(name, file, id, _)| (name, file, id));
+    let local_classes = local_class_items.into_iter().map(|(name, file, id, _)| (name, file, id));
 
     add_local_terms(&mut state.locals, &mut state.errors, local_terms);
     add_local_types(&mut state.locals, &mut state.errors, local_types);
+    add_local_classes(&mut state.locals, &mut state.errors, local_classes);
 
     let exported_terms = indexed.items.iter_terms().filter_map(|(id, item)| {
         // Instances cannot be to referred directly by their given name yet.
@@ -358,11 +367,22 @@ fn export_module_items(state: &mut State, indexed: &IndexedModule, file: FileId)
             return None;
         }
         let name = item.name.as_ref()?;
-        Some((name, file, id, ExportSource::Local))
+        Some((name, file, id, ExportSource::Local, &item.kind))
     });
+
+    let (exported_class_items, exported_type_items): (Vec<_>, Vec<_>) =
+        exported_types.partition(|(_, _, _, _, kind)| matches!(kind, TypeItemKind::Class { .. }));
+
+    let exported_types =
+        exported_type_items.into_iter().map(|(name, file, id, source, _)| (name, file, id, source));
+
+    let exported_classes = exported_class_items
+        .into_iter()
+        .map(|(name, file, id, source, _)| (name, file, id, source));
 
     add_export_terms(&mut state.exports, &mut state.errors, exported_terms);
     add_export_types(&mut state.exports, &mut state.errors, exported_types);
+    add_export_classes(&mut state.exports, &mut state.errors, exported_classes);
 }
 
 fn export_module_imports(state: &mut State, indexed: &IndexedModule) {
@@ -371,7 +391,7 @@ fn export_module_imports(state: &mut State, indexed: &IndexedModule) {
     }
 
     let unqualified = state.unqualified.values().flatten();
-    let qualified = state.qualified.values();
+    let qualified = state.qualified.values().flatten();
     let imports = unqualified.chain(qualified);
 
     for import in imports {
@@ -393,8 +413,16 @@ fn export_module_imports(state: &mut State, indexed: &IndexedModule) {
                 None
             }
         });
+        let classes = import.iter_classes().filter_map(|(k, f, i, d)| {
+            if matches!(d, ImportKind::Implicit | ImportKind::Explicit) {
+                Some((k, f, i, source))
+            } else {
+                None
+            }
+        });
         add_export_terms(&mut state.exports, &mut state.errors, terms);
         add_export_types(&mut state.exports, &mut state.errors, types);
+        add_export_classes(&mut state.exports, &mut state.errors, classes);
     }
 }
 
@@ -457,5 +485,36 @@ fn add_export_type(
     } else {
         let name = SmolStr::clone(name);
         items.types.insert(name, (file, id, source));
+    }
+}
+
+fn add_export_classes<'k>(
+    items: &mut ResolvedExports,
+    errors: &mut Vec<ResolvingError>,
+    iterator: impl Iterator<Item = (&'k SmolStr, FileId, TypeItemId, ExportSource)>,
+) {
+    let (additional, _) = iterator.size_hint();
+    items.classes.reserve(additional);
+    iterator.for_each(move |(name, file, id, source)| {
+        add_export_class(items, errors, name, file, id, source);
+    });
+}
+
+fn add_export_class(
+    items: &mut ResolvedExports,
+    errors: &mut Vec<ResolvingError>,
+    name: &SmolStr,
+    file: FileId,
+    id: TypeItemId,
+    source: ExportSource,
+) {
+    if let Some(&existing) = items.classes.get(name) {
+        let duplicate = (file, id, source);
+        if existing != duplicate {
+            errors.push(ResolvingError::TypeExportConflict { existing, duplicate });
+        }
+    } else {
+        let name = SmolStr::clone(name);
+        items.classes.insert(name, (file, id, source));
     }
 }

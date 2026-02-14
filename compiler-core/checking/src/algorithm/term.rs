@@ -1,294 +1,134 @@
+use std::iter;
+
 use building_types::QueryResult;
-use indexing::TermItemId;
-use itertools::Itertools;
+use itertools::{Itertools, Position};
 use smol_str::SmolStr;
 
 use crate::ExternalQueries;
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::{
-    binder, inspect, kind, operator, substitute, toolkit, transfer, unification,
+    binder, equation, exhaustiveness, inspect, kind, operator, substitute, toolkit, transfer,
+    unification,
 };
 use crate::core::{RowField, RowType, Type, TypeId};
 use crate::error::{ErrorKind, ErrorStep};
-
-/// Infers the type of top-level value group equations.
-///
-/// This function depends on the unification variable created for the current
-/// binding group by [`CheckState::with_term_group`]. This function returns
-/// the inferred type and residual constraints for later generalisation via
-/// [`term_item::commit_value_group`].
-///
-/// [`term_item::commit_value_group`]: crate::algorithm::term_item::commit_value_group
-pub fn infer_equations<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    item_id: TermItemId,
-    equations: &[lowering::Equation],
-) -> QueryResult<(TypeId, Vec<TypeId>)>
-where
-    Q: ExternalQueries,
-{
-    let group_type = state
-        .binding_group
-        .lookup_term(item_id)
-        .expect("invariant violated: invalid binding_group in type inference");
-
-    infer_equations_core(state, context, group_type, equations)?;
-
-    let residual_constraints = state.solve_constraints(context)?;
-    Ok((group_type, residual_constraints))
-}
-
-/// Infers the type of value group equations.
-///
-/// This function infers the type of each value equation, and then checks
-/// that it's a subtype of the provided `group_type`. The `group_type` is
-/// usually a unification variable.
-///
-/// This function is used to implement inference for the following:
-/// - [`lowering::TermItemIr::ValueGroup`]
-/// - [`lowering::LetBindingNameGroup`]
-/// - [`lowering::InstanceMemberGroup`]
-pub fn infer_equations_core<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    group_type: TypeId,
-    equations: &[lowering::Equation],
-) -> QueryResult<()>
-where
-    Q: ExternalQueries,
-{
-    let minimum_equation_arity =
-        equations.iter().map(|equation| equation.binders.len()).min().unwrap_or(0);
-
-    for equation in equations {
-        let mut argument_types = vec![];
-        for &binder_id in equation.binders.iter() {
-            let argument_type = binder::infer_binder(state, context, binder_id)?;
-            argument_types.push(argument_type);
-        }
-
-        let result_type = state.fresh_unification_type(context);
-
-        // Only use the minimum number of binders across equations.
-        let argument_types = &argument_types[..minimum_equation_arity];
-        let equation_type = state.make_function(argument_types, result_type);
-        let _ = unification::subtype(state, context, equation_type, group_type)?;
-
-        if let Some(guarded) = &equation.guarded {
-            let inferred_type = infer_guarded_expression(state, context, guarded)?;
-            let _ = unification::subtype(state, context, inferred_type, result_type)?;
-        }
-    }
-
-    Ok(())
-}
-
-/// Checks the type of value group equations.
-///
-/// This function checks each value equation against the signature previously
-/// checked by the [`check_term_signature`] and [`inspect_signature_core`]
-/// functions.
-///
-/// This function depends on a couple of side-effects produced by the
-/// [`inspect_signature_core`] function. Type variables that appear in the
-/// signature are made visible through rebinding, and given constraints
-/// are pushed onto the environment. See the implementation for more details.
-///
-/// This function solves all constraints during checking using the
-/// [`CheckState::solve_constraints`] function, and reports residual
-/// constraints as [`ErrorKind::NoInstanceFound`] errors.
-///
-/// [`check_term_signature`]: crate::algorithm::term_item::check_term_signature
-/// [`inspect_signature_core`]: crate::algorithm::inspect::inspect_signature_core
-pub fn check_equations<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    signature_id: lowering::TypeId,
-    signature: inspect::InspectSignature,
-    equations: &[lowering::Equation],
-) -> QueryResult<()>
-where
-    Q: ExternalQueries,
-{
-    let expected_arity = signature.arguments.len();
-
-    for equation in equations {
-        let equation_arity = equation.binders.len();
-
-        if equation_arity > expected_arity {
-            let expected = expected_arity as u32;
-            let actual = equation_arity as u32;
-            state.insert_error(ErrorKind::TooManyBinders {
-                signature: signature_id,
-                expected,
-                actual,
-            });
-        }
-
-        for (&binder_id, &argument_type) in equation.binders.iter().zip(&signature.arguments) {
-            let _ = binder::check_binder(state, context, binder_id, argument_type)?;
-        }
-
-        if equation_arity > expected_arity {
-            let extra_binders = &equation.binders[expected_arity..];
-            for &binder_id in extra_binders {
-                let _ = binder::infer_binder(state, context, binder_id)?;
-            }
-        }
-
-        // Compute expected result type based on how many binders there
-        // are on each equation, wrapping remaining arguments if partial.
-        //
-        // foo :: forall a. a -> a -> Int
-        // foo = \a b -> a + b
-        // foo a = \b -> a + b
-        // foo a b = a + b
-        //
-        // signature.arguments := [a, a]
-        // signature.result    := Int
-        //
-        // expected_type :=
-        //   0 binders := forall a. a -> a -> Int
-        //   1 binder  := a -> Int
-        //   2 binders := Int
-        //
-        // This matters for type synonyms that expand to functions. The
-        // return type synonym introduces hidden function arrows that
-        // increase the expected arity after expansion.
-        //
-        // type ReturnsInt a = a -> Int
-        //
-        // bar :: forall a. ReturnsInt a -> ReturnsInt a
-        // bar = \f -> f
-        // bar f = f
-        // bar f a = f a
-        //
-        // signature.arguments := [ReturnsInt a, a]
-        // signature.result    := Int
-        //
-        // expected_type :=
-        //   0 binders := forall a. ReturnsInt a -> ReturnsInt a
-        //   1 binder  := ReturnsInt a
-        //   2 binders := Int
-        let expected_type = if equation_arity == 0 {
-            signature.function
-        } else if equation_arity >= expected_arity {
-            signature.result
-        } else {
-            let remaining_arguments = &signature.arguments[equation_arity..];
-            remaining_arguments.iter().rfold(signature.result, |result, &argument| {
-                state.storage.intern(Type::Function(argument, result))
-            })
-        };
-
-        if let Some(guarded) = &equation.guarded {
-            let inferred_type = infer_guarded_expression(state, context, guarded)?;
-            let _ = unification::subtype(state, context, inferred_type, expected_type)?;
-        }
-    }
-
-    let residual = state.solve_constraints(context)?;
-    for constraint in residual {
-        let constraint = transfer::globalize(state, context, constraint);
-        state.insert_error(ErrorKind::NoInstanceFound { constraint });
-    }
-
-    if let Some(variable) = signature.variables.first() {
-        state.type_scope.unbind(variable.level);
-    }
-
-    Ok(())
-}
-
-fn infer_guarded_expression<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    guarded: &lowering::GuardedExpression,
-) -> QueryResult<TypeId>
-where
-    Q: ExternalQueries,
-{
-    match guarded {
-        lowering::GuardedExpression::Unconditional { where_expression } => {
-            let Some(w) = where_expression else {
-                return Ok(context.prim.unknown);
-            };
-            infer_where_expression(state, context, w)
-        }
-        lowering::GuardedExpression::Conditionals { pattern_guarded } => {
-            let mut inferred_type = context.prim.unknown;
-            for pattern_guarded in pattern_guarded.iter() {
-                for pattern_guard in pattern_guarded.pattern_guards.iter() {
-                    check_pattern_guard(state, context, pattern_guard)?;
-                }
-                if let Some(w) = &pattern_guarded.where_expression {
-                    inferred_type = infer_where_expression(state, context, w)?;
-                }
-            }
-            Ok(inferred_type)
-        }
-    }
-}
-
-fn check_pattern_guard<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    guard: &lowering::PatternGuard,
-) -> QueryResult<()>
-where
-    Q: ExternalQueries,
-{
-    let Some(expression) = guard.expression else {
-        return Ok(());
-    };
-
-    let expression_type = infer_expression(state, context, expression)?;
-
-    let Some(binder) = guard.binder else {
-        return Ok(());
-    };
-
-    let _ = binder::check_binder(state, context, binder, expression_type)?;
-
-    Ok(())
-}
-
-fn infer_where_expression<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    where_expression: &lowering::WhereExpression,
-) -> QueryResult<TypeId>
-where
-    Q: ExternalQueries,
-{
-    check_let_chunks(state, context, &where_expression.bindings)?;
-
-    let Some(expression) = where_expression.expression else {
-        return Ok(context.prim.unknown);
-    };
-
-    infer_expression(state, context, expression)
-}
 
 /// Checks the type of an expression.
 #[tracing::instrument(skip_all, name = "check_expression")]
 pub fn check_expression<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    expr_id: lowering::ExpressionId,
+    expression: lowering::ExpressionId,
     expected: TypeId,
 ) -> QueryResult<TypeId>
 where
     Q: ExternalQueries,
 {
-    crate::trace_fields!(state, context, { expected = expected });
-    state.with_error_step(ErrorStep::CheckingExpression(expr_id), |state| {
-        let inferred = infer_expression_quiet(state, context, expr_id)?;
-        let _ = unification::subtype(state, context, inferred, expected)?;
-        crate::trace_fields!(state, context, { inferred = inferred, expected = expected });
-        Ok(inferred)
+    state.with_error_step(ErrorStep::CheckingExpression(expression), |state| {
+        crate::trace_fields!(state, context, { expected = expected });
+        check_expression_quiet(state, context, expression, expected)
     })
+}
+
+fn check_expression_quiet<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    expression: lowering::ExpressionId,
+    expected: TypeId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let expected = toolkit::normalise_expand_type(state, context, expected)?;
+    let expected = toolkit::skolemise_forall(state, expected);
+    let expected = toolkit::collect_givens(state, expected);
+    if let Some(section_result) = context.sectioned.expressions.get(&expression) {
+        check_sectioned_expression(state, context, expression, section_result, expected)
+    } else {
+        check_expression_core(state, context, expression, expected)
+    }
+}
+
+fn check_sectioned_expression<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    expression: lowering::ExpressionId,
+    section_result: &sugar::SectionResult,
+    expected: TypeId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let mut current = expected;
+    let mut parameters = vec![];
+
+    for &section_id in section_result.iter() {
+        let decomposed =
+            toolkit::decompose_function(state, context, current, toolkit::SynthesiseFunction::Yes)?;
+        if let Some((argument_type, result_type)) = decomposed {
+            state.term_scope.bind_section(section_id, argument_type);
+            parameters.push(argument_type);
+            current = result_type;
+        } else {
+            let parameter = state.fresh_unification_type(context);
+            state.term_scope.bind_section(section_id, parameter);
+            parameters.push(parameter);
+        }
+    }
+
+    let result_type = infer_expression_core(state, context, expression)?;
+    let result_type = toolkit::instantiate_constrained(state, result_type);
+
+    let _ = unification::subtype(state, context, result_type, current)?;
+
+    let function_type = state.make_function(&parameters, result_type);
+    Ok(function_type)
+}
+
+fn check_expression_core<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    expression: lowering::ExpressionId,
+    expected: TypeId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let Some(kind) = context.lowered.info.get_expression_kind(expression) else {
+        return Ok(context.prim.unknown);
+    };
+
+    match kind {
+        lowering::ExpressionKind::Lambda { binders, expression } => {
+            check_lambda(state, context, binders, *expression, expected)
+        }
+        lowering::ExpressionKind::IfThenElse { if_, then, else_ } => {
+            check_if_then_else(state, context, *if_, *then, *else_, expected)
+        }
+        lowering::ExpressionKind::CaseOf { trunk, branches } => {
+            check_case_of(state, context, trunk, branches, expected)
+        }
+        lowering::ExpressionKind::LetIn { bindings, expression } => {
+            check_let_in(state, context, bindings, *expression, expected)
+        }
+        lowering::ExpressionKind::Parenthesized { parenthesized } => {
+            let Some(parenthesized) = parenthesized else { return Ok(context.prim.unknown) };
+            check_expression(state, context, *parenthesized, expected)
+        }
+        lowering::ExpressionKind::Array { array } => check_array(state, context, array, expected),
+        lowering::ExpressionKind::Record { record } => {
+            check_record(state, context, record, expected)
+        }
+        _ => {
+            let inferred = infer_expression_quiet(state, context, expression)?;
+            let inferred = toolkit::instantiate_constrained(state, inferred);
+
+            let _ = unification::subtype(state, context, inferred, expected)?;
+
+            crate::trace_fields!(state, context, { inferred = inferred, expected = expected });
+            Ok(inferred)
+        }
+    }
 }
 
 /// Infers the type of an expression.
@@ -296,13 +136,13 @@ where
 pub fn infer_expression<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    expr_id: lowering::ExpressionId,
+    expression: lowering::ExpressionId,
 ) -> QueryResult<TypeId>
 where
     Q: ExternalQueries,
 {
-    state.with_error_step(ErrorStep::InferringExpression(expr_id), |state| {
-        let inferred = infer_expression_quiet(state, context, expr_id)?;
+    state.with_error_step(ErrorStep::InferringExpression(expression), |state| {
+        let inferred = infer_expression_quiet(state, context, expression)?;
         crate::trace_fields!(state, context, { inferred = inferred });
         Ok(inferred)
     })
@@ -311,22 +151,22 @@ where
 fn infer_expression_quiet<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    expr_id: lowering::ExpressionId,
+    expression: lowering::ExpressionId,
 ) -> QueryResult<TypeId>
 where
     Q: ExternalQueries,
 {
-    if let Some(section_result) = context.sectioned.expressions.get(&expr_id) {
-        infer_sectioned_expression(state, context, expr_id, section_result)
+    if let Some(section_result) = context.sectioned.expressions.get(&expression) {
+        infer_sectioned_expression(state, context, expression, section_result)
     } else {
-        infer_expression_core(state, context, expr_id)
+        infer_expression_core(state, context, expression)
     }
 }
 
 fn infer_sectioned_expression<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    expr_id: lowering::ExpressionId,
+    expression: lowering::ExpressionId,
     section_result: &sugar::SectionResult,
 ) -> QueryResult<TypeId>
 where
@@ -339,7 +179,9 @@ where
     });
 
     let parameter_types = parameter_types.collect_vec();
-    let result_type = infer_expression_core(state, context, expr_id)?;
+
+    let result_type = infer_expression_core(state, context, expression)?;
+    let result_type = toolkit::instantiate_constrained(state, result_type);
 
     Ok(state.make_function(&parameter_types, result_type))
 }
@@ -347,14 +189,14 @@ where
 fn infer_expression_core<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    expr_id: lowering::ExpressionId,
+    expression: lowering::ExpressionId,
 ) -> QueryResult<TypeId>
 where
     Q: ExternalQueries,
 {
     let unknown = context.prim.unknown;
 
-    let Some(kind) = context.lowered.info.get_expression_kind(expr_id) else {
+    let Some(kind) = context.lowered.info.get_expression_kind(expression) else {
         return Ok(unknown);
     };
 
@@ -370,7 +212,7 @@ where
         }
 
         lowering::ExpressionKind::OperatorChain { .. } => {
-            let (_, inferred_type) = operator::infer_operator_chain(state, context, expr_id)?;
+            let (_, inferred_type) = operator::infer_operator_chain(state, context, expression)?;
             Ok(inferred_type)
         }
 
@@ -420,15 +262,10 @@ where
         }
 
         lowering::ExpressionKind::Do { bind, discard, statements } => {
-            let Some(bind) = bind else { return Ok(unknown) };
-            let Some(discard) = discard else { return Ok(unknown) };
             infer_do(state, context, *bind, *discard, statements)
         }
 
         lowering::ExpressionKind::Ado { map, apply, pure, statements, expression } => {
-            let Some(map) = map else { return Ok(unknown) };
-            let Some(apply) = apply else { return Ok(unknown) };
-            let Some(pure) = pure else { return Ok(unknown) };
             infer_ado(state, context, *map, *apply, *pure, statements, *expression)
         }
 
@@ -448,7 +285,7 @@ where
         }
 
         lowering::ExpressionKind::Section => {
-            if let Some(type_id) = state.term_scope.lookup_section(expr_id) {
+            if let Some(type_id) = state.term_scope.lookup_section(expression) {
                 Ok(type_id)
             } else {
                 Ok(unknown)
@@ -568,12 +405,290 @@ where
     }
 
     let result_type = if let Some(body) = expression {
-        infer_expression(state, context, body)?
+        let body_type = infer_expression(state, context, body)?;
+        toolkit::instantiate_constrained(state, body_type)
     } else {
         state.fresh_unification_type(context)
     };
 
-    Ok(state.make_function(&argument_types, result_type))
+    let function_type = state.make_function(&argument_types, result_type);
+
+    let exhaustiveness =
+        exhaustiveness::check_lambda_patterns(state, context, &argument_types, binders)?;
+
+    let has_missing = exhaustiveness.missing.is_some();
+    state.report_exhaustiveness(exhaustiveness);
+
+    if has_missing {
+        let constrained_type = Type::Constrained(context.prim.partial, function_type);
+        Ok(state.storage.intern(constrained_type))
+    } else {
+        Ok(function_type)
+    }
+}
+
+fn check_lambda<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    binders: &[lowering::BinderId],
+    expression: Option<lowering::ExpressionId>,
+    expected: TypeId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let mut arguments = vec![];
+    let mut remaining = expected;
+
+    for &binder_id in binders.iter() {
+        let decomposed = toolkit::decompose_function(
+            state,
+            context,
+            remaining,
+            toolkit::SynthesiseFunction::Yes,
+        )?;
+        if let Some((argument, result)) = decomposed {
+            let _ = binder::check_binder(state, context, binder_id, argument)?;
+            arguments.push(argument);
+            remaining = result;
+        } else {
+            let argument_type = state.fresh_unification_type(context);
+            let _ = binder::check_binder(state, context, binder_id, argument_type)?;
+            arguments.push(argument_type);
+        }
+    }
+
+    let result_type = if let Some(body) = expression {
+        check_expression(state, context, body, remaining)?
+    } else {
+        state.fresh_unification_type(context)
+    };
+
+    let function_type = state.make_function(&arguments, result_type);
+
+    let exhaustiveness =
+        exhaustiveness::check_lambda_patterns(state, context, &arguments, binders)?;
+
+    let has_missing = exhaustiveness.missing.is_some();
+    state.report_exhaustiveness(exhaustiveness);
+
+    if has_missing {
+        state.push_wanted(context.prim.partial);
+    }
+
+    Ok(function_type)
+}
+
+fn check_if_then_else<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    if_: Option<lowering::ExpressionId>,
+    then: Option<lowering::ExpressionId>,
+    else_: Option<lowering::ExpressionId>,
+    expected: TypeId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    if let Some(if_) = if_ {
+        check_expression(state, context, if_, context.prim.boolean)?;
+    }
+
+    if let Some(then) = then {
+        check_expression(state, context, then, expected)?;
+    }
+
+    if let Some(else_) = else_ {
+        check_expression(state, context, else_, expected)?;
+    }
+
+    Ok(expected)
+}
+
+fn instantiate_trunk_types<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    trunk_types: &mut [TypeId],
+    branches: &[lowering::CaseBranch],
+) where
+    Q: ExternalQueries,
+{
+    for (position, trunk_type) in trunk_types.iter_mut().enumerate() {
+        let should_instantiate = branches.iter().any(|branch| {
+            let binder = branch.binders.get(position);
+            binder.is_some_and(|&binder_id| binder::requires_instantiation(context, binder_id))
+        });
+        if should_instantiate {
+            *trunk_type = toolkit::instantiate_forall(state, *trunk_type);
+        }
+    }
+}
+
+fn check_case_of<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    trunk: &[lowering::ExpressionId],
+    branches: &[lowering::CaseBranch],
+    expected: TypeId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let mut trunk_types = vec![];
+    for trunk in trunk.iter() {
+        let trunk_type = infer_expression(state, context, *trunk)?;
+        trunk_types.push(trunk_type);
+    }
+
+    instantiate_trunk_types(state, context, &mut trunk_types, branches);
+
+    for branch in branches.iter() {
+        for (binder, trunk) in branch.binders.iter().zip(&trunk_types) {
+            let _ = binder::check_binder(state, context, *binder, *trunk)?;
+        }
+        if let Some(guarded) = &branch.guarded_expression {
+            check_guarded_expression(state, context, guarded, expected)?;
+        }
+    }
+
+    let exhaustiveness =
+        exhaustiveness::check_case_patterns(state, context, &trunk_types, branches)?;
+
+    let has_missing = exhaustiveness.missing.is_some();
+    state.report_exhaustiveness(exhaustiveness);
+
+    if has_missing {
+        state.push_wanted(context.prim.partial);
+    }
+
+    Ok(expected)
+}
+
+fn check_let_in<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    bindings: &[lowering::LetBindingChunk],
+    expression: Option<lowering::ExpressionId>,
+    expected: TypeId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    check_let_chunks(state, context, bindings)?;
+
+    let Some(expression) = expression else {
+        return Ok(context.prim.unknown);
+    };
+
+    check_expression(state, context, expression, expected)
+}
+
+fn check_array<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    array: &[lowering::ExpressionId],
+    expected: TypeId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let normalised = state.normalize_type(expected);
+    if let Type::Application(constructor, element_type) = state.storage[normalised] {
+        let constructor = state.normalize_type(constructor);
+        if constructor == context.prim.array {
+            for expression in array.iter() {
+                check_expression(state, context, *expression, element_type)?;
+            }
+            return Ok(expected);
+        }
+    }
+
+    // Fallback: infer then subtype.
+    let inferred = infer_array(state, context, array)?;
+    let _ = unification::subtype(state, context, inferred, expected)?;
+    Ok(inferred)
+}
+
+fn check_record<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    record: &[lowering::ExpressionRecordItem],
+    expected: TypeId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let normalised = state.normalize_type(expected);
+    if let Type::Application(constructor, row_type) = state.storage[normalised] {
+        let constructor = state.normalize_type(constructor);
+        if constructor == context.prim.record {
+            let row_type = state.normalize_type(row_type);
+            if let Type::Row(ref row) = state.storage[row_type] {
+                let expected_fields = row.fields.clone();
+
+                let mut fields = vec![];
+
+                for field in record.iter() {
+                    match field {
+                        lowering::ExpressionRecordItem::RecordField { name, value } => {
+                            let Some(name) = name else { continue };
+                            let Some(value) = value else { continue };
+
+                            let label = SmolStr::clone(name);
+
+                            // Look up whether this field has an expected type.
+                            let expected_field_type =
+                                expected_fields.iter().find(|f| f.label == label).map(|f| f.id);
+
+                            let id = if let Some(expected_type) = expected_field_type {
+                                check_expression(state, context, *value, expected_type)?
+                            } else {
+                                let id = infer_expression(state, context, *value)?;
+                                let id = toolkit::instantiate_forall(state, id);
+                                toolkit::collect_wanteds(state, id)
+                            };
+
+                            fields.push(RowField { label, id });
+                        }
+                        lowering::ExpressionRecordItem::RecordPun { name, resolution } => {
+                            let Some(name) = name else { continue };
+                            let Some(resolution) = resolution else { continue };
+
+                            let label = SmolStr::clone(name);
+
+                            let expected_field_type =
+                                expected_fields.iter().find(|f| f.label == label).map(|f| f.id);
+
+                            let id = lookup_term_variable(state, context, *resolution)?;
+
+                            let id = if let Some(expected_type) = expected_field_type {
+                                let _ = unification::subtype(state, context, id, expected_type)?;
+                                id
+                            } else {
+                                let id = toolkit::instantiate_forall(state, id);
+                                toolkit::collect_wanteds(state, id)
+                            };
+
+                            fields.push(RowField { label, id });
+                        }
+                    }
+                }
+
+                let row_type = RowType::from_unsorted(fields, None);
+                let row_type = state.storage.intern(Type::Row(row_type));
+                let record_type =
+                    state.storage.intern(Type::Application(context.prim.record, row_type));
+
+                let _ = unification::subtype(state, context, record_type, expected)?;
+                return Ok(record_type);
+            }
+        }
+    }
+
+    // Fallback: infer then subtype.
+    let inferred = infer_record(state, context, record)?;
+    let _ = unification::subtype(state, context, inferred, expected)?;
+    Ok(inferred)
 }
 
 fn infer_case_of<Q>(
@@ -585,7 +700,7 @@ fn infer_case_of<Q>(
 where
     Q: ExternalQueries,
 {
-    let inferred_type = state.fresh_unification_type(context);
+    let result_type = state.fresh_unification_type(context);
 
     let mut trunk_types = vec![];
     for trunk in trunk.iter() {
@@ -593,37 +708,151 @@ where
         trunk_types.push(trunk_type);
     }
 
+    instantiate_trunk_types(state, context, &mut trunk_types, branches);
+
     for branch in branches.iter() {
         for (binder, trunk) in branch.binders.iter().zip(&trunk_types) {
             let _ = binder::check_binder(state, context, *binder, *trunk)?;
         }
         if let Some(guarded) = &branch.guarded_expression {
             let guarded_type = infer_guarded_expression(state, context, guarded)?;
-            let _ = unification::subtype(state, context, inferred_type, guarded_type)?;
+            let _ = unification::subtype(state, context, guarded_type, result_type)?;
         }
     }
 
-    Ok(inferred_type)
+    let exhaustiveness =
+        exhaustiveness::check_case_patterns(state, context, &trunk_types, branches)?;
+
+    let has_missing = exhaustiveness.missing.is_some();
+    state.report_exhaustiveness(exhaustiveness);
+
+    if has_missing {
+        let constrained_type = Type::Constrained(context.prim.partial, result_type);
+        Ok(state.storage.intern(constrained_type))
+    } else {
+        Ok(result_type)
+    }
 }
 
-fn infer_do<Q>(
+/// Lookup `bind` from resolution, or synthesize `?m ?a -> (?a -> ?m ?b) -> ?m ?b`.
+fn lookup_or_synthesise_bind<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    bind: lowering::TermVariableResolution,
-    discard: lowering::TermVariableResolution,
-    statements: &[lowering::DoStatement],
+    resolution: Option<lowering::TermVariableResolution>,
 ) -> QueryResult<TypeId>
 where
     Q: ExternalQueries,
 {
-    let bind_type = lookup_term_variable(state, context, bind)?;
-    let discard_type = lookup_term_variable(state, context, discard)?;
+    if let Some(resolution) = resolution {
+        lookup_term_variable(state, context, resolution)
+    } else {
+        let m = state.fresh_unification_kinded(context.prim.type_to_type);
+        let a = state.fresh_unification_type(context);
+        let b = state.fresh_unification_type(context);
+        let m_a = state.storage.intern(Type::Application(m, a));
+        let m_b = state.storage.intern(Type::Application(m, b));
+        let a_to_m_b = state.storage.intern(Type::Function(a, m_b));
+        Ok(state.make_function(&[m_a, a_to_m_b], m_b))
+    }
+}
 
-    // First, perform a forward pass where variable bindings are
-    // bound to unification variables and let bindings are checked.
-    // This is like inferring the lambda in a desugared representation.
-    let mut do_statements = vec![];
-    for statement in statements.iter() {
+/// Lookup `discard` from resolution, or synthesize `?m ?a -> (?a -> ?m ?b) -> ?m ?b`.
+fn lookup_or_synthesise_discard<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    resolution: Option<lowering::TermVariableResolution>,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    // Same shape as bind
+    lookup_or_synthesise_bind(state, context, resolution)
+}
+
+/// Lookup `map` from resolution, or synthesize `(?a -> ?b) -> ?f ?a -> ?f ?b`.
+fn lookup_or_synthesise_map<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    resolution: Option<lowering::TermVariableResolution>,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    if let Some(resolution) = resolution {
+        lookup_term_variable(state, context, resolution)
+    } else {
+        let f = state.fresh_unification_kinded(context.prim.type_to_type);
+        let a = state.fresh_unification_type(context);
+        let b = state.fresh_unification_type(context);
+        let f_a = state.storage.intern(Type::Application(f, a));
+        let f_b = state.storage.intern(Type::Application(f, b));
+        let a_to_b = state.storage.intern(Type::Function(a, b));
+        Ok(state.make_function(&[a_to_b, f_a], f_b))
+    }
+}
+
+/// Lookup `apply` from resolution, or synthesize `?f (?a -> ?b) -> ?f ?a -> ?f ?b`.
+fn lookup_or_synthesise_apply<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    resolution: Option<lowering::TermVariableResolution>,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    if let Some(resolution) = resolution {
+        lookup_term_variable(state, context, resolution)
+    } else {
+        let f = state.fresh_unification_kinded(context.prim.type_to_type);
+        let a = state.fresh_unification_type(context);
+        let b = state.fresh_unification_type(context);
+        let a_to_b = state.storage.intern(Type::Function(a, b));
+        let f_a_to_b = state.storage.intern(Type::Application(f, a_to_b));
+        let f_a = state.storage.intern(Type::Application(f, a));
+        let f_b = state.storage.intern(Type::Application(f, b));
+        Ok(state.make_function(&[f_a_to_b, f_a], f_b))
+    }
+}
+
+/// Lookup `pure` from resolution, or synthesize `?a -> ?f ?a`.
+fn lookup_or_synthesise_pure<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    resolution: Option<lowering::TermVariableResolution>,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    if let Some(resolution) = resolution {
+        lookup_term_variable(state, context, resolution)
+    } else {
+        let f = state.fresh_unification_kinded(context.prim.type_to_type);
+        let a = state.fresh_unification_type(context);
+        let f_a = state.storage.intern(Type::Application(f, a));
+        Ok(state.storage.intern(Type::Function(a, f_a)))
+    }
+}
+
+#[tracing::instrument(skip_all, name = "infer_do")]
+fn infer_do<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    bind: Option<lowering::TermVariableResolution>,
+    discard: Option<lowering::TermVariableResolution>,
+    statement_ids: &[lowering::DoStatementId],
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    // First, perform a forward pass where variable bindings are bound
+    // to unification variables. Let bindings are not checked here to
+    // avoid premature solving of unification variables. Instead, they
+    // are checked inline during the statement checking loop.
+    let mut steps = vec![];
+    for &statement_id in statement_ids.iter() {
+        let Some(statement) = context.lowered.info.get_do_statement(statement_id) else {
+            continue;
+        };
         match statement {
             lowering::DoStatement::Bind { binder, expression } => {
                 let binder_type = if let Some(binder) = binder {
@@ -631,94 +860,268 @@ where
                 } else {
                     state.fresh_unification_type(context)
                 };
-                do_statements.push((Some(binder_type), *expression));
+                steps.push(DoStep::Bind {
+                    statement: statement_id,
+                    binder_type,
+                    expression: *expression,
+                });
             }
             lowering::DoStatement::Let { statements } => {
-                check_let_chunks(state, context, statements)?;
+                steps.push(DoStep::Let { statement: statement_id, statements });
             }
             lowering::DoStatement::Discard { expression } => {
-                do_statements.push((None, *expression));
+                steps.push(DoStep::Discard { statement: statement_id, expression: *expression });
             }
         }
     }
 
-    let [bind_statements @ .., (_, pure_expression)] = &do_statements[..] else {
+    let action_count = steps
+        .iter()
+        .filter(|step| matches!(step, DoStep::Bind { .. } | DoStep::Discard { .. }))
+        .count();
+
+    let (has_bind_step, has_discard_step) = {
+        let mut has_bind = false;
+        let mut has_discard = false;
+        for (position, statement) in steps.iter().with_position() {
+            let is_final = matches!(position, Position::Last | Position::Only);
+            match statement {
+                DoStep::Bind { .. } => has_bind = true,
+                DoStep::Discard { .. } if !is_final => has_discard = true,
+                _ => (),
+            }
+        }
+        (has_bind, has_discard)
+    };
+
+    let bind_type = if has_bind_step {
+        lookup_or_synthesise_bind(state, context, bind)?
+    } else {
+        context.prim.unknown
+    };
+
+    let discard_type = if has_discard_step {
+        lookup_or_synthesise_discard(state, context, discard)?
+    } else {
+        context.prim.unknown
+    };
+
+    let pure_expression = match steps.iter().last() {
+        Some(statement) => match statement {
+            // Technically valid, syntactically disallowed. This allows
+            // partially-written do expressions to infer, with a friendly
+            // warning to nudge the user that `bind` is prohibited.
+            DoStep::Bind { statement, expression, .. } => {
+                state.with_error_step(ErrorStep::InferringDoBind(*statement), |state| {
+                    state.insert_error(ErrorKind::InvalidFinalBind);
+                });
+                expression
+            }
+            DoStep::Discard { expression, .. } => expression,
+            DoStep::Let { statement, .. } => {
+                state.with_error_step(ErrorStep::CheckingDoLet(*statement), |state| {
+                    state.insert_error(ErrorKind::InvalidFinalLet);
+                });
+                return Ok(context.prim.unknown);
+            }
+        },
+        None => {
+            state.insert_error(ErrorKind::EmptyDoBlock);
+            return Ok(context.prim.unknown);
+        }
+    };
+
+    // If either don't actually have expressions, it's empty!
+    let Some(pure_expression) = *pure_expression else {
         state.insert_error(ErrorKind::EmptyDoBlock);
         return Ok(context.prim.unknown);
     };
 
-    let Some(pure_expression) = pure_expression else {
-        return Ok(context.prim.unknown);
-    };
+    // Create unification variables that each statement in the do expression
+    // will unify against. The next section will get into more detail how
+    // these are used. These unification variables are used to enable GHC-like
+    // left-to-right checking of do expressions while maintaining the same
+    // semantics as rebindable `do` in PureScript.
+    let continuation_types = iter::repeat_with(|| state.fresh_unification_type(context))
+        .take(action_count)
+        .collect_vec();
 
-    // With the binders and let-bound names in scope, infer
-    // the type of the last expression as our starting point.
+    // Let's trace over the following example:
     //
-    // main = do
-    //   pure 42
-    //   y <- pure "Hello!"
-    //   pure $ Message y
+    //   main = do
+    //     a <- effect
+    //     b <- aff
+    //     pure { a, b }
     //
-    // accumulated_type := Effect Message
-    let mut accumulated_type = infer_expression(state, context, *pure_expression)?;
+    // For the first statement, we know the following information. We
+    // instantiate the `bind` function to prepare it for application.
+    // The first argument is easy, it's just the expression_type; the
+    // second argument involves synthesising a function type using the
+    // `binder_type` and the `next` continuation. The application of
+    // these arguments creates important unifications, listed below.
+    // Additionally, we also create a unification to unify the `now`
+    // type with the result of the `bind` application.
+    //
+    //   expression_type := Effect Int
+    //   binder_type     := ?a
+    //   now             := ?0
+    //   next            := ?1
+    //   lambda_type     := ?a -> ?1
+    //
+    //   bind_type       := m a -> (a -> m b) -> m b
+    //                   |
+    //                   := apply(expression_type)
+    //                   := (Int -> Effect ?r1) -> Effect ?r1
+    //                   |
+    //                   := apply(lambda_type)
+    //                   := Effect ?r1
+    //                   |
+    //                   >> ?a := Int
+    //                   >> ?1 := Effect ?r1
+    //                   >> ?0 := Effect ?r1
+    //
+    // For the second statement, we know the following information.
+    // The `now` type was already solved by the previous statement,
+    // and an error should surface once we check the inferred type
+    // of the statement against it.
+    //
+    //   expression_type := Aff Int
+    //   binder_type     := ?b
+    //   now             := ?1 := Effect ?r1
+    //   next            := ?2
+    //   lambda_type     := ?b -> ?2
+    //
+    //   bind_type       := m a -> (a -> m b) -> m b
+    //                   |
+    //                   := apply(expression_type)
+    //                   := (Int -> Aff ?r2) -> Aff ?r2
+    //                   |
+    //                   := apply(lambda_type)
+    //                   := Aff ?r2
+    //                   |
+    //                   >> ?b := Int
+    //                   >> ?2 := Aff ?r2
+    //                   |
+    //                   >> ?1         ~ Aff ?r2
+    //                   >> Effect ?r1 ~ Aff ?r2
+    //                   |
+    //                   >> Oh no!
+    //
+    // This unification error is expected, but this left-to-right checking
+    // approach significantly improves the reported error positions compared
+    // to the previous approach that emulated desugared checking.
 
-    // Then, infer do statements in reverse order to emulate
-    // inside-out type inference for desugared do statements.
-    for (binder, expression) in bind_statements.iter().rev() {
-        accumulated_type = if let Some(binder) = binder {
-            // This applies bind_type to expression_type to get
-            // bind_applied, which is then applied to lambda_type
-            // to get the accumulated_type and to solve ?y.
-            //
-            // bind_type        := m a -> (a -> m b) -> m b
-            // expression_type  := Effect String
-            //
-            // bind_applied     := (String -> Effect b) -> Effect b
-            // lambda_type      := ?y -> Effect Message
-            //
-            // accumulated_type := Effect Message
-            infer_do_bind(state, context, bind_type, accumulated_type, *expression, *binder)?
-        } else {
-            // This applies discard_type to expression_type to
-            // get discard_applied, which is then deconstructed
-            // to subsume against the `Effect b`.
-            //
-            // discard_type     := m a -> (a -> m b) -> m b
-            // expression_type  := Effect Int
-            //
-            // discard_applied  := (Int -> Effect b) -> Effect b
-            // accumulated_type := Effect Message
-            //
-            // accumulated_type <: Effect b
-            infer_do_discard(state, context, discard_type, accumulated_type, *expression)?
+    let mut continuations = continuation_types.iter().tuple_windows::<(_, _)>();
+
+    for step in &steps {
+        match step {
+            DoStep::Let { statement, statements } => {
+                let error_step = ErrorStep::CheckingDoLet(*statement);
+                state.with_error_step(error_step, |state| {
+                    check_let_chunks(state, context, statements)
+                })?;
+            }
+            DoStep::Bind { statement, binder_type, expression } => {
+                let Some((&now_type, &next_type)) = continuations.next() else {
+                    continue;
+                };
+                let Some(expression) = *expression else {
+                    continue;
+                };
+                let arguments = InferDoBind {
+                    statement: *statement,
+                    bind_type,
+                    now_type,
+                    next_type,
+                    expression,
+                    binder_type: *binder_type,
+                };
+                infer_do_bind(state, context, arguments)?;
+            }
+            DoStep::Discard { statement, expression } => {
+                let Some((&now_type, &next_type)) = continuations.next() else {
+                    continue;
+                };
+                let Some(expression) = *expression else {
+                    continue;
+                };
+                let arguments = InferDoDiscard {
+                    statement: *statement,
+                    discard_type,
+                    now_type,
+                    next_type,
+                    expression,
+                };
+                infer_do_discard(state, context, arguments)?;
+            }
         }
     }
 
-    Ok(accumulated_type)
+    // The `first_continuation` is the overall type of the do expression,
+    // built iteratively and through solving unification variables. On
+    // the other hand, the `final_continuation` is the expected type for
+    // the final statement in the do expression. If there is only a single
+    // statement in the do expression, then these two bindings are equivalent.
+    let first_continuation =
+        *continuation_types.first().expect("invariant violated: empty continuation_types");
+    let final_continuation =
+        *continuation_types.last().expect("invariant violated: empty continuation_types");
+
+    check_expression(state, context, pure_expression, final_continuation)?;
+
+    Ok(first_continuation)
 }
 
+enum DoStep<'a> {
+    Bind {
+        statement: lowering::DoStatementId,
+        binder_type: TypeId,
+        expression: Option<lowering::ExpressionId>,
+    },
+    Discard {
+        statement: lowering::DoStatementId,
+        expression: Option<lowering::ExpressionId>,
+    },
+    Let {
+        statement: lowering::DoStatementId,
+        statements: &'a [lowering::LetBindingChunk],
+    },
+}
+
+enum AdoStep<'a> {
+    Action {
+        statement: lowering::DoStatementId,
+        binder_type: TypeId,
+        expression: lowering::ExpressionId,
+    },
+    Let {
+        statement: lowering::DoStatementId,
+        statements: &'a [lowering::LetBindingChunk],
+    },
+}
+
+#[tracing::instrument(skip_all, name = "infer_ado")]
 fn infer_ado<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    map: lowering::TermVariableResolution,
-    apply: lowering::TermVariableResolution,
-    pure: lowering::TermVariableResolution,
-    statements: &[lowering::DoStatement],
+    map: Option<lowering::TermVariableResolution>,
+    apply: Option<lowering::TermVariableResolution>,
+    pure: Option<lowering::TermVariableResolution>,
+    statement_ids: &[lowering::DoStatementId],
     expression: Option<lowering::ExpressionId>,
 ) -> QueryResult<TypeId>
 where
     Q: ExternalQueries,
 {
-    let map_type = lookup_term_variable(state, context, map)?;
-    let apply_type = lookup_term_variable(state, context, apply)?;
-    let pure_type = lookup_term_variable(state, context, pure)?;
-
-    // First, perform a forward pass where variable bindings are
-    // bound to unification variables and let bindings are checked.
-    // This is like inferring the lambda in a desugared representation.
-    let mut binder_types = vec![];
-    let mut ado_statements = vec![];
-    for statement in statements.iter() {
+    // First, perform a forward pass where variable bindings are bound
+    // to unification variables. Let bindings are not checked here to
+    // avoid premature solving of unification variables. Instead, they
+    // are checked inline during the statement checking loop.
+    let mut steps = vec![];
+    for &statement_id in statement_ids.iter() {
+        let Some(statement) = context.lowered.info.get_do_statement(statement_id) else {
+            continue;
+        };
         match statement {
             lowering::DoStatement::Bind { binder, expression } => {
                 let binder_type = if let Some(binder) = binder {
@@ -726,82 +1129,162 @@ where
                 } else {
                     state.fresh_unification_type(context)
                 };
-                binder_types.push(binder_type);
-                ado_statements.push(*expression);
+                let Some(expression) = *expression else { continue };
+                steps.push(AdoStep::Action { statement: statement_id, binder_type, expression });
             }
             lowering::DoStatement::Let { statements } => {
-                check_let_chunks(state, context, statements)?;
+                steps.push(AdoStep::Let { statement: statement_id, statements });
             }
             lowering::DoStatement::Discard { expression } => {
                 let binder_type = state.fresh_unification_type(context);
-                binder_types.push(binder_type);
-                ado_statements.push(*expression);
+                let Some(expression) = *expression else { continue };
+                steps.push(AdoStep::Action { statement: statement_id, binder_type, expression });
             }
         }
     }
 
-    assert_eq!(binder_types.len(), ado_statements.len());
+    let binder_types = steps.iter().filter_map(|step| match step {
+        AdoStep::Action { binder_type, .. } => Some(*binder_type),
+        AdoStep::Let { .. } => None,
+    });
 
-    let [head_statement, tail_statements @ ..] = &ado_statements[..] else {
+    let binder_types = binder_types.collect_vec();
+
+    // For ado blocks with no bindings, we check let statements and then
+    // apply pure to the expression.
+    //
+    //   pure_type  := a -> f a
+    //   expression := t
+    if binder_types.is_empty() {
+        for step in &steps {
+            if let AdoStep::Let { statement, statements } = step {
+                state.with_error_step(ErrorStep::CheckingAdoLet(*statement), |state| {
+                    check_let_chunks(state, context, statements)
+                })?;
+            }
+        }
         return if let Some(expression) = expression {
+            let pure_type = lookup_or_synthesise_pure(state, context, pure)?;
             check_function_term_application(state, context, pure_type, expression)
         } else {
             state.insert_error(ErrorKind::EmptyAdoBlock);
             Ok(context.prim.unknown)
         };
-    };
-
-    // With the binders and let-bound names in scope, infer
-    // the type of the final expression as our starting point.
-    //
-    // main = ado
-    //   pure 1
-    //   y <- pure "Hello!"
-    //   in Message y
-    //
-    // expression_type := Message
-    let expression_type = if let Some(expression) = expression {
-        infer_expression(state, context, expression)?
-    } else {
-        state.fresh_unification_type(context)
-    };
-
-    // Create a function type using the binder types collected
-    // from the forward pass. We made sure to allocate unification
-    // variables for the discard statements too.
-    //
-    // lambda_type := ?discard -> ?y -> Message
-    let lambda_type = state.make_function(&binder_types, expression_type);
-
-    // This applies map_type to the lambda_type that we just built
-    // and then to the inferred type of the first expression.
-    //
-    // map_type         := (a -> b) -> f a -> f b
-    // lambda_type      := ?discard -> ?y -> Message
-    //
-    // map_applied      := f ?discard -> f (?y -> Message)
-    // expression_type  := f Int
-    //
-    // accumulated_type := f (?y -> Message)
-    let mut accumulated_type =
-        infer_ado_map(state, context, map_type, lambda_type, *head_statement)?;
-
-    // This applies apply_type to the accumulated_type, and then to the
-    // inferred type of the expression to update the accumulated_type.
-    //
-    // apply_type       := f (a -> b) -> f a -> f b
-    // accumulated_type := f (?y -> Message)
-    //
-    // accumulated_type := f ?y -> f Message
-    // expression_type  := f String
-    //
-    // accumulated_type := f Message
-    for expression in tail_statements {
-        accumulated_type =
-            infer_ado_apply(state, context, apply_type, accumulated_type, *expression)?;
     }
 
-    Ok(accumulated_type)
+    // Create a fresh unification variable for the in_expression.
+    // Inferring expression directly may solve the unification variables
+    // introduced in the first pass. This is undesirable, because the
+    // errors would be attributed incorrectly to the ado statements
+    // rather than the in-expression itself.
+    //
+    //   ado
+    //     a <- pure "Hello!"
+    //     _ <- pure 42
+    //     in Message a
+    //
+    //   in_expression      :: Effect Message
+    //   in_expression_type := ?in_expression
+    //   lambda_type        := ?a -> ?b -> ?in_expression
+    let in_expression_type = state.fresh_unification_type(context);
+    let lambda_type = state.make_function(&binder_types, in_expression_type);
+
+    // The desugared form of an ado-expression is a forward applicative
+    // pipeline, unlike do-notation which works inside-out. The example
+    // above desugars to the following expression:
+    //
+    //   (\a _ -> Message a) <$> (pure "Hello!") <*> (pure 42)
+    //
+    // To emulate this, we process steps in source order. Let bindings
+    // are checked inline between map/apply operations. The first action
+    // uses infer_ado_map, and subsequent actions use infer_ado_apply.
+    //
+    //   map_type        :: (a -> b) -> f a -> f b
+    //   lambda_type     := ?a -> ?b -> ?in_expression
+    //
+    //   expression_type         := Effect String
+    //   map(lambda, expression) := Effect (?b -> ?in_expression)
+    //                           >>
+    //                           >> ?a := String
+    //
+    //   continuation_type := Effect (?b -> ?in_expression)
+
+    // Lazily compute map_type and apply_type only when needed.
+    // - 1 action: only map is needed
+    // - 2+ actions: map and apply are needed
+    let action_count = binder_types.len();
+
+    let map_type = lookup_or_synthesise_map(state, context, map)?;
+
+    let apply_type = if action_count > 1 {
+        lookup_or_synthesise_apply(state, context, apply)?
+    } else {
+        context.prim.unknown
+    };
+
+    let mut continuation_type = None;
+
+    for step in &steps {
+        match step {
+            AdoStep::Let { statement, statements } => {
+                let error_step = ErrorStep::CheckingAdoLet(*statement);
+                state.with_error_step(error_step, |state| {
+                    check_let_chunks(state, context, statements)
+                })?;
+            }
+            AdoStep::Action { statement, expression, .. } => {
+                let statement_type = if let Some(continuation_type) = continuation_type {
+                    // Then, the infer_ado_apply rule applies `apply` to the inferred
+                    // expression type and the continuation type that is a function
+                    // contained within some container, like Effect.
+                    //
+                    //   apply_type        := f (x -> y) -> f x -> f y
+                    //   continuation_type := Effect (?b -> ?in_expression)
+                    //
+                    //   expression_type                 := Effect Int
+                    //   apply(continuation, expression) := Effect ?in_expression
+                    //                                   >>
+                    //                                   >> ?b := Int
+                    //
+                    //   continuation_type := Effect ?in_expression
+                    let arguments = InferAdoApply {
+                        statement: *statement,
+                        apply_type,
+                        continuation_type,
+                        expression: *expression,
+                    };
+                    infer_ado_apply(state, context, arguments)?
+                } else {
+                    let arguments = InferAdoMap {
+                        statement: *statement,
+                        map_type,
+                        lambda_type,
+                        expression: *expression,
+                    };
+                    infer_ado_map(state, context, arguments)?
+                };
+                continuation_type = Some(statement_type);
+            }
+        }
+    }
+
+    // Finally, check the in-expression against in_expression.
+    // At this point the binder unification variables have been solved
+    // to concrete types, so errors are attributed to the in-expression.
+    //
+    //   in_expression      :: Effect Message
+    //   in_expression_type := Effect ?in_expression
+    //                      >>
+    //                      >> ?in_expression := Message
+    if let Some(expression) = expression {
+        check_expression(state, context, expression, in_expression_type)?;
+    }
+
+    let Some(continuation_type) = continuation_type else {
+        unreachable!("invariant violated: impossible empty steps");
+    };
+
+    Ok(continuation_type)
 }
 
 fn infer_array<Q>(
@@ -845,7 +1328,7 @@ where
 
                 // Instantiate to avoid polymorphic types in record fields.
                 let id = toolkit::instantiate_forall(state, id);
-                let id = toolkit::collect_constraints(state, id);
+                let id = toolkit::collect_wanteds(state, id);
 
                 fields.push(RowField { label, id });
             }
@@ -858,7 +1341,7 @@ where
 
                 // Instantiate to avoid polymorphic types in record fields.
                 let id = toolkit::instantiate_forall(state, id);
-                let id = toolkit::collect_constraints(state, id);
+                let id = toolkit::collect_wanteds(state, id);
 
                 fields.push(RowField { label, id });
             }
@@ -889,10 +1372,7 @@ where
 
         let field_type = state.fresh_unification_type(context);
 
-        let row_type_kind =
-            state.storage.intern(Type::Application(context.prim.row, context.prim.t));
-
-        let tail_type = state.fresh_unification_kinded(row_type_kind);
+        let tail_type = state.fresh_unification_kinded(context.prim.row_type);
 
         let row_type =
             RowType::from_unsorted(vec![RowField { label, id: field_type }], Some(tail_type));
@@ -978,8 +1458,7 @@ where
         }
     }
 
-    let row_type_kind = state.storage.intern(Type::Application(context.prim.row, context.prim.t));
-    let tail = state.fresh_unification_kinded(row_type_kind);
+    let tail = state.fresh_unification_kinded(context.prim.row_type);
 
     Ok((input_fields, output_fields, tail))
 }
@@ -1008,20 +1487,38 @@ where
     }
 }
 
+struct InferAdoMap {
+    statement: lowering::DoStatementId,
+    map_type: TypeId,
+    lambda_type: TypeId,
+    expression: lowering::ExpressionId,
+}
+
+#[tracing::instrument(skip_all, name = "infer_ado_map")]
 fn infer_ado_map<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    map_type: TypeId,
-    lambda_type: TypeId,
-    expression: Option<lowering::ExpressionId>,
+    arguments: InferAdoMap,
 ) -> QueryResult<TypeId>
 where
     Q: ExternalQueries,
 {
-    let Some(expression) = expression else {
-        return Ok(context.prim.unknown);
-    };
+    let InferAdoMap { statement, map_type, lambda_type, expression } = arguments;
+    state.with_error_step(ErrorStep::InferringAdoMap(statement), |state| {
+        infer_ado_map_core(state, context, map_type, lambda_type, expression)
+    })
+}
 
+fn infer_ado_map_core<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    map_type: TypeId,
+    lambda_type: TypeId,
+    expression: lowering::ExpressionId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
     // expression_type := f a
     let expression_type = infer_expression(state, context, expression)?;
 
@@ -1053,33 +1550,51 @@ where
     )
 }
 
+struct InferAdoApply {
+    statement: lowering::DoStatementId,
+    apply_type: TypeId,
+    continuation_type: TypeId,
+    expression: lowering::ExpressionId,
+}
+
+#[tracing::instrument(skip_all, name = "infer_ado_apply")]
 fn infer_ado_apply<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    apply_type: TypeId,
-    accumulated_type: TypeId,
-    expression: Option<lowering::ExpressionId>,
+    arguments: InferAdoApply,
 ) -> QueryResult<TypeId>
 where
     Q: ExternalQueries,
 {
-    let Some(expression) = expression else {
-        return Ok(context.prim.unknown);
-    };
+    let InferAdoApply { statement, apply_type, continuation_type, expression } = arguments;
+    state.with_error_step(ErrorStep::InferringAdoApply(statement), |state| {
+        infer_ado_apply_core(state, context, apply_type, continuation_type, expression)
+    })
+}
 
+fn infer_ado_apply_core<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    apply_type: TypeId,
+    continuation_type: TypeId,
+    expression: lowering::ExpressionId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
     // expression_type := ?f ?a
     let expression_type = infer_expression(state, context, expression)?;
 
-    // apply_type       := f (a -> b) -> f a -> f b
-    // accumulated_type := f (a -> b)
+    // apply_type        := f (a -> b) -> f a -> f b
+    // continuation_type := f (a -> b)
     let apply_applied = check_function_application_core(
         state,
         context,
         apply_type,
-        accumulated_type,
-        |state, context, accumulated_type, expected_type| {
-            let _ = unification::subtype(state, context, accumulated_type, expected_type)?;
-            Ok(accumulated_type)
+        continuation_type,
+        |state, context, continuation_type, expected_type| {
+            let _ = unification::subtype(state, context, continuation_type, expected_type)?;
+            Ok(continuation_type)
         },
     )?;
 
@@ -1098,25 +1613,49 @@ where
     )
 }
 
+struct InferDoBind {
+    statement: lowering::DoStatementId,
+    bind_type: TypeId,
+    now_type: TypeId,
+    next_type: TypeId,
+    expression: lowering::ExpressionId,
+    binder_type: TypeId,
+}
+
+#[tracing::instrument(skip_all, name = "infer_do_bind")]
 fn infer_do_bind<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
+    arguments: InferDoBind,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    let InferDoBind { statement, bind_type, now_type, next_type, expression, binder_type } =
+        arguments;
+    state.with_error_step(ErrorStep::InferringDoBind(statement), move |state| {
+        let statement_type =
+            infer_do_bind_core(state, context, bind_type, next_type, expression, binder_type)?;
+        let _ = unification::subtype(state, context, statement_type, now_type)?;
+        Ok(())
+    })
+}
+
+fn infer_do_bind_core<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
     bind_type: TypeId,
-    accumulated_type: TypeId,
-    expression: Option<lowering::ExpressionId>,
+    continuation_type: TypeId,
+    expression: lowering::ExpressionId,
     binder_type: TypeId,
 ) -> QueryResult<TypeId>
 where
     Q: ExternalQueries,
 {
-    let Some(expression) = expression else {
-        return Ok(context.prim.unknown);
-    };
-
     // expression_type := m a
     let expression_type = infer_expression(state, context, expression)?;
     // lambda_type := a -> m b
-    let lambda_type = state.make_function(&[binder_type], accumulated_type);
+    let lambda_type = state.make_function(&[binder_type], continuation_type);
 
     // bind_type       := m a -> (a -> m b) -> m b
     // expression_type := m a
@@ -1146,20 +1685,42 @@ where
     )
 }
 
+struct InferDoDiscard {
+    statement: lowering::DoStatementId,
+    discard_type: TypeId,
+    now_type: TypeId,
+    next_type: TypeId,
+    expression: lowering::ExpressionId,
+}
+
+#[tracing::instrument(skip_all, name = "infer_do_discard")]
 fn infer_do_discard<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
+    arguments: InferDoDiscard,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    let InferDoDiscard { statement, discard_type, now_type, next_type, expression } = arguments;
+    state.with_error_step(ErrorStep::InferringDoDiscard(statement), move |state| {
+        let statement_type =
+            infer_do_discard_core(state, context, discard_type, next_type, expression)?;
+        let _ = unification::subtype(state, context, statement_type, now_type)?;
+        Ok(())
+    })
+}
+
+fn infer_do_discard_core<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
     discard_type: TypeId,
-    accumulated_type: TypeId,
-    expression: Option<lowering::ExpressionId>,
+    continuation_type: TypeId,
+    expression: lowering::ExpressionId,
 ) -> QueryResult<TypeId>
 where
     Q: ExternalQueries,
 {
-    let Some(expression) = expression else {
-        return Ok(context.prim.unknown);
-    };
-
     // expression_type := m a
     let expression_type = infer_expression(state, context, expression)?;
 
@@ -1189,9 +1750,9 @@ where
         |_, _, _, continuation_type| Ok(continuation_type),
     )?;
 
-    let _ = unification::subtype(state, context, accumulated_type, result_type)?;
+    let _ = unification::subtype(state, context, continuation_type, result_type)?;
 
-    Ok(accumulated_type)
+    Ok(continuation_type)
 }
 
 /// Looks up the type of a term.
@@ -1207,6 +1768,8 @@ where
     let term_id = if file_id == context.id {
         if let Some(&k) = state.binding_group.terms.get(&term_id) {
             k
+        } else if let Some(&k) = state.pending_terms.get(&term_id) {
+            k.into()
         } else if let Some(&k) = state.checked.terms.get(&term_id) {
             transfer::localize(state, context, k)
         } else {
@@ -1256,12 +1819,12 @@ where
     let function_t = state.normalize_type(function_t);
     match state.storage[function_t] {
         Type::Forall(ref binder, inner) => {
-            let binder_level = binder.level;
+            let binder_variable = binder.variable.clone();
             let binder_kind = binder.kind;
 
             let (argument_type, _) =
                 kind::check_surface_kind(state, context, argument, binder_kind)?;
-            Ok(substitute::SubstituteBound::on(state, binder_level, argument_type, inner))
+            Ok(substitute::SubstituteBound::on(state, binder_variable, argument_type, inner))
         }
 
         _ => Ok(context.prim.unknown),
@@ -1296,7 +1859,7 @@ where
     F: FnOnce(&mut CheckState, &CheckContext<Q>, A, TypeId) -> QueryResult<TypeId>,
 {
     crate::trace_fields!(state, context, { function = function_t });
-    let function_t = state.normalize_type(function_t);
+    let function_t = toolkit::normalise_expand_type(state, context, function_t)?;
     match state.storage[function_t] {
         // Check that `argument_id :: argument_type`
         Type::Function(argument_type, result_type) => {
@@ -1332,18 +1895,18 @@ where
 
         // Instantiation rule, like `toolkit::instantiate_forall`
         Type::Forall(ref binder, inner) => {
-            let binder_level = binder.level;
+            let binder_variable = binder.variable.clone();
             let binder_kind = binder.kind;
 
             let unification = state.fresh_unification_kinded(binder_kind);
             let function_t =
-                substitute::SubstituteBound::on(state, binder_level, unification, inner);
+                substitute::SubstituteBound::on(state, binder_variable, unification, inner);
             check_function_application_core(state, context, function_t, argument_id, check_argument)
         }
 
         // Constraint generation, like `toolkit::collect_constraints`
         Type::Constrained(constraint, constrained) => {
-            state.constraints.push_wanted(constraint);
+            state.push_wanted(constraint);
             check_function_application_core(
                 state,
                 context,
@@ -1351,6 +1914,24 @@ where
                 argument_id,
                 check_argument,
             )
+        }
+
+        // Application(Application(f, a), b) as Function(a, b)
+        Type::Application(partial, result_type) => {
+            let partial = state.normalize_type(partial);
+            if let Type::Application(constructor, argument_type) = state.storage[partial] {
+                let constructor = state.normalize_type(constructor);
+                if constructor == context.prim.function {
+                    check_argument(state, context, argument_id, argument_type)?;
+                    return Ok(result_type);
+                }
+                if let Type::Unification(unification_id) = state.storage[constructor] {
+                    state.unification.solve(unification_id, context.prim.function);
+                    check_argument(state, context, argument_id, argument_type)?;
+                    return Ok(result_type);
+                }
+            }
+            Ok(context.prim.unknown)
         }
 
         _ => Ok(context.prim.unknown),
@@ -1369,7 +1950,7 @@ where
     check_function_application_core(state, context, function_t, expression_id, check_expression)
 }
 
-fn check_let_chunks<Q>(
+pub(crate) fn check_let_chunks<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     chunks: &[lowering::LetBindingChunk],
@@ -1405,11 +1986,27 @@ where
 
     let expression_type = infer_where_expression(state, context, where_expression)?;
 
-    let Some(binder) = binder else {
+    let Some(binder) = *binder else {
         return Ok(());
     };
 
-    let _ = binder::check_binder(state, context, *binder, expression_type)?;
+    let expression_type = if binder::requires_instantiation(context, binder) {
+        toolkit::instantiate_forall(state, expression_type)
+    } else {
+        expression_type
+    };
+
+    let binder_type = binder::check_binder(state, context, binder, expression_type)?;
+
+    let exhaustiveness =
+        exhaustiveness::check_lambda_patterns(state, context, &[binder_type], &[binder])?;
+
+    let has_missing = exhaustiveness.missing.is_some();
+    state.report_exhaustiveness(exhaustiveness);
+
+    if has_missing {
+        state.push_wanted(context.prim.partial);
+    }
 
     Ok(())
 }
@@ -1464,6 +2061,21 @@ fn check_let_name_binding<Q>(
 where
     Q: ExternalQueries,
 {
+    state.with_implication(|state| {
+        state.with_error_step(ErrorStep::CheckingLetName(id), |state| {
+            check_let_name_binding_core(state, context, id)
+        })
+    })
+}
+
+fn check_let_name_binding_core<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    id: lowering::LetBindingNameGroupId,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
     let Some(name) = context.lowered.info.get_let_binding(id) else {
         return Ok(());
     };
@@ -1476,18 +2088,150 @@ where
         let surface_bindings = state.surface_bindings.get_let(id);
         let surface_bindings = surface_bindings.as_deref().unwrap_or_default();
 
-        let signature =
-            inspect::inspect_signature_core(state, context, name_type, surface_bindings)?;
+        let signature = inspect::inspect_signature(state, context, name_type, surface_bindings)?;
 
-        check_equations(state, context, signature_id, signature, &name.equations)
+        equation::check_equations_core(state, context, signature_id, &signature, &name.equations)?;
+
+        let origin = equation::ExhaustivenessOrigin::FromSignature(&signature.arguments);
+        equation::patterns(state, context, origin, &name.equations)?;
+
+        if let Some(variable) = signature.variables.first() {
+            state.type_scope.unbind_name(&variable.variable);
+        }
     } else {
-        infer_equations_core(state, context, name_type, &name.equations)?;
+        // Keep simple let bindings e.g. `bind = ibind` polymorphic.
+        if let [equation] = name.equations.as_ref()
+            && equation.binders.is_empty()
+            && let Some(guarded) = &equation.guarded
+        {
+            let inferred_type = infer_guarded_expression(state, context, guarded)?;
+            state.term_scope.bind_let(id, inferred_type);
+        } else {
+            equation::infer_equations_core(state, context, name_type, &name.equations)?;
 
-        // No let-generalization: infer equations and solve constraints;
-        // residuals are deferred to parent scope for later error reporting.
-        let residual = state.solve_constraints(context)?;
-        state.constraints.extend_wanted(&residual);
-
-        Ok(())
+            let origin = equation::ExhaustivenessOrigin::FromType(name_type);
+            equation::patterns(state, context, origin, &name.equations)?;
+        }
     }
+
+    Ok(())
+}
+
+pub fn infer_guarded_expression<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    guarded: &lowering::GuardedExpression,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    match guarded {
+        lowering::GuardedExpression::Unconditional { where_expression } => {
+            let Some(w) = where_expression else {
+                return Ok(context.prim.unknown);
+            };
+            infer_where_expression(state, context, w)
+        }
+        lowering::GuardedExpression::Conditionals { pattern_guarded } => {
+            let mut inferred_type = context.prim.unknown;
+            for pattern_guarded in pattern_guarded.iter() {
+                for pattern_guard in pattern_guarded.pattern_guards.iter() {
+                    check_pattern_guard(state, context, pattern_guard)?;
+                }
+                if let Some(w) = &pattern_guarded.where_expression {
+                    inferred_type = infer_where_expression(state, context, w)?;
+                }
+            }
+            Ok(inferred_type)
+        }
+    }
+}
+
+pub fn check_guarded_expression<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    guarded: &lowering::GuardedExpression,
+    expected: TypeId,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    match guarded {
+        lowering::GuardedExpression::Unconditional { where_expression } => {
+            let Some(w) = where_expression else {
+                return Ok(());
+            };
+            check_where_expression(state, context, w, expected)?;
+            Ok(())
+        }
+        lowering::GuardedExpression::Conditionals { pattern_guarded } => {
+            for pattern_guarded in pattern_guarded.iter() {
+                for pattern_guard in pattern_guarded.pattern_guards.iter() {
+                    check_pattern_guard(state, context, pattern_guard)?;
+                }
+                if let Some(w) = &pattern_guarded.where_expression {
+                    check_where_expression(state, context, w, expected)?;
+                }
+            }
+            Ok(())
+        }
+    }
+}
+
+fn check_pattern_guard<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    guard: &lowering::PatternGuard,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    let Some(expression) = guard.expression else {
+        return Ok(());
+    };
+
+    let expression_type = infer_expression(state, context, expression)?;
+
+    let Some(binder) = guard.binder else {
+        return Ok(());
+    };
+
+    let _ = binder::check_binder(state, context, binder, expression_type)?;
+
+    Ok(())
+}
+
+pub fn infer_where_expression<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    where_expression: &lowering::WhereExpression,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    check_let_chunks(state, context, &where_expression.bindings)?;
+
+    let Some(expression) = where_expression.expression else {
+        return Ok(context.prim.unknown);
+    };
+
+    infer_expression(state, context, expression)
+}
+
+fn check_where_expression<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    where_expression: &lowering::WhereExpression,
+    expected: TypeId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    check_let_chunks(state, context, &where_expression.bindings)?;
+
+    let Some(expression) = where_expression.expression else {
+        return Ok(context.prim.unknown);
+    };
+
+    check_expression(state, context, expression, expected)
 }

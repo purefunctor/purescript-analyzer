@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -47,5 +48,9 @@ derive Eq (NoOrd :: Type)
 derive Eq (ContainsNoOrd :: Type)
 derive Ord (ContainsNoOrd :: Type)
 
-Errors
-NoInstanceFound { Ord NoOrd } at [TermDeclaration(Idx::<TermItem>(10))]
+Diagnostics
+error[NoInstanceFound]: No instance found for: Ord NoOrd
+  --> 23:1..23:34
+   |
+23 | derive instance Ord ContainsNoOrd
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

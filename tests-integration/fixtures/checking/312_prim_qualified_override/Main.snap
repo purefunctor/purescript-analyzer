@@ -1,0 +1,24 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+
+Types
+Test :: Array ???
+
+Roles
+Test = []
+
+Diagnostics
+error[NotInScope]: 'Prim.Int' is not in scope
+  --> 5:35..5:43
+  |
+5 | foreign import data Test :: Array Prim.Int
+  |                                   ^~~~~~~~
+error[CannotUnify]: Cannot unify '???' with 'Type'
+  --> 5:35..5:43
+  |
+5 | foreign import data Test :: Array Prim.Int
+  |                                   ^~~~~~~~

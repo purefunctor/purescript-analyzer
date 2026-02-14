@@ -1,0 +1,39 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+NonEmpty :: forall (a :: Type). (a :: Type) -> Array (a :: Type) -> NonEmpty (a :: Type)
+:| :: forall (a :: Type). (a :: Type) -> Array (a :: Type) -> NonEmpty (a :: Type)
+test1 :: forall (t5 :: Type). NonEmpty (t5 :: Type) -> (t5 :: Type)
+test2 :: forall (t8 :: Type). NonEmpty (t8 :: Type) -> (t8 :: Type)
+Cons :: forall (a :: Type). (a :: Type) -> List (a :: Type) -> List (a :: Type)
+Nil :: forall (a :: Type). List (a :: Type)
+: :: forall (a :: Type). (a :: Type) -> List (a :: Type) -> List (a :: Type)
+test3 :: forall (t12 :: Type). Partial => List (t12 :: Type) -> (t12 :: Type)
+
+Types
+NonEmpty :: Type -> Type
+List :: Type -> Type
+
+Data
+NonEmpty
+  Quantified = :0
+  Kind = :0
+
+List
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+NonEmpty = [Representational]
+List = [Representational]
+
+Diagnostics
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: Nil
+  --> 15:9..16:15
+   |
+15 | test3 = case _ of
+   |         ^~~~~~~~~

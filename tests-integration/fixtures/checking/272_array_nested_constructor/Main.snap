@@ -1,0 +1,48 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Just :: forall (a :: Type). (a :: Type) -> Maybe (a :: Type)
+Nothing :: forall (a :: Type). Maybe (a :: Type)
+testArrayWithMaybe :: Array (Maybe Int) -> Int
+testArrayWithMultipleMaybe :: Array (Maybe Int) -> Int
+testArrayMaybeExhaustive :: Array (Maybe Int) -> Int
+testNestedArrayMaybe :: Array (Array (Maybe Int)) -> Int
+testExhaustiveInner :: Array (Maybe Int) -> Int
+testUselessMultiple :: Array (Maybe Int) -> Int
+
+Types
+Maybe :: Type -> Type
+
+Data
+Maybe
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+Maybe = [Representational]
+
+Diagnostics
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: _
+  --> 6:1..6:47
+  |
+6 | testArrayWithMaybe :: Array (Maybe Int) -> Int
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: _
+  --> 10:1..10:55
+   |
+10 | testArrayWithMultipleMaybe :: Array (Maybe Int) -> Int
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: _
+  --> 19:1..19:57
+   |
+19 | testNestedArrayMaybe :: Array (Array (Maybe Int)) -> Int
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+warning[RedundantPattern]: Pattern match has redundant patterns: [Just _, Just _]
+  --> 29:1..29:48
+   |
+29 | testUselessMultiple :: Array (Maybe Int) -> Int
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

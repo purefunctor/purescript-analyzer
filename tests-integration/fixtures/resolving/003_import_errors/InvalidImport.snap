@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/resolving/generated.rs
+assertion_line: 12
 expression: report
 ---
 module InvalidImport
@@ -11,11 +12,15 @@ Terms:
 Types:
   - Invalid is Explicit
 
+Classes:
+
 Terms:
 
 Types:
   - Css is Explicit
   - Html is Explicit
+
+Classes:
 
 Qualified Imports:
 
@@ -23,9 +28,13 @@ Exported Terms:
 
 Exported Types:
 
+Exported Classes:
+
 Local Terms:
 
 Local Types:
+
+Local Classes:
 
 Class Members:
 

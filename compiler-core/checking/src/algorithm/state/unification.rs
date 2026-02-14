@@ -8,7 +8,7 @@ pub enum UnificationState {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct UnificationEntry {
-    pub domain: debruijn::Size,
+    pub depth: debruijn::Size,
     pub kind: TypeId,
     pub state: UnificationState,
 }
@@ -20,11 +20,11 @@ pub struct UnificationContext {
 }
 
 impl UnificationContext {
-    pub fn fresh(&mut self, domain: debruijn::Size, kind: TypeId) -> u32 {
+    pub fn fresh(&mut self, depth: debruijn::Size, kind: TypeId) -> u32 {
         let unique = self.unique;
 
         self.unique += 1;
-        self.entries.push(UnificationEntry { domain, kind, state: UnificationState::Unsolved });
+        self.entries.push(UnificationEntry { depth, kind, state: UnificationState::Unsolved });
 
         unique
     }

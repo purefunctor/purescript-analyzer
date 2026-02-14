@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -29,8 +30,16 @@ Roles
 WrapBoth = [Representational, Representational, Nominal, Nominal]
 
 Derived
-derive Bifunctor (WrapBoth @Type @Type (&0 :: Type -> Type) (&1 :: Type -> Type) :: Type -> Type -> Type)
+derive Bifunctor (WrapBoth @Type @Type (f :: Type -> Type) (g :: Type -> Type) :: Type -> Type -> Type)
 
-Errors
-DeriveMissingFunctor at [TermDeclaration(Idx::<TermItem>(1))]
-DeriveMissingFunctor at [TermDeclaration(Idx::<TermItem>(1))]
+Diagnostics
+error[DeriveMissingFunctor]: Deriving Functor requires Data.Functor to be in scope
+  --> 6:1..6:41
+  |
+6 | derive instance Bifunctor (WrapBoth f g)
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[DeriveMissingFunctor]: Deriving Functor requires Data.Functor to be in scope
+  --> 6:1..6:41
+  |
+6 | derive instance Bifunctor (WrapBoth f g)
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

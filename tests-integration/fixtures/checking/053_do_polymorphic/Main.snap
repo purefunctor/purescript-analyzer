@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -16,7 +17,7 @@ discard ::
     (m :: Type -> Type) (b :: Type)
 pure :: forall (m :: Type -> Type) (a :: Type). (a :: Type) -> (m :: Type -> Type) (a :: Type)
 test :: forall (m :: Type -> Type). (m :: Type -> Type) (Tuple Int String)
-test' :: forall (t58 :: Type -> Type). (t58 :: Type -> Type) (Tuple Int String)
+test' :: forall (t55 :: Type -> Type). (t55 :: Type -> Type) (Tuple Int String)
 
 Types
 Tuple :: Type -> Type -> Type

@@ -1,0 +1,22 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+
+Types
+SList :: Type
+SCons :: Symbol -> SList -> SList
+SNil :: SList
+
+Data
+SList
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+SList = []
+SCons = [Nominal, Nominal]
+SNil = []

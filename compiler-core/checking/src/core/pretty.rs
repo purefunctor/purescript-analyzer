@@ -295,16 +295,16 @@ where
 
             let binder_docs = binders
                 .iter()
-                .map(|ForallBinder { name, kind, .. }| {
+                .map(|ForallBinder { text, variable, kind, .. }| {
                     let kind_doc =
                         traverse_precedence(arena, source, context, Precedence::Top, *kind);
-                    context.names.insert(context.depth.0, name.to_string());
+                    context.names.insert(variable.unique, text.to_string());
                     context.depth = debruijn::Size(context.depth.0 + 1);
 
                     // Group each binder so it stays together as an atomic unit
                     arena
                         .text("(")
-                        .append(arena.text(name.to_string()))
+                        .append(arena.text(text.to_string()))
                         .append(arena.text(" :: "))
                         .append(kind_doc)
                         .append(arena.text(")"))
@@ -454,7 +454,7 @@ where
         Type::Unification(unification_id) => match source {
             TraversalSource::Local { state, .. } => {
                 let unification = state.unification.get(unification_id);
-                arena.text(format!("?{}[{}]", unification_id, unification.domain))
+                arena.text(format!("?{}[{}]", unification_id, unification.depth))
             }
             TraversalSource::Global { .. } => arena.text(format!("?{}[<Global>]", unification_id)),
         },
@@ -482,22 +482,22 @@ where
     Q: ExternalQueries,
 {
     match variable {
-        Variable::Skolem(level, kind) => {
+        Variable::Skolem(name, kind) => {
+            let name = format!("~{}", name.text);
             let kind_doc = traverse_precedence(arena, source, context, Precedence::Top, *kind);
             arena
                 .text("(")
-                .append(arena.text(format!("~{}", level)))
+                .append(arena.text(name))
                 .append(arena.text(" :: "))
                 .append(kind_doc)
                 .append(arena.text(")"))
         }
-        Variable::Bound(level, kind) => {
-            let name = context.names.get(&level.0).cloned();
-            let name_doc = arena.text(name.unwrap_or_else(|| format!("{}", level)));
+        Variable::Bound(name, kind) => {
+            let name = name.text.to_string();
             let kind_doc = traverse_precedence(arena, source, context, Precedence::Top, *kind);
             arena
                 .text("(")
-                .append(name_doc)
+                .append(arena.text(name))
                 .append(arena.text(" :: "))
                 .append(kind_doc)
                 .append(arena.text(")"))

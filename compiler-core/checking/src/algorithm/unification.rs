@@ -4,11 +4,34 @@ use building_types::QueryResult;
 use itertools::{EitherOrBoth, Itertools};
 
 use crate::ExternalQueries;
-use crate::algorithm::kind::synonym;
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::{kind, substitute, transfer};
+use crate::algorithm::{kind, substitute, toolkit};
 use crate::core::{RowField, RowType, Type, TypeId, Variable, debruijn};
 use crate::error::ErrorKind;
+
+/// Determines if constraints are elaborated during [`subtype`].
+///
+/// Elaboration means pushing constraints as "wanted" and inserting dictionary
+/// placeholders. This is only valid in **covariant** positions where the type
+/// checker controls what value is passed.
+///
+/// In **contravariant** positions (e.g., function arguments), the caller provides
+/// values—we cannot insert dictionaries there. When both sides have matching
+/// constraint structure, structural unification handles them correctly:
+///
+/// ```text
+/// (IsSymbol ?sym => Proxy ?sym -> r) <= (IsSymbol ~sym => Proxy ~sym -> r)
+///   IsSymbol ?sym ~ IsSymbol ~sym  → solves ?sym := ~sym
+/// ```
+///
+/// [`Type::Function`] in the [`subtype`] rule disables this for the argument
+/// and result positions. Syntax-driven rules like checking for binders and
+/// expressions that appear in the argument position also disable elaboration.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ElaborationMode {
+    Yes,
+    No,
+}
 
 /// Check that `t1` is a subtype of `t2`
 ///
@@ -42,7 +65,6 @@ use crate::error::ErrorKind;
 ///   subtype (?a -> ?a) (~a -> ~a)
 ///     subtype ?a ~a
 /// ```
-#[tracing::instrument(skip_all, name = "subtype")]
 pub fn subtype<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -52,10 +74,24 @@ pub fn subtype<Q>(
 where
     Q: ExternalQueries,
 {
-    let t1 = synonym::normalize_expand_type(state, context, t1)?;
-    let t2 = synonym::normalize_expand_type(state, context, t2)?;
+    subtype_with_mode(state, context, t1, t2, ElaborationMode::Yes)
+}
 
-    crate::debug_fields!(state, context, { t1 = t1, t2 = t2 });
+#[tracing::instrument(skip_all, name = "subtype_with_mode")]
+pub fn subtype_with_mode<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    t1: TypeId,
+    t2: TypeId,
+    mode: ElaborationMode,
+) -> QueryResult<bool>
+where
+    Q: ExternalQueries,
+{
+    let t1 = toolkit::normalise_expand_type(state, context, t1)?;
+    let t2 = toolkit::normalise_expand_type(state, context, t2)?;
+
+    crate::debug_fields!(state, context, { t1 = t1, t2 = t2, ?mode = mode });
 
     if t1 == t2 {
         crate::trace_fields!(state, context, { t1 = t1, t2 = t2 }, "identical");
@@ -67,29 +103,58 @@ where
 
     match (t1_core, t2_core) {
         (Type::Function(t1_argument, t1_result), Type::Function(t2_argument, t2_result)) => {
-            Ok(subtype(state, context, t2_argument, t1_argument)?
-                && subtype(state, context, t1_result, t2_result)?)
+            Ok(subtype_with_mode(state, context, t2_argument, t1_argument, ElaborationMode::No)?
+                && subtype_with_mode(state, context, t1_result, t2_result, ElaborationMode::No)?)
+        }
+
+        (Type::Application(_, _), Type::Function(t2_argument, t2_result)) => {
+            let t2 = state.storage.intern(Type::Application(context.prim.function, t2_argument));
+            let t2 = state.storage.intern(Type::Application(t2, t2_result));
+            subtype_with_mode(state, context, t1, t2, mode)
+        }
+
+        (Type::Function(t1_argument, t1_result), Type::Application(_, _)) => {
+            let t1 = state.storage.intern(Type::Application(context.prim.function, t1_argument));
+            let t1 = state.storage.intern(Type::Application(t1, t1_result));
+            subtype_with_mode(state, context, t1, t2, mode)
         }
 
         (_, Type::Forall(ref binder, inner)) => {
-            let v = Variable::Skolem(binder.level, binder.kind);
+            let v = Variable::Skolem(binder.variable.clone(), binder.kind);
             let t = state.storage.intern(Type::Variable(v));
 
-            let inner = substitute::SubstituteBound::on(state, binder.level, t, inner);
-            subtype(state, context, t1, inner)
+            let inner = substitute::SubstituteBound::on(state, binder.variable.clone(), t, inner);
+            subtype_with_mode(state, context, t1, inner, mode)
         }
 
         (Type::Forall(ref binder, inner), _) => {
             let k = state.normalize_type(binder.kind);
             let t = state.fresh_unification_kinded(k);
 
-            let inner = substitute::SubstituteBound::on(state, binder.level, t, inner);
-            subtype(state, context, inner, t2)
+            let inner = substitute::SubstituteBound::on(state, binder.variable.clone(), t, inner);
+            subtype_with_mode(state, context, inner, t2, mode)
         }
 
-        (Type::Constrained(constraint, inner), _) => {
-            state.constraints.push_wanted(constraint);
-            subtype(state, context, inner, t2)
+        (Type::Constrained(constraint, inner), _) if mode == ElaborationMode::Yes => {
+            state.push_wanted(constraint);
+            subtype_with_mode(state, context, inner, t2, mode)
+        }
+
+        (
+            Type::Application(t1_function, t1_argument),
+            Type::Application(t2_function, t2_argument),
+        ) if t1_function == context.prim.record && t2_function == context.prim.record => {
+            let t1_argument = toolkit::normalise_expand_type(state, context, t1_argument)?;
+            let t2_argument = toolkit::normalise_expand_type(state, context, t2_argument)?;
+
+            let t1_core = state.storage[t1_argument].clone();
+            let t2_core = state.storage[t2_argument].clone();
+
+            if let (Type::Row(t1_row), Type::Row(t2_row)) = (t1_core, t2_core) {
+                subtype_rows(state, context, &t1_row, &t2_row, mode)
+            } else {
+                unify(state, context, t1, t2)
+            }
         }
 
         (_, _) => unify(state, context, t1, t2),
@@ -106,8 +171,8 @@ pub fn unify<Q>(
 where
     Q: ExternalQueries,
 {
-    let t1 = synonym::normalize_expand_type(state, context, t1)?;
-    let t2 = synonym::normalize_expand_type(state, context, t2)?;
+    let t1 = toolkit::normalise_expand_type(state, context, t1)?;
+    let t2 = toolkit::normalise_expand_type(state, context, t2)?;
 
     crate::debug_fields!(state, context, { t1 = t1, t2 = t2 });
 
@@ -143,12 +208,99 @@ where
             unify(state, context, t1_left, t2_left)? && unify(state, context, t1_right, t2_right)?
         }
 
+        (Type::Forall(t1_binder, t1_inner), Type::Forall(t2_binder, t2_inner)) => {
+            unify(state, context, t1_binder.kind, t2_binder.kind)?;
+
+            let (t1_name, t2_name) = state.fresh_name_unify(&t1_binder.text, &t2_binder.text);
+
+            let t1_skolem = {
+                let skolem = Variable::Skolem(t1_name, t1_binder.kind);
+                state.storage.intern(Type::Variable(skolem))
+            };
+
+            let t2_skolem = {
+                let skolem = Variable::Skolem(t2_name, t2_binder.kind);
+                state.storage.intern(Type::Variable(skolem))
+            };
+
+            let t1 =
+                substitute::SubstituteBound::on(state, t1_binder.variable, t1_skolem, t1_inner);
+            let t2 =
+                substitute::SubstituteBound::on(state, t2_binder.variable, t2_skolem, t2_inner);
+
+            unify(state, context, t1, t2)?
+        }
+
+        (Type::Forall(binder, inner), _) => {
+            let name = state.fresh_name(&binder.text);
+            let skolem = Variable::Skolem(name, binder.kind);
+            let skolem = state.storage.intern(Type::Variable(skolem));
+            let inner = substitute::SubstituteBound::on(state, binder.variable, skolem, inner);
+            unify(state, context, inner, t2)?
+        }
+
+        (_, Type::Forall(binder, inner)) => {
+            let name = state.fresh_name(&binder.text);
+            let skolem = Variable::Skolem(name, binder.kind);
+            let skolem = state.storage.intern(Type::Variable(skolem));
+            let inner = substitute::SubstituteBound::on(state, binder.variable, skolem, inner);
+            unify(state, context, t1, inner)?
+        }
+
         (Type::Function(t1_argument, t1_result), Type::Function(t2_argument, t2_result)) => {
             unify(state, context, t1_argument, t2_argument)?
                 && unify(state, context, t1_result, t2_result)?
         }
 
+        // Unify Application(Application(f, a), b) with Function(a', b').
+        //
+        // This handles the case where `f` is a unification variable that should
+        // be solved to `Function`. For example, when checking:
+        //
+        //   identity :: forall t. Category a => a t t
+        //
+        //   monomorphic :: forall a. a -> a
+        //   monomorphic = identity
+        //
+        // Unifying `?a ?t ?t` and `a -> a` solves `?a := Function`.
+        //
+        // We reconstruct the `Application`-based form for a `Function` as the
+        // type to unify against, allowing `Application(?f, ?x)` to unify.
+        (Type::Application(_, _), Type::Function(t2_argument, t2_result)) => {
+            let t2 = state.storage.intern(Type::Application(context.prim.function, t2_argument));
+            let t2 = state.storage.intern(Type::Application(t2, t2_result));
+            unify(state, context, t1, t2)?
+        }
+
+        (Type::Function(t1_argument, t1_result), Type::Application(_, _)) => {
+            let t1 = state.storage.intern(Type::Application(context.prim.function, t1_argument));
+            let t1 = state.storage.intern(Type::Application(t1, t1_result));
+            unify(state, context, t1, t2)?
+        }
+
         (Type::Row(t1_row), Type::Row(t2_row)) => unify_rows(state, context, t1_row, t2_row)?,
+
+        (
+            Type::Variable(Variable::Bound(t1_name, t1_kind)),
+            Type::Variable(Variable::Bound(t2_name, t2_kind)),
+        ) => {
+            if t1_name == t2_name {
+                unify(state, context, t1_kind, t2_kind)?
+            } else {
+                false
+            }
+        }
+
+        (
+            Type::Variable(Variable::Skolem(t1_level, t1_kind)),
+            Type::Variable(Variable::Skolem(t2_level, t2_kind)),
+        ) => {
+            if t1_level == t2_level {
+                unify(state, context, t1_kind, t2_kind)?
+            } else {
+                false
+            }
+        }
 
         (Type::Unification(unification_id), _) => {
             solve(state, context, unification_id, t2)?.is_some()
@@ -172,8 +324,8 @@ where
     if !unifies {
         // at this point, it should be impossible to have
         // unsolved unification variables within t1 and t2
-        let t1 = transfer::globalize(state, context, t1);
-        let t2 = transfer::globalize(state, context, t2);
+        let t1 = state.render_local_type(context, t1);
+        let t2 = state.render_local_type(context, t2);
         state.insert_error(ErrorKind::CannotUnify { t1, t2 });
     }
 
@@ -195,9 +347,9 @@ where
         solution = solution,
     });
 
-    let codomain = state.type_scope.size();
+    let solve_depth = state.type_scope.size();
 
-    if !promote_type(state, codomain, unification_id, solution) {
+    if !promote_type(state, solve_depth, unification_id, solution) {
         crate::trace_fields!(state, context, {
             ?unification_id = unification_id,
             solution = solution,
@@ -216,121 +368,207 @@ where
 
 pub fn promote_type(
     state: &mut CheckState,
-    codomain: debruijn::Size,
+    solve_depth: debruijn::Size,
     unification_id: u32,
     solution: TypeId,
 ) -> bool {
-    let solution = state.normalize_type(solution);
-    match state.storage[solution] {
-        Type::Application(function, argument) => {
-            promote_type(state, codomain, unification_id, function)
-                && promote_type(state, codomain, unification_id, argument)
-        }
+    /// Invariant context for the inner recursion of [`promote_type`].
+    struct PromoteContext {
+        /// The type scope size when calling [`solve`].
+        ///
+        /// Bound variables at or above this level are introduced
+        /// by foralls within the solution and don't escape.
+        solve_depth: debruijn::Size,
+        /// The unification variable being solved.
+        unification_id: u32,
+    }
 
-        Type::Constrained(constraint, inner) => {
-            promote_type(state, codomain, unification_id, constraint)
-                && promote_type(state, codomain, unification_id, inner)
-        }
-
-        Type::Constructor(_, _) => true,
-
-        Type::Forall(ref binder, inner) => {
-            let inner_codomain = codomain.increment();
-            promote_type(state, codomain, unification_id, binder.kind)
-                && promote_type(state, inner_codomain, unification_id, inner)
-        }
-
-        Type::Function(argument, result) => {
-            promote_type(state, codomain, unification_id, argument)
-                && promote_type(state, codomain, unification_id, result)
-        }
-
-        Type::Integer(_) => true,
-
-        Type::KindApplication(function, argument) => {
-            promote_type(state, codomain, unification_id, function)
-                && promote_type(state, codomain, unification_id, argument)
-        }
-
-        Type::Kinded(inner, kind) => {
-            promote_type(state, codomain, unification_id, inner)
-                && promote_type(state, codomain, unification_id, kind)
-        }
-
-        Type::Operator(_, _) => true,
-
-        Type::OperatorApplication(_, _, left, right) => {
-            promote_type(state, codomain, unification_id, left)
-                && promote_type(state, codomain, unification_id, right)
-        }
-
-        Type::Row(RowType { ref fields, tail }) => {
-            let fields = Arc::clone(fields);
-
-            for field in fields.iter() {
-                if !promote_type(state, codomain, unification_id, field.id) {
-                    return false;
-                }
+    fn aux(s: &mut CheckState, c: &PromoteContext, depth: debruijn::Size, t: TypeId) -> bool {
+        let t = s.normalize_type(t);
+        match s.storage[t] {
+            Type::Application(function, argument) => {
+                aux(s, c, depth, function) && aux(s, c, depth, argument)
             }
 
-            if let Some(tail) = tail
-                && !promote_type(state, codomain, unification_id, tail)
-            {
-                return false;
+            Type::Constrained(constraint, inner) => {
+                aux(s, c, depth, constraint) && aux(s, c, depth, inner)
             }
 
-            true
-        }
+            Type::Constructor(_, _) => true,
 
-        Type::String(_, _) => true,
-
-        Type::SynonymApplication(_, _, _, ref arguments) => {
-            let arguments = Arc::clone(arguments);
-            for argument in arguments.iter() {
-                if !promote_type(state, codomain, unification_id, *argument) {
-                    return false;
-                }
-            }
-            true
-        }
-
-        Type::Unification(solution_id) => {
-            let unification = state.unification.get(unification_id);
-            let solution = state.unification.get(solution_id);
-
-            if unification_id == solution_id {
-                return false;
+            Type::Forall(ref binder, inner) => {
+                let inner_depth = depth.increment();
+                aux(s, c, depth, binder.kind) && aux(s, c, inner_depth, inner)
             }
 
-            if unification.domain < solution.domain {
-                let promoted_ty =
-                    state.fresh_unification_kinded_at(unification.domain, unification.kind);
-
-                // promoted_ty is simple enough to not warrant `solve` recursion
-                state.unification.solve(solution_id, promoted_ty);
+            Type::Function(argument, result) => {
+                aux(s, c, depth, argument) && aux(s, c, depth, result)
             }
 
-            true
-        }
+            Type::Integer(_) => true,
 
-        Type::Variable(ref variable) => {
-            // A bound variable escapes if its level >= the unification variable's domain.
-            // This means the variable was bound at or after the unification was created.
-            match variable {
-                Variable::Bound(level, kind) => {
-                    let unification = state.unification.get(unification_id);
-                    if level.0 >= unification.domain.0 {
+            Type::KindApplication(function, argument) => {
+                aux(s, c, depth, function) && aux(s, c, depth, argument)
+            }
+
+            Type::Kinded(inner, kind) => aux(s, c, depth, inner) && aux(s, c, depth, kind),
+
+            Type::Operator(_, _) => true,
+
+            Type::OperatorApplication(_, _, left, right) => {
+                aux(s, c, depth, left) && aux(s, c, depth, right)
+            }
+
+            Type::Row(RowType { ref fields, tail }) => {
+                let fields = Arc::clone(fields);
+
+                for field in fields.iter() {
+                    if !aux(s, c, depth, field.id) {
                         return false;
                     }
-                    promote_type(state, codomain, unification_id, *kind)
                 }
-                Variable::Skolem(_, kind) => promote_type(state, codomain, unification_id, *kind),
-                Variable::Free(_) => true,
-            }
-        }
 
-        Type::Unknown => true,
+                if let Some(tail) = tail
+                    && !aux(s, c, depth, tail)
+                {
+                    return false;
+                }
+
+                true
+            }
+
+            Type::String(_, _) => true,
+
+            Type::SynonymApplication(_, _, _, ref arguments) => {
+                let arguments = Arc::clone(arguments);
+                for argument in arguments.iter() {
+                    if !aux(s, c, depth, *argument) {
+                        return false;
+                    }
+                }
+                true
+            }
+
+            Type::Unification(solution_id) => {
+                let unification = s.unification.get(c.unification_id);
+                let solution = s.unification.get(solution_id);
+
+                if c.unification_id == solution_id {
+                    return false;
+                }
+
+                if unification.depth < solution.depth {
+                    let promoted_ty =
+                        s.fresh_unification_kinded_at(unification.depth, unification.kind);
+
+                    // promoted_ty is simple enough to not warrant `solve` recursion
+                    s.unification.solve(solution_id, promoted_ty);
+                }
+
+                true
+            }
+
+            Type::Variable(ref variable) => {
+                // Given a unification variable ?u created at depth C; and
+                // the solve depth S, the type scope size when solve was
+                // called; and a given variable bound at `level`, we define:
+                //
+                //   level < C        — safe, in scope when ?u was created
+                //   C <= level < S   — unsafe, introduced after ?u but before solving
+                //   S <= level       — safe, bound by a forall within the solution
+                //
+                // The third rule enables impredicative solutions. Forall types
+                // inside the solution introduce bound variables that are local
+                // to the solution type and don't escape. For example:
+                //
+                // Solving `?a[:1] := forall c. Maybe c`
+                //
+                //   forall a.           -- level 0, below C(1) → safe
+                //     forall b.         -- level 1, C=1, ?a created here
+                //       solve at S=2
+                //         forall c.     -- level 2, >= S(2) → solution-internal, safe
+                //           Maybe c
+                //
+                // Without the third rule, `c` at level 2 >= C(1) would be
+                // rejected as escaping, breaking `?a := forall c. Maybe c`.
+                match variable {
+                    Variable::Bound(name, kind) => {
+                        let bound_depth = name.depth;
+                        if bound_depth.0 >= c.solve_depth.0 {
+                            // S <= depth
+                            return aux(s, c, depth, *kind);
+                        }
+                        let unification = s.unification.get(c.unification_id);
+                        if bound_depth.0 >= unification.depth.0 {
+                            // C <= depth < S
+                            return false;
+                        }
+                        // depth < C
+                        aux(s, c, depth, *kind)
+                    }
+                    Variable::Skolem(_, kind) => aux(s, c, depth, *kind),
+                    Variable::Free(_) => true,
+                }
+            }
+
+            Type::Unknown => true,
+        }
     }
+
+    let c = PromoteContext { solve_depth, unification_id };
+    aux(state, &c, solve_depth, solution)
+}
+
+/// Checks that `t1_row` is a subtype of `t2_row`, generating errors for
+/// additional or missing fields. This is used for record subtyping.
+///
+/// * This algorithm partitions row fields into common, t1-only, and t2-only fields.
+/// * If t1_row is closed and t2_row is non-empty, [`ErrorKind::PropertyIsMissing`]
+/// * If t2_row is closed and t1_row is non-empty, [`ErrorKind::AdditionalProperty`]
+#[tracing::instrument(skip_all, name = "subtype_rows")]
+fn subtype_rows<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    t1_row: &RowType,
+    t2_row: &RowType,
+    mode: ElaborationMode,
+) -> QueryResult<bool>
+where
+    Q: ExternalQueries,
+{
+    let (left_only, right_only, ok) = partition_row_fields_with(
+        state,
+        context,
+        t1_row,
+        t2_row,
+        |state, context, left, right| subtype_with_mode(state, context, left, right, mode),
+    )?;
+
+    if !ok {
+        return Ok(false);
+    }
+
+    let mut failed = false;
+
+    if t1_row.tail.is_none() && !right_only.is_empty() {
+        let labels = right_only.iter().map(|field| field.label.clone());
+        let labels = Arc::from_iter(labels);
+        state.insert_error(ErrorKind::PropertyIsMissing { labels });
+        failed = true;
+    }
+
+    if t2_row.tail.is_none() && !left_only.is_empty() {
+        let labels = left_only.iter().map(|field| field.label.clone());
+        let labels = Arc::from_iter(labels);
+        state.insert_error(ErrorKind::AdditionalProperty { labels });
+        failed = true;
+    }
+
+    if failed {
+        return Ok(false);
+    }
+
+    unify_row_tails(state, context, t1_row.tail, t2_row.tail, left_only, right_only)
 }
 
 fn unify_rows<Q>(
@@ -342,55 +580,25 @@ fn unify_rows<Q>(
 where
     Q: ExternalQueries,
 {
-    let (extras_left, extras_right, ok) = partition_row_fields(state, context, &t1_row, &t2_row)?;
+    let (left_only, right_only, ok) = partition_row_fields(state, context, &t1_row, &t2_row)?;
 
     if !ok {
         return Ok(false);
     }
 
-    match (t1_row.tail, t2_row.tail) {
-        (None, None) => Ok(extras_left.is_empty() && extras_right.is_empty()),
-
-        (Some(t1_tail), None) => {
-            if !extras_left.is_empty() {
-                return Ok(false);
-            }
-            let row = Type::Row(RowType { fields: Arc::from(extras_right), tail: None });
-            let row_id = state.storage.intern(row);
-            unify(state, context, t1_tail, row_id)
-        }
-
-        (None, Some(t2_tail)) => {
-            if !extras_right.is_empty() {
-                return Ok(false);
-            }
-            let row = Type::Row(RowType { fields: Arc::from(extras_left), tail: None });
-            let row_id = state.storage.intern(row);
-            unify(state, context, t2_tail, row_id)
-        }
-
-        (Some(t1_tail), Some(t2_tail)) => {
-            if extras_left.is_empty() && extras_right.is_empty() {
-                return unify(state, context, t1_tail, t2_tail);
-            }
-
-            let row_type_kind =
-                state.storage.intern(Type::Application(context.prim.row, context.prim.t));
-
-            let unification = state.fresh_unification_kinded(row_type_kind);
-
-            let left_tail_row =
-                Type::Row(RowType { fields: Arc::from(extras_right), tail: Some(unification) });
-            let left_tail_row_id = state.storage.intern(left_tail_row);
-
-            let right_tail_row =
-                Type::Row(RowType { fields: Arc::from(extras_left), tail: Some(unification) });
-            let right_tail_row_id = state.storage.intern(right_tail_row);
-
-            Ok(unify(state, context, t1_tail, left_tail_row_id)?
-                && unify(state, context, t2_tail, right_tail_row_id)?)
-        }
+    if t1_row.tail.is_none() && t2_row.tail.is_none() {
+        return Ok(left_only.is_empty() && right_only.is_empty());
     }
+
+    if t2_row.tail.is_none() && !left_only.is_empty() {
+        return Ok(false);
+    }
+
+    if t1_row.tail.is_none() && !right_only.is_empty() {
+        return Ok(false);
+    }
+
+    unify_row_tails(state, context, t1_row.tail, t2_row.tail, left_only, right_only)
 }
 
 pub fn partition_row_fields<Q>(
@@ -402,6 +610,20 @@ pub fn partition_row_fields<Q>(
 where
     Q: ExternalQueries,
 {
+    partition_row_fields_with(state, context, t1_row, t2_row, unify)
+}
+
+fn partition_row_fields_with<Q, F>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    t1_row: &RowType,
+    t2_row: &RowType,
+    mut field_check: F,
+) -> QueryResult<(Vec<RowField>, Vec<RowField>, bool)>
+where
+    Q: ExternalQueries,
+    F: FnMut(&mut CheckState, &CheckContext<Q>, TypeId, TypeId) -> QueryResult<bool>,
+{
     let mut extras_left = vec![];
     let mut extras_right = vec![];
     let mut ok = true;
@@ -412,7 +634,7 @@ where
     for field in t1_fields.merge_join_by(t2_fields, |left, right| left.label.cmp(&right.label)) {
         match field {
             EitherOrBoth::Both(left, right) => {
-                if !unify(state, context, left.id, right.id)? {
+                if !field_check(state, context, left.id, right.id)? {
                     ok = false;
                 }
             }
@@ -428,4 +650,50 @@ where
     }
 
     Ok((extras_left, extras_right, ok))
+}
+
+fn unify_row_tails<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    t1_tail: Option<TypeId>,
+    t2_tail: Option<TypeId>,
+    extras_left: Vec<RowField>,
+    extras_right: Vec<RowField>,
+) -> QueryResult<bool>
+where
+    Q: ExternalQueries,
+{
+    match (t1_tail, t2_tail) {
+        (None, None) => Ok(true),
+
+        (Some(t1_tail), None) => {
+            let row = Type::Row(RowType { fields: Arc::from(extras_right), tail: None });
+            let row_id = state.storage.intern(row);
+            unify(state, context, t1_tail, row_id)
+        }
+
+        (None, Some(t2_tail)) => {
+            let row = Type::Row(RowType { fields: Arc::from(extras_left), tail: None });
+            let row_id = state.storage.intern(row);
+            unify(state, context, t2_tail, row_id)
+        }
+
+        (Some(t1_tail), Some(t2_tail)) => {
+            if extras_left.is_empty() && extras_right.is_empty() {
+                return unify(state, context, t1_tail, t2_tail);
+            }
+
+            let unification = state.fresh_unification_kinded(context.prim.row_type);
+            let tail = Some(unification);
+
+            let left_tail_row = Type::Row(RowType { fields: Arc::from(extras_right), tail });
+            let left_tail_row_id = state.storage.intern(left_tail_row);
+
+            let right_tail_row = Type::Row(RowType { fields: Arc::from(extras_left), tail });
+            let right_tail_row_id = state.storage.intern(right_tail_row);
+
+            Ok(unify(state, context, t1_tail, left_tail_row_id)?
+                && unify(state, context, t2_tail, right_tail_row_id)?)
+        }
+    }
 }

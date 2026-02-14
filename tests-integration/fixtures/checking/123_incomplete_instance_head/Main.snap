@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -12,7 +13,7 @@ Types
 Pair :: Type -> Type -> Constraint
 
 Classes
-class Pair (&0 :: Type) (&1 :: Type)
+class Pair (a :: Type) (b :: Type)
 
 Instances
 instance Pair (Int :: Type) (String :: Type)
@@ -20,5 +21,9 @@ instance Pair (Int :: Type) (String :: Type)
 instance Pair (Int :: Type)
   chain: 0
 
-Errors
-InstanceHeadMismatch { class_file: Idx::<File>(30), class_item: Idx::<TypeItem>(0), expected: 2, actual: 1 } at [TermDeclaration(Idx::<TermItem>(2))]
+Diagnostics
+error[InstanceHeadMismatch]: Instance head mismatch: expected 2 arguments, got 1
+  --> 9:1..10:28
+  |
+9 | instance Pair Int where
+  | ^~~~~~~~~~~~~~~~~~~~~~~

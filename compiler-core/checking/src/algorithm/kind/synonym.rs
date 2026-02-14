@@ -131,6 +131,7 @@ pub fn infer_synonym_constructor<Q: ExternalQueries>(
     }
 
     if is_recursive_synonym(context, file_id, type_id)? {
+        state.insert_error(ErrorKind::RecursiveSynonymExpansion { file_id, item_id: type_id });
         let synonym_type = state.storage.intern(Type::Constructor(file_id, type_id));
         return Ok((synonym_type, kind));
     }
@@ -178,7 +179,21 @@ where
     let expected_arity = synonym.type_variables.0 as usize;
     let actual_arity = arguments.len();
 
-    if expected_arity != actual_arity {
+    // A synonym's result kind can itself be a function kind, which means
+    // the application chain may contain more arguments than the synonym
+    // has parameters. For example:
+    //
+    //   type C2 :: forall k. (k -> Type) -> (k -> Type) -> k -> Type
+    //   type C2 a z = Coproduct a z
+    //
+    //   in1 :: forall a z. a ~> C2 a z
+    //
+    // The lowered application chain for `C2 a z x` has 3 arguments, but
+    // the synonym only has 2 parameters. After expanding with the first
+    // 2 arguments, `C2 a z` becomes `Coproduct a z` with kind `k -> Type`.
+    // The third argument `x` is then applied to the expanded result as a
+    // regular type application, giving `Coproduct a z x` of kind `Type`.
+    if actual_arity < expected_arity {
         if state.defer_synonym_expansion {
             let (synonym_type, synonym_kind) = infer_partial_synonym_application(
                 state,
@@ -194,12 +209,36 @@ where
         }
     }
 
+    // Continuing our previous example, `C2 a z x` produces:
+    //
+    //   synonym_arguments := [a, z]
+    //   excess_arguments  := [x]
+    let (synonym_arguments, excess_arguments) = arguments.split_at(expected_arity);
+
     let defer_synonym_expansion = mem::replace(&mut state.defer_synonym_expansion, true);
-
-    let (synonym_type, synonym_kind) =
-        infer_synonym_application_arguments(state, context, (file_id, type_id), kind, arguments)?;
-
+    let (mut synonym_type, mut synonym_kind) = infer_synonym_application_arguments(
+        state,
+        context,
+        (file_id, type_id),
+        kind,
+        synonym_arguments,
+    )?;
     state.defer_synonym_expansion = defer_synonym_expansion;
+
+    // Continuing our previous example, `C2 a z x` expands:
+    //
+    //   synonym_type := Coproduct a z
+    //   synonym_kind := (k -> Type)
+    //
+    // Finally, we append the excess arguments to get:
+    //
+    //   synonym_type := Coproduct a z x
+    //   synonym_kind := Type
+    //
+    for &argument in excess_arguments {
+        (synonym_type, synonym_kind) =
+            kind::infer_surface_app_kind(state, context, (synonym_type, synonym_kind), argument)?;
+    }
 
     Ok((synonym_type, synonym_kind))
 }
@@ -275,13 +314,13 @@ where
         }
 
         Type::Forall(ref binder, inner) => {
-            let binder_level = binder.level;
+            let binder_variable = binder.variable.clone();
             let binder_kind = binder.kind;
 
             let k = state.normalize_type(binder_kind);
             let t = state.fresh_unification_kinded(k);
 
-            let function_k = substitute::SubstituteBound::on(state, binder_level, t, inner);
+            let function_k = substitute::SubstituteBound::on(state, binder_variable, t, inner);
             infer_synonym_application_argument(state, context, function_k, argument)
         }
 
@@ -412,6 +451,44 @@ where
             }
         }
 
+        Type::OperatorApplication(operator_file_id, operator_item_id, left, right) => {
+            let resolution = if operator_file_id == context.id {
+                kind::operator::resolve_type_operator_target(&context.lowered, operator_item_id)
+            } else {
+                let lowered = context.queries.lowered(operator_file_id)?;
+                kind::operator::resolve_type_operator_target(&lowered, operator_item_id)
+            };
+
+            let Some((file_id, item_id)) = resolution else {
+                return Ok(None);
+            };
+
+            let Some((synonym, _)) = lookup_file_synonym(state, context, file_id, item_id)? else {
+                return Ok(None);
+            };
+
+            if is_recursive_synonym(context, file_id, item_id)? {
+                state.insert_error(ErrorKind::RecursiveSynonymExpansion { file_id, item_id });
+                return Ok(None);
+            }
+
+            let arguments = vec![left, right];
+
+            if arguments.len() != synonym.type_variables.0 as usize {
+                return Ok(None);
+            }
+
+            if additional.is_empty() {
+                Ok(Some(DiscoveredSynonym::Saturated { synonym, arguments }))
+            } else {
+                Ok(Some(DiscoveredSynonym::Additional {
+                    synonym,
+                    arguments: Arc::from(arguments),
+                    additional,
+                }))
+            }
+        }
+
         _ => Ok(None),
     }
 }
@@ -422,11 +499,12 @@ fn instantiate_saturated(state: &mut CheckState, synonym: Synonym, arguments: &[
 
     for _ in 0..count {
         if let Type::Forall(ref binder, inner) = state.storage[instantiated] {
-            let binder_level = binder.level;
+            let binder_variable = binder.variable.clone();
             let binder_kind = binder.kind;
 
             let unification = state.fresh_unification_kinded(binder_kind);
-            instantiated = substitute::SubstituteBound::on(state, binder_level, unification, inner);
+            instantiated =
+                substitute::SubstituteBound::on(state, binder_variable, unification, inner);
         } else {
             break;
         }
@@ -434,7 +512,8 @@ fn instantiate_saturated(state: &mut CheckState, synonym: Synonym, arguments: &[
 
     for &argument in arguments {
         if let Type::Forall(ref binder, inner) = state.storage[instantiated] {
-            instantiated = substitute::SubstituteBound::on(state, binder.level, argument, inner);
+            instantiated =
+                substitute::SubstituteBound::on(state, binder.variable.clone(), argument, inner);
         } else {
             break;
         }
@@ -466,28 +545,4 @@ where
             })
         }
     })
-}
-
-pub fn normalize_expand_type<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    mut type_id: TypeId,
-) -> QueryResult<TypeId>
-where
-    Q: ExternalQueries,
-{
-    const EXPANSION_LIMIT: u32 = 1_000_000;
-
-    for _ in 0..EXPANSION_LIMIT {
-        let normalized_id = state.normalize_type(type_id);
-        let expanded_id = expand_type_synonym(state, context, normalized_id)?;
-
-        if expanded_id == type_id {
-            return Ok(type_id);
-        }
-
-        type_id = expanded_id;
-    }
-
-    unreachable!("critical violation: limit reached in normalize_expand_type")
 }

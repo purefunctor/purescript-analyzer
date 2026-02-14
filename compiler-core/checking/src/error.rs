@@ -2,7 +2,11 @@
 
 use std::sync::Arc;
 
-use crate::TypeId;
+use interner::{Id, Interner};
+use smol_str::SmolStr;
+
+pub type TypeErrorMessageId = Id<SmolStr>;
+pub type TypeErrorMessageInterner = Interner<SmolStr>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ErrorStep {
@@ -18,29 +22,39 @@ pub enum ErrorStep {
 
     InferringExpression(lowering::ExpressionId),
     CheckingExpression(lowering::ExpressionId),
+
+    InferringDoBind(lowering::DoStatementId),
+    InferringDoDiscard(lowering::DoStatementId),
+    CheckingDoLet(lowering::DoStatementId),
+
+    InferringAdoMap(lowering::DoStatementId),
+    InferringAdoApply(lowering::DoStatementId),
+    CheckingAdoLet(lowering::DoStatementId),
+
+    CheckingLetName(lowering::LetBindingNameGroupId),
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ErrorKind {
     AmbiguousConstraint {
-        constraint: TypeId,
+        constraint: TypeErrorMessageId,
     },
     CannotDeriveClass {
         class_file: files::FileId,
         class_id: indexing::TypeItemId,
     },
     CannotDeriveForType {
-        type_id: TypeId,
+        type_message: TypeErrorMessageId,
     },
     ContravariantOccurrence {
-        type_id: TypeId,
+        type_message: TypeErrorMessageId,
     },
     CovariantOccurrence {
-        type_id: TypeId,
+        type_message: TypeErrorMessageId,
     },
     CannotUnify {
-        t1: TypeId,
-        t2: TypeId,
+        t1: TypeErrorMessageId,
+        t2: TypeErrorMessageId,
     },
     DeriveInvalidArity {
         class_file: files::FileId,
@@ -51,24 +65,38 @@ pub enum ErrorKind {
     DeriveMissingFunctor,
     EmptyAdoBlock,
     EmptyDoBlock,
+    InvalidFinalBind,
+    InvalidFinalLet,
     InstanceHeadMismatch {
         class_file: files::FileId,
         class_item: indexing::TypeItemId,
         expected: usize,
         actual: usize,
     },
+    InstanceHeadLabeledRow {
+        class_file: files::FileId,
+        class_item: indexing::TypeItemId,
+        position: usize,
+        type_message: TypeErrorMessageId,
+    },
     InstanceMemberTypeMismatch {
-        expected: TypeId,
-        actual: TypeId,
+        expected: TypeErrorMessageId,
+        actual: TypeErrorMessageId,
+    },
+    InvalidTypeApplication {
+        function_type: TypeErrorMessageId,
+        function_kind: TypeErrorMessageId,
+        argument_type: TypeErrorMessageId,
     },
     InvalidTypeOperator {
-        id: TypeId,
+        kind_message: TypeErrorMessageId,
     },
     ExpectedNewtype {
-        type_id: TypeId,
+        type_message: TypeErrorMessageId,
     },
+    InvalidNewtypeDeriveSkolemArguments,
     NoInstanceFound {
-        constraint: TypeId,
+        constraint: TypeErrorMessageId,
     },
     PartialSynonymApplication {
         id: lowering::TypeId,
@@ -88,8 +116,7 @@ pub enum ErrorKind {
         actual: u32,
     },
     InvalidRoleDeclaration {
-        type_id: indexing::TypeItemId,
-        parameter_index: usize,
+        index: usize,
         declared: crate::core::Role,
         inferred: crate::core::Role,
     },
@@ -98,10 +125,22 @@ pub enum ErrorKind {
         item_id: indexing::TypeItemId,
     },
     CustomWarning {
-        message_id: u32,
+        message_id: TypeErrorMessageId,
+    },
+    RedundantPatterns {
+        patterns: Arc<[SmolStr]>,
+    },
+    MissingPatterns {
+        patterns: Arc<[SmolStr]>,
     },
     CustomFailure {
-        message_id: u32,
+        message_id: TypeErrorMessageId,
+    },
+    PropertyIsMissing {
+        labels: Arc<[SmolStr]>,
+    },
+    AdditionalProperty {
+        labels: Arc<[SmolStr]>,
     },
 }
 

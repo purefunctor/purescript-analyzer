@@ -1,7 +1,7 @@
 use std::mem;
 use std::sync::Arc;
 
-use itertools::Itertools;
+use itertools::{Itertools, Position};
 use petgraph::algo::tarjan_scc;
 use rowan::ast::AstNode;
 use rustc_hash::FxHashMap;
@@ -45,8 +45,25 @@ fn lower_binder_kind(
                 .collect();
             BinderKind::OperatorChain { head, tail }
         }
-        cst::Binder::BinderInteger(_) => BinderKind::Integer,
-        cst::Binder::BinderNumber(_) => BinderKind::Number,
+        cst::Binder::BinderInteger(cst) => {
+            let value = cst.integer_token().and_then(|token| {
+                let text = token.text();
+                let integer = if let Some(hex) = text.strip_prefix("0x") {
+                    let clean = hex.replace_smolstr("_", "");
+                    i32::from_str_radix(&clean, 16).ok()?
+                } else {
+                    let clean = text.replace_smolstr("_", "");
+                    clean.parse().ok()?
+                };
+                if cst.minus_token().is_some() { Some(-integer) } else { Some(integer) }
+            });
+            BinderKind::Integer { value }
+        }
+        cst::Binder::BinderNumber(cst) => {
+            let negative = cst.minus_token().is_some();
+            let value = cst.number_token().map(|token| SmolStr::from(token.text()));
+            BinderKind::Number { negative, value }
+        }
         cst::Binder::BinderConstructor(cst) => {
             let resolution = cst.name().and_then(|cst| {
                 let (qualifier, name) = lower_qualified_name(&cst, cst::QualifiedName::upper)?;
@@ -77,8 +94,50 @@ fn lower_binder_kind(
             BinderKind::Named { named, binder }
         }
         cst::Binder::BinderWildcard(_) => BinderKind::Wildcard,
-        cst::Binder::BinderString(_) => BinderKind::String,
-        cst::Binder::BinderChar(_) => BinderKind::Char,
+        cst::Binder::BinderString(cst) => {
+            let (kind, value) = if let Some(token) = cst.string() {
+                let text = token.text();
+                let value = text
+                    .strip_prefix('"')
+                    .and_then(|text| text.strip_suffix('"'))
+                    .map(SmolStr::from);
+                (StringKind::String, value)
+            } else if let Some(token) = cst.raw_string() {
+                let text = token.text();
+                let value = text
+                    .strip_prefix("\"\"\"")
+                    .and_then(|text| text.strip_suffix("\"\"\""))
+                    .map(SmolStr::from);
+                (StringKind::RawString, value)
+            } else {
+                (StringKind::String, None)
+            };
+            BinderKind::String { kind, value }
+        }
+        cst::Binder::BinderChar(cst) => {
+            let value = cst.char_token().and_then(|token| {
+                let text = token.text();
+                let inner = text.strip_prefix('\'')?.strip_suffix('\'')?;
+                if let Some(escaped) = inner.strip_prefix('\\') {
+                    match escaped.chars().next()? {
+                        'n' => Some('\n'),
+                        'r' => Some('\r'),
+                        't' => Some('\t'),
+                        '\\' => Some('\\'),
+                        '\'' => Some('\''),
+                        '0' => Some('\0'),
+                        'x' if escaped.len() >= 3 => {
+                            let hex = &escaped[1..3];
+                            u8::from_str_radix(hex, 16).ok().map(|b| b as char)
+                        }
+                        _ => None,
+                    }
+                } else {
+                    inner.chars().next()
+                }
+            });
+            BinderKind::Char { value }
+        }
         cst::Binder::BinderTrue(_) => BinderKind::Boolean { boolean: true },
         cst::Binder::BinderFalse(_) => BinderKind::Boolean { boolean: false },
         cst::Binder::BinderArray(cst) => {
@@ -274,26 +333,44 @@ fn lower_expression_kind(
         cst::Expression::ExpressionDo(cst) => state.with_scope(|state| {
             let qualifier = cst.qualifier().and_then(|cst| {
                 let token = cst.text()?;
-                let text = token.text();
+                let text = token.text().trim_end_matches('.');
                 Some(SmolStr::from(text))
             });
 
-            let bind = state.resolve_term_full(context, qualifier.as_deref(), "bind");
-            let discard = state.resolve_term_full(context, qualifier.as_deref(), "discard");
+            // Scan statements to determine which rebindable functions are needed:
+            // - `bind` is needed if there's at least one `<-` statement
+            // - `discard` is needed if there's a non-final discard statement
+            let (has_bind, has_discard) = cst.statements().map_or((false, false), |statements| {
+                let mut has_bind = false;
+                let mut has_discard = false;
 
-            if bind.is_none() {
-                let id = context.stabilized.lookup_cst(cst).expect_id();
-                state
-                    .errors
-                    .push(LoweringError::NotInScope(NotInScope::DoFn { kind: DoFn::Bind, id }));
-            }
+                for (position, statement) in statements.children().with_position() {
+                    let is_final = matches!(position, Position::Last | Position::Only);
+                    match statement {
+                        cst::DoStatement::DoStatementBind(_) => has_bind = true,
+                        cst::DoStatement::DoStatementDiscard(_) if !is_final => has_discard = true,
+                        _ => {}
+                    }
+                }
 
-            if discard.is_none() {
-                let id = context.stabilized.lookup_cst(cst).expect_id();
-                state
-                    .errors
-                    .push(LoweringError::NotInScope(NotInScope::DoFn { kind: DoFn::Discard, id }));
-            }
+                (has_bind, has_discard)
+            });
+
+            let mut resolve_do_fn = |kind: DoFn| {
+                let name = match kind {
+                    DoFn::Bind => "bind",
+                    DoFn::Discard => "discard",
+                };
+                let resolution = state.resolve_term_full(context, qualifier.as_deref(), name);
+                if resolution.is_none() {
+                    let id = context.stabilized.lookup_cst(cst).expect_id();
+                    state.errors.push(LoweringError::NotInScope(NotInScope::DoFn { kind, id }));
+                }
+                resolution
+            };
+
+            let bind = if has_bind { resolve_do_fn(DoFn::Bind) } else { None };
+            let discard = if has_discard { resolve_do_fn(DoFn::Discard) } else { None };
 
             let statements = recover! {
                 cst.statements()?
@@ -307,34 +384,51 @@ fn lower_expression_kind(
         cst::Expression::ExpressionAdo(cst) => state.with_scope(|state| {
             let qualifier = cst.qualifier().and_then(|cst| {
                 let token = cst.text()?;
-                let text = token.text();
+                let text = token.text().trim_end_matches('.');
                 Some(SmolStr::from(text))
             });
 
-            let map = state.resolve_term_full(context, qualifier.as_deref(), "map");
-            let apply = state.resolve_term_full(context, qualifier.as_deref(), "apply");
-            let pure = state.resolve_term_full(context, qualifier.as_deref(), "pure");
+            // Count action statements (Bind/Discard, ignoring Let) to determine
+            // which rebindable functions are needed:
+            // - 0 actions: only `pure` needed
+            // - 1 action: only `map` needed
+            // - 2+ actions: `map` and `apply` needed
+            let action_count = cst.statements().map_or(0, |statements| {
+                statements
+                    .children()
+                    .filter(|s| {
+                        matches!(
+                            s,
+                            cst::DoStatement::DoStatementBind(_)
+                                | cst::DoStatement::DoStatementDiscard(_)
+                        )
+                    })
+                    .count()
+            });
 
-            if map.is_none() {
-                let id = context.stabilized.lookup_cst(cst).expect_id();
-                state
-                    .errors
-                    .push(LoweringError::NotInScope(NotInScope::AdoFn { kind: AdoFn::Map, id }));
-            }
+            let (needs_pure, needs_map, needs_apply) = match action_count {
+                0 => (true, false, false),
+                1 => (false, true, false),
+                _ => (false, true, true),
+            };
 
-            if apply.is_none() {
-                let id = context.stabilized.lookup_cst(cst).expect_id();
-                state
-                    .errors
-                    .push(LoweringError::NotInScope(NotInScope::AdoFn { kind: AdoFn::Apply, id }));
-            }
+            let mut resolve_ado_fn = |kind: AdoFn| {
+                let name = match kind {
+                    AdoFn::Map => "map",
+                    AdoFn::Apply => "apply",
+                    AdoFn::Pure => "pure",
+                };
+                let resolution = state.resolve_term_full(context, qualifier.as_deref(), name);
+                if resolution.is_none() {
+                    let id = context.stabilized.lookup_cst(cst).expect_id();
+                    state.errors.push(LoweringError::NotInScope(NotInScope::AdoFn { kind, id }));
+                }
+                resolution
+            };
 
-            if pure.is_none() {
-                let id = context.stabilized.lookup_cst(cst).expect_id();
-                state
-                    .errors
-                    .push(LoweringError::NotInScope(NotInScope::AdoFn { kind: AdoFn::Pure, id }));
-            }
+            let map = if needs_map { resolve_ado_fn(AdoFn::Map) } else { None };
+            let apply = if needs_apply { resolve_ado_fn(AdoFn::Apply) } else { None };
+            let pure = if needs_pure { resolve_ado_fn(AdoFn::Pure) } else { None };
 
             let statements = recover! {
                 cst.statements()?
@@ -725,8 +819,13 @@ pub(crate) fn lower_equation_like<T: AstNode>(
     })
 }
 
-fn lower_do_statement(state: &mut State, context: &Context, cst: &cst::DoStatement) -> DoStatement {
-    match cst {
+fn lower_do_statement(
+    state: &mut State,
+    context: &Context,
+    cst: &cst::DoStatement,
+) -> DoStatementId {
+    let id = context.stabilized.lookup_cst(cst).expect_id();
+    let statement = match cst {
         cst::DoStatement::DoStatementBind(cst) => {
             let expression = cst.expression().map(|cst| lower_expression(state, context, &cst));
             state.push_binder_scope();
@@ -741,7 +840,9 @@ fn lower_do_statement(state: &mut State, context: &Context, cst: &cst::DoStateme
             let expression = cst.expression().map(|cst| lower_expression(state, context, &cst));
             DoStatement::Discard { expression }
         }
-    }
+    };
+    state.associate_do_statement(id, statement);
+    id
 }
 
 fn lower_record_updates(
@@ -789,9 +890,11 @@ fn lower_type_kind(
 ) -> TypeKind {
     match cst {
         cst::Type::TypeApplicationChain(cst) => {
-            let mut children = cst.children().map(|cst| lower_type(state, context, &cst));
-            let function = children.next();
-            let arguments = children.collect();
+            let mut children = cst.children();
+            let function = children.next().map(|cst| lower_type(state, context, &cst));
+            let in_constraint = mem::replace(&mut state.in_constraint, false);
+            let arguments = children.map(|cst| lower_type(state, context, &cst)).collect();
+            state.in_constraint = in_constraint;
             TypeKind::ApplicationChain { function, arguments }
         }
         cst::Type::TypeArrow(cst) => {
@@ -801,15 +904,23 @@ fn lower_type_kind(
             TypeKind::Arrow { argument, result }
         }
         cst::Type::TypeConstrained(cst) => {
-            let mut children = cst.children().map(|cst| lower_type(state, context, &cst));
-            let constraint = children.next();
-            let constrained = children.next();
+            let mut children = cst.children();
+            let in_constraint = mem::replace(&mut state.in_constraint, true);
+            let constraint = children.next().map(|cst| lower_type(state, context, &cst));
+            state.in_constraint = in_constraint;
+            let constrained = children.next().map(|cst| lower_type(state, context, &cst));
             TypeKind::Constrained { constraint, constrained }
         }
         cst::Type::TypeConstructor(cst) => {
             let resolution = cst.name().and_then(|cst| {
                 let (qualifier, name) = lower_qualified_name(&cst, cst::QualifiedName::upper)?;
-                state.resolve_type_reference(context, qualifier.as_deref(), &name)
+                if state.in_constraint {
+                    state.resolve_class_reference(context, qualifier.as_deref(), &name).or_else(
+                        || state.resolve_type_reference(context, qualifier.as_deref(), &name),
+                    )
+                } else {
+                    state.resolve_type_reference(context, qualifier.as_deref(), &name)
+                }
             });
             if resolution.is_none() {
                 let id = context.stabilized.lookup_cst(cst).expect_id();

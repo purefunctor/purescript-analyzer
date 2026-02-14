@@ -1,0 +1,37 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Proxy :: forall (k :: Type) (a :: (k :: Type)). Proxy @(k :: Type) (a :: (k :: Type))
+consOpen ::
+  forall (r :: Row Type) (row :: Row Type).
+    Cons @Type "x" Int ( a :: String | (r :: Row Type) ) (row :: Row Type) =>
+    Proxy @(Row Type) (row :: Row Type)
+decomposeOpen ::
+  forall (t :: Type) (tail :: Row Type) (r :: Row Type).
+    Cons @Type "x" (t :: Type) (tail :: Row Type) ( a :: String, x :: Int | (r :: Row Type) ) =>
+    Proxy @Type (t :: Type)
+extractTail ::
+  forall (tail :: Row Type) (r :: Row Type).
+    Cons @Type "x" Int (tail :: Row Type) ( a :: String, x :: Int | (r :: Row Type) ) =>
+    Proxy @(Row Type) (tail :: Row Type)
+forceSolve ::
+  forall (t26 :: Row Type) (t32 :: Row Type).
+    { consOpen :: Proxy @(Row Type) ( a :: String, x :: Int | (t26 :: Row Type) )
+    , decomposeOpen :: Proxy @Type Int
+    , extractTail :: Proxy @(Row Type) ( a :: String | (t32 :: Row Type) )
+    }
+
+Types
+Proxy :: forall (k :: Type). (k :: Type) -> Type
+
+Data
+Proxy
+  Quantified = :0
+  Kind = :1
+
+
+Roles
+Proxy = [Phantom]

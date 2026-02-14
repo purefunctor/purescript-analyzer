@@ -9,9 +9,13 @@ use rustc_hash::FxHashMap;
 
 use crate::ExternalQueries;
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::{constraint, quantify, substitute, transfer};
-use crate::core::{Instance, InstanceKind, Type, TypeId, debruijn};
+use crate::algorithm::{constraint, quantify, transfer};
+use crate::core::{Instance, InstanceKind, Type, TypeId};
 use crate::error::ErrorKind;
+
+mod substitute {
+    pub use crate::algorithm::substitute::{NameToType, SubstituteBindings};
+}
 
 /// Elaborated derive instance after kind inference.
 pub struct ElaboratedDerive {
@@ -30,14 +34,7 @@ pub fn emit_constraint(
 ) {
     let class_type = state.storage.intern(Type::Constructor(class_file, class_id));
     let constraint = state.storage.intern(Type::Application(class_type, type_id));
-    state.constraints.push_wanted(constraint);
-}
-
-/// Pushes given constraints from the instance head onto the constraint stack.
-pub fn push_given_constraints(state: &mut CheckState, constraints: &[(TypeId, TypeId)]) {
-    for (constraint_type, _) in constraints {
-        state.constraints.push_given(*constraint_type);
-    }
+    state.push_wanted(constraint);
 }
 
 /// Emits wanted constraints for the superclasses of the class being derived.
@@ -51,13 +48,14 @@ pub fn push_given_constraints(state: &mut CheckState, constraints: &[(TypeId, Ty
 pub fn emit_superclass_constraints<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    input: &ElaboratedDerive,
+    class_file: FileId,
+    class_id: TypeItemId,
+    arguments: &[(TypeId, TypeId)],
 ) -> QueryResult<()>
 where
     Q: ExternalQueries,
 {
-    let Some(class_info) =
-        constraint::lookup_file_class(state, context, input.class_file, input.class_id)?
+    let Some(class_info) = constraint::lookup_file_class(state, context, class_file, class_id)?
     else {
         return Ok(());
     };
@@ -66,16 +64,14 @@ where
         return Ok(());
     }
 
-    let initial_level = class_info.quantified_variables.0 + class_info.kind_variables.0;
-    let mut bindings = FxHashMap::default();
-    for (index, &(argument_type, _)) in input.arguments.iter().enumerate() {
-        let level = debruijn::Level(initial_level + index as u32);
-        bindings.insert(level, argument_type);
+    let mut bindings: substitute::NameToType = FxHashMap::default();
+    for (name, &(argument_type, _)) in class_info.type_variable_names.iter().zip(arguments) {
+        bindings.insert(name.clone(), argument_type);
     }
 
     for &(superclass, _) in class_info.superclasses.iter() {
-        let specialized = substitute::SubstituteBindings::on(state, &bindings, superclass);
-        state.constraints.push_wanted(specialized);
+        let specialised = substitute::SubstituteBindings::on(state, &bindings, superclass);
+        state.push_wanted(specialised);
     }
 
     Ok(())
@@ -91,7 +87,7 @@ where
 {
     let residual = state.solve_constraints(context)?;
     for constraint in residual {
-        let constraint = transfer::globalize(state, context, constraint);
+        let constraint = state.render_local_type(context, constraint);
         state.insert_error(ErrorKind::NoInstanceFound { constraint });
     }
     Ok(())
@@ -105,7 +101,8 @@ pub fn register_derived_instance<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     input: ElaboratedDerive,
-) where
+) -> QueryResult<()>
+where
     Q: ExternalQueries,
 {
     let ElaboratedDerive { derive_id, constraints, arguments, class_file, class_id } = input;
@@ -120,6 +117,8 @@ pub fn register_derived_instance<Q>(
 
     quantify::quantify_instance(state, &mut instance);
 
+    constraint::validate_instance_rows(state, context, class_file, class_id, &instance.arguments)?;
+
     for (t, k) in instance.arguments.iter_mut() {
         *t = transfer::globalize(state, context, *t);
         *k = transfer::globalize(state, context, *k);
@@ -131,6 +130,8 @@ pub fn register_derived_instance<Q>(
     }
 
     state.checked.derived.insert(derive_id, instance);
+
+    Ok(())
 }
 
 /// Looks up data constructors for a type, handling cross-file lookups.

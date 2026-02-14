@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -32,8 +33,12 @@ NoEq = []
 ContainsNoEq = []
 
 Derived
-derive forall (&0 :: Type). Eq (Proxy @(&0 :: Type) (&1 :: (&0 :: Type)) :: Type)
+derive forall (t1 :: Type). Eq (Proxy @(t1 :: Type) (a :: (t1 :: Type)) :: Type)
 derive Eq (ContainsNoEq :: Type)
 
-Errors
-NoInstanceFound { Eq NoEq } at [TermDeclaration(Idx::<TermItem>(4))]
+Diagnostics
+error[NoInstanceFound]: No instance found for: Eq NoEq
+  --> 13:1..13:32
+   |
+13 | derive instance Eq ContainsNoEq
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -12,7 +12,7 @@ use smol_str::SmolStrBuilder;
 use crate::algorithm::constraint::{self, ConstraintApplication};
 use crate::algorithm::fold::Zonk;
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::substitute::{ShiftBound, SubstituteUnification, UniToLevel};
+use crate::algorithm::substitute::{SubstituteUnification, UniToName};
 use crate::core::{Class, ForallBinder, Instance, RowType, Type, TypeId, Variable, debruijn};
 use crate::{ExternalQueries, safe_loop};
 
@@ -30,24 +30,20 @@ pub fn quantify(state: &mut CheckState, id: TypeId) -> Option<(TypeId, debruijn:
         debruijn::Size(size as u32)
     };
 
-    // Shift existing bound variable levels to make room for new quantifiers
-    let mut quantified = ShiftBound::on(state, id, size.0);
-    let mut substitutions = UniToLevel::default();
+    let mut quantified = id;
+    let mut substitutions = UniToName::default();
 
-    for (index, &id) in unsolved.iter().rev().enumerate() {
+    for &id in unsolved.iter().rev() {
         let kind = state.unification.get(id).kind;
-        let kind = ShiftBound::on(state, kind, size.0);
-        let name = generate_type_name(id);
+        let text = generate_type_name(id);
+        let mut name = state.fresh_name(&text);
+        name.depth = debruijn::Size(0);
 
-        let index = debruijn::Index(index as u32);
-        let level = index
-            .to_level(size)
-            .unwrap_or_else(|| unreachable!("invariant violated: invalid {index} for {size}"));
-
-        let binder = ForallBinder { visible: false, name, level, kind };
+        let binder =
+            ForallBinder { visible: false, implicit: true, text, variable: name.clone(), kind };
         quantified = state.storage.intern(Type::Forall(binder, quantified));
 
-        substitutions.insert(id, (level, kind));
+        substitutions.insert(id, (name, kind));
     }
 
     let quantified = SubstituteUnification::on(&substitutions, state, quantified);
@@ -98,9 +94,20 @@ where
 
     let mut pending = vec![];
     let mut unsatisfied = vec![];
+    let mut latent = vec![];
 
     for constraint in constraints {
         let constraint = Zonk::on(state, constraint);
+
+        // Partial is a latent constraint, it has no type arguments so it
+        // never has unification variables, but should be generalised
+        // rather than reported as unsatisfied. This allows inferring
+        // `Partial => Int` for expressions with non-exhaustive patterns.
+        if constraint == context.prim.partial {
+            latent.push(constraint);
+            continue;
+        }
+
         let unification: FxHashSet<u32> = collect_unification(state, constraint).nodes().collect();
         if unification.is_empty() {
             unsatisfied.push(constraint);
@@ -113,7 +120,7 @@ where
     let (generalised, ambiguous) = classify_constraints_by_reachability(pending, in_signature);
 
     // Subtle: stable ordering for consistent output
-    let generalised = generalised.into_iter().sorted().collect_vec();
+    let generalised = latent.into_iter().chain(generalised).sorted().collect_vec();
     let minimized = minimize_by_superclasses(state, context, generalised)?;
 
     let constrained_type = minimized.into_iter().rfold(type_id, |constrained, constraint| {
@@ -217,7 +224,7 @@ fn classify_constraints_by_reachability(
     }
 }
 
-fn generate_type_name(id: u32) -> smol_str::SmolStr {
+pub(crate) fn generate_type_name(id: u32) -> smol_str::SmolStr {
     let mut builder = SmolStrBuilder::default();
     write!(builder, "t{id}").unwrap();
     builder.finish()
@@ -248,26 +255,24 @@ pub fn quantify_class(state: &mut CheckState, class: &mut Class) -> Option<debru
     let unsolved = ordered_toposort(&graph, state)?;
     let size = debruijn::Size(unsolved.len() as u32);
 
-    let mut substitutions = UniToLevel::default();
-    for (index, &id) in unsolved.iter().rev().enumerate() {
+    let mut substitutions = UniToName::default();
+    for &id in unsolved.iter().rev() {
         let kind = state.unification.get(id).kind;
-        let kind = ShiftBound::on(state, kind, size.0);
-        let index = debruijn::Index(index as u32);
-        let level = index.to_level(size)?;
-        substitutions.insert(id, (level, kind));
+        let text = generate_type_name(id);
+        let mut name = state.fresh_name(&text);
+        name.depth = debruijn::Size(0);
+        substitutions.insert(id, (name, kind));
     }
 
-    let type_variable_kinds = class.type_variable_kinds.iter().map(|&kind| {
-        let kind = ShiftBound::on(state, kind, size.0);
-        SubstituteUnification::on(&substitutions, state, kind)
-    });
+    let type_variable_kinds = class
+        .type_variable_kinds
+        .iter()
+        .map(|&kind| SubstituteUnification::on(&substitutions, state, kind));
 
     class.type_variable_kinds = type_variable_kinds.collect();
 
     let superclasses = class.superclasses.iter().map(|&(t, k)| {
-        let t = ShiftBound::on(state, t, size.0);
         let t = SubstituteUnification::on(&substitutions, state, t);
-        let k = ShiftBound::on(state, k, size.0);
         let k = SubstituteUnification::on(&substitutions, state, k);
         (t, k)
     });
@@ -302,25 +307,22 @@ pub fn quantify_instance(state: &mut CheckState, instance: &mut Instance) -> Opt
     }
 
     let unsolved = ordered_toposort(&graph, state)?;
-    let size = debruijn::Size(unsolved.len() as u32);
 
-    let mut substitutions = UniToLevel::default();
-    for (index, &id) in unsolved.iter().rev().enumerate() {
+    let mut substitutions = UniToName::default();
+    for &id in unsolved.iter().rev() {
         let kind = state.unification.get(id).kind;
-        let kind = ShiftBound::on(state, kind, size.0);
-        let index = debruijn::Index(index as u32);
-        let level = index.to_level(size)?;
-        substitutions.insert(id, (level, kind));
+        let text = generate_type_name(id);
+        let mut name = state.fresh_name(&text);
+        name.depth = debruijn::Size(0);
+        substitutions.insert(id, (name, kind));
     }
 
-    let kind_variables = substitutions.values().copied();
-    let kind_variables = kind_variables.sorted_by_key(|(level, _)| *level);
-    let kind_variables = kind_variables.map(|(_, kind)| kind).collect_vec();
+    let kind_variables = substitutions.values().cloned();
+    let kind_variables = kind_variables.sorted_by_key(|(name, _)| name.unique);
+    let kind_variables = kind_variables.collect_vec();
 
     let arguments = instance.arguments.iter().map(|&(t, k)| {
-        let t = ShiftBound::on(state, t, size.0);
         let t = SubstituteUnification::on(&substitutions, state, t);
-        let k = ShiftBound::on(state, k, size.0);
         let k = SubstituteUnification::on(&substitutions, state, k);
         (t, k)
     });
@@ -328,9 +330,7 @@ pub fn quantify_instance(state: &mut CheckState, instance: &mut Instance) -> Opt
     instance.arguments = arguments.collect();
 
     let constraints = instance.constraints.iter().map(|&(t, k)| {
-        let t = ShiftBound::on(state, t, size.0);
         let t = SubstituteUnification::on(&substitutions, state, t);
-        let k = ShiftBound::on(state, k, size.0);
         let k = SubstituteUnification::on(&substitutions, state, k);
         (t, k)
     });
@@ -344,14 +344,14 @@ pub fn quantify_instance(state: &mut CheckState, instance: &mut Instance) -> Opt
 
 /// Builds a topological sort of the [`UniGraph`].
 ///
-/// This function uses the domain-based sorting of the unification variables
+/// This function uses the depth-based sorting of the unification variables
 /// as the base for the post-order traversal. In turn, this ensures that
-/// unconnected nodes are ordered by domain while connected ones are sorted
+/// unconnected nodes are ordered by depth while connected ones are sorted
 /// topologically. The resulting [`IndexSet`] can be iterated in reverse to
 /// build the `forall` binders during quantification.
 fn ordered_toposort(graph: &UniGraph, state: &CheckState) -> Option<IndexSet<u32>> {
     let mut nodes: Vec<u32> = graph.nodes().collect();
-    nodes.sort_by_key(|&id| (state.unification.get(id).domain, id));
+    nodes.sort_by_key(|&id| (state.unification.get(id).depth, id));
 
     let mut dfs = DfsPostOrder::empty(graph);
     let mut unsolved = IndexSet::new();
@@ -477,14 +477,19 @@ fn collect_unification(state: &mut CheckState, id: TypeId) -> UniGraph {
 mod tests {
     use super::*;
 
-    fn add_unification(state: &mut CheckState, domain: u32) -> u32 {
+    fn test_file_id() -> files::FileId {
+        let mut files = files::Files::default();
+        files.insert("Test.purs", "module Test where\n\n")
+    }
+
+    fn add_unification(state: &mut CheckState, depth: u32) -> u32 {
         let kind = state.storage.intern(Type::Unknown);
-        state.unification.fresh(debruijn::Size(domain), kind)
+        state.unification.fresh(debruijn::Size(depth), kind)
     }
 
     #[test]
     fn test_toposort_dag() {
-        let mut state = CheckState::default();
+        let mut state = CheckState::new(test_file_id());
         let mut graph = UniGraph::default();
 
         let id0 = add_unification(&mut state, 0);
@@ -504,7 +509,7 @@ mod tests {
 
     #[test]
     fn test_toposort_tuple_cycle() {
-        let mut state = CheckState::default();
+        let mut state = CheckState::new(test_file_id());
         let mut graph = UniGraph::default();
 
         let id0 = add_unification(&mut state, 0);
@@ -521,7 +526,7 @@ mod tests {
 
     #[test]
     fn test_toposort_self_cycle() {
-        let mut state = CheckState::default();
+        let mut state = CheckState::new(test_file_id());
         let mut graph = UniGraph::default();
 
         let id0 = add_unification(&mut state, 0);
@@ -535,7 +540,7 @@ mod tests {
 
     #[test]
     fn test_toposort_triple_cycle() {
-        let mut state = CheckState::default();
+        let mut state = CheckState::new(test_file_id());
         let mut graph = UniGraph::default();
 
         let id0 = add_unification(&mut state, 0);
@@ -553,7 +558,7 @@ mod tests {
 
     #[test]
     fn test_toposort_domain_ordering() {
-        let mut state = CheckState::default();
+        let mut state = CheckState::new(test_file_id());
         let mut graph = UniGraph::default();
 
         let id0 = add_unification(&mut state, 1);
@@ -571,7 +576,7 @@ mod tests {
 
     #[test]
     fn test_toposort_id_ordering() {
-        let mut state = CheckState::default();
+        let mut state = CheckState::new(test_file_id());
         let mut graph = UniGraph::default();
 
         let id0 = add_unification(&mut state, 0);
@@ -589,7 +594,7 @@ mod tests {
 
     #[test]
     fn test_toposort_dependency_ordering() {
-        let mut state = CheckState::default();
+        let mut state = CheckState::new(test_file_id());
         let mut graph = UniGraph::default();
 
         let id0 = add_unification(&mut state, 2);
@@ -608,7 +613,7 @@ mod tests {
 
     #[test]
     fn test_toposort_diamond() {
-        let mut state = CheckState::default();
+        let mut state = CheckState::new(test_file_id());
         let mut graph = UniGraph::default();
 
         let id0 = add_unification(&mut state, 0);
@@ -626,7 +631,7 @@ mod tests {
 
         let sorted: Vec<u32> = result.unwrap().into_iter().collect();
 
-        // All have the same domain,
+        // All have the same depth,
         assert_eq!(sorted, vec![id3, id2, id0, id1]);
     }
 }

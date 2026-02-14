@@ -9,7 +9,7 @@ Expressions:
 
 Types:
 
-a@Some(Position { line: 2, character: 25 })
+a@2:25
   introduces a constraint variable "a"
-a@Some(Position { line: 3, character: 34 })
+a@3:34
   introduces a constraint variable "a"

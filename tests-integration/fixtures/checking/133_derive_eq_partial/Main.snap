@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -19,8 +20,12 @@ Roles
 Either = [Representational, Representational]
 
 Derived
-derive Eq (&0 :: Type) => Eq (Either Int (&0 :: Type) :: Type)
-derive Eq (Either Int (&0 :: Type) :: Type)
+derive Eq (b :: Type) => Eq (Either Int (b :: Type) :: Type)
+derive Eq (Either Int (b :: Type) :: Type)
 
-Errors
-NoInstanceFound { Eq (&0 :: Type) } at [TermDeclaration(Idx::<TermItem>(3))]
+Diagnostics
+error[NoInstanceFound]: No instance found for: Eq (b :: Type)
+  --> 9:1..9:34
+  |
+9 | derive instance Eq (Either Int b)
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

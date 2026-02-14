@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -18,4 +19,4 @@ Roles
 Vector = [Phantom, Representational]
 
 Derived
-derive Show (&1 :: Type) => Show (Vector (&0 :: Int) (&1 :: Type) :: Type)
+derive Show (a :: Type) => Show (Vector (n :: Int) (a :: Type) :: Type)

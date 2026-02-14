@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -91,7 +92,7 @@ Proxy = [Phantom]
 Derived
 derive Generic (Void :: Type) (NoConstructors :: Type)
 derive Generic (MyUnit :: Type) (Constructor "MyUnit" NoArguments :: Type)
-derive Generic (Identity (&0 :: Type) :: Type) (Constructor "Identity" (Argument (&0 :: Type)) :: Type)
-derive Generic (Either (&0 :: Type) (&1 :: Type) :: Type) (Sum (Constructor "Left" (Argument (&0 :: Type))) (Constructor "Right" (Argument (&1 :: Type))) :: Type)
-derive Generic (Tuple (&0 :: Type) (&1 :: Type) :: Type) (Constructor "Tuple" (Product (Argument (&0 :: Type)) (Argument (&1 :: Type))) :: Type)
-derive Generic (Wrapper (&0 :: Type) :: Type) (Constructor "Wrapper" (Argument (&0 :: Type)) :: Type)
+derive Generic (Identity (a :: Type) :: Type) (Constructor "Identity" (Argument (a :: Type)) :: Type)
+derive Generic (Either (a :: Type) (b :: Type) :: Type) (Sum (Constructor "Left" (Argument (a :: Type))) (Constructor "Right" (Argument (b :: Type))) :: Type)
+derive Generic (Tuple (a :: Type) (b :: Type) :: Type) (Constructor "Tuple" (Product (Argument (a :: Type)) (Argument (b :: Type))) :: Type)
+derive Generic (Wrapper (a :: Type) :: Type) (Constructor "Wrapper" (Argument (a :: Type)) :: Type)

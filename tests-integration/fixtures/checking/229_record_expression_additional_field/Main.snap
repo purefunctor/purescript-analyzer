@@ -1,0 +1,16 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+test :: { a :: Int }
+
+Types
+
+Diagnostics
+error[AdditionalProperty]: Additional properties not allowed: b
+  --> 4:8..4:22
+  |
+4 | test = { a: 1, b: 2 }
+  |        ^~~~~~~~~~~~~~

@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -16,5 +17,5 @@ Convert :: Type -> Type -> Constraint
 Relate :: Type -> Type -> Type -> Constraint
 
 Classes
-class Convert (&0 :: Type) (&1 :: Type)
-class Relate (&0 :: Type) (&1 :: Type) (&2 :: Type)
+class Convert (a :: Type) (b :: Type)
+class Relate (a :: Type) (b :: Type) (c :: Type)

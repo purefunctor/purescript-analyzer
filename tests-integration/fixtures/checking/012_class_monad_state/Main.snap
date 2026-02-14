@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -19,5 +20,5 @@ Monad :: (Type -> Type) -> Constraint
 MonadState :: Type -> (Type -> Type) -> Constraint
 
 Classes
-class Monad (&0 :: Type -> Type)
-class Monad (&1 :: Type -> Type) <= MonadState (&0 :: Type) (&1 :: Type -> Type)
+class Monad (m :: Type -> Type)
+class Monad (m :: Type -> Type) <= MonadState (s :: Type) (m :: Type -> Type)

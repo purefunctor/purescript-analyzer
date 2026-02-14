@@ -1,0 +1,16 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+test :: { a :: Int, b :: Int }
+
+Types
+
+Diagnostics
+error[PropertyIsMissing]: Missing required properties: b
+  --> 4:8..4:16
+  |
+4 | test = { a: 1 }
+  |        ^~~~~~~~

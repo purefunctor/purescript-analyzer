@@ -10,10 +10,11 @@ use lowering::TypeVariableBindingId;
 use smol_str::SmolStr;
 
 use crate::ExternalQueries;
+use crate::algorithm::safety::safe_loop;
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::{substitute, transfer, unification};
-use crate::core::{ForallBinder, RowField, RowType, Type, TypeId, Variable};
-use crate::error::ErrorStep;
+use crate::core::{ForallBinder, RowField, RowType, Type, TypeId, Variable, debruijn};
+use crate::error::{ErrorKind, ErrorStep};
 
 const MISSING_NAME: SmolStr = SmolStr::new_static("<MissingName>");
 
@@ -133,6 +134,8 @@ where
         }
 
         lowering::TypeKind::Forall { bindings, inner } => {
+            let unbind_level = debruijn::Level(state.type_scope.size().0);
+
             let binders = bindings
                 .iter()
                 .map(|binding| check_type_variable_binding(state, context, binding))
@@ -154,8 +157,8 @@ where
 
             let k = context.prim.t;
 
-            if let Some(binder) = binders.first() {
-                state.type_scope.unbind(binder.level);
+            if !binders.is_empty() {
+                state.type_scope.unbind(unbind_level);
             }
 
             Ok((t, k))
@@ -214,7 +217,8 @@ where
             }
 
             Some(lowering::TypeVariableResolution::Implicit(implicit)) => {
-                Ok(infer_implicit_variable(state, context, implicit))
+                let text = name.clone().unwrap_or(MISSING_NAME);
+                Ok(infer_implicit_variable(state, context, implicit, text))
             }
 
             None => {
@@ -234,11 +238,8 @@ where
         }
 
         lowering::TypeKind::Record { items, tail } => {
-            let expected_kind =
-                state.storage.intern(Type::Application(context.prim.row, context.prim.t));
-
             let (row_t, row_k) = infer_row_kind(state, context, items, tail)?;
-            let _ = unification::subtype(state, context, row_k, expected_kind)?;
+            let _ = unification::subtype(state, context, row_k, context.prim.row_type)?;
 
             let t = state.storage.intern(Type::Application(context.prim.record, row_t));
             let k = context.prim.t;
@@ -259,14 +260,14 @@ fn infer_forall_variable(
     state: &mut CheckState,
     forall: TypeVariableBindingId,
 ) -> (TypeId, TypeId) {
-    let level =
+    let name =
         state.type_scope.lookup_forall(forall).expect("invariant violated: TypeScope::bind_forall");
     let k = state
         .type_scope
         .lookup_forall_kind(forall)
         .expect("invariant violated: TypeScope::bind_forall");
 
-    let variable = Variable::Bound(level, k);
+    let variable = Variable::Bound(name, k);
     let t = state.storage.intern(Type::Variable(variable));
 
     (t, k)
@@ -276,16 +277,18 @@ fn infer_implicit_variable<Q: ExternalQueries>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     implicit: &lowering::ImplicitTypeVariable,
+    text: SmolStr,
 ) -> (TypeId, TypeId) {
     let (t, k) = if implicit.binding {
         let kind = state.fresh_unification(context);
+        let name = state.fresh_name(&text);
 
-        let level = state.type_scope.bind_implicit(implicit.node, implicit.id, kind);
-        let variable = Variable::Bound(level, kind);
+        let name = state.type_scope.bind_implicit(implicit.node, implicit.id, kind, name);
+        let variable = Variable::Bound(name, kind);
 
         (state.storage.intern(Type::Variable(variable)), kind)
     } else {
-        let level = state
+        let name = state
             .type_scope
             .lookup_implicit(implicit.node, implicit.id)
             .expect("invariant violated: TypeScope::bind_implicit");
@@ -294,7 +297,7 @@ fn infer_implicit_variable<Q: ExternalQueries>(
             .lookup_implicit_kind(implicit.node, implicit.id)
             .expect("invariant violated: TypeScope::bind_implicit");
 
-        let variable = Variable::Bound(level, kind);
+        let variable = Variable::Bound(name, kind);
         (state.storage.intern(Type::Variable(variable)), kind)
     };
 
@@ -390,19 +393,36 @@ where
         }
 
         Type::Forall(ref binder, function_k) => {
-            let binder_level = binder.level;
+            let binder_variable = binder.variable.clone();
             let binder_kind = binder.kind;
 
             let k = state.normalize_type(binder_kind);
             let t = state.fresh_unification_kinded(k);
 
             let function_t = state.storage.intern(Type::KindApplication(function_t, t));
-            let function_k = substitute::SubstituteBound::on(state, binder_level, t, function_k);
+            let function_k = substitute::SubstituteBound::on(state, binder_variable, t, function_k);
 
             infer_surface_app_kind(state, context, (function_t, function_k), argument)
         }
 
-        _ => Ok((context.prim.unknown, context.prim.unknown)),
+        _ => {
+            // Even if the function type cannot be applied, the argument must
+            // still be inferred. For invalid applications on instance heads,
+            // this ensures that implicit variables are bound.
+            let (argument_t, _) = infer_surface_kind(state, context, argument)?;
+
+            let function_type = state.render_local_type(context, function_t);
+            let function_kind = state.render_local_type(context, function_k);
+            let argument_type = state.render_local_type(context, argument_t);
+            state.insert_error(ErrorKind::InvalidTypeApplication {
+                function_type,
+                function_kind,
+                argument_type,
+            });
+
+            let t = state.storage.intern(Type::Application(function_t, argument_t));
+            Ok((t, context.prim.unknown))
+        }
     }
 }
 
@@ -428,10 +448,10 @@ where
                 Type::Function(_, result) => result,
 
                 Type::Unification(unification_id) => {
-                    let domain = state.unification.get(unification_id).domain;
+                    let depth = state.unification.get(unification_id).depth;
 
-                    let argument_u = state.fresh_unification_kinded_at(domain, context.prim.t);
-                    let result_u = state.fresh_unification_kinded_at(domain, context.prim.t);
+                    let argument_u = state.fresh_unification_kinded_at(depth, context.prim.t);
+                    let result_u = state.fresh_unification_kinded_at(depth, context.prim.t);
                     let function = state.storage.intern(Type::Function(argument_u, result_u));
 
                     let _ = unification::solve(state, context, unification_id, function);
@@ -457,9 +477,9 @@ where
             let function_kind = state.normalize_type(function_kind);
             match state.storage[function_kind] {
                 Type::Forall(ref binder, inner) => {
-                    let binder_level = binder.level;
+                    let binder_variable = binder.variable.clone();
                     let argument = state.normalize_type(argument);
-                    substitute::SubstituteBound::on(state, binder_level, argument, inner)
+                    substitute::SubstituteBound::on(state, binder_variable, argument, inner)
                 }
                 _ => unknown,
             }
@@ -525,26 +545,81 @@ where
     Ok(type_id)
 }
 
+/// Instantiates kind-level foralls using [`Type::KindApplication`].
+///
+/// If the inferred kind is polymorphic, and the inferred kind is monomorphic,
+/// this function adds the necessary kind applications to the inferred type.
+/// For example, when checking `RowList.Nil` against `RowList Type`:
+///
+/// ```text
+/// Nil :: forall k. RowList k.
+///
+/// check(Nil, RowList Type)
+///   infer(Nil) -> forall k. RowList k
+///   instantiate(Nil) -> (Nil @?t, RowList ?t)
+///
+/// subtype(RowList ?t, RowList Type)
+///   solve(?t, Type)
+///
+/// t := Nil @Type
+/// k := RowList Type
+/// ```
+fn instantiate_kind_applications(
+    state: &mut CheckState,
+    mut t: TypeId,
+    mut k: TypeId,
+    expected_kind: TypeId,
+) -> (TypeId, TypeId) {
+    let expected_kind = state.normalize_type(expected_kind);
+
+    if matches!(state.storage[expected_kind], Type::Forall(_, _)) {
+        return (t, k);
+    }
+
+    safe_loop! {
+        k = state.normalize_type(k);
+
+        let Type::Forall(ref binder, inner_kind) = state.storage[k] else {
+            break;
+        };
+
+        let binder_variable = binder.variable.clone();
+        let binder_kind = state.normalize_type(binder.kind);
+
+        let argument_type = state.fresh_unification_kinded(binder_kind);
+        t = state.storage.intern(Type::KindApplication(t, argument_type));
+        k = substitute::SubstituteBound::on(state, binder_variable, argument_type, inner_kind);
+    }
+
+    (t, k)
+}
+
 #[tracing::instrument(skip_all, name = "check_surface_kind")]
 pub fn check_surface_kind<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     id: lowering::TypeId,
-    kind: TypeId,
+    expected_kind: TypeId,
 ) -> QueryResult<(TypeId, TypeId)>
 where
     Q: ExternalQueries,
 {
-    crate::trace_fields!(state, context, { expected_kind = kind });
+    crate::trace_fields!(state, context, { expected_kind = expected_kind });
 
     state.with_error_step(ErrorStep::CheckingKind(id), |state| {
         let (inferred_type, inferred_kind) = infer_surface_kind_core(state, context, id)?;
-        let _ = unification::subtype(state, context, inferred_kind, kind)?;
+
+        let (inferred_type, inferred_kind) =
+            instantiate_kind_applications(state, inferred_type, inferred_kind, expected_kind);
+
+        let _ = unification::subtype(state, context, inferred_kind, expected_kind)?;
+
         crate::trace_fields!(state, context, {
             inferred_type = inferred_type,
             inferred_kind = inferred_kind,
-            expected_kind = kind
+            expected_kind = expected_kind
         });
+
         Ok((inferred_type, inferred_kind))
     })
 }
@@ -558,7 +633,7 @@ where
     Q: ExternalQueries,
 {
     let visible = binding.visible;
-    let name = binding.name.clone().unwrap_or(MISSING_NAME);
+    let text = binding.name.clone().unwrap_or(MISSING_NAME);
 
     let kind = if let Some(id) = binding.kind {
         let (kind, _) = check_surface_kind(state, context, id, context.prim.t)?;
@@ -567,8 +642,9 @@ where
         state.fresh_unification_type(context)
     };
 
-    let level = state.type_scope.bind_forall(binding.id, kind);
-    Ok(ForallBinder { visible, name, level, kind })
+    let name = state.fresh_name(&text);
+    state.type_scope.bind_forall(binding.id, kind, name.clone());
+    Ok(ForallBinder { visible, implicit: false, text, variable: name, kind })
 }
 
 pub(crate) fn lookup_file_type<Q>(
@@ -583,6 +659,8 @@ where
     let type_id = if file_id == context.id {
         if let Some(k) = state.binding_group.lookup_type(type_id) {
             k
+        } else if let Some(&k) = state.pending_types.get(&type_id) {
+            TypeId::from(k)
         } else if let Some(&k) = state.checked.types.get(&type_id) {
             transfer::localize(state, context, k)
         } else {

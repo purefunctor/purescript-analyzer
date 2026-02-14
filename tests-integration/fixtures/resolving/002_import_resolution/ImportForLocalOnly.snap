@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/resolving/generated.rs
+assertion_line: 12
 expression: report
 ---
 module ImportForLocalOnly
@@ -11,11 +12,15 @@ Terms:
 
 Types:
 
+Classes:
+
 Terms:
   - Id is Explicit
 
 Types:
   - Id is Explicit
+
+Classes:
 
 Qualified Imports:
 
@@ -25,9 +30,13 @@ Exported Terms:
 Exported Types:
   - Id
 
+Exported Classes:
+
 Local Terms:
 
 Local Types:
+
+Local Classes:
 
 Class Members:
 

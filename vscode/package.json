@@ -46,5 +46,17 @@
   },
   "extensionDependencies": [
     "nwolverson.language-purescript"
-  ]
+  ],
+  "contributes": {
+    "configuration": {
+      "title": "PureScript Analyzer",
+      "properties": {
+        "purescriptAnalyzer.sourceCommand": {
+          "type": "string",
+          "default": null,
+          "description": "Command to use to get source files. Setting this also disables the spago.lock integration."
+        }
+      }
+    }
+  }
 }

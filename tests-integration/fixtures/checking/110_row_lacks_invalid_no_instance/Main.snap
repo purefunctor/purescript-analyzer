@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -19,5 +20,9 @@ Proxy
 Roles
 Proxy = [Phantom]
 
-Errors
-NoInstanceFound { Lacks @Type "b" ( a :: Int, b :: String ) } at [TermDeclaration(Idx::<TermItem>(2))]
+Diagnostics
+error[NoInstanceFound]: No instance found for: Lacks @Type "b" ( a :: Int, b :: String )
+  --> 11:1..11:25
+   |
+11 | forceSolve = { invalid }
+   | ^~~~~~~~~~~~~~~~~~~~~~~~

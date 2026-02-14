@@ -6,23 +6,23 @@ module Main
 
 Expressions:
 
-x@Some(Position { line: 3, character: 8 })
-  resolves to top-level name
-pure@Some(Position { line: 5, character: 6 })
-  resolves to top-level name
-pure@Some(Position { line: 6, character: 12 })
-  resolves to top-level name
-x@Some(Position { line: 7, character: 8 })
-  resolves to equation Some(Position { line: 4, character: 5 })
-action@Some(Position { line: 2, character: 9 })
-  resolves to top-level name
-y@Some(Position { line: 7, character: 12 })
-  resolves to binder Some(Position { line: 4, character: 12 })
-z@Some(Position { line: 7, character: 16 })
-  resolves to equation Some(Position { line: 6, character: 5 })
-z@Some(Position { line: 3, character: 12 })
-  resolves to top-level name
-y@Some(Position { line: 3, character: 10 })
-  resolves to top-level name
+x@3:8
+  -> top-level
+pure@5:6
+  -> top-level
+pure@6:12
+  -> top-level
+x@7:8
+  -> equation@4:5
+action@2:9
+  -> top-level
+y@7:12
+  -> binder@4:12
+z@7:16
+  -> equation@6:5
+z@3:12
+  -> top-level
+y@3:10
+  -> top-level
 
 Types:

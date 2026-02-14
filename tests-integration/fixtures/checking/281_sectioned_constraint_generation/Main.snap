@@ -1,0 +1,25 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Unit :: Unit
+example :: forall (a :: Type). Example (a :: Type) => (a :: Type)
+test :: forall (t4 :: Type). Example (t4 :: Type) => Unit -> (t4 :: Type)
+
+Types
+Unit :: Type
+Example :: Type -> Constraint
+
+Data
+Unit
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+Unit = []
+
+Classes
+class Example (a :: Type)

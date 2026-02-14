@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -13,10 +14,14 @@ Types
 Build :: forall (t0 :: Type) (t1 :: Type). (t0 :: Type) -> (t1 :: Type) -> Constraint
 
 Classes
-class Build (&2 :: (&0 :: Type)) (&3 :: (&1 :: Type))
+class Build (n :: (t0 :: Type)) (r :: (t1 :: Type))
 
 Instances
-instance forall (&0 :: Type). Build (0 :: Int) (() :: Row (&0 :: Type))
+instance forall (t14 :: Type). Build (0 :: Int) (() :: Row (t14 :: Type))
   chain: 0
-instance (Add (&2 :: Int) 1 (&0 :: Int), ToString (&0 :: Int) (&3 :: Symbol), Append "n" (&3 :: Symbol) (&4 :: Symbol), Build @Int @(Row Int) (&2 :: Int) (&5 :: Row Int), Cons @Int (&4 :: Symbol) (&0 :: Int) (&5 :: Row Int) (&1 :: Row Int)) => Build ((&0 :: Int) :: Int) ((&1 :: Row Int) :: Row Int)
+instance (Add (minusOne :: Int) 1 (currentId :: Int), ToString (currentId :: Int) (labelId :: Symbol), Append "n" (labelId :: Symbol) (actualLabel :: Symbol), Build @Int @(Row Int) (minusOne :: Int) (minusOneResult :: Row Int), Cons @Int
+  (actualLabel :: Symbol)
+  (currentId :: Int)
+  (minusOneResult :: Row Int)
+  (finalResult :: Row Int)) => Build ((currentId :: Int) :: Int) ((finalResult :: Row Int) :: Row Int)
   chain: 1

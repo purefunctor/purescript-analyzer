@@ -1,26 +1,13 @@
 use analyzer::{common, locate};
 use async_lsp::LanguageClient;
 use async_lsp::lsp_types::*;
+use diagnostics::{DiagnosticsContext, ToDiagnostics};
 use files::FileId;
-use indexing::{IndexedModule, TypeItemKind};
-use lowering::{LoweringError, RecursiveGroup};
-use resolving::{ResolvedModule, ResolvingError};
-use rowan::ast::AstNode;
-use stabilizing::StabilizedModule;
-use syntax::SyntaxNode;
+use itertools::Itertools;
+use rowan::TextSize;
 
 use crate::lsp::error::LspError;
 use crate::lsp::{State, StateSnapshot};
-
-struct DiagnosticsContext<'a> {
-    uri: &'a Url,
-    content: &'a str,
-    root: &'a SyntaxNode,
-    stabilized: &'a StabilizedModule,
-    indexed: &'a IndexedModule,
-    resolved: &'a ResolvedModule,
-    lowered: &'a lowering::LoweredModule,
-}
 
 pub fn emit_collect_diagnostics(state: &mut State, uri: Url) -> Result<(), LspError> {
     let files = state.files.read();
@@ -56,25 +43,72 @@ fn collect_diagnostics_core(
     let indexed = snapshot.engine.indexed(id)?;
     let resolved = snapshot.engine.resolved(id)?;
     let lowered = snapshot.engine.lowered(id)?;
+    let checked = snapshot.engine.checked(id)?;
 
     let uri = {
         let files = snapshot.files.read();
         common::file_uri(&snapshot.engine, &files, id)?
     };
 
-    let context = DiagnosticsContext {
-        uri: &uri,
-        content: &content,
-        root: &root,
-        stabilized: &stabilized,
-        indexed: &indexed,
-        resolved: &resolved,
-        lowered: &lowered,
-    };
+    let context =
+        DiagnosticsContext::new(&content, &root, &stabilized, &indexed, &lowered, &checked);
 
-    let mut diagnostics = vec![];
-    diagnostics.extend(resolved_diagnostics(&context));
-    diagnostics.extend(lowered_diagnostics(&context));
+    let mut all_diagnostics = vec![];
+
+    for error in &lowered.errors {
+        all_diagnostics.extend(error.to_diagnostics(&context));
+    }
+
+    for error in &resolved.errors {
+        all_diagnostics.extend(error.to_diagnostics(&context));
+    }
+
+    for error in &checked.errors {
+        all_diagnostics.extend(error.to_diagnostics(&context));
+    }
+
+    let to_position = |offset: u32| locate::offset_to_position(&content, TextSize::from(offset));
+
+    let diagnostics = all_diagnostics
+        .iter()
+        .filter_map(|diagnostic| {
+            let start = to_position(diagnostic.primary.start)?;
+            let end = to_position(diagnostic.primary.end)?;
+            let range = Range { start, end };
+
+            let severity = match diagnostic.severity {
+                diagnostics::Severity::Error => DiagnosticSeverity::ERROR,
+                diagnostics::Severity::Warning => DiagnosticSeverity::WARNING,
+            };
+
+            let related_information = diagnostic.related.iter().filter_map(|related| {
+                let start = to_position(related.span.start)?;
+                let end = to_position(related.span.end)?;
+                Some(DiagnosticRelatedInformation {
+                    location: Location { uri: uri.clone(), range: Range { start, end } },
+                    message: related.message.clone(),
+                })
+            });
+
+            let related_information = related_information.collect_vec();
+
+            Some(Diagnostic {
+                range,
+                severity: Some(severity),
+                code: Some(NumberOrString::String(diagnostic.code.to_string())),
+                code_description: None,
+                source: Some(format!("analyzer/{}", diagnostic.source)),
+                message: diagnostic.message.clone(),
+                related_information: if related_information.is_empty() {
+                    None
+                } else {
+                    Some(related_information)
+                },
+                tags: None,
+                data: None,
+            })
+        })
+        .collect();
 
     snapshot.client.publish_diagnostics(PublishDiagnosticsParams {
         uri,
@@ -83,204 +117,4 @@ fn collect_diagnostics_core(
     })?;
 
     Ok(())
-}
-
-fn lowered_diagnostics<'a>(
-    context: &'a DiagnosticsContext<'a>,
-) -> impl Iterator<Item = Diagnostic> + 'a {
-    context.lowered.errors.iter().filter_map(|error| lowered_error(context, error))
-}
-
-fn lowered_error(context: &DiagnosticsContext<'_>, error: &LoweringError) -> Option<Diagnostic> {
-    match error {
-        LoweringError::NotInScope(not_in_scope) => {
-            let (ptr, name) = match not_in_scope {
-                lowering::NotInScope::ExprConstructor { id } => {
-                    (context.stabilized.syntax_ptr(*id)?, None)
-                }
-                lowering::NotInScope::ExprVariable { id } => {
-                    (context.stabilized.syntax_ptr(*id)?, None)
-                }
-                lowering::NotInScope::ExprOperatorName { id } => {
-                    (context.stabilized.syntax_ptr(*id)?, None)
-                }
-                lowering::NotInScope::TypeConstructor { id } => {
-                    (context.stabilized.syntax_ptr(*id)?, None)
-                }
-                lowering::NotInScope::TypeVariable { id } => {
-                    (context.stabilized.syntax_ptr(*id)?, None)
-                }
-                lowering::NotInScope::TypeOperatorName { id } => {
-                    (context.stabilized.syntax_ptr(*id)?, None)
-                }
-                lowering::NotInScope::NegateFn { id } => {
-                    (context.stabilized.syntax_ptr(*id)?, Some("negate"))
-                }
-                lowering::NotInScope::DoFn { kind, id } => (
-                    context.stabilized.syntax_ptr(*id)?,
-                    match kind {
-                        lowering::DoFn::Bind => Some("bind"),
-                        lowering::DoFn::Discard => Some("discard"),
-                    },
-                ),
-                lowering::NotInScope::AdoFn { kind, id } => (
-                    context.stabilized.syntax_ptr(*id)?,
-                    match kind {
-                        lowering::AdoFn::Map => Some("map"),
-                        lowering::AdoFn::Apply => Some("apply"),
-                        lowering::AdoFn::Pure => Some("pure"),
-                    },
-                ),
-                lowering::NotInScope::TermOperator { id } => {
-                    (context.stabilized.syntax_ptr(*id)?, None)
-                }
-                lowering::NotInScope::TypeOperator { id } => {
-                    (context.stabilized.syntax_ptr(*id)?, None)
-                }
-            };
-
-            let message = if let Some(name) = name {
-                format!("'{name}' is not in scope")
-            } else {
-                let range = ptr.to_node(context.root).text_range();
-                let name = context.content[range].trim();
-                format!("'{name}' is not in scope")
-            };
-
-            let range = locate::syntax_range(context.content, context.root, &ptr)?;
-
-            Some(Diagnostic {
-                range,
-                severity: Some(DiagnosticSeverity::ERROR),
-                code: Some(NumberOrString::String("NotInScope".to_string())),
-                code_description: None,
-                source: Some("analyzer/lowering".to_string()),
-                message: message.to_string(),
-                related_information: None,
-                tags: None,
-                data: None,
-            })
-        }
-
-        LoweringError::RecursiveSynonym(RecursiveGroup { group }) => {
-            let equations = group.iter().filter_map(|id| {
-                if let TypeItemKind::Synonym { equation, .. } = context.indexed.items[*id].kind {
-                    equation
-                } else {
-                    None
-                }
-            });
-
-            let locations = equations.filter_map(|equation| {
-                let syntax_ptr = context.stabilized.syntax_ptr(equation)?;
-                locate::syntax_range(context.content, context.root, &syntax_ptr)
-            });
-
-            let locations: Vec<_> = locations.collect();
-            let [range, associated @ ..] = &locations[..] else { return None };
-
-            let related_information = associated.iter().map(|&range| {
-                let uri = context.uri.clone();
-                let location = Location { uri, range };
-                DiagnosticRelatedInformation {
-                    location,
-                    message: "Includes this type synonym".to_string(),
-                }
-            });
-
-            let related_information = related_information.collect();
-
-            Some(Diagnostic {
-                range: *range,
-                severity: Some(DiagnosticSeverity::ERROR),
-                code: Some(NumberOrString::String("RecursiveSynonym".to_string())),
-                code_description: None,
-                source: Some("analyzer/lowering".to_string()),
-                message: "Invalid type synonym cycle".to_string(),
-                related_information: Some(related_information),
-                tags: None,
-                data: None,
-            })
-        }
-
-        _ => None,
-    }
-}
-
-fn resolved_diagnostics<'a>(
-    context: &'a DiagnosticsContext<'a>,
-) -> impl Iterator<Item = Diagnostic> + 'a {
-    context.resolved.errors.iter().filter_map(|error| resolved_error(context, error))
-}
-
-fn resolved_error(context: &DiagnosticsContext<'_>, error: &ResolvingError) -> Option<Diagnostic> {
-    let source = Some("analyzer/resolving".to_string());
-    match error {
-        ResolvingError::TermImportConflict { .. } => None,
-
-        ResolvingError::TypeImportConflict { .. } => None,
-
-        ResolvingError::TermExportConflict { .. } => None,
-
-        ResolvingError::TypeExportConflict { .. } => None,
-
-        ResolvingError::ExistingTerm { .. } => None,
-
-        ResolvingError::ExistingType { .. } => None,
-
-        ResolvingError::InvalidImportStatement { id } => {
-            let ptr = context.stabilized.ast_ptr(*id)?;
-
-            let message = {
-                let cst = ptr.to_node(context.root);
-
-                let name = cst.module_name().map(|cst| {
-                    let range = cst.syntax().text_range();
-                    context.content[range].trim()
-                });
-
-                let name = name.unwrap_or("<ParseError>");
-                format!("Cannot import module '{name}'")
-            };
-
-            let ptr = ptr.syntax_node_ptr();
-            let range = locate::syntax_range(context.content, context.root, &ptr)?;
-
-            Some(Diagnostic {
-                range,
-                severity: Some(DiagnosticSeverity::ERROR),
-                code: Some(NumberOrString::String("InvalidImportStatement".to_string())),
-                code_description: None,
-                source,
-                message,
-                related_information: None,
-                tags: None,
-                data: None,
-            })
-        }
-
-        ResolvingError::InvalidImportItem { id } => {
-            let ptr = context.stabilized.syntax_ptr(*id)?;
-
-            let message = {
-                let range = ptr.to_node(context.root).text_range();
-                let name = context.content[range].trim();
-                format!("Cannot import item '{name}'")
-            };
-
-            let range = locate::syntax_range(context.content, context.root, &ptr)?;
-
-            Some(Diagnostic {
-                range,
-                severity: Some(DiagnosticSeverity::ERROR),
-                code: Some(NumberOrString::String("InvalidImportItem".to_string())),
-                code_description: None,
-                source,
-                message,
-                related_information: None,
-                tags: None,
-                data: None,
-            })
-        }
-    }
 }

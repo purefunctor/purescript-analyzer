@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -10,9 +11,9 @@ sub :: Int -> Int -> Int
 identity :: forall (a :: Type). (a :: Type) -> (a :: Type)
 test1 :: Int -> String -> { a :: Int, b :: String }
 test2 ::
-  forall (t13 :: Type) (t16 :: Type) (t17 :: Type).
-    ((((t16 :: Type) -> (t17 :: Type)) -> (t16 :: Type) -> (t17 :: Type)) -> (t13 :: Type)) ->
-    (t13 :: Type)
+  forall (t11 :: Type) (t15 :: Type) (t16 :: Type).
+    ((((t16 :: Type) -> (t15 :: Type)) -> (t16 :: Type) -> (t15 :: Type)) -> (t11 :: Type)) ->
+    (t11 :: Type)
 test3 :: Boolean -> Int -> Int
 test4 :: Int
 test5 :: { x :: Int, y :: Int | () }

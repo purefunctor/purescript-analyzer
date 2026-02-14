@@ -1,0 +1,25 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+make :: forall (a :: Type) (b :: Type). Make (a :: Type) (b :: Type) => (a :: Type) -> (b :: Type)
+testMake :: { a :: Int, b :: String } -> { a :: Int, b :: String }
+convert ::
+  forall (a :: Type) (b :: Type). Convert (a :: Type) (b :: Type) => (a :: Type) -> (b :: Type)
+testConvert :: { x :: Int } -> { converted :: { x :: Int } }
+
+Types
+Make :: Type -> Type -> Constraint
+Convert :: Type -> Type -> Constraint
+
+Classes
+class Make (a :: Type) (b :: Type)
+class Convert (a :: Type) (b :: Type)
+
+Instances
+instance Make ({| (r :: Row Type) } :: Type) ({| (r :: Row Type) } :: Type)
+  chain: 0
+instance Convert ({| (r :: Row Type) } :: Type) ({ converted :: {| (r :: Row Type) } } :: Type)
+  chain: 0

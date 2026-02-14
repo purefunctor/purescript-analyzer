@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -38,4 +39,4 @@ Const2 = [Representational, Phantom, Phantom]
 Derived
 derive Bifoldable (Either :: Type -> Type -> Type)
 derive Bifoldable (Pair :: Type -> Type -> Type)
-derive Bifoldable (Const2 @Type @Type (&0 :: Type) :: Type -> Type -> Type)
+derive Bifoldable (Const2 @Type @Type (e :: Type) :: Type -> Type -> Type)

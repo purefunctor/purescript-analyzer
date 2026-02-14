@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -9,7 +10,7 @@ Tuple :: Type -> Type -> Type
 AliasType :: Type
 AliasTypeType :: Type -> Type
 InferApply ::
-  forall (t4 :: Type) (t9 :: Type). ((t9 :: Type) -> (t4 :: Type)) -> (t9 :: Type) -> (t4 :: Type)
+  forall (t2 :: Type) (t7 :: Type). ((t7 :: Type) -> (t2 :: Type)) -> (t7 :: Type) -> (t2 :: Type)
 InferTuple :: Type -> Type -> Type
 CheckApply ::
   forall (x :: Type) (y :: Type). ((x :: Type) -> (y :: Type)) -> (x :: Type) -> (y :: Type)
@@ -27,8 +28,8 @@ AliasTypeType = Array
   Kind = :0
   Type = :0
 
-InferApply = forall (t4 :: Type) (t9 :: Type) (f :: (t9 :: Type) -> (t4 :: Type)) (a :: (t9 :: Type)).
-  (f :: (t9 :: Type) -> (t4 :: Type)) (a :: (t9 :: Type))
+InferApply = forall (t2 :: Type) (t7 :: Type) (f :: (t7 :: Type) -> (t2 :: Type)) (a :: (t7 :: Type)).
+  (f :: (t7 :: Type) -> (t2 :: Type)) (a :: (t7 :: Type))
   Quantified = :2
   Kind = :0
   Type = :2

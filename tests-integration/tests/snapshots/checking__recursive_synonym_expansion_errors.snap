@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking.rs
+assertion_line: 1050
 expression: checked.errors
 ---
 [
@@ -12,16 +13,11 @@ expression: checked.errors
             TermDeclaration(
                 Idx::<TermItem>(0),
             ),
-        ],
-    },
-    CheckError {
-        kind: RecursiveSynonymExpansion {
-            file_id: Idx::<File>(9),
-            item_id: Idx::<TypeItem>(0),
-        },
-        step: [
-            TermDeclaration(
-                Idx::<TermItem>(0),
+            CheckingKind(
+                AstId<syntax::cst::Type>(12),
+            ),
+            CheckingKind(
+                AstId<syntax::cst::Type>(13),
             ),
         ],
     },
@@ -34,16 +30,11 @@ expression: checked.errors
             TermDeclaration(
                 Idx::<TermItem>(0),
             ),
-        ],
-    },
-    CheckError {
-        kind: RecursiveSynonymExpansion {
-            file_id: Idx::<File>(9),
-            item_id: Idx::<TypeItem>(2),
-        },
-        step: [
-            TermDeclaration(
-                Idx::<TermItem>(1),
+            CheckingKind(
+                AstId<syntax::cst::Type>(12),
+            ),
+            CheckingKind(
+                AstId<syntax::cst::Type>(14),
             ),
         ],
     },
@@ -56,6 +47,12 @@ expression: checked.errors
             TermDeclaration(
                 Idx::<TermItem>(1),
             ),
+            CheckingKind(
+                AstId<syntax::cst::Type>(22),
+            ),
+            CheckingKind(
+                AstId<syntax::cst::Type>(23),
+            ),
         ],
     },
     CheckError {
@@ -66,6 +63,68 @@ expression: checked.errors
         step: [
             TermDeclaration(
                 Idx::<TermItem>(1),
+            ),
+            CheckingKind(
+                AstId<syntax::cst::Type>(22),
+            ),
+            CheckingKind(
+                AstId<syntax::cst::Type>(24),
+            ),
+        ],
+    },
+    CheckError {
+        kind: RecursiveSynonymExpansion {
+            file_id: Idx::<File>(9),
+            item_id: Idx::<TypeItem>(0),
+        },
+        step: [
+            TermDeclaration(
+                Idx::<TermItem>(0),
+            ),
+            CheckingExpression(
+                AstId<syntax::cst::Expression>(20),
+            ),
+        ],
+    },
+    CheckError {
+        kind: RecursiveSynonymExpansion {
+            file_id: Idx::<File>(9),
+            item_id: Idx::<TypeItem>(0),
+        },
+        step: [
+            TermDeclaration(
+                Idx::<TermItem>(0),
+            ),
+            CheckingExpression(
+                AstId<syntax::cst::Expression>(20),
+            ),
+        ],
+    },
+    CheckError {
+        kind: RecursiveSynonymExpansion {
+            file_id: Idx::<File>(9),
+            item_id: Idx::<TypeItem>(2),
+        },
+        step: [
+            TermDeclaration(
+                Idx::<TermItem>(1),
+            ),
+            CheckingExpression(
+                AstId<syntax::cst::Expression>(30),
+            ),
+        ],
+    },
+    CheckError {
+        kind: RecursiveSynonymExpansion {
+            file_id: Idx::<File>(9),
+            item_id: Idx::<TypeItem>(2),
+        },
+        step: [
+            TermDeclaration(
+                Idx::<TermItem>(1),
+            ),
+            CheckingExpression(
+                AstId<syntax::cst::Expression>(30),
             ),
         ],
     },

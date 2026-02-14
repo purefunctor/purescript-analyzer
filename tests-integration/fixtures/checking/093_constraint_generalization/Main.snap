@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -13,5 +14,5 @@ Eq :: Type -> Constraint
 Ord :: Type -> Constraint
 
 Classes
-class Eq (&0 :: Type)
-class Ord (&0 :: Type)
+class Eq (a :: Type)
+class Ord (a :: Type)

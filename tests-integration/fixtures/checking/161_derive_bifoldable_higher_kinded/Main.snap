@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -47,9 +48,17 @@ WrapBoth = [Representational, Representational, Nominal, Nominal]
 WrapBothNoConstraint = [Representational, Representational, Nominal, Nominal]
 
 Derived
-derive (Foldable (&0 :: Type -> Type), Foldable (&1 :: Type -> Type)) => Bifoldable (WrapBoth @Type @Type (&0 :: Type -> Type) (&1 :: Type -> Type) :: Type -> Type -> Type)
-derive Bifoldable (WrapBothNoConstraint @Type @Type (&0 :: Type -> Type) (&1 :: Type -> Type) :: Type -> Type -> Type)
+derive (Foldable (f :: Type -> Type), Foldable (g :: Type -> Type)) => Bifoldable (WrapBoth @Type @Type (f :: Type -> Type) (g :: Type -> Type) :: Type -> Type -> Type)
+derive Bifoldable (WrapBothNoConstraint @Type @Type (f :: Type -> Type) (g :: Type -> Type) :: Type -> Type -> Type)
 
-Errors
-NoInstanceFound { Foldable (&0 :: Type -> Type) } at [TermDeclaration(Idx::<TermItem>(3))]
-NoInstanceFound { Foldable (&1 :: Type -> Type) } at [TermDeclaration(Idx::<TermItem>(3))]
+Diagnostics
+error[NoInstanceFound]: No instance found for: Foldable (f :: Type -> Type)
+  --> 10:1..10:54
+   |
+10 | derive instance Bifoldable (WrapBothNoConstraint f g)
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[NoInstanceFound]: No instance found for: Foldable (g :: Type -> Type)
+  --> 10:1..10:54
+   |
+10 | derive instance Bifoldable (WrapBothNoConstraint f g)
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -6,15 +6,6 @@ use crate::ExportSource;
 /// The kind of errors produced during name resolution.
 #[derive(Debug, PartialEq, Eq)]
 pub enum ResolvingError {
-    TermImportConflict {
-        existing: (FileId, TermItemId, ImportId),
-        duplicate: (FileId, TermItemId, ImportId),
-    },
-    TypeImportConflict {
-        existing: (FileId, TypeItemId, ImportId),
-        duplicate: (FileId, TypeItemId, ImportId),
-    },
-
     TermExportConflict {
         existing: (FileId, TermItemId, ExportSource),
         duplicate: (FileId, TermItemId, ExportSource),

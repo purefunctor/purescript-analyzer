@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -22,6 +23,14 @@ Triple = [Representational, Representational, Representational]
 Derived
 derive Bifunctor (Triple Int String :: Type -> Type)
 
-Errors
-CannotUnify { Type, Type -> Type } at [TermDeclaration(Idx::<TermItem>(1)), CheckingKind(AstId<syntax::cst::Type>(21))]
-CannotDeriveForType { type_id: Id<checking::core::Type>(46) } at [TermDeclaration(Idx::<TermItem>(1))]
+Diagnostics
+error[CannotUnify]: Cannot unify 'Type' with 'Type -> Type'
+  --> 6:27..6:46
+  |
+6 | derive instance Bifunctor (Triple Int String)
+  |                           ^~~~~~~~~~~~~~~~~~~
+error[CannotDeriveForType]: Cannot derive for type: Triple Int String
+  --> 6:1..6:46
+  |
+6 | derive instance Bifunctor (Triple Int String)
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

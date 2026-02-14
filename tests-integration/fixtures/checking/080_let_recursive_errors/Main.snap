@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -11,9 +12,29 @@ threeWayConflict :: Int -> Int
 
 Types
 
-Errors
-CannotUnify { Int, String } at [TermDeclaration(Idx::<TermItem>(1)), InferringExpression(AstId<syntax::cst::Expression>(20))]
-CannotUnify { String, Int } at [TermDeclaration(Idx::<TermItem>(1)), InferringExpression(AstId<syntax::cst::Expression>(20))]
-CannotUnify { ??? -> ???, ??? } at [TermDeclaration(Idx::<TermItem>(2)), InferringExpression(AstId<syntax::cst::Expression>(61))]
-CannotUnify { Int, String } at [TermDeclaration(Idx::<TermItem>(3)), InferringExpression(AstId<syntax::cst::Expression>(82)), InferringExpression(AstId<syntax::cst::Expression>(102)), CheckingExpression(AstId<syntax::cst::Expression>(105))]
-CannotUnify { String, Int } at [TermDeclaration(Idx::<TermItem>(4)), InferringExpression(AstId<syntax::cst::Expression>(115)), InferringExpression(AstId<syntax::cst::Expression>(135)), CheckingExpression(AstId<syntax::cst::Expression>(138))]
+Diagnostics
+error[CannotUnify]: Cannot unify 'Int' with 'String'
+  --> 11:13..11:16
+   |
+11 |       g x = f x
+   |             ^~~
+error[CannotUnify]: Cannot unify 'String' with 'Int'
+  --> 9:13..9:16
+  |
+9 |       f x = g x
+  |             ^~~
+error[CannotUnify]: Cannot unify '?2[:0] -> ?3[:0]' with '?3[:0]'
+  --> 17:7..17:14
+   |
+17 |   let f x = f
+   |       ^~~~~~~
+error[CannotUnify]: Cannot unify 'Int' with 'String'
+  --> 25:8..25:9
+   |
+25 |   in f n
+   |        ^
+error[CannotUnify]: Cannot unify 'String' with 'Int'
+  --> 32:15..32:21
+   |
+32 |       b x = c "oops"
+   |               ^~~~~~

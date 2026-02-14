@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -27,6 +28,6 @@ Roles
 Compose = [Representational, Representational, Nominal]
 
 Derived
-derive (Functor (&0 :: Type -> Type), Functor (&1 :: Type -> Type)) => Functor (Compose @Type @Type (&0 :: Type -> Type) (&1 :: Type -> Type) :: Type -> Type)
-derive (Foldable (&0 :: Type -> Type), Foldable (&1 :: Type -> Type)) => Foldable (Compose @Type @Type (&0 :: Type -> Type) (&1 :: Type -> Type) :: Type -> Type)
-derive (Traversable (&0 :: Type -> Type), Traversable (&1 :: Type -> Type)) => Traversable (Compose @Type @Type (&0 :: Type -> Type) (&1 :: Type -> Type) :: Type -> Type)
+derive (Functor (f :: Type -> Type), Functor (g :: Type -> Type)) => Functor (Compose @Type @Type (f :: Type -> Type) (g :: Type -> Type) :: Type -> Type)
+derive (Foldable (f :: Type -> Type), Foldable (g :: Type -> Type)) => Foldable (Compose @Type @Type (f :: Type -> Type) (g :: Type -> Type) :: Type -> Type)
+derive (Traversable (f :: Type -> Type), Traversable (g :: Type -> Type)) => Traversable (Compose @Type @Type (f :: Type -> Type) (g :: Type -> Type) :: Type -> Type)

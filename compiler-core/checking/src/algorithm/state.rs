@@ -1,53 +1,84 @@
 pub mod unification;
-use itertools::Itertools;
 pub use unification::*;
 
-use std::collections::VecDeque;
-use std::mem;
+pub mod implication;
+pub use implication::*;
+
 use std::sync::Arc;
 
 use building_types::QueryResult;
 use files::FileId;
 use indexing::{IndexedModule, TermItemId, TypeItemId};
+use itertools::Itertools;
 use lowering::{
     BinderId, GraphNodeId, GroupedModule, ImplicitBindingId, LetBindingNameGroupId, LoweredModule,
-    RecordPunId, TypeItemIr, TypeVariableBindingId,
+    RecordPunId, TermOperatorId, TypeItemIr, TypeOperatorId, TypeVariableBindingId,
 };
 use resolving::ResolvedModule;
 use rustc_hash::FxHashMap;
+use smol_str::{SmolStr, ToSmolStr};
 use stabilizing::StabilizedModule;
 use sugar::{Bracketed, Sectioned};
 
+use crate::algorithm::exhaustiveness::{
+    ExhaustivenessReport, Pattern, PatternConstructor, PatternId, PatternKind, PatternStorage,
+};
 use crate::algorithm::{constraint, transfer};
-use crate::core::{Type, TypeId, TypeInterner, Variable, debruijn};
+use crate::core::{Name, Type, TypeId, TypeInterner, Variable, debruijn, pretty};
 use crate::error::{CheckError, ErrorKind, ErrorStep};
-use crate::{CheckedModule, ExternalQueries};
+use crate::{CheckedModule, ExternalQueries, TypeErrorMessageId};
+
+/// Produces globally unique [`Name`] values.
+pub struct Names {
+    next: u32,
+    file: FileId,
+}
+
+impl Names {
+    pub fn new(file: FileId) -> Names {
+        Names { next: 0, file }
+    }
+}
+
+#[derive(Copy, Clone, Debug)]
+pub struct OperatorBranchTypes {
+    pub left: TypeId,
+    pub right: TypeId,
+    pub result: TypeId,
+}
 
 /// Manually-managed scope for type-level bindings.
 #[derive(Default)]
 pub struct TypeScope {
     pub bound: debruijn::Bound,
     pub kinds: debruijn::BoundMap<TypeId>,
+    pub names: FxHashMap<debruijn::Level, Name>,
+    pub operator_node: FxHashMap<TypeOperatorId, OperatorBranchTypes>,
 }
 
 impl TypeScope {
-    pub fn bind_forall(&mut self, id: TypeVariableBindingId, kind: TypeId) -> debruijn::Level {
+    pub fn bind_forall(&mut self, id: TypeVariableBindingId, kind: TypeId, name: Name) -> Name {
         let variable = debruijn::Variable::Forall(id);
         let level = self.bound.bind(variable);
         self.kinds.insert(level, kind);
-        level
+        let result = name.clone();
+        self.names.insert(level, name);
+        result
     }
 
-    pub fn bind_core(&mut self, kind: TypeId) -> debruijn::Level {
+    pub fn bind_core(&mut self, kind: TypeId, name: Name) -> Name {
         let variable = debruijn::Variable::Core;
         let level = self.bound.bind(variable);
         self.kinds.insert(level, kind);
-        level
+        let result = name.clone();
+        self.names.insert(level, name);
+        result
     }
 
-    pub fn lookup_forall(&self, id: TypeVariableBindingId) -> Option<debruijn::Level> {
+    pub fn lookup_forall(&self, id: TypeVariableBindingId) -> Option<Name> {
         let variable = debruijn::Variable::Forall(id);
-        self.bound.level_of(variable)
+        let level = self.bound.level_of(variable)?;
+        self.names.get(&level).cloned()
     }
 
     pub fn lookup_forall_kind(&self, id: TypeVariableBindingId) -> Option<TypeId> {
@@ -61,20 +92,20 @@ impl TypeScope {
         node: GraphNodeId,
         id: ImplicitBindingId,
         kind: TypeId,
-    ) -> debruijn::Level {
+        name: Name,
+    ) -> Name {
         let variable = debruijn::Variable::Implicit { node, id };
         let level = self.bound.level_of(variable).unwrap_or_else(|| self.bound.bind(variable));
         self.kinds.insert(level, kind);
-        level
+        let result = name.clone();
+        self.names.insert(level, name);
+        result
     }
 
-    pub fn lookup_implicit(
-        &self,
-        node: GraphNodeId,
-        id: ImplicitBindingId,
-    ) -> Option<debruijn::Level> {
+    pub fn lookup_implicit(&self, node: GraphNodeId, id: ImplicitBindingId) -> Option<Name> {
         let variable = debruijn::Variable::Implicit { node, id };
-        self.bound.level_of(variable)
+        let level = self.bound.level_of(variable)?;
+        self.names.get(&level).cloned()
     }
 
     pub fn lookup_implicit_kind(&self, node: GraphNodeId, id: ImplicitBindingId) -> Option<TypeId> {
@@ -86,6 +117,15 @@ impl TypeScope {
     pub fn unbind(&mut self, level: debruijn::Level) {
         self.bound.unbind(level);
         self.kinds.unbind(level);
+        self.names.retain(|&l, _| l < level);
+    }
+
+    /// Finds the level for a given [`Name`] and unbinds from that level.
+    pub fn unbind_name(&mut self, name: &Name) {
+        let level = self.names.iter().find_map(|(&level, n)| (n == name).then_some(level));
+        if let Some(level) = level {
+            self.unbind(level);
+        }
     }
 
     /// Unbinds variables starting from a level and returns captured implicit bindings.
@@ -99,8 +139,9 @@ impl TypeScope {
         for (level, variable) in self.bound.iter_from(level) {
             if let debruijn::Variable::Implicit { node, id } = variable
                 && let Some(&kind) = self.kinds.get(level)
+                && let Some(name) = self.names.get(&level).cloned()
             {
-                implicits.push(InstanceHeadBinding { node, id, kind });
+                implicits.push(InstanceHeadBinding { node, id, kind, name });
             }
         }
 
@@ -111,6 +152,14 @@ impl TypeScope {
     pub fn size(&self) -> debruijn::Size {
         self.bound.size()
     }
+
+    pub fn bind_operator_node(&mut self, id: TypeOperatorId, types: OperatorBranchTypes) {
+        self.operator_node.insert(id, types);
+    }
+
+    pub fn lookup_operator_node(&self, id: TypeOperatorId) -> Option<OperatorBranchTypes> {
+        self.operator_node.get(&id).copied()
+    }
 }
 
 /// Manually-managed scope for term-level bindings.
@@ -120,6 +169,7 @@ pub struct TermScope {
     pub let_binding: FxHashMap<LetBindingNameGroupId, TypeId>,
     pub record_pun: FxHashMap<RecordPunId, TypeId>,
     pub section: FxHashMap<lowering::ExpressionId, TypeId>,
+    pub operator_node: FxHashMap<TermOperatorId, OperatorBranchTypes>,
 }
 
 impl TermScope {
@@ -154,6 +204,14 @@ impl TermScope {
     pub fn lookup_section(&self, id: lowering::ExpressionId) -> Option<TypeId> {
         self.section.get(&id).copied()
     }
+
+    pub fn bind_operator_node(&mut self, id: TermOperatorId, types: OperatorBranchTypes) {
+        self.operator_node.insert(id, types);
+    }
+
+    pub fn lookup_operator_node(&self, id: TermOperatorId) -> Option<OperatorBranchTypes> {
+        self.operator_node.get(&id).copied()
+    }
 }
 
 /// A single implicit variable captured from an instance head.
@@ -165,6 +223,7 @@ pub struct InstanceHeadBinding {
     pub node: GraphNodeId,
     pub id: ImplicitBindingId,
     pub kind: TypeId,
+    pub name: Name,
 }
 
 /// Tracks type variables declared in surface syntax.
@@ -235,35 +294,24 @@ impl SurfaceBindings {
     }
 }
 
-/// Collects wanted and given constraints.
-#[derive(Default)]
-pub struct ConstraintContext {
-    pub wanted: VecDeque<TypeId>,
-    pub given: Vec<TypeId>,
+#[derive(Clone, Copy)]
+pub enum PendingType {
+    Immediate(TypeId),
+    Deferred(TypeId),
 }
 
-impl ConstraintContext {
-    pub fn push_wanted(&mut self, constraint: TypeId) {
-        self.wanted.push_back(constraint);
-    }
-
-    pub fn extend_wanted(&mut self, constraints: &[TypeId]) {
-        self.wanted.extend(constraints);
-    }
-
-    pub fn push_given(&mut self, constraint: TypeId) {
-        self.given.push(constraint);
-    }
-
-    pub fn take(&mut self) -> (VecDeque<TypeId>, Vec<TypeId>) {
-        (mem::take(&mut self.wanted), mem::take(&mut self.given))
+impl From<PendingType> for TypeId {
+    fn from(value: PendingType) -> Self {
+        match value {
+            PendingType::Immediate(id) => id,
+            PendingType::Deferred(id) => id,
+        }
     }
 }
 
 /// The core state structure threaded through the [`algorithm`].
 ///
 /// [`algorithm`]: crate::algorithm
-#[derive(Default)]
 pub struct CheckState {
     /// Interns and stores all types created during checking.
     pub storage: TypeInterner,
@@ -278,18 +326,54 @@ pub struct CheckState {
     /// Tracks surface variables for rebinding, see struct documentation.
     pub surface_bindings: SurfaceBindings,
 
-    /// Collects wanted/given type class constraints.
-    pub constraints: ConstraintContext,
+    /// Stores implication scopes for constraint solving.
+    pub implications: Implications,
+
     /// Collects unification variables and solutions.
     pub unification: UnificationContext,
     /// The in-progress binding group; used for recursive declarations.
     pub binding_group: BindingGroupContext,
+
+    /// Stores terms whose signatures have been kind-checked that still need
+    /// additional unification before moving into [`CheckedModule::terms`].
+    pub pending_terms: FxHashMap<TermItemId, PendingType>,
+
+    /// Stores types whose signatures have been kind-checked that still need
+    /// additional unification before moving into [`CheckedModule::types`].
+    pub pending_types: FxHashMap<TypeItemId, PendingType>,
 
     /// Error context breadcrumbs for [`CheckedModule::errors`].
     pub check_steps: Vec<ErrorStep>,
 
     /// Flag that determines when it's appropriate to expand synonyms.
     pub defer_synonym_expansion: bool,
+
+    /// Interns patterns for exhaustiveness checking.
+    pub patterns: PatternStorage,
+
+    /// Produces fresh [`Name`] values for bound type variables.
+    pub names: Names,
+}
+
+impl CheckState {
+    pub fn new(file_id: FileId) -> CheckState {
+        CheckState {
+            storage: Default::default(),
+            checked: Default::default(),
+            type_scope: Default::default(),
+            term_scope: Default::default(),
+            surface_bindings: Default::default(),
+            implications: Default::default(),
+            unification: Default::default(),
+            binding_group: Default::default(),
+            pending_terms: Default::default(),
+            pending_types: Default::default(),
+            check_steps: Default::default(),
+            defer_synonym_expansion: Default::default(),
+            patterns: Default::default(),
+            names: Names::new(file_id),
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -340,6 +424,7 @@ where
     pub prim_coerce: PrimCoerceCore,
     pub prim_type_error: PrimTypeErrorCore,
     pub known_types: KnownTypesCore,
+    pub known_terms: KnownTermsCore,
     pub known_reflectable: KnownReflectableCore,
     pub known_generic: Option<KnownGeneric>,
 
@@ -381,6 +466,7 @@ where
         let prim_coerce = PrimCoerceCore::collect(queries)?;
         let prim_type_error = PrimTypeErrorCore::collect(queries, state)?;
         let known_types = KnownTypesCore::collect(queries)?;
+        let known_terms = KnownTermsCore::collect(queries)?;
         let known_reflectable = KnownReflectableCore::collect(queries, &mut state.storage)?;
         let known_generic = KnownGeneric::collect(queries, &mut state.storage)?;
         let resolved = queries.resolved(id)?;
@@ -399,6 +485,7 @@ where
             prim_coerce,
             prim_type_error,
             known_types,
+            known_terms,
             known_reflectable,
             known_generic,
             id,
@@ -446,15 +533,33 @@ impl<'r, 's> PrimLookup<'r, 's> {
         self.storage.intern(Type::Constructor(file_id, type_id))
     }
 
+    fn class_item(&self, name: &str) -> TypeItemId {
+        let (_, type_id) =
+            self.resolved.lookup_class(self.resolved, None, name).unwrap_or_else(|| {
+                unreachable!("invariant violated: {name} not in {}", self.module_name)
+            });
+        type_id
+    }
+
+    fn class_constructor(&mut self, name: &str) -> TypeId {
+        let (file_id, type_id) =
+            self.resolved.lookup_class(self.resolved, None, name).unwrap_or_else(|| {
+                unreachable!("invariant violated: {name} not in {}", self.module_name)
+            });
+        self.storage.intern(Type::Constructor(file_id, type_id))
+    }
+
     fn intern(&mut self, ty: Type) -> TypeId {
         self.storage.intern(ty)
     }
 }
 
 pub struct PrimCore {
+    pub prim_id: FileId,
     pub t: TypeId,
     pub type_to_type: TypeId,
     pub function: TypeId,
+    pub function_item: TypeItemId,
     pub array: TypeId,
     pub record: TypeId,
     pub number: TypeId,
@@ -466,21 +571,31 @@ pub struct PrimCore {
     pub constraint: TypeId,
     pub symbol: TypeId,
     pub row: TypeId,
+    pub row_type: TypeId,
     pub unknown: TypeId,
 }
 
 impl PrimCore {
     fn collect(queries: &impl ExternalQueries, state: &mut CheckState) -> QueryResult<PrimCore> {
-        let resolved = queries.resolved(queries.prim_id())?;
+        let prim_id = queries.prim_id();
+        let resolved = queries.resolved(prim_id)?;
         let mut lookup = PrimLookup::new(&resolved, &mut state.storage, "Prim");
 
         let t = lookup.type_constructor("Type");
         let type_to_type = lookup.intern(Type::Function(t, t));
 
+        let row = lookup.type_constructor("Row");
+        let row_type = lookup.intern(Type::Application(row, t));
+
+        let function = lookup.type_constructor("Function");
+        let function_item = lookup.type_item("Function");
+
         Ok(PrimCore {
+            prim_id,
             t,
             type_to_type,
-            function: lookup.type_constructor("Function"),
+            function,
+            function_item,
             array: lookup.type_constructor("Array"),
             record: lookup.type_constructor("Record"),
             number: lookup.type_constructor("Number"),
@@ -488,10 +603,11 @@ impl PrimCore {
             string: lookup.type_constructor("String"),
             char: lookup.type_constructor("Char"),
             boolean: lookup.type_constructor("Boolean"),
-            partial: lookup.type_constructor("Partial"),
+            partial: lookup.class_constructor("Partial"),
             constraint: lookup.type_constructor("Constraint"),
             symbol: lookup.type_constructor("Symbol"),
-            row: lookup.type_constructor("Row"),
+            row,
+            row_type,
             unknown: lookup.intern(Type::Unknown),
         })
     }
@@ -516,10 +632,10 @@ impl PrimIntCore {
 
         Ok(PrimIntCore {
             file_id,
-            add: lookup.type_item("Add"),
-            mul: lookup.type_item("Mul"),
-            compare: lookup.type_item("Compare"),
-            to_string: lookup.type_item("ToString"),
+            add: lookup.class_item("Add"),
+            mul: lookup.class_item("Mul"),
+            compare: lookup.class_item("Compare"),
+            to_string: lookup.class_item("ToString"),
         })
     }
 }
@@ -575,9 +691,9 @@ impl PrimSymbolCore {
 
         Ok(PrimSymbolCore {
             file_id,
-            append: lookup.type_item("Append"),
-            compare: lookup.type_item("Compare"),
-            cons: lookup.type_item("Cons"),
+            append: lookup.class_item("Append"),
+            compare: lookup.class_item("Compare"),
+            cons: lookup.class_item("Cons"),
         })
     }
 }
@@ -621,10 +737,10 @@ impl PrimRowCore {
 
         Ok(PrimRowCore {
             file_id,
-            union: lookup.type_item("Union"),
-            cons: lookup.type_item("Cons"),
-            lacks: lookup.type_item("Lacks"),
-            nub: lookup.type_item("Nub"),
+            union: lookup.class_item("Union"),
+            cons: lookup.class_item("Cons"),
+            lacks: lookup.class_item("Lacks"),
+            nub: lookup.class_item("Nub"),
         })
     }
 }
@@ -650,7 +766,7 @@ impl PrimRowListCore {
 
         Ok(PrimRowListCore {
             file_id,
-            row_to_list: lookup.type_item("RowToList"),
+            row_to_list: lookup.class_item("RowToList"),
             cons: lookup.type_constructor("Cons"),
             nil: lookup.type_constructor("Nil"),
         })
@@ -671,7 +787,7 @@ impl PrimCoerceCore {
         let resolved = queries.resolved(file_id)?;
         let (_, coercible) = resolved
             .exports
-            .lookup_type("Coercible")
+            .lookup_class("Coercible")
             .unwrap_or_else(|| unreachable!("invariant violated: Coercible not in Prim.Coerce"));
 
         Ok(PrimCoerceCore { file_id, coercible })
@@ -700,8 +816,8 @@ impl PrimTypeErrorCore {
 
         Ok(PrimTypeErrorCore {
             file_id,
-            warn: lookup.type_item("Warn"),
-            fail: lookup.type_item("Fail"),
+            warn: lookup.class_item("Warn"),
+            fail: lookup.class_item("Fail"),
             text: lookup.type_constructor("Text"),
             quote: lookup.type_constructor("Quote"),
             quote_label: lookup.type_constructor("QuoteLabel"),
@@ -711,7 +827,22 @@ impl PrimTypeErrorCore {
     }
 }
 
-fn fetch_known_type(
+fn fetch_known_term(
+    queries: &impl ExternalQueries,
+    m: &str,
+    n: &str,
+) -> QueryResult<Option<(FileId, indexing::TermItemId)>> {
+    let Some(file_id) = queries.module_file(m) else {
+        return Ok(None);
+    };
+    let resolved = queries.resolved(file_id)?;
+    let Some((file_id, term_id)) = resolved.exports.lookup_term(n) else {
+        return Ok(None);
+    };
+    Ok(Some((file_id, term_id)))
+}
+
+fn fetch_known_class(
     queries: &impl ExternalQueries,
     m: &str,
     n: &str,
@@ -720,7 +851,7 @@ fn fetch_known_type(
         return Ok(None);
     };
     let resolved = queries.resolved(file_id)?;
-    let Some((file_id, type_id)) = resolved.exports.lookup_type(n) else {
+    let Some((file_id, type_id)) = resolved.exports.lookup_class(n) else {
         return Ok(None);
     };
     Ok(Some((file_id, type_id)))
@@ -761,21 +892,21 @@ pub struct KnownTypesCore {
 
 impl KnownTypesCore {
     fn collect(queries: &impl ExternalQueries) -> QueryResult<KnownTypesCore> {
-        let eq = fetch_known_type(queries, "Data.Eq", "Eq")?;
-        let eq1 = fetch_known_type(queries, "Data.Eq", "Eq1")?;
-        let ord = fetch_known_type(queries, "Data.Ord", "Ord")?;
-        let ord1 = fetch_known_type(queries, "Data.Ord", "Ord1")?;
-        let functor = fetch_known_type(queries, "Data.Functor", "Functor")?;
-        let bifunctor = fetch_known_type(queries, "Data.Bifunctor", "Bifunctor")?;
+        let eq = fetch_known_class(queries, "Data.Eq", "Eq")?;
+        let eq1 = fetch_known_class(queries, "Data.Eq", "Eq1")?;
+        let ord = fetch_known_class(queries, "Data.Ord", "Ord")?;
+        let ord1 = fetch_known_class(queries, "Data.Ord", "Ord1")?;
+        let functor = fetch_known_class(queries, "Data.Functor", "Functor")?;
+        let bifunctor = fetch_known_class(queries, "Data.Bifunctor", "Bifunctor")?;
         let contravariant =
-            fetch_known_type(queries, "Data.Functor.Contravariant", "Contravariant")?;
-        let profunctor = fetch_known_type(queries, "Data.Profunctor", "Profunctor")?;
-        let foldable = fetch_known_type(queries, "Data.Foldable", "Foldable")?;
-        let bifoldable = fetch_known_type(queries, "Data.Bifoldable", "Bifoldable")?;
-        let traversable = fetch_known_type(queries, "Data.Traversable", "Traversable")?;
-        let bitraversable = fetch_known_type(queries, "Data.Bitraversable", "Bitraversable")?;
-        let newtype = fetch_known_type(queries, "Data.Newtype", "Newtype")?;
-        let generic = fetch_known_type(queries, "Data.Generic.Rep", "Generic")?;
+            fetch_known_class(queries, "Data.Functor.Contravariant", "Contravariant")?;
+        let profunctor = fetch_known_class(queries, "Data.Profunctor", "Profunctor")?;
+        let foldable = fetch_known_class(queries, "Data.Foldable", "Foldable")?;
+        let bifoldable = fetch_known_class(queries, "Data.Bifoldable", "Bifoldable")?;
+        let traversable = fetch_known_class(queries, "Data.Traversable", "Traversable")?;
+        let bitraversable = fetch_known_class(queries, "Data.Bitraversable", "Bitraversable")?;
+        let newtype = fetch_known_class(queries, "Data.Newtype", "Newtype")?;
+        let generic = fetch_known_class(queries, "Data.Generic.Rep", "Generic")?;
         Ok(KnownTypesCore {
             eq,
             eq1,
@@ -806,8 +937,8 @@ impl KnownReflectableCore {
         queries: &impl ExternalQueries,
         storage: &mut TypeInterner,
     ) -> QueryResult<KnownReflectableCore> {
-        let is_symbol = fetch_known_type(queries, "Data.Symbol", "IsSymbol")?;
-        let reflectable = fetch_known_type(queries, "Data.Reflectable", "Reflectable")?;
+        let is_symbol = fetch_known_class(queries, "Data.Symbol", "IsSymbol")?;
+        let reflectable = fetch_known_class(queries, "Data.Reflectable", "Reflectable")?;
         let ordering = fetch_known_constructor(queries, storage, "Data.Ordering", "Ordering")?;
         Ok(KnownReflectableCore { is_symbol, reflectable, ordering })
     }
@@ -867,6 +998,17 @@ impl KnownGeneric {
     }
 }
 
+pub struct KnownTermsCore {
+    pub otherwise: Option<(FileId, indexing::TermItemId)>,
+}
+
+impl KnownTermsCore {
+    fn collect(queries: &impl ExternalQueries) -> QueryResult<KnownTermsCore> {
+        let otherwise = fetch_known_term(queries, "Data.Boolean", "otherwise")?;
+        Ok(KnownTermsCore { otherwise })
+    }
+}
+
 impl CheckState {
     /// Executes the given closure with a term binding group in scope.
     ///
@@ -883,7 +1025,7 @@ impl CheckState {
         F: FnOnce(&mut Self) -> T,
     {
         for item in group {
-            if !self.checked.terms.contains_key(&item) {
+            if !self.checked.terms.contains_key(&item) && !self.pending_terms.contains_key(&item) {
                 let t = self.fresh_unification_type(context);
                 self.binding_group.terms.insert(item, t);
             }
@@ -915,6 +1057,9 @@ impl CheckState {
             if self.checked.types.contains_key(&item_id) {
                 return false;
             }
+            if self.pending_types.contains_key(&item_id) {
+                return false;
+            }
             true
         });
 
@@ -940,8 +1085,10 @@ impl CheckState {
             );
 
             let kind = self.binding_group.lookup_type(item_id).or_else(|| {
-                let kind = self.checked.types.get(&item_id)?;
-                Some(transfer::localize(self, context, *kind))
+                self.pending_types.get(&item_id).map(|&k| TypeId::from(k)).or_else(|| {
+                    let kind = self.checked.types.get(&item_id)?;
+                    Some(transfer::localize(self, context, *kind))
+                })
             });
 
             let kind = kind.expect("invariant violated: expected kind for operator target");
@@ -953,12 +1100,58 @@ impl CheckState {
         result
     }
 
+    pub fn with_implication<T>(&mut self, action: impl FnOnce(&mut Self) -> T) -> T {
+        let child = self.push_implication();
+        let result = action(self);
+        self.pop_implication(child);
+        result
+    }
+
+    pub fn push_implication(&mut self) -> ImplicationId {
+        self.implications.push()
+    }
+
+    pub fn pop_implication(&mut self, implication: ImplicationId) {
+        self.implications.pop(implication);
+    }
+
+    pub fn current_implication(&self) -> ImplicationId {
+        self.implications.current()
+    }
+
+    pub fn current_implication_mut(&mut self) -> &mut implication::Implication {
+        self.implications.current_mut()
+    }
+
+    pub fn push_wanted(&mut self, constraint: TypeId) {
+        self.current_implication_mut().wanted.push_back(constraint);
+    }
+
+    pub fn extend_wanted(&mut self, constraints: &[TypeId]) {
+        self.current_implication_mut().wanted.extend(constraints.iter().copied());
+    }
+
+    pub fn push_given(&mut self, constraint: TypeId) {
+        self.current_implication_mut().given.push(constraint);
+    }
+
     pub fn solve_constraints<Q>(&mut self, context: &CheckContext<Q>) -> QueryResult<Vec<TypeId>>
     where
         Q: ExternalQueries,
     {
-        let (wanted, given) = self.constraints.take();
-        constraint::solve_constraints(self, context, wanted, given)
+        constraint::solve_implication(self, context)
+    }
+
+    pub fn report_exhaustiveness(&mut self, exhaustiveness: ExhaustivenessReport) {
+        if let Some(patterns) = exhaustiveness.missing {
+            let patterns = Arc::from(patterns);
+            self.insert_error(ErrorKind::MissingPatterns { patterns });
+        }
+
+        if !exhaustiveness.redundant.is_empty() {
+            let patterns = Arc::from(exhaustiveness.redundant);
+            self.insert_error(ErrorKind::RedundantPatterns { patterns });
+        }
     }
 
     /// Executes an action with an [`ErrorStep`] in scope.
@@ -978,20 +1171,74 @@ impl CheckState {
         let error = CheckError { kind, step };
         self.checked.errors.push(error);
     }
+
+    /// Interns an error message in [`CheckedModule::error_messages`].
+    pub fn intern_error_message(&mut self, message: impl ToSmolStr) -> TypeErrorMessageId {
+        self.checked.error_messages.intern(message.to_smolstr())
+    }
+
+    /// Renders a local type and interns it in [`CheckedModule::error_messages`].
+    pub fn render_local_type<Q>(
+        &mut self,
+        context: &CheckContext<Q>,
+        t: TypeId,
+    ) -> TypeErrorMessageId
+    where
+        Q: ExternalQueries,
+    {
+        let t = pretty::print_local(self, context, t);
+        self.intern_error_message(t)
+    }
+}
+
+/// Functions for creating fresh [`Name`] values.
+impl CheckState {
+    pub fn fresh_name(&mut self, text: &SmolStr) -> Name {
+        let unique = self.names.next;
+        self.names.next += 1;
+        let file = self.names.file;
+        let text = SmolStr::clone(text);
+        let depth = self.type_scope.size();
+        Name { unique, file, text, depth }
+    }
+
+    pub fn fresh_name_str(&mut self, text: &str) -> Name {
+        let unique = self.names.next;
+        self.names.next += 1;
+        let file = self.names.file;
+        let text = SmolStr::new(text);
+        let depth = self.type_scope.size();
+        Name { unique, file, text, depth }
+    }
+
+    pub fn fresh_name_unify(&mut self, left: &SmolStr, right: &SmolStr) -> (Name, Name) {
+        let unique = self.names.next;
+        self.names.next += 1;
+        let file = self.names.file;
+        let depth = self.type_scope.size();
+        (
+            Name { unique, file, text: SmolStr::clone(left), depth },
+            Name { unique, file, text: SmolStr::clone(right), depth },
+        )
+    }
+
+    pub fn name_text<'a>(&self, name: &'a Name) -> &'a str {
+        name.text.as_str()
+    }
 }
 
 /// Functions for creating unification variables.
 impl CheckState {
-    /// Creates a fresh unification variable with the provided domain and kind.
-    pub fn fresh_unification_kinded_at(&mut self, domain: debruijn::Size, kind: TypeId) -> TypeId {
-        let unification_id = self.unification.fresh(domain, kind);
+    /// Creates a fresh unification variable with the provided depth and kind.
+    pub fn fresh_unification_kinded_at(&mut self, depth: debruijn::Size, kind: TypeId) -> TypeId {
+        let unification_id = self.unification.fresh(depth, kind);
         self.storage.intern(Type::Unification(unification_id))
     }
 
     /// Creates a fresh unification variable with the provided kind.
     pub fn fresh_unification_kinded(&mut self, kind: TypeId) -> TypeId {
-        let domain = self.type_scope.size();
-        self.fresh_unification_kinded_at(domain, kind)
+        let depth = self.type_scope.size();
+        self.fresh_unification_kinded_at(depth, kind)
     }
 
     /// Creates a fresh polykinded unification variable.
@@ -1013,15 +1260,14 @@ impl CheckState {
 
     /// Creates a fresh skolem variable with the provided kind.
     pub fn fresh_skolem_kinded(&mut self, kind: TypeId) -> TypeId {
-        let domain = self.type_scope.size();
-        let level = debruijn::Level(domain.0);
-        let skolem = Variable::Skolem(level, kind);
+        let name = self.fresh_name_str("_");
+        let skolem = Variable::Skolem(name, kind);
         self.storage.intern(Type::Variable(skolem))
     }
 }
 
 impl CheckState {
-    /// Normalizes unification and bound type variables.
+    /// Normalises unification and bound type variables.
     ///
     /// This function also applies path compression to unification variables,
     /// where if a unification variable `?0` solves to `?1`, which solves to
@@ -1037,6 +1283,13 @@ impl CheckState {
                     {
                         id = solution;
                         to_compress.push(unification_id);
+                    } else {
+                        break id;
+                    }
+                }
+                Type::Row(ref row) if row.fields.is_empty() => {
+                    if let Some(tail) = row.tail {
+                        id = tail;
                     } else {
                         break id;
                     }
@@ -1058,5 +1311,25 @@ impl CheckState {
             let function = Type::Function(argument, result);
             self.storage.intern(function)
         })
+    }
+}
+
+impl CheckState {
+    pub fn allocate_pattern(&mut self, kind: PatternKind, t: TypeId) -> PatternId {
+        let pattern = Pattern { kind, t };
+        self.patterns.intern(pattern)
+    }
+
+    pub fn allocate_constructor(
+        &mut self,
+        constructor: PatternConstructor,
+        t: TypeId,
+    ) -> PatternId {
+        let kind = PatternKind::Constructor { constructor };
+        self.allocate_pattern(kind, t)
+    }
+
+    pub fn allocate_wildcard(&mut self, t: TypeId) -> PatternId {
+        self.allocate_pattern(PatternKind::Wildcard, t)
     }
 }

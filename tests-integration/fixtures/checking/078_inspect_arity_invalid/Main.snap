@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -35,7 +36,19 @@ Const = forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type) -> (a :: Type
   Type = :0
 
 
-Errors
-TooManyBinders { signature: AstId<syntax::cst::Type>(13), expected: 2, actual: 3 } at [TermDeclaration(Idx::<TermItem>(0))]
-TooManyBinders { signature: AstId<syntax::cst::Type>(39), expected: 2, actual: 3 } at [TermDeclaration(Idx::<TermItem>(1))]
-TooManyBinders { signature: AstId<syntax::cst::Type>(62), expected: 2, actual: 3 } at [TermDeclaration(Idx::<TermItem>(2))]
+Diagnostics
+error[TooManyBinders]: Too many binders: expected 2, got 3
+  --> 7:1..7:33
+  |
+7 | addWrong :: forall a. BinaryOp a
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[TooManyBinders]: Too many binders: expected 2, got 3
+  --> 13:1..13:40
+   |
+13 | composeWrong :: forall a. ReturnUnary a
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[TooManyBinders]: Too many binders: expected 2, got 3
+  --> 18:1..18:20
+   |
+18 | constWrong :: Const
+   | ^~~~~~~~~~~~~~~~~~~

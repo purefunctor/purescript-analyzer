@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -12,9 +13,17 @@ Read :: Type -> Constraint
 Show :: Type -> Constraint
 
 Classes
-class Read (&0 :: Type)
-class Show (&0 :: Type)
+class Read (a :: Type)
+class Show (a :: Type)
 
-Errors
-AmbiguousConstraint { Show ??? } at [TermDeclaration(Idx::<TermItem>(2))]
-AmbiguousConstraint { Read ??? } at [TermDeclaration(Idx::<TermItem>(2))]
+Diagnostics
+error[AmbiguousConstraint]: Ambiguous constraint: Show ?5[:0]
+  --> 11:1..11:23
+   |
+11 | test s = show (read s)
+   | ^~~~~~~~~~~~~~~~~~~~~~
+error[AmbiguousConstraint]: Ambiguous constraint: Read ?5[:0]
+  --> 11:1..11:23
+   |
+11 | test s = show (read s)
+   | ^~~~~~~~~~~~~~~~~~~~~~

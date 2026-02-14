@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -27,5 +28,9 @@ Box = []
 Derived
 derive Eq (Box :: Type)
 
-Errors
-NoInstanceFound { Eq NoEq } at [TermDeclaration(Idx::<TermItem>(2))]
+Diagnostics
+error[NoInstanceFound]: No instance found for: Eq NoEq
+  --> 9:1..9:23
+  |
+9 | derive instance Eq Box
+  | ^~~~~~~~~~~~~~~~~~~~~~

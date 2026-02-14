@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -31,8 +32,12 @@ Wrap = [Representational, Nominal]
 WrapNoFunctor = [Representational, Nominal]
 
 Derived
-derive Functor (&0 :: Type -> Type) => Functor (Wrap @Type (&0 :: Type -> Type) :: Type -> Type)
-derive Functor (WrapNoFunctor @Type (&0 :: Type -> Type) :: Type -> Type)
+derive Functor (f :: Type -> Type) => Functor (Wrap @Type (f :: Type -> Type) :: Type -> Type)
+derive Functor (WrapNoFunctor @Type (f :: Type -> Type) :: Type -> Type)
 
-Errors
-NoInstanceFound { Functor (&0 :: Type -> Type) } at [TermDeclaration(Idx::<TermItem>(3))]
+Diagnostics
+error[NoInstanceFound]: No instance found for: Functor (f :: Type -> Type)
+  --> 9:1..9:42
+  |
+9 | derive instance Functor (WrapNoFunctor f)
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

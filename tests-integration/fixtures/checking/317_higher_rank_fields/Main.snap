@@ -1,0 +1,17 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+test1 :: { identity :: forall (a :: Type). (a :: Type) -> (a :: Type) } -> Int
+test2 :: { identity :: forall (a :: Type). (a :: Type) -> (a :: Type) } -> Int
+
+Types
+Test :: Type
+
+Synonyms
+Test = { identity :: forall (a :: Type). (a :: Type) -> (a :: Type) }
+  Quantified = :0
+  Kind = :0
+  Type = :0

@@ -132,8 +132,21 @@ fn references_import(
 
     let references_type = |engine: &QueryEngine, files: &Files, name: &str| {
         let name = name.trim_start_matches("(").trim_end_matches(")");
-        let (f_id, t_id) =
-            import_resolved.exports.lookup_type(name).ok_or(AnalyzerError::NonFatal)?;
+        let (f_id, t_id) = import_resolved
+            .exports
+            .lookup_type(name)
+            .or_else(|| import_resolved.exports.lookup_class(name))
+            .ok_or(AnalyzerError::NonFatal)?;
+        references_file_type(engine, files, current_file, f_id, t_id)
+    };
+
+    let references_class = |engine: &QueryEngine, files: &Files, name: &str| {
+        let name = name.trim_start_matches("(").trim_end_matches(")");
+        let (f_id, t_id) = import_resolved
+            .exports
+            .lookup_class(name)
+            .or_else(|| import_resolved.exports.lookup_type(name))
+            .ok_or(AnalyzerError::NonFatal)?;
         references_file_type(engine, files, current_file, f_id, t_id)
     };
 
@@ -146,7 +159,7 @@ fn references_import(
         cst::ImportItem::ImportClass(cst) => {
             let token = cst.name_token().ok_or(AnalyzerError::NonFatal)?;
             let name = token.text();
-            references_type(engine, files, name)
+            references_class(engine, files, name)
         }
         cst::ImportItem::ImportType(cst) => {
             let token = cst.name_token().ok_or(AnalyzerError::NonFatal)?;
@@ -387,6 +400,8 @@ fn probe_type_references(
     probe_workspace_imports(engine, files, current_file, file_id, |import| {
         import.iter_types().any(|(_, f_id, t_id, kind)| {
             kind != ImportKind::Hidden && (f_id, t_id) == (file_id, type_id)
+        }) || import.iter_classes().any(|(_, f_id, t_id, kind)| {
+            kind != ImportKind::Hidden && (f_id, t_id) == (file_id, type_id)
         })
     })
 }
@@ -408,7 +423,7 @@ fn probe_workspace_imports(
         let resolved = engine.resolved(workspace_file_id)?;
 
         let unqualified = resolved.unqualified.values().flatten();
-        let qualified = resolved.qualified.values();
+        let qualified = resolved.qualified.values().flatten();
         let imports = unqualified.chain(qualified);
 
         for import in imports {
@@ -432,7 +447,7 @@ fn probe_imports_for(
         let resolved = engine.resolved(workspace_file_id)?;
 
         let unqualified = resolved.unqualified.values().flatten();
-        let qualified = resolved.qualified.values();
+        let qualified = resolved.qualified.values().flatten();
         let imports = unqualified.chain(qualified);
 
         for import in imports {

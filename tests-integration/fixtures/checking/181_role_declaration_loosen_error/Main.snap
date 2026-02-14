@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -20,5 +21,9 @@ F
 Roles
 F = [Representational, Nominal]
 
-Errors
-InvalidRoleDeclaration { type_id: Idx::<TypeItem>(0), parameter_index: 1, declared: Phantom, inferred: Nominal } at []
+Diagnostics
+error[InvalidRoleDeclaration]: Invalid role declaration: declared Phantom, inferred Nominal
+  --> 3:1..3:21
+  |
+3 | data F f a = F (f a)
+  | ^~~~~~~~~~~~~~~~~~~~

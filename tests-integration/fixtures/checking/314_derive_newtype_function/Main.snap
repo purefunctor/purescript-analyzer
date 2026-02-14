@@ -1,0 +1,24 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Builder ::
+  forall (a :: Type) (b :: Type). ((a :: Type) -> (b :: Type)) -> Builder (a :: Type) (b :: Type)
+
+Types
+Builder :: Type -> Type -> Type
+
+Data
+Builder
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+Builder = [Representational, Representational]
+
+Derived
+derive Semigroupoid (Builder :: Type -> Type -> Type)
+derive Category (Builder :: Type -> Type -> Type)

@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -21,14 +22,14 @@ test7 :: Int -> Int
 test8 :: Int -> Int
 test9 :: Int -> Int -> Int
 test10 :: forall (t41 :: Type). ((Int -> Int) -> (t41 :: Type)) -> (t41 :: Type)
-test11 :: forall (t48 :: Type). (t48 :: Type) -> Array (t48 :: Type)
-test12 :: forall (t51 :: Type). (t51 :: Type) -> { foo :: (t51 :: Type) }
-test13 :: forall (t54 :: Type). (t54 :: Type) -> (t54 :: Type)
-test14 :: forall (t59 :: Type). (t59 :: Type) -> (t59 :: Type) -> Array (t59 :: Type)
+test11 :: forall (t49 :: Type). (t49 :: Type) -> Array (t49 :: Type)
+test12 :: forall (t52 :: Type). (t52 :: Type) -> { foo :: (t52 :: Type) }
+test13 :: forall (t55 :: Type). (t55 :: Type) -> (t55 :: Type)
+test14 :: forall (t60 :: Type). (t60 :: Type) -> (t60 :: Type) -> Array (t60 :: Type)
 test15 ::
-  forall (t62 :: Type) (t63 :: Type).
-    (t62 :: Type) -> (t63 :: Type) -> { a :: (t62 :: Type), b :: (t63 :: Type) }
-test16 :: forall (t67 :: Type). (t67 :: Type) -> Tuple (t67 :: Type) Int
+  forall (t63 :: Type) (t64 :: Type).
+    (t63 :: Type) -> (t64 :: Type) -> { a :: (t63 :: Type), b :: (t64 :: Type) }
+test16 :: forall (t68 :: Type). (t68 :: Type) -> Tuple (t68 :: Type) Int
 test17 :: Tuple String Int
 test18 :: Int -> Int
 

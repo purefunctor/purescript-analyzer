@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -19,5 +20,5 @@ Eq :: Type -> Constraint
 Coercible :: Type -> Type -> Constraint
 
 Classes
-class Eq (&0 :: Type)
-class Coercible (&0 :: Type) (&1 :: Type)
+class Eq (a :: Type)
+class Coercible (a :: Type) (b :: Type)

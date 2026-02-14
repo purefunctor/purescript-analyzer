@@ -14,15 +14,17 @@ mod variance;
 use building_types::QueryResult;
 use files::FileId;
 use indexing::{DeriveId, TermItemId, TypeItemId};
+use itertools::Itertools;
 
 use crate::ExternalQueries;
+use crate::algorithm::derive::variance::VarianceConfig;
 use crate::algorithm::safety::safe_loop;
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::{kind, term_item, toolkit, transfer};
-use crate::core::{Type, TypeId, debruijn};
+use crate::core::{Type, TypeId, Variable, debruijn};
 use crate::error::{ErrorKind, ErrorStep};
 
-/// Input fields for [`check_derive`].
+/// Input fields for [`check_derive_head`].
 pub struct CheckDerive<'a> {
     pub item_id: TermItemId,
     pub derive_id: DeriveId,
@@ -33,12 +35,74 @@ pub struct CheckDerive<'a> {
     pub is_newtype: bool,
 }
 
-/// Checks a derived instance.
-pub fn check_derive<Q>(
+/// Determines how [`check_derive_member`] generates constraints.
+enum DeriveStrategy {
+    /// [`generate_field_constraints`] strategy.
+    ///
+    /// * Eq
+    /// * Ord
+    FieldConstraints {
+        data_file: FileId,
+        data_id: TypeItemId,
+        derived_type: TypeId,
+        class: (FileId, TypeItemId),
+    },
+    /// [`generate_variance_constraints`] strategy.
+    ///
+    /// * Functor, Bifunctor
+    /// * Contravariant, Profunctor
+    /// * Foldable, Bifoldable
+    /// * Traversable, Bitraversable
+    ///
+    /// [`generate_variance_constraints`]: variance::generate_variance_constraints
+    VarianceConstraints {
+        data_file: FileId,
+        data_id: TypeItemId,
+        derived_type: TypeId,
+        config: VarianceConfig,
+    },
+    /// [`generate_delegate_constraint`] strategy.
+    ///
+    /// * Eq1
+    /// * Ord1
+    DelegateConstraint { derived_type: TypeId, class: (FileId, TypeItemId) },
+    /// `derive newtype instance`
+    NewtypeDeriveConstraint { delegate_constraint: TypeId },
+    /// The instance head was sufficient.
+    ///
+    /// * Generic
+    /// * Newtype
+    HeadOnly,
+}
+
+/// Carries state from [`check_derive_head`] to [`check_derive_member`].
+pub struct DeriveHeadResult {
+    item_id: TermItemId,
+    constraints: Vec<TypeId>,
+    class_file: FileId,
+    class_id: TypeItemId,
+    arguments: Vec<(TypeId, TypeId)>,
+    strategy: DeriveStrategy,
+}
+
+pub fn check_derive_head<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     input: CheckDerive<'_>,
-) -> QueryResult<()>
+) -> QueryResult<Option<DeriveHeadResult>>
+where
+    Q: ExternalQueries,
+{
+    state.with_error_step(ErrorStep::TermDeclaration(input.item_id), |state| {
+        state.with_implication(|state| check_derive_head_core(state, context, input))
+    })
+}
+
+fn check_derive_head_core<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    input: CheckDerive<'_>,
+) -> QueryResult<Option<DeriveHeadResult>>
 where
     Q: ExternalQueries,
 {
@@ -52,89 +116,95 @@ where
         is_newtype,
     } = input;
 
-    state.with_error_step(ErrorStep::TermDeclaration(item_id), |state| {
-        // Save the current size of the environment for unbinding.
-        let size = state.type_scope.size();
+    let size = state.type_scope.size();
 
-        let class_kind = kind::lookup_file_type(state, context, class_file, class_id)?;
-        let expected_kinds = term_item::instantiate_class_kind(state, context, class_kind)?;
+    let class_kind = kind::lookup_file_type(state, context, class_file, class_id)?;
+    let expected_kinds = term_item::instantiate_class_kind(state, context, class_kind)?;
 
-        if expected_kinds.len() != arguments.len() {
-            state.insert_error(ErrorKind::InstanceHeadMismatch {
-                class_file,
-                class_item: class_id,
-                expected: expected_kinds.len(),
-                actual: arguments.len(),
-            });
-        }
-
-        let mut core_arguments = vec![];
-        for (argument, expected_kind) in arguments.iter().zip(expected_kinds) {
-            let (inferred_type, inferred_kind) =
-                kind::check_surface_kind(state, context, *argument, expected_kind)?;
-            core_arguments.push((inferred_type, inferred_kind));
-        }
-
-        let mut core_constraints = vec![];
-        for constraint in constraints.iter() {
-            let (inferred_type, inferred_kind) =
-                kind::infer_surface_kind(state, context, *constraint)?;
-            core_constraints.push((inferred_type, inferred_kind));
-        }
-
-        let elaborated = tools::ElaboratedDerive {
-            derive_id,
-            constraints: core_constraints,
-            arguments: core_arguments,
+    if expected_kinds.len() != arguments.len() {
+        state.insert_error(ErrorKind::InstanceHeadMismatch {
             class_file,
-            class_id,
-        };
+            class_item: class_id,
+            expected: expected_kinds.len(),
+            actual: arguments.len(),
+        });
+    }
 
-        if is_newtype {
-            check_newtype_derive(state, context, elaborated)?;
-        } else {
-            let class_is = |known| Some((class_file, class_id)) == known;
-            let known_types = &context.known_types;
+    let mut core_arguments = vec![];
+    for (argument, expected_kind) in arguments.iter().zip(expected_kinds) {
+        let (inferred_type, inferred_kind) =
+            kind::check_surface_kind(state, context, *argument, expected_kind)?;
+        core_arguments.push((inferred_type, inferred_kind));
+    }
 
-            macro_rules! dispatch {
-                ($($($known:ident)|+ => $handler:path),+ $(,)?) => {
-                    $(if $(class_is(known_types.$known))||+ {
-                        $handler(state, context, elaborated)?;
-                    } else)+ {
-                        state.insert_error(ErrorKind::CannotDeriveClass { class_file, class_id });
-                    }
-                };
-            }
+    let mut core_constraints = vec![];
+    for constraint in constraints.iter() {
+        let (inferred_type, inferred_kind) = kind::infer_surface_kind(state, context, *constraint)?;
+        core_constraints.push((inferred_type, inferred_kind));
+    }
 
-            dispatch! {
-                eq | ord => check_derive_class,
-                functor => functor::check_derive_functor,
-                bifunctor => functor::check_derive_bifunctor,
-                contravariant => contravariant::check_derive_contravariant,
-                profunctor => contravariant::check_derive_profunctor,
-                foldable => foldable::check_derive_foldable,
-                bifoldable => foldable::check_derive_bifoldable,
-                traversable => traversable::check_derive_traversable,
-                bitraversable => traversable::check_derive_bitraversable,
-                eq1 => eq1::check_derive_eq1,
-                ord1 => eq1::check_derive_ord1,
-                newtype => newtype::check_derive_newtype,
-                generic => generic::check_derive_generic,
-            }
+    let constraints = core_constraints.iter().map(|&(t, _)| t).collect_vec();
+    let arguments = core_arguments.clone();
+
+    let elaborated = tools::ElaboratedDerive {
+        derive_id,
+        constraints: core_constraints,
+        arguments: core_arguments,
+        class_file,
+        class_id,
+    };
+
+    let strategy = if is_newtype {
+        check_newtype_derive(state, context, elaborated)?
+    } else {
+        let class_is = |known| Some((class_file, class_id)) == known;
+        let known_types = &context.known_types;
+
+        macro_rules! dispatch {
+            ($($($known:ident)|+ => $handler:path),+ $(,)?) => {
+                $(if $(class_is(known_types.$known))||+ {
+                    $handler(state, context, elaborated)?
+                } else)+ {
+                    state.insert_error(ErrorKind::CannotDeriveClass { class_file, class_id });
+                    None
+                }
+            };
         }
 
-        // Unbind type variables bound during elaboration.
-        state.type_scope.unbind(debruijn::Level(size.0));
+        dispatch! {
+            eq | ord => check_derive_class,
+            functor => functor::check_derive_functor,
+            bifunctor => functor::check_derive_bifunctor,
+            contravariant => contravariant::check_derive_contravariant,
+            profunctor => contravariant::check_derive_profunctor,
+            foldable => foldable::check_derive_foldable,
+            bifoldable => foldable::check_derive_bifoldable,
+            traversable => traversable::check_derive_traversable,
+            bitraversable => traversable::check_derive_bitraversable,
+            eq1 => eq1::check_derive_eq1,
+            ord1 => eq1::check_derive_ord1,
+            newtype => newtype::check_derive_newtype,
+            generic => generic::check_derive_generic,
+        }
+    };
 
-        Ok(())
-    })
+    state.type_scope.unbind(debruijn::Level(size.0));
+
+    Ok(strategy.map(|strategy| DeriveHeadResult {
+        item_id,
+        constraints,
+        class_file,
+        class_id,
+        arguments,
+        strategy,
+    }))
 }
 
 fn check_derive_class<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     input: tools::ElaboratedDerive,
-) -> QueryResult<()>
+) -> QueryResult<Option<DeriveStrategy>>
 where
     Q: ExternalQueries,
 {
@@ -145,61 +215,68 @@ where
             expected: 1,
             actual: input.arguments.len(),
         });
-        return Ok(());
+        return Ok(None);
     };
 
     let Some((data_file, data_id)) = extract_type_constructor(state, derived_type) else {
-        let global_type = transfer::globalize(state, context, derived_type);
-        state.insert_error(ErrorKind::CannotDeriveForType { type_id: global_type });
-        return Ok(());
+        let type_message = state.render_local_type(context, derived_type);
+        state.insert_error(ErrorKind::CannotDeriveForType { type_message });
+        return Ok(None);
     };
 
     let class = (input.class_file, input.class_id);
-    tools::push_given_constraints(state, &input.constraints);
-    tools::emit_superclass_constraints(state, context, &input)?;
-    tools::register_derived_instance(state, context, input);
+    tools::register_derived_instance(state, context, input)?;
 
-    generate_field_constraints(state, context, data_file, data_id, derived_type, class)?;
-
-    tools::solve_and_report_constraints(state, context)
+    Ok(Some(DeriveStrategy::FieldConstraints { data_file, data_id, derived_type, class }))
 }
 
 fn check_newtype_derive<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     input: tools::ElaboratedDerive,
-) -> QueryResult<()>
+) -> QueryResult<Option<DeriveStrategy>>
 where
     Q: ExternalQueries,
 {
     let [ref preceding_arguments @ .., (newtype_type, _)] = input.arguments[..] else {
-        return Ok(());
+        return Ok(None);
     };
 
-    let insert_error =
-        |state: &mut CheckState, context: &CheckContext<Q>, kind: fn(TypeId) -> ErrorKind| {
-            let global = transfer::globalize(state, context, newtype_type);
-            state.insert_error(kind(global));
-        };
-
     let Some((newtype_file, newtype_id)) = extract_type_constructor(state, newtype_type) else {
-        insert_error(state, context, |type_id| ErrorKind::CannotDeriveForType { type_id });
-        return Ok(());
+        let type_message = state.render_local_type(context, newtype_type);
+        state.insert_error(ErrorKind::CannotDeriveForType { type_message });
+        return Ok(None);
     };
 
     if newtype_file != context.id {
-        insert_error(state, context, |type_id| ErrorKind::CannotDeriveForType { type_id });
-        return Ok(());
+        let type_message = state.render_local_type(context, newtype_type);
+        state.insert_error(ErrorKind::CannotDeriveForType { type_message });
+        return Ok(None);
     }
 
     if !is_newtype(context, newtype_file, newtype_id)? {
-        insert_error(state, context, |type_id| ErrorKind::ExpectedNewtype { type_id });
-        return Ok(());
+        let type_message = state.render_local_type(context, newtype_type);
+        state.insert_error(ErrorKind::ExpectedNewtype { type_message });
+        return Ok(None);
     }
 
-    let inner_type = get_newtype_inner(state, context, newtype_file, newtype_id, newtype_type)?;
+    let (inner_type, skolem_count) =
+        get_newtype_inner(state, context, newtype_file, newtype_id, newtype_type)?;
 
-    // Build `Class t1 t2 Inner` given the constraint `Class t1 t2 Newtype`
+    let inner_type = if skolem_count == 0 {
+        inner_type
+    } else if let Some(inner_type) =
+        try_peel_trailing_skolems(state, context, inner_type, skolem_count)
+    {
+        inner_type
+    } else {
+        state.insert_error(ErrorKind::InvalidNewtypeDeriveSkolemArguments);
+        return Ok(None);
+    };
+
+    // Make sure that the constraint solver sees the synonym expansion.
+    let inner_type = toolkit::normalise_expand_type(state, context, inner_type)?;
+
     let delegate_constraint = {
         let class_type = state.storage.intern(Type::Constructor(input.class_file, input.class_id));
 
@@ -211,12 +288,154 @@ where
         state.storage.intern(Type::Application(preceding_arguments, inner_type))
     };
 
-    tools::push_given_constraints(state, &input.constraints);
-    tools::register_derived_instance(state, context, input);
+    tools::register_derived_instance(state, context, input)?;
 
-    state.constraints.push_wanted(delegate_constraint);
+    Ok(Some(DeriveStrategy::NewtypeDeriveConstraint { delegate_constraint }))
+}
+
+pub fn check_derive_member<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    result: &DeriveHeadResult,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    state.with_error_step(ErrorStep::TermDeclaration(result.item_id), |state| {
+        state.with_implication(|state| check_derive_member_core(state, context, result))
+    })
+}
+
+fn check_derive_member_core<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    result: &DeriveHeadResult,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    for &constraint in &result.constraints {
+        state.push_given(constraint);
+    }
+
+    match &result.strategy {
+        DeriveStrategy::FieldConstraints { data_file, data_id, derived_type, class } => {
+            tools::emit_superclass_constraints(
+                state,
+                context,
+                result.class_file,
+                result.class_id,
+                &result.arguments,
+            )?;
+            generate_field_constraints(
+                state,
+                context,
+                *data_file,
+                *data_id,
+                *derived_type,
+                *class,
+            )?;
+        }
+        DeriveStrategy::VarianceConstraints { data_file, data_id, derived_type, config } => {
+            tools::emit_superclass_constraints(
+                state,
+                context,
+                result.class_file,
+                result.class_id,
+                &result.arguments,
+            )?;
+            variance::generate_variance_constraints(
+                state,
+                context,
+                *data_file,
+                *data_id,
+                *derived_type,
+                *config,
+            )?;
+        }
+        DeriveStrategy::DelegateConstraint { derived_type, class } => {
+            tools::emit_superclass_constraints(
+                state,
+                context,
+                result.class_file,
+                result.class_id,
+                &result.arguments,
+            )?;
+            generate_delegate_constraint(state, context.prim.t, *derived_type, *class);
+        }
+        DeriveStrategy::NewtypeDeriveConstraint { delegate_constraint } => {
+            state.push_wanted(*delegate_constraint);
+        }
+        DeriveStrategy::HeadOnly => {
+            tools::emit_superclass_constraints(
+                state,
+                context,
+                result.class_file,
+                result.class_id,
+                &result.arguments,
+            )?;
+        }
+    }
 
     tools::solve_and_report_constraints(state, context)
+}
+
+fn generate_delegate_constraint(
+    state: &mut CheckState,
+    prim_type: TypeId,
+    derived_type: TypeId,
+    class: (FileId, TypeItemId),
+) {
+    // Introduce a fresh skolem `~a` for the last type parameter.
+    let skolem_type = state.fresh_skolem_kinded(prim_type);
+
+    // Given `Eq ~a`, prove `Eq (Identity ~a)`.
+    let applied_type = state.storage.intern(Type::Application(derived_type, skolem_type));
+
+    let class_type = state.storage.intern(Type::Constructor(class.0, class.1));
+    let given_constraint = state.storage.intern(Type::Application(class_type, skolem_type));
+    state.push_given(given_constraint);
+
+    let wanted_constraint = state.storage.intern(Type::Application(class_type, applied_type));
+    state.push_wanted(wanted_constraint);
+}
+
+fn try_peel_trailing_skolems<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    mut type_id: TypeId,
+    mut count: usize,
+) -> Option<TypeId>
+where
+    Q: ExternalQueries,
+{
+    safe_loop! {
+        if count == 0 {
+            break Some(type_id);
+        }
+        type_id = state.normalize_type(type_id);
+        if let Type::Application(function, argument) | Type::KindApplication(function, argument) =
+            state.storage[type_id]
+        {
+            let argument = state.normalize_type(argument);
+            if matches!(state.storage[argument], Type::Variable(Variable::Skolem(_, _))) {
+                count -= 1;
+                type_id = function;
+            } else {
+                break None;
+            }
+        } else if let Type::Function(argument, result) = state.storage[type_id] {
+            let result = state.normalize_type(result);
+            if matches!(state.storage[result], Type::Variable(Variable::Skolem(_, _))) {
+                count -= 1;
+                type_id = state.storage.intern(Type::Application(context.prim.function, argument));
+            } else {
+                break None;
+            }
+        } else {
+            break None;
+        }
+    }
 }
 
 pub fn extract_type_constructor(
@@ -270,34 +489,37 @@ where
     Ok(global_type.map(|global_type| transfer::localize(state, context, global_type)))
 }
 
-/// Gets the inner type for a newtype, specialized with type arguments.
+/// Gets the inner type for a newtype, specialised with type arguments.
 ///
 /// Newtypes have exactly one constructor with exactly one field.
 /// This function extracts that field type, substituting any type parameters.
+/// If not enough type arguments are supplied, it skolemises the remaining
+/// binders and returns the skolem count.
 pub fn get_newtype_inner<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     newtype_file: FileId,
     newtype_id: TypeItemId,
     newtype_type: TypeId,
-) -> QueryResult<TypeId>
+) -> QueryResult<(TypeId, usize)>
 where
     Q: ExternalQueries,
 {
     let constructors = tools::lookup_data_constructors(context, newtype_file, newtype_id)?;
 
     let [constructor_id] = constructors[..] else {
-        return Ok(context.prim.unknown);
+        return Ok((context.prim.unknown, 0));
     };
 
     let constructor_type = lookup_local_term_type(state, context, newtype_file, constructor_id)?;
     let Some(constructor_type) = constructor_type else {
-        return Ok(context.prim.unknown);
+        return Ok((context.prim.unknown, 0));
     };
 
     let arguments = toolkit::extract_all_applications(state, newtype_type);
-    let fields = instantiate_constructor_fields(state, constructor_type, &arguments);
-    Ok(fields.into_iter().next().unwrap_or(context.prim.unknown))
+    let (fields, skolem_count) =
+        instantiate_constructor_fields(state, constructor_type, &arguments);
+    Ok((fields.into_iter().next().unwrap_or(context.prim.unknown), skolem_count))
 }
 
 /// Generates constraints for all fields of across all constructors.
@@ -332,7 +554,7 @@ where
         let constructor_type = lookup_local_term_type(state, context, data_file, constructor_id)?;
         let Some(constructor_type) = constructor_type else { continue };
 
-        let field_types = instantiate_constructor_fields(state, constructor_type, &arguments);
+        let (field_types, _) = instantiate_constructor_fields(state, constructor_type, &arguments);
         for field_type in field_types {
             higher_kinded::generate_constraint(state, context, field_type, class, class1);
         }
@@ -345,7 +567,8 @@ where
 ///
 /// This function uses [`toolkit::instantiate_with_arguments`] to specialise
 /// the constructor type with the given type arguments, then extracts the
-/// function arguments. Consider the ff:
+/// function arguments, returning the fields and the number of skolems that
+/// were introduced for the remaining arguments. Consider the ff:
 ///
 /// ```purescript
 /// data Either a b = Left a | Right b
@@ -358,6 +581,10 @@ where
 ///
 /// derive instance Eq (Proxy @Type Int)
 /// -- Proxy :: Proxy @Type Int
+///
+/// derive instance Eq1 (Vector n)
+/// -- Vector :: Vector n ~a
+/// -- skolem_count := 1
 /// ```
 ///
 /// The `arguments` parameter should be obtained by calling
@@ -367,8 +594,9 @@ fn instantiate_constructor_fields(
     state: &mut CheckState,
     constructor_type: TypeId,
     arguments: &[TypeId],
-) -> Vec<TypeId> {
-    let constructor = toolkit::instantiate_with_arguments(state, constructor_type, arguments);
+) -> (Vec<TypeId>, usize) {
+    let (constructor, skolem_count) =
+        toolkit::instantiate_with_arguments(state, constructor_type, arguments);
     let (fields, _) = toolkit::extract_function_arguments(state, constructor);
-    fields
+    (fields, skolem_count)
 }

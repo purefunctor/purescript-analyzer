@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -22,8 +23,8 @@ Roles
 Proxy = [Phantom]
 
 Classes
-class Phantom (&0 :: Type)
+class Phantom (a :: Type)
 
 Instances
-instance forall (&0 :: Type). Phantom (Proxy @(&0 :: Type) (&1 :: (&0 :: Type)) :: Type)
+instance forall (t2 :: Type). Phantom (Proxy @(t2 :: Type) (a :: (t2 :: Type)) :: Type)
   chain: 0

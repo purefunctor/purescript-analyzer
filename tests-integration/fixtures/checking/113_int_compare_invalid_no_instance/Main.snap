@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -19,5 +20,14 @@ Proxy
 Roles
 Proxy = [Phantom]
 
-Errors
-NoInstanceFound { Compare 5 1 LT } at [TermDeclaration(Idx::<TermItem>(2))]
+Diagnostics
+error[InvalidImportItem]: Cannot import item 'kind'
+  --> 4:23..4:27
+  |
+4 | import Prim.Ordering (kind Ordering, LT)
+  |                       ^~~~
+error[NoInstanceFound]: No instance found for: Compare 5 1 LT
+  --> 12:1..12:25
+   |
+12 | forceSolve = { invalid }
+   | ^~~~~~~~~~~~~~~~~~~~~~~~

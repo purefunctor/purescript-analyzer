@@ -1,0 +1,33 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+testPartialZero :: Number -> Int
+testPartialOneFive :: Number -> Int
+testWildcard :: Number -> Int
+
+Types
+
+Diagnostics
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: _
+  --> 4:21..5:11
+  |
+4 | testPartialZero n = case n of
+  |                     ^~~~~~~~~
+error[NoInstanceFound]: No instance found for: Partial
+  --> 3:1..3:33
+  |
+3 | testPartialZero :: Number -> Int
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: _
+  --> 8:24..9:11
+  |
+8 | testPartialOneFive n = case n of
+  |                        ^~~~~~~~~
+error[NoInstanceFound]: No instance found for: Partial
+  --> 7:1..7:36
+  |
+7 | testPartialOneFive :: Number -> Int
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

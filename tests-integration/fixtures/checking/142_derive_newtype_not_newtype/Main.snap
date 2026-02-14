@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -17,5 +18,9 @@ Foo
 Roles
 Foo = []
 
-Errors
-ExpectedNewtype { type_id: Id<checking::core::Type>(9) } at [TermDeclaration(Idx::<TermItem>(1))]
+Diagnostics
+error[ExpectedNewtype]: Expected a newtype, got: Foo
+  --> 7:1..7:33
+  |
+7 | derive newtype instance Show Foo
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

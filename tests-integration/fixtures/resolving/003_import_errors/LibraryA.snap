@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/resolving/generated.rs
+assertion_line: 12
 expression: report
 ---
 module LibraryA
@@ -15,12 +16,16 @@ Exported Types:
   - Css
   - Html
 
+Exported Classes:
+
 Local Terms:
   - html
 
 Local Types:
   - Css
   - Html
+
+Local Classes:
 
 Class Members:
 

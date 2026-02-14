@@ -1,5 +1,7 @@
 use rowan::ast::AstNode;
 
+use crate::names;
+
 #[macro_use]
 mod macros;
 
@@ -18,9 +20,13 @@ has_token!(
 has_token!(
     QualifiedName
     | upper() -> UPPER
-    | lower() -> LOWER
     | operator() -> OPERATOR
     | operator_name() -> OPERATOR_NAME
+);
+
+has_token_set!(
+    QualifiedName
+    | lower() -> names::LOWER
 );
 
 has_child!(
@@ -987,14 +993,14 @@ has_children!(
     | children() -> Binder
 );
 
-has_token!(
+has_token_set!(
     BinderVariable
-    | name_token() -> LOWER
+    | name_token() -> names::LOWER
 );
 
-has_token!(
+has_token_set!(
     BinderNamed
-    | name_token() -> LOWER
+    | name_token() -> names::LOWER
 );
 
 has_child!(
@@ -1168,4 +1174,27 @@ has_token!(
     TypeString
     | string() -> STRING
     | raw_string() -> RAW_STRING
+);
+
+has_token!(
+    BinderInteger
+    | minus_token() -> MINUS
+    | integer_token() -> INTEGER
+);
+
+has_token!(
+    BinderNumber
+    | minus_token() -> MINUS
+    | number_token() -> NUMBER
+);
+
+has_token!(
+    BinderString
+    | string() -> STRING
+    | raw_string() -> RAW_STRING
+);
+
+has_token!(
+    BinderChar
+    | char_token() -> CHAR
 );

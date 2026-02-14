@@ -5,11 +5,11 @@ mod compiler_solved;
 mod functional_dependency;
 
 use compiler_solved::*;
-use functional_dependency::Fd;
+use functional_dependency::{Fd, get_all_determined};
 
 use std::collections::{HashSet, VecDeque};
-use std::iter;
 use std::sync::Arc;
+use std::{iter, mem};
 
 use building_types::QueryResult;
 use files::FileId;
@@ -18,10 +18,13 @@ use itertools::Itertools;
 use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::algorithm::fold::{FoldAction, TypeFold, fold_type};
+use crate::algorithm::state::implication::ImplicationId;
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::visit::{CollectFileReferences, TypeVisitor, VisitAction, visit_type};
-use crate::algorithm::{toolkit, transfer, unification};
-use crate::core::{Class, Instance, InstanceKind, Variable, debruijn};
+use crate::algorithm::visit::{
+    CollectFileReferences, HasLabeledRole, TypeVisitor, VisitAction, visit_type,
+};
+use crate::algorithm::{substitute, toolkit, transfer, unification};
+use crate::core::{self, Class, Instance, InstanceKind, Name, Variable};
 use crate::{CheckedModule, ExternalQueries, Type, TypeId};
 
 #[tracing::instrument(skip_all, name = "solve_constraints")]
@@ -29,7 +32,7 @@ pub fn solve_constraints<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     wanted: VecDeque<TypeId>,
-    given: Vec<TypeId>,
+    given: &[TypeId],
 ) -> QueryResult<Vec<TypeId>>
 where
     Q: ExternalQueries,
@@ -119,6 +122,72 @@ where
     Ok(residual)
 }
 
+#[tracing::instrument(skip_all, name = "solve_implication")]
+pub fn solve_implication<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+) -> QueryResult<Vec<TypeId>>
+where
+    Q: ExternalQueries,
+{
+    let implication = state.implications.current();
+    solve_implication_id(state, context, implication, &[])
+}
+
+/// Recursively solves an implication and its children.
+fn solve_implication_id<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    implication: ImplicationId,
+    inherited: &[TypeId],
+) -> QueryResult<Vec<TypeId>>
+where
+    Q: ExternalQueries,
+{
+    let (wanted, given, children) = {
+        let node = &mut state.implications[implication];
+        (mem::take(&mut node.wanted), mem::take(&mut node.given), node.children.clone())
+    };
+
+    let all_given = {
+        let inherited = inherited.iter().copied();
+        let given = given.iter().copied();
+        inherited.chain(given).collect_vec()
+    };
+
+    crate::debug_fields!(state, context, {
+        ?implication = implication,
+        ?wanted = wanted.len(),
+        ?given = given.len(),
+        ?inherited = inherited.len(),
+        ?children = children.len(),
+    });
+
+    // Solve this implication's children with all_given.
+    for child in &children {
+        let residual = solve_implication_id(state, context, *child, &all_given)?;
+
+        crate::debug_fields!(state, context, {
+            ?child = child,
+            ?residual = residual.len(),
+        });
+
+        // TODO: partition_by_skolem_escape once skolems are introduced.
+        state.implications[implication].wanted.extend(residual);
+    }
+
+    // Solve this implication's wanted constraints with all_given.
+    let remaining = mem::take(&mut state.implications[implication].wanted);
+    let wanted: VecDeque<TypeId> = wanted.into_iter().chain(remaining).collect();
+    let residuals = solve_constraints(state, context, wanted, &all_given)?;
+
+    let implication = &mut state.implications[implication];
+    implication.given = given;
+    implication.wanted = Vec::clone(&residuals).into();
+
+    Ok(residuals)
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub(crate) struct ConstraintApplication {
     pub(crate) file_id: FileId,
@@ -142,19 +211,41 @@ pub(crate) fn constraint_application(
 fn elaborate_given<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    given: Vec<TypeId>,
+    given: &[TypeId],
 ) -> QueryResult<Vec<ConstraintApplication>>
 where
     Q: ExternalQueries,
 {
     let mut elaborated = vec![];
 
-    for constraint in given {
+    for &constraint in given {
         elaborated.push(constraint);
         elaborate_superclasses(state, context, constraint, &mut elaborated)?;
     }
 
-    Ok(elaborated.into_iter().filter_map(|given| constraint_application(state, given)).collect())
+    let applications =
+        elaborated.into_iter().filter_map(|given| constraint_application(state, given));
+    let mut applications = applications.collect_vec();
+
+    let is_coercible = |file_id, item_id| {
+        context.prim_coerce.file_id == file_id && context.prim_coerce.coercible == item_id
+    };
+
+    // For coercible applications, also elaborate into symmetric versions.
+    let symmetric = applications.iter().filter_map(|application| {
+        let is_coercible = is_coercible(application.file_id, application.item_id);
+        let &[left, right] = application.arguments.as_slice() else { return None };
+        is_coercible.then(|| ConstraintApplication {
+            file_id: application.file_id,
+            item_id: application.item_id,
+            arguments: vec![right, left],
+        })
+    });
+
+    let reversed = symmetric.collect_vec();
+    applications.extend(reversed);
+
+    Ok(applications)
 }
 
 /// Discovers superclass constraints for a given constraint.
@@ -195,11 +286,9 @@ where
             return Ok(());
         }
 
-        let initial_level = class_info.quantified_variables.0 + class_info.kind_variables.0;
-        let mut bindings = FxHashMap::default();
-        for (index, &argument) in arguments.iter().enumerate() {
-            let level = debruijn::Level(initial_level + index as u32);
-            bindings.insert(level, argument);
+        let mut bindings: substitute::NameToType = FxHashMap::default();
+        for (name, &argument) in class_info.type_variable_names.iter().zip(arguments.iter()) {
+            bindings.insert(name.clone(), argument);
         }
 
         for &(superclass, _) in class_info.superclasses.iter() {
@@ -298,6 +387,7 @@ where
     Class {
         superclasses,
         type_variable_kinds,
+        type_variable_names: class.type_variable_names.clone(),
         quantified_variables: class.quantified_variables,
         kind_variables: class.kind_variables,
     }
@@ -461,13 +551,17 @@ enum MatchInstance {
 /// We use the [`can_unify`] function to speculate if these two types can be
 /// unified, or if unifying them solves unification variables, encoded by the
 /// [`CanUnify::Unify`] variant.
-fn match_type(
+fn match_type<Q>(
     state: &mut CheckState,
-    bindings: &mut FxHashMap<debruijn::Level, TypeId>,
+    context: &CheckContext<Q>,
+    bindings: &mut FxHashMap<Name, TypeId>,
     equalities: &mut Vec<(TypeId, TypeId)>,
     wanted: TypeId,
     given: TypeId,
-) -> MatchType {
+) -> MatchType
+where
+    Q: ExternalQueries,
+{
     let wanted = state.normalize_type(wanted);
     let given = state.normalize_type(given);
 
@@ -479,8 +573,8 @@ fn match_type(
     let given_core = &state.storage[given];
 
     match (wanted_core, given_core) {
-        (_, Type::Variable(Variable::Bound(level, _))) => {
-            if let Some(&bound) = bindings.get(level) {
+        (_, Type::Variable(Variable::Bound(name, _))) => {
+            if let Some(&bound) = bindings.get(name) {
                 match can_unify(state, wanted, bound) {
                     CanUnify::Equal => MatchType::Match,
                     CanUnify::Apart => MatchType::Apart,
@@ -490,37 +584,55 @@ fn match_type(
                     }
                 }
             } else {
-                bindings.insert(*level, wanted);
+                bindings.insert(name.clone(), wanted);
                 MatchType::Match
             }
         }
 
         (Type::Unification(_), _) => MatchType::Stuck,
 
+        (Type::Row(wanted_row), Type::Row(given_row)) => {
+            let wanted_row = wanted_row.clone();
+            let given_row = given_row.clone();
+            match_row_type(state, context, bindings, equalities, wanted_row, given_row)
+        }
+
         (
             &Type::Application(w_function, w_argument),
             &Type::Application(g_function, g_argument),
-        ) => match_type(state, bindings, equalities, w_function, g_function)
-            .and_also(|| match_type(state, bindings, equalities, w_argument, g_argument)),
+        ) => match_type(state, context, bindings, equalities, w_function, g_function)
+            .and_also(|| match_type(state, context, bindings, equalities, w_argument, g_argument)),
 
         (&Type::Function(w_argument, w_result), &Type::Function(g_argument, g_result)) => {
-            match_type(state, bindings, equalities, w_argument, g_argument)
-                .and_also(|| match_type(state, bindings, equalities, w_result, g_result))
+            match_type(state, context, bindings, equalities, w_argument, g_argument)
+                .and_also(|| match_type(state, context, bindings, equalities, w_result, g_result))
+        }
+
+        (&Type::Function(w_argument, w_result), &Type::Application(_, _)) => {
+            let wanted = state.storage.intern(Type::Application(context.prim.function, w_argument));
+            let wanted = state.storage.intern(Type::Application(wanted, w_result));
+            match_type(state, context, bindings, equalities, wanted, given)
+        }
+
+        (&Type::Application(_, _), &Type::Function(g_argument, g_result)) => {
+            let given = state.storage.intern(Type::Application(context.prim.function, g_argument));
+            let given = state.storage.intern(Type::Application(given, g_result));
+            match_type(state, context, bindings, equalities, wanted, given)
         }
 
         (
             &Type::KindApplication(w_function, w_argument),
             &Type::KindApplication(g_function, g_argument),
-        ) => match_type(state, bindings, equalities, w_function, g_function)
-            .and_also(|| match_type(state, bindings, equalities, w_argument, g_argument)),
+        ) => match_type(state, context, bindings, equalities, w_function, g_function)
+            .and_also(|| match_type(state, context, bindings, equalities, w_argument, g_argument)),
 
         (
             &Type::OperatorApplication(f1, t1, l1, r1),
             &Type::OperatorApplication(f2, t2, l2, r2),
         ) => {
             if f1 == f2 && t1 == t2 {
-                match_type(state, bindings, equalities, l1, l2)
-                    .and_also(|| match_type(state, bindings, equalities, r1, r2))
+                match_type(state, context, bindings, equalities, l1, l2)
+                    .and_also(|| match_type(state, context, bindings, equalities, r1, r2))
             } else {
                 MatchType::Apart
             }
@@ -531,7 +643,7 @@ fn match_type(
                 let a1 = Arc::clone(a1);
                 let a2 = Arc::clone(a2);
                 iter::zip(a1.iter(), a2.iter()).fold(MatchType::Match, |result, (&a1, &a2)| {
-                    result.and_also(|| match_type(state, bindings, equalities, a1, a2))
+                    result.and_also(|| match_type(state, context, bindings, equalities, a1, a2))
                 })
             } else {
                 MatchType::Apart
@@ -542,13 +654,122 @@ fn match_type(
     }
 }
 
+/// Matches row types in instance heads.
+///
+/// This function handles structural row matching for both the tail variable
+/// form `( | r )` in determiner positions and labeled rows in determined
+/// positions `( x :: T | r )`. This function partitions the two row types,
+/// matches the shared fields, and handles the row tail.
+fn match_row_type<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    bindings: &mut FxHashMap<Name, TypeId>,
+    equalities: &mut Vec<(TypeId, TypeId)>,
+    wanted_row: core::RowType,
+    given_row: core::RowType,
+) -> MatchType
+where
+    Q: ExternalQueries,
+{
+    let mut wanted_only = vec![];
+    let mut given_only = vec![];
+    let mut result = MatchType::Match;
+
+    let wanted_fields = wanted_row.fields.iter();
+    let given_fields = given_row.fields.iter();
+
+    for field in itertools::merge_join_by(wanted_fields, given_fields, |wanted, given| {
+        wanted.label.cmp(&given.label)
+    }) {
+        match field {
+            itertools::EitherOrBoth::Both(wanted, given) => {
+                result = result.and_also(|| {
+                    match_type(state, context, bindings, equalities, wanted.id, given.id)
+                });
+                // Given an open wanted row, additional fields from the
+                // given row can be absorbed into the wanted row's tail.
+                if matches!(result, MatchType::Apart) && wanted_row.tail.is_none() {
+                    return MatchType::Apart;
+                }
+            }
+            itertools::EitherOrBoth::Left(wanted) => wanted_only.push(wanted),
+            itertools::EitherOrBoth::Right(given) => given_only.push(given),
+        }
+    }
+
+    enum RowRest {
+        /// `( a :: Int )` and `( a :: Int | r )`
+        Additional,
+        /// `( | r )`
+        Open(TypeId),
+        /// `( )`
+        Closed,
+    }
+
+    impl RowRest {
+        fn new(only: &[&core::RowField], tail: Option<TypeId>) -> RowRest {
+            if !only.is_empty() {
+                RowRest::Additional
+            } else if let Some(tail) = tail {
+                RowRest::Open(tail)
+            } else {
+                RowRest::Closed
+            }
+        }
+    }
+
+    let given_rest = RowRest::new(&given_only, given_row.tail);
+    let wanted_rest = RowRest::new(&wanted_only, wanted_row.tail);
+
+    use RowRest::*;
+
+    match given_rest {
+        // If there are additional given fields
+        Additional => match wanted_rest {
+            // we cannot match it against a tail-less wanted,
+            // nor against the additional wanted fields.
+            Closed | Additional => MatchType::Apart,
+            // we could potentially make progress by having the
+            // wanted tail absorb the additional given fields
+            Open(_) => MatchType::Stuck,
+        },
+
+        // If the given row has a tail, match it against the
+        // additional fields and tail from the wanted row
+        Open(given_tail) => {
+            let fields = Arc::from_iter(wanted_only.into_iter().cloned());
+            let row = core::RowType { fields, tail: wanted_row.tail };
+            let row_id = state.storage.intern(Type::Row(row));
+            result.and_also(|| match_type(state, context, bindings, equalities, row_id, given_tail))
+        }
+
+        // If we have a closed given row
+        Closed => match wanted_rest {
+            // we cannot match it against fields in the wanted row
+            Additional => MatchType::Apart,
+            // we could make progress with an open wanted row
+            Open(_) => MatchType::Stuck,
+            // we can match it directly with a closed wanted row
+            Closed => result,
+        },
+    }
+}
+
 /// Matches an argument from a wanted constraint to one from a given constraint.
 ///
 /// This function is specialised for matching given constraints, like those
 /// found in value signatures rather than top-level instance declarations;
 /// unlike [`match_type`], this function does not build bindings or equalities
 /// for [`Variable::Bound`] or [`Variable::Implicit`] variables.
-fn match_given_type(state: &mut CheckState, wanted: TypeId, given: TypeId) -> MatchType {
+fn match_given_type<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    wanted: TypeId,
+    given: TypeId,
+) -> MatchType
+where
+    Q: ExternalQueries,
+{
     let wanted = state.normalize_type(wanted);
     let given = state.normalize_type(given);
 
@@ -563,22 +784,22 @@ fn match_given_type(state: &mut CheckState, wanted: TypeId, given: TypeId) -> Ma
         (Type::Unification(_), _) => MatchType::Stuck,
 
         (
-            Type::Variable(Variable::Bound(w_level, w_kind)),
-            Type::Variable(Variable::Bound(g_level, g_kind)),
+            Type::Variable(Variable::Bound(w_name, w_kind)),
+            Type::Variable(Variable::Bound(g_name, g_kind)),
         ) => {
-            if w_level == g_level {
-                match_given_type(state, *w_kind, *g_kind)
+            if w_name == g_name {
+                match_given_type(state, context, *w_kind, *g_kind)
             } else {
                 MatchType::Apart
             }
         }
 
         (
-            Type::Variable(Variable::Skolem(w_level, w_kind)),
-            Type::Variable(Variable::Skolem(g_level, g_kind)),
+            Type::Variable(Variable::Skolem(w_name, w_kind)),
+            Type::Variable(Variable::Skolem(g_name, g_kind)),
         ) => {
-            if w_level == g_level {
-                match_given_type(state, *w_kind, *g_kind)
+            if w_name == g_name {
+                match_given_type(state, context, *w_kind, *g_kind)
             } else {
                 MatchType::Apart
             }
@@ -587,26 +808,84 @@ fn match_given_type(state: &mut CheckState, wanted: TypeId, given: TypeId) -> Ma
         (
             &Type::Application(w_function, w_argument),
             &Type::Application(g_function, g_argument),
-        ) => match_given_type(state, w_function, g_function)
-            .and_also(|| match_given_type(state, w_argument, g_argument)),
+        ) => match_given_type(state, context, w_function, g_function)
+            .and_also(|| match_given_type(state, context, w_argument, g_argument)),
 
         (&Type::Function(w_argument, w_result), &Type::Function(g_argument, g_result)) => {
-            match_given_type(state, w_argument, g_argument)
-                .and_also(|| match_given_type(state, w_result, g_result))
+            match_given_type(state, context, w_argument, g_argument)
+                .and_also(|| match_given_type(state, context, w_result, g_result))
+        }
+
+        (&Type::Function(w_argument, w_result), &Type::Application(_, _)) => {
+            let wanted = state.storage.intern(Type::Application(context.prim.function, w_argument));
+            let wanted = state.storage.intern(Type::Application(wanted, w_result));
+            match_given_type(state, context, wanted, given)
+        }
+
+        (&Type::Application(_, _), &Type::Function(g_argument, g_result)) => {
+            let given = state.storage.intern(Type::Application(context.prim.function, g_argument));
+            let given = state.storage.intern(Type::Application(given, g_result));
+            match_given_type(state, context, wanted, given)
+        }
+
+        (Type::Row(wanted_row), Type::Row(given_row)) => {
+            if wanted_row.fields.len() != given_row.fields.len() {
+                return MatchType::Apart;
+            }
+
+            let wanted_fields = Arc::clone(&wanted_row.fields);
+            let given_fields = Arc::clone(&given_row.fields);
+
+            let wanted_tail = wanted_row.tail;
+            let given_tail = given_row.tail;
+
+            let mut result = MatchType::Match;
+            for (wanted_field, given_field) in iter::zip(wanted_fields.iter(), given_fields.iter())
+            {
+                if wanted_field.label != given_field.label {
+                    return MatchType::Apart;
+                }
+                result = result
+                    .and_also(|| match_given_type(state, context, wanted_field.id, given_field.id));
+            }
+
+            match (wanted_tail, given_tail) {
+                (Some(wanted_tail), Some(given_tail)) => {
+                    result.and_also(|| match_given_type(state, context, wanted_tail, given_tail))
+                }
+                (Some(wanted_tail), None) => {
+                    let wanted_tail = state.normalize_type(wanted_tail);
+                    if matches!(state.storage[wanted_tail], Type::Unification(_)) {
+                        result.and_also(|| MatchType::Stuck)
+                    } else {
+                        MatchType::Apart
+                    }
+                }
+                (None, Some(given_tail)) => {
+                    let given_tail = state.normalize_type(given_tail);
+                    if matches!(state.storage[given_tail], Type::Unification(_)) {
+                        result.and_also(|| MatchType::Stuck)
+                    } else {
+                        MatchType::Apart
+                    }
+                }
+                (None, None) => result,
+            }
         }
 
         (
             &Type::KindApplication(w_function, w_argument),
             &Type::KindApplication(g_function, g_argument),
-        ) => match_given_type(state, w_function, g_function)
-            .and_also(|| match_given_type(state, w_argument, g_argument)),
+        ) => match_given_type(state, context, w_function, g_function)
+            .and_also(|| match_given_type(state, context, w_argument, g_argument)),
 
         (
             &Type::OperatorApplication(f1, t1, l1, r1),
             &Type::OperatorApplication(f2, t2, l2, r2),
         ) => {
             if f1 == f2 && t1 == t2 {
-                match_given_type(state, l1, l2).and_also(|| match_given_type(state, r1, r2))
+                match_given_type(state, context, l1, l2)
+                    .and_also(|| match_given_type(state, context, r1, r2))
             } else {
                 MatchType::Apart
             }
@@ -617,7 +896,7 @@ fn match_given_type(state: &mut CheckState, wanted: TypeId, given: TypeId) -> Ma
                 let a1 = Arc::clone(a1);
                 let a2 = Arc::clone(a2);
                 iter::zip(a1.iter(), a2.iter()).fold(MatchType::Match, |result, (&a1, &a2)| {
-                    result.and_also(|| match_given_type(state, a1, a2))
+                    result.and_also(|| match_given_type(state, context, a1, a2))
                 })
             } else {
                 MatchType::Apart
@@ -667,6 +946,11 @@ fn can_unify(state: &mut CheckState, t1: TypeId, t2: TypeId) -> CanUnify {
                 .and_also(|| can_unify(state, t1_result, t2_result))
         }
 
+        // Function(a, b) and Application(Application(f, a), b) can
+        // unify when `f` resolves to the Function constructor.
+        (&Type::Function(..), &Type::Application(..))
+        | (&Type::Application(..), &Type::Function(..)) => Unify,
+
         (
             &Type::KindApplication(t1_function, t1_argument),
             &Type::KindApplication(t2_function, t2_argument),
@@ -683,8 +967,9 @@ fn can_unify(state: &mut CheckState, t1: TypeId, t2: TypeId) -> CanUnify {
         ) => can_unify(state, t1_constraint, t2_constraint)
             .and_also(|| can_unify(state, t1_body, t2_body)),
 
-        (&Type::Forall(_, t1_body), &Type::Forall(_, t2_body)) => {
-            can_unify(state, t1_body, t2_body)
+        (&Type::Forall(ref t1_binder, t1_body), &Type::Forall(ref t2_binder, t2_body)) => {
+            can_unify(state, t1_binder.kind, t2_binder.kind)
+                .and_also(|| can_unify(state, t1_body, t2_body))
         }
 
         (
@@ -718,10 +1003,10 @@ fn can_unify(state: &mut CheckState, t1: TypeId, t2: TypeId) -> CanUnify {
         }
 
         (
-            &Type::Variable(Variable::Bound(t1_level, t1_kind)),
-            &Type::Variable(Variable::Bound(t2_level, t2_kind)),
+            &Type::Variable(Variable::Bound(ref t1_name, t1_kind)),
+            &Type::Variable(Variable::Bound(ref t2_name, t2_kind)),
         ) => {
-            if t1_level == t2_level {
+            if t1_name == t2_name {
                 can_unify(state, t1_kind, t2_kind)
             } else {
                 Apart
@@ -729,10 +1014,10 @@ fn can_unify(state: &mut CheckState, t1: TypeId, t2: TypeId) -> CanUnify {
         }
 
         (
-            &Type::Variable(Variable::Skolem(t1_level, t1_kind)),
-            &Type::Variable(Variable::Skolem(t2_level, t2_kind)),
+            &Type::Variable(Variable::Skolem(ref t1_name, t1_kind)),
+            &Type::Variable(Variable::Skolem(ref t2_name, t2_kind)),
         ) => {
-            if t1_level == t2_level {
+            if t1_name == t2_name {
                 can_unify(state, t1_kind, t2_kind)
             } else {
                 Apart
@@ -758,13 +1043,13 @@ where
 
     let mut bindings = FxHashMap::default();
     let mut equalities = vec![];
-
     let mut match_results = vec![];
     let mut stuck_positions = vec![];
 
     for (index, (wanted, (given, _))) in arguments.iter().zip(&instance.arguments).enumerate() {
         let given = transfer::localize(state, context, *given);
-        let match_result = match_type(state, &mut bindings, &mut equalities, *wanted, given);
+        let match_result =
+            match_type(state, context, &mut bindings, &mut equalities, *wanted, given);
 
         if matches!(match_result, MatchType::Apart) {
             crate::trace_fields!(state, context, { ?wanted = wanted, ?given = given }, "apart");
@@ -792,10 +1077,10 @@ where
         }
     }
 
-    let mut argument_levels = FxHashSet::default();
+    let mut argument_names = FxHashSet::default();
     for &(argument, _) in &instance.arguments {
         let localized = transfer::localize(state, context, argument);
-        CollectBoundLevels::on(state, localized, &mut argument_levels);
+        CollectBoundNames::on(state, localized, &mut argument_names);
     }
 
     let mut constraint_variables = FxHashMap::default();
@@ -804,10 +1089,10 @@ where
         CollectBoundVariables::on(state, localized, &mut constraint_variables);
     }
 
-    for (level, kind) in constraint_variables {
-        if !argument_levels.contains(&level) && !bindings.contains_key(&level) {
+    for (name, kind) in constraint_variables {
+        if !argument_names.contains(&name) && !bindings.contains_key(&name) {
             let unification = state.fresh_unification_kinded(kind);
-            bindings.insert(level, unification);
+            bindings.insert(name, unification);
         }
     }
 
@@ -847,13 +1132,12 @@ where
             continue;
         }
 
-        let mut match_results = Vec::with_capacity(wanted.arguments.len());
         let mut stuck_positions = vec![];
 
         for (index, (&wanted_argument, &given_argument)) in
             wanted.arguments.iter().zip(&given.arguments).enumerate()
         {
-            let match_result = match_given_type(state, wanted_argument, given_argument);
+            let match_result = match_given_type(state, context, wanted_argument, given_argument);
 
             if matches!(match_result, MatchType::Apart) {
                 continue 'given;
@@ -862,24 +1146,11 @@ where
             if matches!(match_result, MatchType::Stuck) {
                 stuck_positions.push(index);
             }
-
-            match_results.push(match_result);
         }
 
-        if stuck_positions.is_empty() {
-            return Ok(Some(MatchInstance::Match { constraints: vec![], equalities: vec![] }));
-        }
-
-        if !can_determine_stuck(
-            context,
-            wanted.file_id,
-            wanted.item_id,
-            &match_results,
-            &stuck_positions,
-        )? {
-            continue 'given;
-        }
-
+        // Given constraints are valid by construction. When a unification
+        // variable makes a position stuck, it's safe to emit an equality
+        // rather than require functional dependencies to cover it.
         let equalities = stuck_positions.iter().map(|&index| {
             let wanted = wanted.arguments[index];
             let given = given.arguments[index];
@@ -938,10 +1209,10 @@ where
             cons => prim_symbol_cons(state, arguments),
         },
         context.prim_row => {
-            union => prim_row_union(state, arguments),
-            cons => prim_row_cons(state, arguments),
-            lacks => prim_row_lacks(state, arguments),
-            nub => prim_row_nub(state, arguments),
+            union => prim_row_union(state, context, arguments)?,
+            cons => prim_row_cons(state, context, arguments)?,
+            lacks => prim_row_lacks(state, context, arguments)?,
+            nub => prim_row_nub(state, context, arguments)?,
         },
         context.prim_row_list => {
             row_to_list => prim_rowlist_row_to_list(state, context, arguments),
@@ -962,13 +1233,13 @@ where
 }
 
 struct ApplyBindings<'a> {
-    bindings: &'a FxHashMap<debruijn::Level, TypeId>,
+    bindings: &'a FxHashMap<Name, TypeId>,
 }
 
 impl<'a> ApplyBindings<'a> {
     fn on(
         state: &mut CheckState,
-        bindings: &'a FxHashMap<debruijn::Level, TypeId>,
+        bindings: &'a FxHashMap<Name, TypeId>,
         type_id: TypeId,
     ) -> TypeId {
         fold_type(state, type_id, &mut ApplyBindings { bindings })
@@ -978,8 +1249,8 @@ impl<'a> ApplyBindings<'a> {
 impl TypeFold for ApplyBindings<'_> {
     fn transform(&mut self, _state: &mut CheckState, id: TypeId, t: &Type) -> FoldAction {
         match t {
-            Type::Variable(Variable::Bound(level, _)) => {
-                let id = self.bindings.get(level).copied().unwrap_or(id);
+            Type::Variable(Variable::Bound(name, _)) => {
+                let id = self.bindings.get(name).copied().unwrap_or(id);
                 FoldAction::Replace(id)
             }
             _ => FoldAction::Continue,
@@ -987,21 +1258,21 @@ impl TypeFold for ApplyBindings<'_> {
     }
 }
 
-/// Collects all bound variable levels from a type.
-struct CollectBoundLevels<'a> {
-    levels: &'a mut FxHashSet<debruijn::Level>,
+/// Collects all bound variable names from a type.
+struct CollectBoundNames<'a> {
+    names: &'a mut FxHashSet<Name>,
 }
 
-impl<'a> CollectBoundLevels<'a> {
-    fn on(state: &mut CheckState, type_id: TypeId, levels: &'a mut FxHashSet<debruijn::Level>) {
-        visit_type(state, type_id, &mut CollectBoundLevels { levels });
+impl<'a> CollectBoundNames<'a> {
+    fn on(state: &mut CheckState, type_id: TypeId, names: &'a mut FxHashSet<Name>) {
+        visit_type(state, type_id, &mut CollectBoundNames { names });
     }
 }
 
-impl TypeVisitor for CollectBoundLevels<'_> {
+impl TypeVisitor for CollectBoundNames<'_> {
     fn visit(&mut self, _state: &mut CheckState, _id: TypeId, t: &Type) -> VisitAction {
-        if let Type::Variable(Variable::Bound(level, _)) = t {
-            self.levels.insert(*level);
+        if let Type::Variable(Variable::Bound(name, _)) = t {
+            self.names.insert(name.clone());
         }
         VisitAction::Continue
     }
@@ -1009,24 +1280,57 @@ impl TypeVisitor for CollectBoundLevels<'_> {
 
 /// Collects all bound variables with their kinds from a type.
 struct CollectBoundVariables<'a> {
-    variables: &'a mut FxHashMap<debruijn::Level, TypeId>,
+    variables: &'a mut FxHashMap<Name, TypeId>,
 }
 
 impl<'a> CollectBoundVariables<'a> {
-    fn on(
-        state: &mut CheckState,
-        type_id: TypeId,
-        variables: &'a mut FxHashMap<debruijn::Level, TypeId>,
-    ) {
+    fn on(state: &mut CheckState, type_id: TypeId, variables: &'a mut FxHashMap<Name, TypeId>) {
         visit_type(state, type_id, &mut CollectBoundVariables { variables });
     }
 }
 
 impl TypeVisitor for CollectBoundVariables<'_> {
     fn visit(&mut self, _state: &mut CheckState, _id: TypeId, t: &Type) -> VisitAction {
-        if let Type::Variable(Variable::Bound(level, kind)) = t {
-            self.variables.insert(*level, *kind);
+        if let Type::Variable(Variable::Bound(name, kind)) = t {
+            self.variables.insert(name.clone(), *kind);
         }
         VisitAction::Continue
     }
+}
+
+/// Validates that all rows in instance declaration arguments
+/// do not have labels in non-determined positions.
+///
+/// In PureScript, instance declarations can only contain rows with labels
+/// in positions that are determined by functional dependencies. In the
+/// determiner position, only row variables such as `( | r )` are valid.
+pub fn validate_instance_rows<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    class_file: FileId,
+    class_item: TypeItemId,
+    arguments: &[(TypeId, TypeId)],
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    let functional_dependencies = get_functional_dependencies(context, class_file, class_item)?;
+    let all_determined = get_all_determined(&functional_dependencies);
+
+    for (position, &(argument_type, _)) in arguments.iter().enumerate() {
+        if all_determined.contains(&position) {
+            continue;
+        }
+        if HasLabeledRole::on(state, argument_type) {
+            let type_message = state.render_local_type(context, argument_type);
+            state.insert_error(crate::error::ErrorKind::InstanceHeadLabeledRow {
+                class_file,
+                class_item,
+                position,
+                type_message,
+            });
+        }
+    }
+
+    Ok(())
 }

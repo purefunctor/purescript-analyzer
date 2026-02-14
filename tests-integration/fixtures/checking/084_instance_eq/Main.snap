@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -10,11 +11,15 @@ Types
 Eq :: Type -> Constraint
 
 Classes
-class Eq (&0 :: Type)
+class Eq (a :: Type)
 
 Instances
 instance Eq (Int :: Type)
   chain: 0
 
-Errors
-NoInstanceFound { Eq String } at [TermDeclaration(Idx::<TermItem>(2))]
+Diagnostics
+error[NoInstanceFound]: No instance found for: Eq String
+  --> 9:1..9:36
+  |
+9 | test = [eq 123 456, eq "123" "456"]
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

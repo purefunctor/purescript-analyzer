@@ -1,14 +1,13 @@
-use std::mem;
 use std::sync::Arc;
 
 use building_types::QueryResult;
 use lowering::TypeVariableBindingId;
 
 use crate::ExternalQueries;
-use crate::algorithm::kind::synonym;
+use crate::algorithm::safety::safe_loop;
 use crate::algorithm::state::{CheckContext, CheckState};
-use crate::algorithm::substitute;
-use crate::core::{ForallBinder, Type, TypeId, Variable, debruijn};
+use crate::algorithm::{substitute, toolkit};
+use crate::core::{ForallBinder, Type, TypeId, Variable};
 
 pub struct InspectSignature {
     pub variables: Vec<ForallBinder>,
@@ -54,7 +53,7 @@ where
     Arc::from(variables)
 }
 
-pub fn inspect_signature_core<Q>(
+pub fn inspect_signature<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     type_id: TypeId,
@@ -63,59 +62,85 @@ pub fn inspect_signature_core<Q>(
 where
     Q: ExternalQueries,
 {
-    const INSPECTION_LIMIT: u32 = 1_000_000;
-
+    // Consider a synonym that hides a quantifier:
+    //
+    //   type NaturalTransformation f g = forall a. f a -> g a
+    //
+    //   transform :: forall f g. NaturalTransformation f g
+    //
+    // Synonym expansion can reveal additional quantifiers:
+    //
+    //   transform :: forall f g. forall a. f a -> g a
+    //
+    // The following algorithm rebinds each quantifier's variable
+    // name to a fresh name in the current scope.
     let mut surface_bindings = surface_bindings.iter();
     let mut variables = vec![];
     let mut current_id = type_id;
 
-    for _ in 0..INSPECTION_LIMIT {
-        let expanded_id = synonym::normalize_expand_type(state, context, current_id)?;
-        match state.storage[expanded_id] {
-            // Foralls can and will have levels that are different from
-            // when they were originally checked, such as when a Forall
-            // appears on a type synonym. We rebind each type variable
-            // to get the current level then substitute it within the
-            // quantified type to ensure correct scoping.
+    let mut bindings = substitute::NameToType::default();
+
+    safe_loop! {
+        current_id = toolkit::normalise_expand_type(state, context, current_id)?;
+
+        // In the example, after the Forall case has peeled f, g, and the
+        // synonym-expanded a, the accumulated bindings are the following:
+        //
+        //   { old_f -> f', old_g -> g', old_a -> a' }
+        //
+        // We're at a monomorphic type at this point, so we can now proceed
+        // with applying the substitutions and continuing.
+        if !matches!(state.storage[current_id], Type::Forall(..)) && !bindings.is_empty() {
+            current_id = substitute::SubstituteBindings::on(state, &bindings, current_id);
+            bindings.clear();
+            continue;
+        }
+
+        match state.storage[current_id] {
+            // Bind each ForallBinder relative to the current scope, recording
+            // the name substitution for later.
             Type::Forall(ref binder, inner) => {
-                let mut binder = binder.clone();
+                let mut binder = ForallBinder::clone(binder);
 
-                let new_level = if let Some(&binding_id) = surface_bindings.next() {
-                    state.type_scope.bound.bind(debruijn::Variable::Forall(binding_id))
+                let old_name = binder.variable.clone();
+                let new_name = state.fresh_name(&binder.text);
+
+                if !binder.implicit && let Some(&binding_id) = surface_bindings.next() {
+                    state.type_scope.bind_forall(binding_id, binder.kind, new_name.clone());
                 } else {
-                    state.type_scope.bound.bind(debruijn::Variable::Core)
-                };
+                    state.type_scope.bind_core(binder.kind, new_name.clone());
+                }
 
-                let old_level = mem::replace(&mut binder.level, new_level);
+                binder.variable = new_name.clone();
 
-                state.type_scope.kinds.insert(new_level, binder.kind);
+                // Substitute the binder's kind through existing bindings so that
+                // references to earlier forall variables use the fresh Names.
+                if !bindings.is_empty() {
+                    binder.kind = substitute::SubstituteBindings::on(state, &bindings, binder.kind);
+                }
 
-                let variable =
-                    state.storage.intern(Type::Variable(Variable::Bound(new_level, binder.kind)));
-                let inner = substitute::SubstituteBound::on(state, old_level, variable, inner);
+                let variable = Type::Variable(Variable::Bound(new_name, binder.kind));
+                let variable = state.storage.intern(variable);
 
+                bindings.insert(old_name, variable);
                 variables.push(binder);
-
                 current_id = inner;
             }
 
             Type::Constrained(constraint, constrained) => {
-                state.constraints.push_given(constraint);
+                state.push_given(constraint);
                 current_id = constrained;
             }
 
             _ => {
-                let function = expanded_id;
-                let (arguments, result) = signature_components_core(state, context, expanded_id)?;
-                return Ok(InspectSignature { variables, function, arguments, result });
+                let (arguments, result) = signature_components(state, context, current_id)?;
+                return Ok(InspectSignature { variables, function: current_id, arguments, result });
             }
         }
     }
-
-    unreachable!("critical violation: limit reached in inspect_signature_core")
 }
 
-fn signature_components_core<Q>(
+fn signature_components<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     type_id: TypeId,
@@ -123,36 +148,48 @@ fn signature_components_core<Q>(
 where
     Q: ExternalQueries,
 {
-    const INSPECTION_LIMIT: u32 = 1_000_000;
-
     let mut arguments = vec![];
     let mut current_id = type_id;
+    let mut bindings = substitute::NameToType::default();
 
-    for _ in 0..INSPECTION_LIMIT {
-        let expanded = synonym::normalize_expand_type(state, context, current_id)?;
-        match state.storage[expanded] {
+    safe_loop! {
+        current_id = toolkit::normalise_expand_type(state, context, current_id)?;
+
+        if !matches!(state.storage[current_id], Type::Forall(..)) && !bindings.is_empty() {
+            current_id = substitute::SubstituteBindings::on(state, &bindings, current_id);
+            bindings.clear();
+            continue;
+        }
+
+        match state.storage[current_id] {
+            Type::Forall(ref binder, inner) => {
+                let old_name = binder.variable.clone();
+                let mut kind = binder.kind;
+
+                let text = binder.text.clone();
+                let name = state.fresh_name(&text);
+
+                state.type_scope.bind_core(kind, name.clone());
+
+                if !bindings.is_empty() {
+                    kind = substitute::SubstituteBindings::on(state, &bindings, kind);
+                }
+
+                let variable = Type::Variable(Variable::Bound(name, kind));
+                let variable = state.storage.intern(variable);
+
+                bindings.insert(old_name, variable);
+                current_id = inner;
+            }
+
             Type::Function(argument_id, return_id) => {
                 arguments.push(argument_id);
                 current_id = return_id;
             }
 
-            Type::Forall(ref binder, inner) => {
-                let binder_level = binder.level;
-                let binder_kind = binder.kind;
-
-                let level = state.type_scope.bound.bind(debruijn::Variable::Core);
-                state.type_scope.kinds.insert(level, binder_kind);
-
-                let variable =
-                    state.storage.intern(Type::Variable(Variable::Bound(level, binder_kind)));
-                current_id = substitute::SubstituteBound::on(state, binder_level, variable, inner);
-            }
-
             _ => {
-                return Ok((arguments, expanded));
+                return Ok((arguments, current_id));
             }
         }
     }
-
-    unreachable!("critical violation: limit reached in signature_components_core")
 }

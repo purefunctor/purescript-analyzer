@@ -10,7 +10,7 @@ use smol_str::SmolStr;
 
 use crate::ExternalQueries;
 use crate::algorithm::safety::safe_loop;
-use crate::algorithm::state::{CheckContext, CheckState, CheckedConstructor};
+use crate::algorithm::state::{CheckContext, CheckState, CheckedConstructor, PendingType};
 use crate::algorithm::{inspect, kind, quantify, transfer, unification};
 use crate::core::{
     Class, DataLike, ForallBinder, Operator, Role, Synonym, Type, TypeId, Variable, debruijn,
@@ -64,6 +64,7 @@ pub enum CheckedTypeItem {
 /// - [`check_data_definition`]
 /// - [`check_synonym_definition`]
 /// - [`check_class_definition`]
+#[tracing::instrument(skip_all, name = "check_type_item")]
 pub fn check_type_item<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -73,8 +74,6 @@ where
     Q: ExternalQueries,
 {
     state.with_error_step(ErrorStep::TypeDeclaration(item_id), |state| {
-        let _span = tracing::debug_span!("check_type_item").entered();
-
         let Some(item) = context.lowered.info.get_type_item(item_id) else {
             return Ok(None);
         };
@@ -141,8 +140,13 @@ fn check_data_definition<Q>(
 where
     Q: ExternalQueries,
 {
-    let Some(SignatureLike { kind_variables, type_variables, result_kind }) =
-        check_signature_like(state, context, item_id, signature, variables, |_| context.prim.t)?
+    let Some(SignatureLike {
+        kind_variables,
+        type_variables,
+        result_kind,
+        kind_unbind_level,
+        type_unbind_level,
+    }) = check_signature_like(state, context, item_id, signature, variables, |_| context.prim.t)?
     else {
         return Ok(None);
     };
@@ -159,9 +163,6 @@ where
     }
 
     let constructors = check_constructor_arguments(state, context, item_id)?;
-
-    let type_unbind_level = type_variables.first().map(|variable| variable.level);
-    let kind_unbind_level = kind_variables.first().map(|variable| variable.level);
 
     if let Some(level) = type_unbind_level {
         state.type_scope.unbind(level);
@@ -193,10 +194,15 @@ fn check_synonym_definition<Q>(
 where
     Q: ExternalQueries,
 {
-    let Some(SignatureLike { kind_variables, type_variables, result_kind }) =
-        check_signature_like(state, context, item_id, signature, variables, |state| {
-            state.fresh_unification_type(context)
-        })?
+    let Some(SignatureLike {
+        kind_variables,
+        type_variables,
+        result_kind,
+        kind_unbind_level,
+        type_unbind_level,
+    }) = check_signature_like(state, context, item_id, signature, variables, |state| {
+        state.fresh_unification_type(context)
+    })?
     else {
         return Ok(None);
     };
@@ -213,11 +219,11 @@ where
         inferred_kind.replace(synonym_kind);
     }
 
-    if let Some(variable) = type_variables.first() {
-        state.type_scope.unbind(variable.level);
+    if let Some(level) = type_unbind_level {
+        state.type_scope.unbind(level);
     }
-    if let Some(variable) = kind_variables.first() {
-        state.type_scope.unbind(variable.level);
+    if let Some(level) = kind_unbind_level {
+        state.type_scope.unbind(level);
     }
 
     crate::debug_fields!(state, context, { synonym_type = synonym_type });
@@ -241,10 +247,15 @@ fn check_class_definition<Q>(
 where
     Q: ExternalQueries,
 {
-    let Some(SignatureLike { kind_variables, type_variables, result_kind }) =
-        check_signature_like(state, context, item_id, signature, variables, |_| {
-            context.prim.constraint
-        })?
+    let Some(SignatureLike {
+        kind_variables,
+        type_variables,
+        result_kind,
+        kind_unbind_level,
+        type_unbind_level,
+    }) = check_signature_like(state, context, item_id, signature, variables, |_| {
+        context.prim.constraint
+    })?
     else {
         return Ok(None);
     };
@@ -261,7 +272,7 @@ where
     let class_reference = {
         let reference_type = state.storage.intern(Type::Constructor(context.id, item_id));
         type_variables.iter().cloned().fold(reference_type, |reference_type, binder| {
-            let variable = Variable::Bound(binder.level, binder.kind);
+            let variable = Variable::Bound(binder.variable, binder.kind);
             let variable = state.storage.intern(Type::Variable(variable));
             state.storage.intern(Type::Application(reference_type, variable))
         })
@@ -286,11 +297,11 @@ where
         class_reference,
     )?;
 
-    if let Some(variable) = type_variables.first() {
-        state.type_scope.unbind(variable.level);
+    if let Some(level) = type_unbind_level {
+        state.type_scope.unbind(level);
     }
-    if let Some(variable) = kind_variables.first() {
-        state.type_scope.unbind(variable.level);
+    if let Some(level) = kind_unbind_level {
+        state.type_scope.unbind(level);
     }
 
     crate::debug_fields!(state, context, { ?superclass_count = superclasses.len(), ?member_count = members.len() });
@@ -387,6 +398,14 @@ where
     {
         let type_id = transfer::globalize(state, context, quantified_type);
         state.checked.types.insert(item_id, type_id);
+    } else if inferred_kind.is_none()
+        && let Some(PendingType::Deferred(deferred_kind)) = state.pending_types.remove(&item_id)
+    {
+        let quantified_type = quantify::quantify(state, deferred_kind)
+            .map(|(quantified_type, _)| quantified_type)
+            .unwrap_or(deferred_kind);
+        let type_id = transfer::globalize(state, context, quantified_type);
+        state.checked.types.insert(item_id, type_id);
     }
 
     let synonym_type = type_variables.iter().rfold(synonym_type, |inner, binder| {
@@ -451,6 +470,22 @@ where
 
         let type_id = transfer::globalize(state, context, quantified_type);
         state.checked.types.insert(item_id, type_id);
+    } else if let Some(PendingType::Deferred(deferred_kind)) = state.pending_types.remove(&item_id)
+    {
+        let (quantified_type, quantified_variables) =
+            if let Some(result) = quantify::quantify(state, deferred_kind) {
+                result
+            } else {
+                (deferred_kind, debruijn::Size(0))
+            };
+
+        let kind_variables = debruijn::Size(kind_variable_count);
+
+        let data_like = DataLike { quantified_variables, kind_variables };
+        state.checked.data.insert(item_id, data_like);
+
+        let type_id = transfer::globalize(state, context, quantified_type);
+        state.checked.types.insert(item_id, type_id);
     } else {
         let quantified_variables = debruijn::Size(0);
         let kind_variables = debruijn::Size(kind_variable_count);
@@ -500,7 +535,7 @@ where
     let reference_type = state.storage.intern(Type::Constructor(context.id, item_id));
 
     let reference_type = kind_variables.iter().fold(reference_type, |reference, binder| {
-        let variable = Variable::Bound(binder.level, binder.kind);
+        let variable = Variable::Bound(binder.variable.clone(), binder.kind);
         let variable = state.storage.intern(Type::Variable(variable));
         state.storage.intern(Type::KindApplication(reference, variable))
     });
@@ -511,14 +546,14 @@ where
     });
 
     let mut unsolved_kinds = unsolved_kinds.collect_vec();
-    unsolved_kinds.sort_by_key(|&(_, id)| (state.unification.get(id).domain, id));
+    unsolved_kinds.sort_by_key(|&(_, id)| (state.unification.get(id).depth, id));
 
     let reference_type = unsolved_kinds.iter().fold(reference_type, |reference, &(kind, _)| {
         state.storage.intern(Type::KindApplication(reference, kind))
     });
 
     type_variables.iter().fold(reference_type, |reference, binder| {
-        let variable = Variable::Bound(binder.level, binder.kind);
+        let variable = Variable::Bound(binder.variable.clone(), binder.kind);
         let variable = state.storage.intern(Type::Variable(variable));
         state.storage.intern(Type::Application(reference, variable))
     })
@@ -537,30 +572,37 @@ where
     let CheckedClass { inferred_kind, kind_variables, type_variables, superclasses, members } =
         checked;
 
-    let mut quantified_type = None;
-    let mut quantified_variables = debruijn::Size(0);
-
     if let Some(inferred_kind) = inferred_kind
-        && let Some((q_type, q_variables)) = quantify::quantify(state, inferred_kind)
+        && let Some((quantified_type, _)) = quantify::quantify(state, inferred_kind)
     {
-        quantified_type = Some(q_type);
-        quantified_variables = q_variables;
-    };
+        let type_id = transfer::globalize(state, context, quantified_type);
+        state.checked.types.insert(item_id, type_id);
+    } else if inferred_kind.is_none()
+        && let Some(PendingType::Deferred(deferred_kind)) = state.pending_types.remove(&item_id)
+    {
+        let quantified_type =
+            quantify::quantify(state, deferred_kind).map(|(qt, _)| qt).unwrap_or(deferred_kind);
+        let type_id = transfer::globalize(state, context, quantified_type);
+        state.checked.types.insert(item_id, type_id);
+    }
 
     let mut class = {
         let kind_var_count = kind_variables.len() as u32;
         let kind_variables = debruijn::Size(kind_var_count);
         let type_variable_kinds = type_variables.iter().map(|binder| binder.kind).collect();
-        Class { superclasses, type_variable_kinds, quantified_variables, kind_variables }
+        let type_variable_names =
+            type_variables.iter().map(|binder| binder.variable.clone()).collect();
+        Class {
+            superclasses,
+            type_variable_kinds,
+            type_variable_names,
+            quantified_variables: debruijn::Size(0),
+            kind_variables,
+        }
     };
 
-    let class_quantified_count =
+    let quantified_variables =
         quantify::quantify_class(state, &mut class).unwrap_or(debruijn::Size(0));
-
-    debug_assert_eq!(
-        quantified_variables, class_quantified_count,
-        "critical violation: class type signature and declaration should have the same number of variables"
-    );
 
     class.quantified_variables = quantified_variables;
 
@@ -578,11 +620,6 @@ where
     class.type_variable_kinds = type_variable_kinds.collect();
 
     state.checked.classes.insert(item_id, class);
-
-    if let Some(quantified_type) = quantified_type {
-        let type_id = transfer::globalize(state, context, quantified_type);
-        state.checked.types.insert(item_id, type_id);
-    }
 
     for (member_id, member_type) in members {
         if let Some((quantified_member, _)) = quantify::quantify(state, member_type) {
@@ -608,7 +645,8 @@ where
 
     // Now that all items in the SCC are processed, the kind should be fully resolved
     if !is_binary_operator_type(state, kind) {
-        state.insert_error(ErrorKind::InvalidTypeOperator { id: kind });
+        let kind_message = state.render_local_type(context, kind);
+        state.insert_error(ErrorKind::InvalidTypeOperator { kind_message });
     }
 
     // Generalize and store the kind
@@ -620,6 +658,24 @@ where
     Ok(())
 }
 
+/// Commits remaining pending type entries from [`CheckState::pending_types`]
+/// into [`CheckedModule::types`].
+pub fn commit_pending_types<Q>(state: &mut CheckState, context: &CheckContext<Q>)
+where
+    Q: ExternalQueries,
+{
+    for (item_id, pending_kind) in state.pending_types.drain().collect_vec() {
+        let local_type = match pending_kind {
+            PendingType::Immediate(id) => id,
+            PendingType::Deferred(id) => {
+                quantify::quantify(state, id).map(|(id, _)| id).unwrap_or(id)
+            }
+        };
+        let global_type = transfer::globalize(state, context, local_type);
+        state.checked.types.insert(item_id, global_type);
+    }
+}
+
 /// Checks the kind signature of a type item.
 ///
 /// This function also generalises the type and inserts it directly to
@@ -629,6 +685,7 @@ where
 /// To enable scoped type variables, this function also populates the
 /// [`CheckState::surface_bindings`] with the kind variables found in
 /// the signature.
+#[tracing::instrument(skip_all, name = "check_type_signature")]
 pub fn check_type_signature<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -638,18 +695,12 @@ where
     Q: ExternalQueries,
 {
     state.with_error_step(ErrorStep::TypeDeclaration(item_id), |state| {
-        let _span = tracing::debug_span!("check_type_signature").entered();
-
         let Some(item) = context.lowered.info.get_type_item(item_id) else {
             return Ok(());
         };
 
         match item {
-            TypeItemIr::DataGroup { signature, .. }
-            | TypeItemIr::NewtypeGroup { signature, .. }
-            | TypeItemIr::SynonymGroup { signature, .. }
-            | TypeItemIr::ClassGroup { signature, .. }
-            | TypeItemIr::Foreign { signature, .. } => {
+            TypeItemIr::Foreign { signature, .. } => {
                 let Some(signature) = signature else {
                     return Ok(());
                 };
@@ -660,10 +711,28 @@ where
                 let (inferred_type, _) =
                     kind::check_surface_kind(state, context, *signature, context.prim.t)?;
 
-                if let Some((quantified_type, _)) = quantify::quantify(state, inferred_type) {
-                    let type_id = transfer::globalize(state, context, quantified_type);
-                    state.checked.types.insert(item_id, type_id);
-                }
+                let quantified_type = quantify::quantify(state, inferred_type)
+                    .map(|(quantified_type, _)| quantified_type)
+                    .unwrap_or(inferred_type);
+
+                state.pending_types.insert(item_id, PendingType::Immediate(quantified_type));
+            }
+
+            TypeItemIr::DataGroup { signature, .. }
+            | TypeItemIr::NewtypeGroup { signature, .. }
+            | TypeItemIr::SynonymGroup { signature, .. }
+            | TypeItemIr::ClassGroup { signature, .. } => {
+                let Some(signature) = signature else {
+                    return Ok(());
+                };
+
+                let signature_variables = inspect::collect_signature_variables(context, *signature);
+                state.surface_bindings.insert_type(item_id, signature_variables);
+
+                let (inferred_type, _) =
+                    kind::check_surface_kind(state, context, *signature, context.prim.t)?;
+
+                state.pending_types.insert(item_id, PendingType::Deferred(inferred_type));
             }
 
             TypeItemIr::Operator { .. } => {}
@@ -677,6 +746,12 @@ struct SignatureLike {
     kind_variables: Vec<ForallBinder>,
     type_variables: Vec<ForallBinder>,
     result_kind: TypeId,
+    /// The scope level before kind_variables were bound,
+    /// used for unbinding.
+    kind_unbind_level: Option<debruijn::Level>,
+    /// The scope level before type_variables were bound,
+    /// used for unbinding.
+    type_unbind_level: Option<debruijn::Level>,
 }
 
 fn check_signature_like<Q>(
@@ -696,28 +771,43 @@ where
         let surface_bindings = state.surface_bindings.get_type(item_id);
         let surface_bindings = surface_bindings.as_deref().unwrap_or_default();
 
-        let signature =
-            inspect::inspect_signature_core(state, context, stored_kind, surface_bindings)?;
+        // Capture scope level before inspect_signature binds kind variables.
+        let kind_unbind_level = debruijn::Level(state.type_scope.size().0);
 
-        if variables.len() != signature.arguments.len() {
+        let signature = inspect::inspect_signature(state, context, stored_kind, surface_bindings)?;
+
+        let kind_unbind_level =
+            if signature.variables.is_empty() { None } else { Some(kind_unbind_level) };
+
+        // The kind signature may have more function arrows than the
+        // definition has parameters when the result kind is itself a
+        // function kind. For example:
+        //
+        //   type C2 :: forall k. (k -> Type) -> (k -> Type) -> k -> Type
+        //   type C2 a z = Coproduct a z
+        //
+        // The kind decomposes into 3 arrows but the synonym only has 2
+        // parameters. The excess arrows belong to the result kind.
+        if variables.len() > signature.arguments.len() {
             state.insert_error(ErrorKind::TypeSignatureVariableMismatch {
                 id: signature_id,
                 expected: 0,
                 actual: 0,
             });
 
-            if let Some(variable) = signature.variables.first() {
-                state.type_scope.unbind(variable.level);
+            if let Some(level) = kind_unbind_level {
+                state.type_scope.unbind(level);
             }
 
             return Ok(None);
         };
 
-        let variables = variables.iter();
-        let arguments = signature.arguments.iter();
+        let parameter_count = variables.len();
+        let (matched_arguments, excess_arguments) = signature.arguments.split_at(parameter_count);
 
         let kinds = variables
-            .zip(arguments)
+            .iter()
+            .zip(matched_arguments.iter())
             .map(|(variable, &argument)| {
                 // Use contravariant subtyping for type variables:
                 //
@@ -746,18 +836,40 @@ where
             .collect::<QueryResult<Vec<_>>>()?;
 
         let kind_variables = signature.variables;
-        let result_kind = signature.result;
-        let type_variables = kinds.into_iter().map(|(id, visible, name, kind)| {
-            let level = state.type_scope.bind_forall(id, kind);
-            ForallBinder { visible, name, level, kind }
+
+        // Fold excess arguments back into the result kind.
+        let result_kind = excess_arguments.iter().rfold(signature.result, |result, &argument| {
+            state.storage.intern(Type::Function(argument, result))
+        });
+
+        // Capture scope level before binding type variables.
+        let type_unbind_level = debruijn::Level(state.type_scope.size().0);
+
+        let type_variables = kinds.into_iter().map(|(id, visible, text, kind)| {
+            let name = state.fresh_name(&text);
+            state.type_scope.bind_forall(id, kind, name.clone());
+            ForallBinder { visible, implicit: false, text, variable: name, kind }
         });
 
         let type_variables = type_variables.collect_vec();
 
-        SignatureLike { kind_variables, type_variables, result_kind }
+        let type_unbind_level =
+            if type_variables.is_empty() { None } else { Some(type_unbind_level) };
+
+        SignatureLike {
+            kind_variables,
+            type_variables,
+            result_kind,
+            kind_unbind_level,
+            type_unbind_level,
+        }
     } else {
         let kind_variables = vec![];
         let result_kind = infer_result(state);
+
+        // Capture scope level before binding type variables.
+        let type_unbind_level = debruijn::Level(state.type_scope.size().0);
+
         let type_variables = variables.iter().map(|variable| {
             let kind = if let Some(id) = variable.kind {
                 let (kind, _) = kind::check_surface_kind(state, context, id, context.prim.t)?;
@@ -767,14 +879,24 @@ where
             };
 
             let visible = variable.visible;
-            let name = variable.name.clone().unwrap_or(MISSING_NAME);
-            let level = state.type_scope.bind_forall(variable.id, kind);
-            Ok(ForallBinder { visible, name, level, kind })
+            let text = variable.name.clone().unwrap_or(MISSING_NAME);
+            let name = state.fresh_name(&text);
+            state.type_scope.bind_forall(variable.id, kind, name.clone());
+            Ok(ForallBinder { visible, implicit: false, text, variable: name, kind })
         });
 
         let type_variables = type_variables.collect::<QueryResult<Vec<_>>>()?;
 
-        SignatureLike { kind_variables, type_variables, result_kind }
+        let type_unbind_level =
+            if type_variables.is_empty() { None } else { Some(type_unbind_level) };
+
+        SignatureLike {
+            kind_variables,
+            type_variables,
+            result_kind,
+            kind_unbind_level: None,
+            type_unbind_level,
+        }
     };
 
     Ok(Some(signature))
@@ -833,6 +955,7 @@ where
     Ok(())
 }
 
+#[tracing::instrument(skip_all, name = "check_constructor_arguments")]
 fn check_constructor_arguments<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -841,7 +964,6 @@ fn check_constructor_arguments<Q>(
 where
     Q: ExternalQueries,
 {
-    let _span = tracing::debug_span!("check_constructor_arguments").entered();
     let mut constructors = vec![];
 
     for item_id in context.indexed.pairs.data_constructors(item_id) {
@@ -862,6 +984,7 @@ where
     Ok(constructors)
 }
 
+#[tracing::instrument(skip_all, name = "infer_constructor_argument")]
 fn infer_constructor_argument<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -871,7 +994,6 @@ where
     Q: ExternalQueries,
 {
     state.with_error_step(ErrorStep::ConstructorArgument(argument), |state| {
-        let _span = tracing::debug_span!("infer_constructor_argument").entered();
         let (inferred_type, _) =
             kind::check_surface_kind(state, context, argument, context.prim.t)?;
         Ok(inferred_type)
@@ -894,8 +1016,8 @@ fn infer_roles(
     ) {
         let type_id = state.normalize_type(type_id);
         match state.storage[type_id].clone() {
-            Type::Variable(Variable::Bound(level, _)) => {
-                if let Some(index) = variables.iter().position(|v| v.level == level) {
+            Type::Variable(Variable::Bound(name, _)) => {
+                if let Some(index) = variables.iter().position(|v| v.variable == name) {
                     // The following cases infer to nominal roles:
                     //
                     // ```
@@ -1021,11 +1143,8 @@ fn check_roles(
         if is_foreign || declared >= inferred {
             *validated = declared;
         } else {
-            state.insert_error(ErrorKind::InvalidRoleDeclaration {
-                type_id,
-                parameter_index: index,
-                declared,
-                inferred,
+            state.with_error_step(ErrorStep::TypeDeclaration(type_id), |state| {
+                state.insert_error(ErrorKind::InvalidRoleDeclaration { index, declared, inferred });
             });
         }
     }

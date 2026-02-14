@@ -1,0 +1,32 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+test :: Effect Int
+test' :: ???
+
+Types
+
+Diagnostics
+error[EmptyDoBlock]: Empty do block
+  --> 6:8..6:10
+  |
+6 | test = do
+  |        ^~
+error[CannotUnify]: Cannot unify '???' with 'Effect Int'
+  --> 6:8..6:10
+  |
+6 | test = do
+  |        ^~
+error[EmptyDoBlock]: Empty do block
+  --> 8:9..8:11
+  |
+8 | test' = do
+  |         ^~
+error[CannotUnify]: Cannot unify 'Type' with '???'
+  --> 8:1..8:11
+  |
+8 | test' = do
+  | ^~~~~~~~~~

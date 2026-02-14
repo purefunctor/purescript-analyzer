@@ -3,24 +3,63 @@
 pub mod debruijn;
 pub mod pretty;
 
+use std::cmp::Ordering;
+use std::hash::{Hash, Hasher};
 use std::sync::Arc;
 
 use files::FileId;
 use indexing::{InstanceChainId, TypeItemId};
 use smol_str::SmolStr;
 
+/// Globally unique identity for a bound type variable.
+#[derive(Debug, Clone)]
+pub struct Name {
+    pub unique: u32,
+    pub file: FileId,
+    pub text: SmolStr,
+    pub depth: debruijn::Size,
+}
+
+impl PartialEq for Name {
+    fn eq(&self, other: &Name) -> bool {
+        self.file == other.file && self.unique == other.unique
+    }
+}
+
+impl Eq for Name {}
+
+impl Hash for Name {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.file.hash(state);
+        self.unique.hash(state);
+    }
+}
+
+impl PartialOrd for Name {
+    fn partial_cmp(&self, other: &Name) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for Name {
+    fn cmp(&self, other: &Name) -> Ordering {
+        self.file.cmp(&other.file).then(self.unique.cmp(&other.unique))
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ForallBinder {
     pub visible: bool,
-    pub name: SmolStr,
-    pub level: debruijn::Level,
+    pub implicit: bool,
+    pub text: SmolStr,
+    pub variable: Name,
     pub kind: TypeId,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Variable {
-    Skolem(debruijn::Level, TypeId),
-    Bound(debruijn::Level, TypeId),
+    Skolem(Name, TypeId),
+    Bound(Name, TypeId),
     Free(SmolStr),
 }
 
@@ -124,13 +163,14 @@ pub struct Instance {
     pub constraints: Vec<(TypeId, TypeId)>,
     pub resolution: (FileId, TypeItemId),
     pub kind: InstanceKind,
-    pub kind_variables: Vec<TypeId>,
+    pub kind_variables: Vec<(Name, TypeId)>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Class {
     pub superclasses: Arc<[(TypeId, TypeId)]>,
     pub type_variable_kinds: Vec<TypeId>,
+    pub type_variable_names: Vec<Name>,
     pub quantified_variables: debruijn::Size,
     pub kind_variables: debruijn::Size,
 }

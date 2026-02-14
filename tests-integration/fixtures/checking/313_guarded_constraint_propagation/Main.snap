@@ -1,0 +1,33 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+generate ::
+  forall (f :: Type -> Type) (a :: Type) (b :: Type).
+    Generate (f :: Type -> Type) =>
+    ((b :: Type) -> (a :: Type)) -> (b :: Type) -> (f :: Type -> Type) (a :: Type)
+Nil :: forall (a :: Type). List (a :: Type)
+Cons :: forall (a :: Type). (a :: Type) -> List (a :: Type)
+test :: Int -> List Int
+
+Types
+Generate :: (Type -> Type) -> Constraint
+List :: Type -> Type
+
+Data
+List
+  Quantified = :0
+  Kind = :0
+
+
+Roles
+List = [Representational]
+
+Classes
+class Generate (f :: Type -> Type)
+
+Instances
+instance Generate (List :: Type -> Type)
+  chain: 0

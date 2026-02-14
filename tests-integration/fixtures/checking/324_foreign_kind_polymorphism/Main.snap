@@ -1,0 +1,26 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Identity ::
+  forall (k :: Type) (a :: (k :: Type) -> (k :: Type)).
+    Identity @(k :: Type) (a :: (k :: Type) -> (k :: Type))
+fn ::
+  forall (t3 :: Type) (k :: (t3 :: Type) -> (t3 :: Type)).
+    Identity @(t3 :: Type) (k :: (t3 :: Type) -> (t3 :: Type)) ->
+    Identity @(t3 :: Type) (k :: (t3 :: Type) -> (t3 :: Type))
+test :: Identity @Type Array
+
+Types
+Identity :: forall (k :: Type). ((k :: Type) -> (k :: Type)) -> Type
+
+Data
+Identity
+  Quantified = :0
+  Kind = :1
+
+
+Roles
+Identity = [Phantom]

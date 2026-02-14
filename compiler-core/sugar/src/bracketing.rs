@@ -91,9 +91,16 @@ where
 }
 
 /// Translates [`Associativity`] and precedence into binding power.
+///
+/// Each precedence level occupies two binding power slots so that
+/// adjacent precedence levels never overlap. Without the `2*p` scaling,
+/// `infixr 3` and `infix 4` both produce a binding power of 5, which
+/// prevents the Pratt parser from breaking out of a higher-precedence
+/// recursive call when it encounters a lower-precedence operator.
 fn binding_power(associativity: Associativity, precedence: u8) -> (u8, u8) {
-    let bp_0 = precedence.saturating_add(1);
-    let bp_1 = precedence.saturating_add(2);
+    let base = precedence.saturating_mul(2);
+    let bp_0 = base.saturating_add(1);
+    let bp_1 = base.saturating_add(2);
     match associativity {
         Associativity::None => (bp_0, bp_0),
         Associativity::Left => (bp_0, bp_1),
@@ -256,4 +263,106 @@ pub fn bracketed(
     }
 
     Ok(Bracketed { binders, expressions, types })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const ALL_ASSOCIATIVITIES: [Associativity; 3] =
+        [Associativity::None, Associativity::Left, Associativity::Right];
+
+    /// PureScript precedences range from 0 to 9.
+    const PRECEDENCE_RANGE: std::ops::RangeInclusive<u8> = 0..=9;
+
+    /// A lower-precedence operator must always yield to a recursive call
+    /// from a higher-precedence operator. Without sufficient spacing in
+    /// the binding power encoding, adjacent precedences can collide.
+    ///
+    /// Let `bp(a, p) = (l, r)` denote the binding power function. Then:
+    ///
+    /// ```text
+    /// forall p1, p2 in 0..=9, a1, a2 in {None, Left, Right}.
+    ///   p1 < p2 => fst(bp(a1, p1)) < snd(bp(a2, p2))
+    /// ```
+    #[test]
+    fn lower_precedence_yields() {
+        for p_high in PRECEDENCE_RANGE {
+            for p_low in 0..p_high {
+                for &assoc_high in &ALL_ASSOCIATIVITIES {
+                    let (_, right_bp_high) = binding_power(assoc_high, p_high);
+                    for &assoc_low in &ALL_ASSOCIATIVITIES {
+                        let (left_bp_low, _) = binding_power(assoc_low, p_low);
+                        assert!(
+                            left_bp_low < right_bp_high,
+                            "precedence {p_low} ({assoc_low:?}) should yield to \
+                             precedence {p_high} ({assoc_high:?}): \
+                             lbp {left_bp_low} must be < rbp {right_bp_high}"
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    /// A higher-precedence operator must bind tighter than a recursive
+    /// call from a lower-precedence operator.
+    ///
+    /// ```text
+    /// forall p1, p2 in 0..=9, a1, a2 in {None, Left, Right}.
+    ///   p1 < p2 => fst(bp(a2, p2)) >= snd(bp(a1, p1))
+    /// ```
+    #[test]
+    fn higher_precedence_binds() {
+        for p_low in PRECEDENCE_RANGE {
+            for p_high in (p_low + 1)..=9 {
+                for &assoc_low in &ALL_ASSOCIATIVITIES {
+                    let (_, right_bp_low) = binding_power(assoc_low, p_low);
+                    for &assoc_high in &ALL_ASSOCIATIVITIES {
+                        let (left_bp_high, _) = binding_power(assoc_high, p_high);
+                        assert!(
+                            left_bp_high >= right_bp_low,
+                            "precedence {p_high} ({assoc_high:?}) should bind inside \
+                             precedence {p_low} ({assoc_low:?}): \
+                             lbp {left_bp_high} must be >= rbp {right_bp_low}"
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    /// Left-associative operators at the same precedence continue the
+    /// current branch rather than recursing deeper.
+    ///
+    /// ```text
+    /// forall p in 0..=9. fst(bp(Left, p)) < snd(bp(Left, p))
+    /// ```
+    #[test]
+    fn left_associative_chains_left() {
+        for p in PRECEDENCE_RANGE {
+            let (left_bp, right_bp) = binding_power(Associativity::Left, p);
+            assert!(
+                left_bp < right_bp,
+                "left-associative at precedence {p}: lbp {left_bp} must be < rbp {right_bp}"
+            );
+        }
+    }
+
+    /// Right-associative operators at the same precedence recurse deeper
+    /// into the right subtree.
+    ///
+    /// ```text
+    /// forall p in 0..=9. fst(bp(Right, p)) > snd(bp(Right, p))
+    /// ```
+    #[test]
+    fn right_associative_chains_right() {
+        for p in PRECEDENCE_RANGE {
+            let (left_bp, right_bp) = binding_power(Associativity::Right, p);
+            assert!(
+                left_bp > right_bp,
+                "right-associative at precedence {p}: lbp {left_bp} must be > rbp {right_bp}"
+            );
+        }
+    }
 }

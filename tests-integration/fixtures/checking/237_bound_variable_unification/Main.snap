@@ -1,0 +1,25 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+unsafeSet ::
+  forall (r1 :: Row Type) (r2 :: Row Type) (a :: Type).
+    String -> (a :: Type) -> {| (r1 :: Row Type) } -> {| (r2 :: Row Type) }
+buildIt ::
+  forall (row :: Row Type) (subrow :: Row Type).
+    BuildRecord (row :: Row Type) (subrow :: Row Type) => {| (subrow :: Row Type) }
+test ::
+  forall (r :: Row Type) (s :: Row Type).
+    BuildRecord (r :: Row Type) (s :: Row Type) => {| (s :: Row Type) }
+
+Types
+BuildRecord :: Row Type -> Row Type -> Constraint
+
+Classes
+class BuildRecord (row :: Row Type) (subrow :: Row Type)
+
+Instances
+instance BuildRecord ((row :: Row Type) :: Row Type) ((subrow :: Row Type) :: Row Type)
+  chain: 0

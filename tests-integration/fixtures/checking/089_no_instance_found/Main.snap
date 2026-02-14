@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -21,7 +22,11 @@ Roles
 Foo = []
 
 Classes
-class Eq (&0 :: Type)
+class Eq (a :: Type)
 
-Errors
-NoInstanceFound { Eq Foo } at [TermDeclaration(Idx::<TermItem>(2))]
+Diagnostics
+error[NoInstanceFound]: No instance found for: Eq Foo
+  --> 9:1..9:23
+  |
+9 | test :: Foo -> Boolean
+  | ^~~~~~~~~~~~~~~~~~~~~~

@@ -1,0 +1,34 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+partialLet :: Partial => Int
+partialLet' :: Partial => Int
+partialWhere :: Partial => Int
+partialWhere' :: Partial => Int
+
+Types
+
+Diagnostics
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: _
+  --> 6:13..7:17
+  |
+6 |     value = case 123 of
+  |             ^~~~~~~~~~~
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: _
+  --> 13:13..14:17
+   |
+13 |     value = case 123 of
+   |             ^~~~~~~~~~~
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: _
+  --> 21:11..22:15
+   |
+21 |   value = case 123 of
+   |           ^~~~~~~~~~~
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: _
+  --> 26:11..27:15
+   |
+26 |   value = case 123 of
+   |           ^~~~~~~~~~~

@@ -1,0 +1,33 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+compose ::
+  forall (k :: Type) (a :: (k :: Type) -> (k :: Type) -> Type) (b :: (k :: Type)) (c :: (k :: Type))
+    (d :: (k :: Type)).
+    Semigroupoid (a :: (k :: Type) -> (k :: Type) -> Type) =>
+    (a :: (k :: Type) -> (k :: Type) -> Type) (c :: (k :: Type)) (d :: (k :: Type)) ->
+    (a :: (k :: Type) -> (k :: Type) -> Type) (b :: (k :: Type)) (c :: (k :: Type)) ->
+    (a :: (k :: Type) -> (k :: Type) -> Type) (b :: (k :: Type)) (d :: (k :: Type))
+identity ::
+  forall (k :: Type) (a :: (k :: Type) -> (k :: Type) -> Type) (t :: (k :: Type)).
+    Category (a :: (k :: Type) -> (k :: Type) -> Type) =>
+    (a :: (k :: Type) -> (k :: Type) -> Type) (t :: (k :: Type)) (t :: (k :: Type))
+test :: forall (a :: Type). (a :: Type) -> (a :: Type)
+test2 :: Int -> Int
+
+Types
+Semigroupoid :: forall (k :: Type). ((k :: Type) -> (k :: Type) -> Type) -> Constraint
+Category :: forall (k :: Type). ((k :: Type) -> (k :: Type) -> Type) -> Constraint
+
+Classes
+class Semigroupoid (a :: (k :: Type) -> (k :: Type) -> Type)
+class Semigroupoid @(k :: Type) (a :: (k :: Type) -> (k :: Type) -> Type) <= Category (a :: (k :: Type) -> (k :: Type) -> Type)
+
+Instances
+instance Semigroupoid (Function :: Type -> Type -> Type)
+  chain: 0
+instance Category (Function :: Type -> Type -> Type)
+  chain: 0

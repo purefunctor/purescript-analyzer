@@ -5,8 +5,8 @@ expression: checked.errors
 [
     CheckError {
         kind: CannotUnify {
-            t1: Id<checking::core::Type>(16),
-            t2: Id<checking::core::Type>(1),
+            t1: Id<smol_str::SmolStr>(1),
+            t2: Id<smol_str::SmolStr>(2),
         },
         step: [
             TypeDeclaration(

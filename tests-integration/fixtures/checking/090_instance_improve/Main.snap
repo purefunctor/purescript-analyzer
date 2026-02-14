@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -28,8 +29,8 @@ True = []
 False = []
 
 Classes
-class TypeEq (&1 :: Type) (&2 :: Type) (&3 :: (&0 :: Type))
+class TypeEq (a :: Type) (b :: Type) (r :: (t2 :: Type))
 
 Instances
-instance TypeEq ((&0 :: Type) :: Type) ((&0 :: Type) :: Type) (True :: Type)
+instance TypeEq ((a :: Type) :: Type) ((a :: Type) :: Type) (True :: Type)
   chain: 0

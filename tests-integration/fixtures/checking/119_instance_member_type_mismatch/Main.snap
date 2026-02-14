@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -9,13 +10,25 @@ Types
 Show :: Type -> Constraint
 
 Classes
-class Show (&0 :: Type)
+class Show (a :: Type)
 
 Instances
 instance Show (Int :: Type)
   chain: 0
 
-Errors
-CannotUnify { Int, String } at [TermDeclaration(Idx::<TermItem>(1))]
-CannotUnify { Int -> Int, Int -> String } at [TermDeclaration(Idx::<TermItem>(1))]
-InstanceMemberTypeMismatch { expected: Int -> String, actual: Int -> Int } at [TermDeclaration(Idx::<TermItem>(1))]
+Diagnostics
+error[CannotUnify]: Cannot unify 'Int' with 'String'
+  --> 6:1..8:13
+  |
+6 | instance Show Int where
+  | ^~~~~~~~~~~~~~~~~~~~~~~
+error[CannotUnify]: Cannot unify 'Int -> Int' with 'Int -> String'
+  --> 6:1..8:13
+  |
+6 | instance Show Int where
+  | ^~~~~~~~~~~~~~~~~~~~~~~
+error[InstanceMemberTypeMismatch]: Instance member type mismatch: expected 'Int -> String', got 'Int -> Int'
+  --> 6:1..8:13
+  |
+6 | instance Show Int where
+  | ^~~~~~~~~~~~~~~~~~~~~~~

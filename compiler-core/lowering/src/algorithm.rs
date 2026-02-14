@@ -43,6 +43,8 @@ pub(crate) struct State {
     pub(crate) synonym_edges: FxHashSet<(TypeItemId, TypeItemId)>,
     pub(crate) let_binding_graph: ItemGraph<LetBindingNameGroupId>,
 
+    pub(crate) in_constraint: bool,
+
     pub(crate) errors: Vec<LoweringError>,
 }
 
@@ -112,6 +114,10 @@ impl State {
         self.info.type_kind.insert(id, kind);
         let Some(node) = self.graph_scope else { return };
         self.nodes.type_node.insert(id, node);
+    }
+
+    fn associate_do_statement(&mut self, id: DoStatementId, statement: DoStatement) {
+        self.info.do_statement.insert(id, statement);
     }
 
     fn associate_let_binding_name(&mut self, id: LetBindingNameGroupId, info: LetBindingName) {
@@ -262,6 +268,33 @@ impl State {
         Some((file_id, type_id))
     }
 
+    fn resolve_class_reference(
+        &mut self,
+        context: &Context,
+        qualifier: Option<&str>,
+        name: &str,
+    ) -> Option<(FileId, TypeItemId)> {
+        let (file_id, type_id) = context.lookup_class(qualifier, name)?;
+
+        if context.file_id == file_id
+            && let Some(current_id) = self.current_type
+        {
+            self.type_edges.insert((current_id, type_id));
+
+            if let Some(synonym_id) = self.current_synonym
+                && let TypeItemKind::Synonym { .. } = context.indexed.items[type_id].kind
+            {
+                self.synonym_edges.insert((synonym_id, type_id));
+            }
+
+            if let Some(kind_id) = self.current_kind {
+                self.kind_edges.insert((kind_id, type_id));
+            }
+        }
+
+        Some((file_id, type_id))
+    }
+
     fn resolve_type_variable(&mut self, id: TypeId, name: &str) -> Option<TypeVariableResolution> {
         let node = self.graph_scope?;
         if let GraphNode::Implicit { collecting, bindings, .. } = &mut self.graph.inner[node] {
@@ -320,6 +353,16 @@ impl Context<'_> {
         let name = name.as_ref();
         self.resolved.lookup_type(self.prim, qualifier, name)
     }
+
+    fn lookup_class<Q, N>(&self, qualifier: Option<Q>, name: N) -> Option<(FileId, TypeItemId)>
+    where
+        Q: AsRef<str>,
+        N: AsRef<str>,
+    {
+        let qualifier = qualifier.as_ref().map(Q::as_ref);
+        let name = name.as_ref();
+        self.resolved.lookup_class(self.prim, qualifier, name)
+    }
 }
 
 pub(super) fn lower_module(
@@ -368,7 +411,7 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
                 let qualified = head.qualified()?;
                 let (qualifier, name) =
                     recursive::lower_qualified_name(&qualified, cst::QualifiedName::upper)?;
-                state.resolve_type_reference(context, qualifier.as_deref(), &name)
+                state.resolve_class_reference(context, qualifier.as_deref(), &name)
             });
 
             state.push_implicit_scope();
@@ -381,6 +424,7 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
                     .collect()
             };
 
+            state.in_constraint = true;
             let constraints = recover! {
                 cst.as_ref()?
                     .instance_constraints()?
@@ -388,6 +432,7 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
                     .map(|cst| recursive::lower_type(state, context, &cst))
                     .collect()
             };
+            state.in_constraint = false;
             state.finish_implicit_scope();
 
             let kind = TermItemIr::Derive { newtype, constraints, resolution, arguments };
@@ -414,7 +459,7 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
                 let qualified = head.qualified()?;
                 let (qualifier, name) =
                     recursive::lower_qualified_name(&qualified, cst::QualifiedName::upper)?;
-                state.resolve_type_reference(context, qualifier.as_deref(), &name)
+                state.resolve_class_reference(context, qualifier.as_deref(), &name)
             });
 
             state.push_implicit_scope();
@@ -427,6 +472,7 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
                     .collect()
             };
 
+            state.in_constraint = true;
             let constraints = recover! {
                 cst.as_ref()?
                     .instance_constraints()?
@@ -434,6 +480,7 @@ fn lower_term_item(state: &mut State, context: &Context, item_id: TermItemId, it
                     .map(|cst| recursive::lower_type(state, context, &cst))
                     .collect()
             };
+            state.in_constraint = false;
             state.finish_implicit_scope();
 
             let members = recover! {
@@ -630,12 +677,14 @@ fn lower_type_item(state: &mut State, context: &Context, item_id: TypeItemId, it
                         .collect()
                 };
 
+                state.in_constraint = true;
                 let constraints = recover! {
                     cst.class_constraints()?
                         .children()
                         .map(|cst| recursive::lower_type(state, context, &cst))
                         .collect()
                 };
+                state.in_constraint = false;
 
                 let variable_map: FxHashMap<&str, u8> = variables
                     .iter()

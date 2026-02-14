@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -18,4 +19,4 @@ Roles
 Identity = [Representational]
 
 Derived
-derive Show (&0 :: Type) => Show (Identity (&0 :: Type) :: Type)
+derive Show (a :: Type) => Show (Identity (a :: Type) :: Type)

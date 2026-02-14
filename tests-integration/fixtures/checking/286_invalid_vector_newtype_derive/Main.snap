@@ -1,0 +1,49 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+empty :: forall (f :: Type -> Type). Empty (f :: Type -> Type) => (f :: Type -> Type) Int
+Vector ::
+  forall (t5 :: Type) (n :: (t5 :: Type)) (a :: Type).
+    Array (a :: Type) -> Vector @(t5 :: Type) (n :: (t5 :: Type)) (a :: Type)
+InvalidVector ::
+  forall (t8 :: Type) (a :: Type) (n :: (t8 :: Type)).
+    Array (a :: Type) -> InvalidVector @(t8 :: Type) (a :: Type) (n :: (t8 :: Type))
+
+Types
+Empty :: (Type -> Type) -> Constraint
+Vector :: forall (t5 :: Type). (t5 :: Type) -> Type -> Type
+InvalidVector :: forall (t8 :: Type). Type -> (t8 :: Type) -> Type
+
+Data
+Vector
+  Quantified = :1
+  Kind = :0
+
+InvalidVector
+  Quantified = :1
+  Kind = :0
+
+
+Roles
+Vector = [Phantom, Representational]
+InvalidVector = [Representational, Phantom]
+
+Classes
+class Empty (f :: Type -> Type)
+
+Instances
+instance Empty (Array :: Type -> Type)
+  chain: 0
+
+Derived
+derive forall (t9 :: Type). Empty (Vector @(t9 :: Type) (n :: (t9 :: Type)) :: Type -> Type)
+
+Diagnostics
+error[InvalidNewtypeDeriveSkolemArguments]: Cannot derive newtype instance where skolemised arguments do not appear trailing in the inner type.
+  --> 13:1..13:50
+   |
+13 | derive newtype instance Empty (InvalidVector Int)
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

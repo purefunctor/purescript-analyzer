@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -9,12 +10,30 @@ Types
 Show :: Type -> Constraint
 
 Classes
-class Show (&0 :: Type)
+class Show (a :: Type)
 
 Instances
 instance Show (Boolean :: Type)
   chain: 0
 
-Errors
-CannotUnify { forall (a :: Type). (a :: Type) -> String, Boolean -> String } at [TermDeclaration(Idx::<TermItem>(1))]
-InstanceMemberTypeMismatch { expected: Boolean -> String, actual: forall (a :: Type). (a :: Type) -> String } at [TermDeclaration(Idx::<TermItem>(1))]
+Diagnostics
+error[CannotUnify]: Cannot unify '(~a :: Type)' with 'Boolean'
+  --> 6:1..8:18
+  |
+6 | instance Show Boolean where
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[CannotUnify]: Cannot unify '(~a :: Type) -> String' with 'Boolean -> String'
+  --> 6:1..8:18
+  |
+6 | instance Show Boolean where
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[CannotUnify]: Cannot unify 'forall (a :: Type). (a :: Type) -> String' with 'Boolean -> String'
+  --> 6:1..8:18
+  |
+6 | instance Show Boolean where
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[InstanceMemberTypeMismatch]: Instance member type mismatch: expected 'Boolean -> String', got 'forall (a :: Type). (a :: Type) -> String'
+  --> 6:1..8:18
+  |
+6 | instance Show Boolean where
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~

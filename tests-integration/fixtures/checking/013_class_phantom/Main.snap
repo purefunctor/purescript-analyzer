@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -9,4 +10,4 @@ Types
 Phantom :: forall (t0 :: Type). (t0 :: Type) -> Constraint
 
 Classes
-class Phantom (&1 :: (&0 :: Type))
+class Phantom (a :: (t0 :: Type))

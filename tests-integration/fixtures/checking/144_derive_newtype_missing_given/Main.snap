@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -18,7 +19,11 @@ Roles
 Identity = [Representational]
 
 Derived
-derive Show (Identity (&0 :: Type) :: Type)
+derive Show (Identity (a :: Type) :: Type)
 
-Errors
-NoInstanceFound { Show (&0 :: Type) } at [TermDeclaration(Idx::<TermItem>(1))]
+Diagnostics
+error[NoInstanceFound]: No instance found for: Show (a :: Type)
+  --> 7:1..7:42
+  |
+7 | derive newtype instance Show (Identity a)
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

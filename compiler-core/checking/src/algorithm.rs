@@ -15,6 +15,8 @@ pub mod constraint;
 /// Implements type class deriving.
 pub mod derive;
 
+pub mod exhaustiveness;
+
 /// Implements type folding for traversals that modify.
 pub mod fold;
 
@@ -45,6 +47,9 @@ pub mod substitute;
 /// Implements type inference and checking for [`lowering::ExpressionKind`].
 pub mod term;
 
+/// Implements equation checking and inference shared by value and let bindings.
+pub mod equation;
+
 /// Shared utilities for common type manipulation patterns.
 pub mod toolkit;
 
@@ -73,65 +78,31 @@ use crate::core::{Role, Type, TypeId};
 use crate::{CheckedModule, ExternalQueries};
 
 pub fn check_source(queries: &impl ExternalQueries, file_id: FileId) -> QueryResult<CheckedModule> {
-    let mut state = state::CheckState::default();
+    let mut state = state::CheckState::new(file_id);
     let context = state::CheckContext::new(queries, &mut state, file_id)?;
 
-    check_type_signatures(&mut state, &context)?;
-    check_type_definitions(&mut state, &context)?;
+    check_types(&mut state, &context)?;
+    type_item::commit_pending_types(&mut state, &context);
 
     check_term_signatures(&mut state, &context)?;
     check_instance_heads(&mut state, &context)?;
-    check_derive_heads(&mut state, &context)?;
+    let derive_results = check_derive_heads(&mut state, &context)?;
     check_value_groups(&mut state, &context)?;
     check_instance_members(&mut state, &context)?;
+    check_derive_members(&mut state, &context, &derive_results)?;
+
+    term_item::commit_pending_terms(&mut state, &context);
 
     Ok(state.checked)
 }
 
-/// See [`type_item::check_type_signature`]
+/// Checks all type declarations in topological order.
 ///
-/// Kind signatures are acyclic, and can be checked separately from the
-/// type definitions. Checking these early adds better information for
-/// inference, especially for mutually recursive type declarations.
+/// Within [`Scc::Mutual`], kind signatures are checked first so that items with
+/// signatures provide better information when inferring items with no signatures.
 ///
-/// Consider the following example:
-///
-/// ```purescript
-/// data F a = MkF (G a)
-///
-/// data G :: Int -> Type
-/// data G a = MkG (F a)
-/// ```
-///
-/// By checking the kind signature of `G` first, we can avoid allocating
-/// a unification variable for `G` when checking the mutually recursive
-/// declarations of `{F, G}`
-fn check_type_signatures<Q>(
-    state: &mut state::CheckState,
-    context: &state::CheckContext<Q>,
-) -> QueryResult<()>
-where
-    Q: ExternalQueries,
-{
-    for scc in &context.grouped.type_scc {
-        let items = match scc {
-            Scc::Base(id) | Scc::Recursive(id) => slice::from_ref(id),
-            Scc::Mutual(items) => items,
-        };
-        for id in items {
-            type_item::check_type_signature(state, context, *id)?;
-        }
-    }
-    Ok(())
-}
-
-/// See [`type_item::check_type_item`]
-///
-/// This function calls [`state::CheckState::with_type_group`] to insert
-/// placeholder unification variables for recursive binding groups. After
-/// checking a binding group, it calls [`type_item::commit_type_item`] to
-/// generalise the types and add them to [`state::CheckState::checked`].
-fn check_type_definitions<Q>(
+/// See [`type_item::check_type_signature`] and [`type_item::check_type_item`].
+fn check_types<Q>(
     state: &mut state::CheckState,
     context: &state::CheckContext<Q>,
 ) -> QueryResult<()>
@@ -141,11 +112,13 @@ where
     for scc in &context.grouped.type_scc {
         match scc {
             Scc::Base(id) => {
+                type_item::check_type_signature(state, context, *id)?;
                 if let Some(item) = type_item::check_type_item(state, context, *id)? {
                     type_item::commit_type_item(state, context, *id, item)?;
                 }
             }
             Scc::Recursive(id) => {
+                type_item::check_type_signature(state, context, *id)?;
                 state.with_type_group(context, [*id], |state| {
                     if let Some(item) = type_item::check_type_item(state, context, *id)? {
                         type_item::commit_type_item(state, context, *id, item)?;
@@ -154,6 +127,9 @@ where
                 })?;
             }
             Scc::Mutual(mutual) => {
+                for id in mutual {
+                    type_item::check_type_signature(state, context, *id)?;
+                }
                 state.with_type_group(context, mutual, |state| {
                     let mut items = vec![];
                     for &id in mutual {
@@ -277,7 +253,7 @@ where
 fn check_derive_heads<Q>(
     state: &mut state::CheckState,
     context: &state::CheckContext<Q>,
-) -> QueryResult<()>
+) -> QueryResult<Vec<derive::DeriveHeadResult>>
 where
     Q: ExternalQueries,
 {
@@ -285,6 +261,8 @@ where
         Scc::Base(item) | Scc::Recursive(item) => slice::from_ref(item),
         Scc::Mutual(items) => items.as_slice(),
     });
+
+    let mut results = vec![];
 
     for &item_id in items {
         let Some(TermItemIr::Derive { newtype, constraints, arguments, resolution }) =
@@ -311,9 +289,25 @@ where
             is_newtype: *newtype,
         };
 
-        derive::check_derive(state, context, check_derive)?;
+        if let Some(result) = derive::check_derive_head(state, context, check_derive)? {
+            results.push(result);
+        }
     }
 
+    Ok(results)
+}
+
+fn check_derive_members<Q>(
+    state: &mut state::CheckState,
+    context: &state::CheckContext<Q>,
+    derive_results: &[derive::DeriveHeadResult],
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    for result in derive_results {
+        derive::check_derive_member(state, context, result)?;
+    }
     Ok(())
 }
 
@@ -341,10 +335,11 @@ where
                 };
                 state.with_term_group(context, [*id], |state| {
                     if let Some(item) = term_item::check_value_group(state, context, value_group)? {
-                        term_item::commit_value_group(state, context, *id, item)?;
+                        term_item::commit_inferred_value_group(state, context, *id, item)?;
                     }
                     Ok(())
                 })?;
+                term_item::commit_checked_value_group(state, context, *id)?;
             }
             Scc::Mutual(mutual) => {
                 let value_groups =
@@ -373,13 +368,17 @@ where
                         }
                     }
                     for (item_id, group) in groups {
-                        term_item::commit_value_group(state, context, item_id, group)?;
+                        term_item::commit_inferred_value_group(state, context, item_id, group)?;
                     }
                     Ok(())
                 })?;
 
-                for value_group in with_signature {
-                    term_item::check_value_group(state, context, value_group)?;
+                for value_group in &with_signature {
+                    term_item::check_value_group(state, context, *value_group)?;
+                }
+
+                for value_group in &with_signature {
+                    term_item::commit_checked_value_group(state, context, value_group.item_id)?;
                 }
             }
         }
@@ -394,6 +393,11 @@ pub fn check_prim(queries: &impl ExternalQueries, file_id: FileId) -> QueryResul
     let lookup_type = |name: &str| {
         let prim_type = resolved.exports.lookup_type(name);
         prim_type.unwrap_or_else(|| unreachable!("invariant violated: {name} not in Prim"))
+    };
+
+    let lookup_class = |name: &str| {
+        let prim_class = resolved.exports.lookup_class(name);
+        prim_class.unwrap_or_else(|| unreachable!("invariant violated: {name} not in Prim"))
     };
 
     let type_core = {
@@ -431,10 +435,12 @@ pub fn check_prim(queries: &impl ExternalQueries, file_id: FileId) -> QueryResul
     insert_type("String", type_core);
     insert_type("Char", type_core);
     insert_type("Boolean", type_core);
-    insert_type("Partial", constraint_core);
     insert_type("Constraint", type_core);
     insert_type("Symbol", type_core);
     insert_type("Row", type_to_type_core);
+
+    let (_, partial_id) = lookup_class("Partial");
+    checked_module.types.insert(partial_id, constraint_core);
 
     let mut insert_roles = |name: &str, roles: &[Role]| {
         let (_, item_id) = lookup_type(name);

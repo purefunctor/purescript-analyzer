@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -31,8 +32,12 @@ Wrap = [Representational, Nominal]
 WrapNoFoldable = [Representational, Nominal]
 
 Derived
-derive Foldable (&0 :: Type -> Type) => Foldable (Wrap @Type (&0 :: Type -> Type) :: Type -> Type)
-derive Foldable (WrapNoFoldable @Type (&0 :: Type -> Type) :: Type -> Type)
+derive Foldable (f :: Type -> Type) => Foldable (Wrap @Type (f :: Type -> Type) :: Type -> Type)
+derive Foldable (WrapNoFoldable @Type (f :: Type -> Type) :: Type -> Type)
 
-Errors
-NoInstanceFound { Foldable (&0 :: Type -> Type) } at [TermDeclaration(Idx::<TermItem>(3))]
+Diagnostics
+error[NoInstanceFound]: No instance found for: Foldable (f :: Type -> Type)
+  --> 9:1..9:44
+  |
+9 | derive instance Foldable (WrapNoFoldable f)
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -34,17 +35,17 @@ bind ::
 testDo ::
   forall (m :: Type -> Type). Monad (m :: Type -> Type) => (m :: Type -> Type) (Tuple Int String)
 testDo' ::
-  forall (t55 :: Type -> Type).
-    Bind (t55 :: Type -> Type) => (t55 :: Type -> Type) (Tuple Int String)
+  forall (t52 :: Type -> Type).
+    Bind (t52 :: Type -> Type) => (t52 :: Type -> Type) (Tuple Int String)
 testAdo ::
   forall (f :: Type -> Type).
     Applicative (f :: Type -> Type) => (f :: Type -> Type) (Tuple Int String)
 testAdo' ::
-  forall (t85 :: Type -> Type).
-    Applicative (t85 :: Type -> Type) => (t85 :: Type -> Type) (Tuple Int String)
+  forall (t91 :: Type -> Type).
+    Applicative (t91 :: Type -> Type) => (t91 :: Type -> Type) (Tuple Int String)
 testDoDiscard :: forall (m :: Type -> Type). Monad (m :: Type -> Type) => (m :: Type -> Type) Int
 testDoDiscard' ::
-  forall (t101 :: Type -> Type). Discard (t101 :: Type -> Type) => (t101 :: Type -> Type) Int
+  forall (t111 :: Type -> Type). Discard (t111 :: Type -> Type) => (t111 :: Type -> Type) Int
 
 Types
 Tuple :: Type -> Type -> Type
@@ -65,12 +66,16 @@ Roles
 Tuple = [Representational, Representational]
 
 Classes
-class Functor (&0 :: Type -> Type)
-class Functor (&0 :: Type -> Type) <= Apply (&0 :: Type -> Type)
-class Apply (&0 :: Type -> Type) <= Applicative (&0 :: Type -> Type)
-class Applicative (&0 :: Type -> Type) <= Discard (&0 :: Type -> Type)
-class Applicative (&0 :: Type -> Type) <= Bind (&0 :: Type -> Type)
-class Bind (&0 :: Type -> Type) <= Monad (&0 :: Type -> Type)
+class Functor (f :: Type -> Type)
+class Functor (f :: Type -> Type) <= Apply (f :: Type -> Type)
+class Apply (f :: Type -> Type) <= Applicative (f :: Type -> Type)
+class Applicative (m :: Type -> Type) <= Discard (m :: Type -> Type)
+class Applicative (m :: Type -> Type) <= Bind (m :: Type -> Type)
+class Bind (m :: Type -> Type) <= Monad (m :: Type -> Type)
 
-Errors
-NoInstanceFound { Discard (&0 :: Type -> Type) } at [TermDeclaration(Idx::<TermItem>(10))]
+Diagnostics
+error[NoInstanceFound]: No instance found for: Discard (m :: Type -> Type)
+  --> 44:1..44:44
+   |
+44 | testDoDiscard :: forall m. Monad m => m Int
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
