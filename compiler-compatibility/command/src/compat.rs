@@ -271,10 +271,8 @@ pub fn check_all(packages_dir: &Path, resolved: &ResolvedSet, quiet: bool) -> Al
             )
             .entered();
 
-            let pkg_files =
-                package_files.get(package_name).map(|v| v.as_slice()).unwrap_or(&[]);
-            let version =
-                resolved.packages.get(package_name).cloned().unwrap_or_default();
+            let pkg_files = package_files.get(package_name).map(|v| v.as_slice()).unwrap_or(&[]);
+            let version = resolved.packages.get(package_name).cloned().unwrap_or_default();
 
             let result = if pkg_files.is_empty() {
                 // Synthetic error for missing package directory
@@ -282,10 +280,7 @@ pub fn check_all(packages_dir: &Path, resolved: &ResolvedSet, quiet: bool) -> Al
                     files: vec![FileResult {
                         error_count: 1,
                         warning_count: 0,
-                        output: format!(
-                            "{}: error: package directory not found\n",
-                            package_name
-                        ),
+                        output: format!("{}: error: package directory not found\n", package_name),
                     }],
                     total_errors: 1,
                     total_warnings: 0,
@@ -317,8 +312,7 @@ pub fn check_all(packages_dir: &Path, resolved: &ResolvedSet, quiet: bool) -> Al
             }
 
             // Classify: root cause vs cascaded
-            let deps =
-                resolved.dependencies.get(package_name).cloned().unwrap_or_default();
+            let deps = resolved.dependencies.get(package_name).cloned().unwrap_or_default();
             let failed_deps: Vec<String> = deps
                 .iter()
                 .filter(|d| outcomes.get(*d).is_some_and(|o| o.total_errors > 0))
