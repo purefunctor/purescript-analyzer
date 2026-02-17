@@ -110,6 +110,14 @@ pub enum Type {
     Unknown(SmolStrId),
 }
 
+/// The role of a type parameter for safe coercions.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Role {
+    Phantom,
+    Representational,
+    Nominal,
+}
+
 pub type ForallBinderId = interner::Id<ForallBinder>;
 pub type RowTypeId = interner::Id<RowType>;
 pub type SynonymId = interner::Id<Synonym>;

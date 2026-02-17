@@ -329,11 +329,17 @@ dependencies = [
 name = "checking2"
 version = "0.1.0"
 dependencies = [
+ "building-types",
  "files",
  "indexing",
  "interner",
  "lowering",
+ "parsing",
+ "resolving",
+ "rustc-hash 2.1.1",
  "smol_str",
+ "stabilizing",
+ "sugar",
 ]
 
 [[package]]

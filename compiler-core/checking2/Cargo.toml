@@ -4,8 +4,14 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+building-types = { version = "0.1.0", path = "../building-types" }
 files = { version = "0.1.0", path = "../files" }
 indexing = { version = "0.1.0", path = "../indexing" }
 interner = { version = "0.1.0", path = "../interner" }
 lowering = { version = "0.1.0", path = "../lowering" }
+parsing = { version = "0.1.0", path = "../parsing" }
+resolving = { version = "0.1.0", path = "../resolving" }
+rustc-hash = "2.1.1"
 smol_str = "0.3.5"
+stabilizing = { version = "0.1.0", path = "../stabilizing" }
+sugar = { version = "0.1.0", path = "../sugar" }
