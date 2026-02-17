@@ -333,6 +333,7 @@ dependencies = [
  "files",
  "indexing",
  "interner",
+ "itertools 0.14.0",
  "lowering",
  "parsing",
  "resolving",

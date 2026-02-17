@@ -1,11 +1,13 @@
 //! Implements core type structures.
 
 pub mod generalise;
+pub mod normalise;
 
 use std::sync::Arc;
 
 use files::FileId;
 use indexing::TypeItemId;
+use itertools::Itertools;
 use smol_str::SmolStr;
 
 /// A globally unique identity for a rigid type variable.
@@ -37,6 +39,14 @@ pub struct RowType {
     pub fields: Arc<[RowField]>,
     /// Closed row if [`None`]; Open row if [`Some`].
     pub tail: Option<TypeId>,
+}
+
+impl RowType {
+    pub fn new(fields: impl IntoIterator<Item = RowField>, tail: Option<TypeId>) -> RowType {
+        let mut fields = fields.into_iter().collect_vec();
+        fields.sort_by(|a, b| a.label.cmp(&b.label));
+        RowType { fields: Arc::from(fields), tail }
+    }
 }
 
 /// A field in a row type.
