@@ -3,37 +3,86 @@
 use files::FileId;
 
 use crate::CheckedModule;
-use crate::core::Name;
+use crate::core::{Depth, Name, TypeId};
 
-/// Yields globally unique [`Name`] values.
+/// Manages [`Name`] values for [`CheckState`].
 pub struct Names {
-    next: u32,
+    unique: u32,
     file: FileId,
 }
 
 impl Names {
     pub fn new(file: FileId) -> Names {
-        Names { next: 0, file }
+        Names { unique: 0, file }
     }
 
     pub fn fresh(&mut self) -> Name {
-        let unique = self.next;
-        self.next += 1;
+        let unique = self.unique;
+        self.unique += 1;
         Name { file: self.file, unique }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum UnificationState {
+    Unsolved,
+    Solved(TypeId),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub struct UnificationEntry {
+    pub depth: Depth,
+    pub kind: TypeId,
+    pub state: UnificationState,
+}
+
+/// Manages unification variables for [`CheckState`].
+#[derive(Debug, Default)]
+pub struct Unifications {
+    entries: Vec<UnificationEntry>,
+    unique: u32,
+}
+
+impl Unifications {
+    pub fn fresh(&mut self, depth: Depth, kind: TypeId) -> u32 {
+        let unique = self.unique;
+
+        self.unique += 1;
+        self.entries.push(UnificationEntry { depth, kind, state: UnificationState::Unsolved });
+
+        unique
+    }
+
+    pub fn get(&self, index: u32) -> &UnificationEntry {
+        &self.entries[index as usize]
+    }
+
+    pub fn get_mut(&mut self, index: u32) -> &mut UnificationEntry {
+        &mut self.entries[index as usize]
+    }
+
+    pub fn solve(&mut self, index: u32, solution: TypeId) {
+        self.get_mut(index).state = UnificationState::Solved(solution);
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = &UnificationEntry> {
+        self.entries.iter()
     }
 }
 
 /// The core state structure threaded through the algorithm.
 pub struct CheckState {
-    /// The output being built, populated by checking rules.
     pub checked: CheckedModule,
-
-    /// Produces fresh [`Name`] values for bound type variables.
     pub names: Names,
+    pub unifications: Unifications,
 }
 
 impl CheckState {
     pub fn new(file_id: FileId) -> CheckState {
-        CheckState { checked: Default::default(), names: Names::new(file_id) }
+        CheckState {
+            checked: Default::default(),
+            names: Names::new(file_id),
+            unifications: Default::default(),
+        }
     }
 }
