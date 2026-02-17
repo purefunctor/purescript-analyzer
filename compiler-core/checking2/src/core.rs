@@ -4,6 +4,7 @@ pub mod fold;
 pub mod generalise;
 pub mod normalise;
 pub mod substitute;
+pub mod unification;
 pub mod walk;
 
 use std::sync::Arc;
