@@ -1,6 +1,7 @@
 pub mod context;
 pub mod core;
-pub mod kind;
+pub mod source;
+pub mod state;
 
 use std::sync::Arc;
 
@@ -62,11 +63,16 @@ impl CheckedModule {
 
 pub fn check_module(queries: &impl ExternalQueries, file_id: FileId) -> QueryResult<CheckedModule> {
     let prim_id = queries.prim_id();
-    if file_id == prim_id {
-        check_prim(queries, prim_id)
-    } else {
-        Ok(CheckedModule::default())
-    }
+    if file_id == prim_id { check_prim(queries, prim_id) } else { check_source(queries, file_id) }
+}
+
+fn check_source(queries: &impl ExternalQueries, file_id: FileId) -> QueryResult<CheckedModule> {
+    let mut state = state::CheckState::new(file_id);
+    let context = context::CheckContext::new(queries, file_id)?;
+
+    source::check_type_items(&mut state, &context)?;
+
+    Ok(state.checked)
 }
 
 fn check_prim(queries: &impl ExternalQueries, file_id: FileId) -> QueryResult<CheckedModule> {

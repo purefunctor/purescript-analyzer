@@ -1,5 +1,7 @@
 //! Implements core type structures.
 
+pub mod generalise;
+
 use std::sync::Arc;
 
 use files::FileId;
