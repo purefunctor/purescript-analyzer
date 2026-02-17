@@ -326,6 +326,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "checking2"
+version = "0.1.0"
+dependencies = [
+ "files",
+ "indexing",
+ "interner",
+ "lowering",
+ "smol_str",
+]
+
+[[package]]
 name = "chrono"
 version = "0.4.43"
 source = "registry+https://github.com/rust-lang/crates.io-index"
