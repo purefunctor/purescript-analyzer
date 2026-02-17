@@ -11,9 +11,8 @@ use petgraph::graphmap::DiGraphMap;
 use rayon::prelude::*;
 use url::Url;
 
-use crate::loader;
-use crate::resolver;
 use crate::types::ResolvedSet;
+use crate::{loader, resolver};
 
 /// Result of checking a single file.
 pub struct FileResult {
