@@ -3,6 +3,7 @@
 pub mod fold;
 pub mod generalise;
 pub mod normalise;
+pub mod substitute;
 pub mod walk;
 
 use std::sync::Arc;
