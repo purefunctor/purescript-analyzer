@@ -5,7 +5,7 @@ use building_types::QueryResult;
 use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::substitute::SubstituteName;
-use crate::core::{Name, RowTypeId, Type, TypeId, normalise};
+use crate::core::{Depth, Name, RowTypeId, Type, TypeId, normalise, pretty};
 use crate::error::ErrorKind;
 use crate::state::{CheckState, UnificationEntry};
 
@@ -133,8 +133,8 @@ where
 
     let unifies = match (t1_core, t2_core) {
         // TODO: document impredicativity
-        (Type::Unification(id), _) => return solve(state, context, id, t2),
-        (_, Type::Unification(id)) => return solve(state, context, id, t1),
+        (Type::Unification(id), _) => return solve(state, context, t1, id, t2),
+        (_, Type::Unification(id)) => return solve(state, context, t2, id, t1),
 
         (
             Type::Application(t1_function, t1_argument),
@@ -237,9 +237,12 @@ where
     };
 
     if !unifies {
-        // TODO: pretty-print types for error messages
-        let t1 = context.queries.intern_smol_str("?".into());
-        let t2 = context.queries.intern_smol_str("?".into());
+        let t1 = pretty::print(state, context, t1);
+        let t1 = context.queries.intern_smol_str(t1);
+
+        let t2 = pretty::print(state, context, t2);
+        let t2 = context.queries.intern_smol_str(t2);
+
         state.insert_error(ErrorKind::CannotUnify { t1, t2 });
     }
 
@@ -250,7 +253,8 @@ where
 pub fn solve<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    unification_id: u32,
+    unification: TypeId,
+    id: u32,
     solution: TypeId,
 ) -> QueryResult<bool>
 where
@@ -258,29 +262,25 @@ where
 {
     let solution = normalise::normalise(state, context, solution)?;
 
-    match promote_type(state, context, unification_id, solution)? {
+    match promote_type(state, context, id, solution)? {
         PromoteResult::Ok => {}
-        PromoteResult::OccursCheck => {
-            // TODO: pretty-print types for error messages
-            let t1 = context.queries.intern_smol_str("?".into());
-            let t2 = context.queries.intern_smol_str("?".into());
-            state.insert_error(ErrorKind::CannotUnify { t1, t2 });
-            return Ok(false);
-        }
-        PromoteResult::SkolemEscape => {
-            // TODO: pretty-print types for error messages
-            let t1 = context.queries.intern_smol_str("?".into());
-            let t2 = context.queries.intern_smol_str("?".into());
+        PromoteResult::OccursCheck | PromoteResult::SkolemEscape => {
+            let t1 = pretty::print(state, context, unification);
+            let t1 = context.queries.intern_smol_str(t1);
+
+            let t2 = pretty::print(state, context, solution);
+            let t2 = context.queries.intern_smol_str(t2);
+
             state.insert_error(ErrorKind::CannotUnify { t1, t2 });
             return Ok(false);
         }
     }
 
-    let unification_kind = state.unifications.get(unification_id).kind;
+    let unification_kind = state.unifications.get(id).kind;
     // TODO: unify kinds once kind elaboration is available
     let _ = unification_kind;
 
-    state.unifications.solve(unification_id, solution);
+    state.unifications.solve(id, solution);
     Ok(true)
 }
 
@@ -322,16 +322,16 @@ impl PromoteResult {
 fn promote_type<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    unification_id: u32,
+    id: u32,
     solution: TypeId,
 ) -> QueryResult<PromoteResult>
 where
     Q: ExternalQueries,
 {
     struct PromotionState {
-        unification_id: u32,
-        unification_depth: crate::core::Depth,
-        bound_names: Vec<Name>,
+        id: u32,
+        depth: Depth,
+        names: Vec<Name>,
     }
 
     fn check<Q>(
@@ -374,9 +374,9 @@ where
                     return Ok(on_kind);
                 }
 
-                promote.bound_names.push(binder.name);
+                promote.names.push(binder.name);
                 let on_inner = check(promote, state, context, inner)?;
-                promote.bound_names.pop();
+                promote.names.pop();
 
                 Ok(on_inner)
             }
@@ -409,9 +409,9 @@ where
             }
 
             Type::Rigid(name, rigid_depth, kind) => {
-                if promote.bound_names.contains(&name) {
+                if promote.names.contains(&name) {
                     check(promote, state, context, kind)
-                } else if rigid_depth > promote.unification_depth {
+                } else if rigid_depth > promote.depth {
                     Ok(PromoteResult::SkolemEscape)
                 } else {
                     check(promote, state, context, kind)
@@ -420,7 +420,7 @@ where
 
             Type::Unification(id) => {
                 // Disallow `?t := ?t`
-                if id == promote.unification_id {
+                if id == promote.id {
                     return Ok(PromoteResult::OccursCheck);
                 }
                 // When solving `a` to a deeper unification variable `b`,
@@ -439,8 +439,8 @@ where
                 // at depth markers that are not in scope, and replaces
                 // them with unification variables that are in scope.
                 let UnificationEntry { depth, kind, .. } = *state.unifications.get(id);
-                if depth > promote.unification_depth {
-                    let promoted = state.unifications.fresh(promote.unification_depth, kind);
+                if depth > promote.depth {
+                    let promoted = state.unifications.fresh(promote.depth, kind);
                     let promoted = context.queries.intern_type(Type::Unification(promoted));
                     state.unifications.solve(id, promoted);
                 }
@@ -452,10 +452,10 @@ where
         }
     }
 
-    let unification_depth = state.unifications.get(unification_id).depth;
-    let bound_names = vec![];
+    let depth = state.unifications.get(id).depth;
+    let names = vec![];
 
-    let mut promote = PromotionState { unification_id, unification_depth, bound_names };
+    let mut promote = PromotionState { id, depth, names };
     check(&mut promote, state, context, solution)
 }
 
