@@ -4,9 +4,9 @@ use std::mem;
 
 use files::FileId;
 
-use crate::CheckedModule;
-use crate::core::{Depth, Name, TypeId};
+use crate::core::{Depth, Name, Type, TypeId};
 use crate::error::{CheckError, ErrorCrumb, ErrorKind};
+use crate::{CheckedModule, ExternalQueries};
 
 /// Manages [`Name`] values for [`CheckState`].
 pub struct Names {
@@ -113,6 +113,16 @@ impl CheckState {
         let result = f(self);
         self.crumbs.pop();
         result
+    }
+
+    pub fn fresh_unification(&mut self, queries: &impl ExternalQueries, kind: TypeId) -> TypeId {
+        let unification = self.unifications.fresh(self.depth, kind);
+        queries.intern_type(Type::Unification(unification))
+    }
+
+    pub fn fresh_rigid(&mut self, queries: &impl ExternalQueries, kind: TypeId) -> TypeId {
+        let name = self.names.fresh();
+        queries.intern_type(Type::Rigid(name, self.depth, kind))
     }
 
     pub fn insert_error(&mut self, kind: ErrorKind) {
