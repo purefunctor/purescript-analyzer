@@ -9,6 +9,7 @@ use files::FileId;
 use indexing::{IndexedModule, TermItemId, TypeItemId};
 use lowering::{GroupedModule, LoweredModule};
 use resolving::ResolvedModule;
+use smol_str::SmolStr;
 use stabilizing::StabilizedModule;
 use sugar::{Bracketed, Sectioned};
 
@@ -119,6 +120,12 @@ impl<'q, Q> CheckContext<'q, Q>
 where
     Q: ExternalQueries,
 {
+    /// Creates an [`Type::Unknown`] type with a descriptive label.
+    pub fn unknown(&self, label: &str) -> TypeId {
+        let label = self.queries.intern_smol_str(SmolStr::new(label));
+        self.queries.intern_type(Type::Unknown(label))
+    }
+
     /// Interns a [`Type::Application`] node.
     pub fn intern_application(&self, function: TypeId, argument: TypeId) -> TypeId {
         self.queries.intern_type(Type::Application(function, argument))

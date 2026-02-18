@@ -3,6 +3,7 @@
 use std::mem;
 
 use files::FileId;
+use rustc_hash::FxHashMap;
 
 use crate::core::{Depth, Name, SmolStrId, Type, TypeId};
 use crate::error::{CheckError, ErrorCrumb, ErrorKind};
@@ -74,6 +75,42 @@ impl Unifications {
     }
 }
 
+/// Tracks type variable bindings during kind inference.
+#[derive(Default)]
+pub struct KindScope {
+    forall_bindings: FxHashMap<lowering::TypeVariableBindingId, (Name, TypeId)>,
+    implicit_bindings:
+        FxHashMap<(lowering::GraphNodeId, lowering::ImplicitBindingId), (Name, TypeId)>,
+}
+
+impl KindScope {
+    pub fn bind_forall(&mut self, id: lowering::TypeVariableBindingId, name: Name, kind: TypeId) {
+        self.forall_bindings.insert(id, (name, kind));
+    }
+
+    pub fn lookup_forall(&self, id: lowering::TypeVariableBindingId) -> Option<(Name, TypeId)> {
+        self.forall_bindings.get(&id).copied()
+    }
+
+    pub fn bind_implicit(
+        &mut self,
+        node: lowering::GraphNodeId,
+        id: lowering::ImplicitBindingId,
+        name: Name,
+        kind: TypeId,
+    ) {
+        self.implicit_bindings.insert((node, id), (name, kind));
+    }
+
+    pub fn lookup_implicit(
+        &self,
+        node: lowering::GraphNodeId,
+        id: lowering::ImplicitBindingId,
+    ) -> Option<(Name, TypeId)> {
+        self.implicit_bindings.get(&(node, id)).copied()
+    }
+}
+
 /// The core state structure threaded through the algorithm.
 pub struct CheckState {
     pub checked: CheckedModule,
@@ -81,6 +118,7 @@ pub struct CheckState {
     pub names: Names,
     pub unifications: Unifications,
     pub implications: Implications,
+    pub kind_scope: KindScope,
     pub depth: Depth,
 
     pub crumbs: Vec<ErrorCrumb>,
@@ -93,6 +131,7 @@ impl CheckState {
             names: Names::new(file_id),
             unifications: Default::default(),
             implications: Default::default(),
+            kind_scope: Default::default(),
             depth: Depth(0),
             crumbs: Default::default(),
         }
