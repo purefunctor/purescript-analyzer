@@ -10,6 +10,7 @@ indexing = { version = "0.1.0", path = "../indexing" }
 interner = { version = "0.1.0", path = "../interner" }
 itertools = "0.14.0"
 lowering = { version = "0.1.0", path = "../lowering" }
+pretty = "0.12"
 parsing = { version = "0.1.0", path = "../parsing" }
 resolving = { version = "0.1.0", path = "../resolving" }
 rustc-hash = "2.1.1"

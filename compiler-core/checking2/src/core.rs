@@ -3,6 +3,7 @@
 pub mod fold;
 pub mod generalise;
 pub mod normalise;
+pub mod pretty;
 pub mod substitute;
 pub mod unification;
 pub mod walk;
