@@ -32,12 +32,14 @@ impl Depth {
 }
 
 /// Carries information about a type variable under a forall.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ForallBinder {
     /// Whether this binder is visible to type applications.
     pub visible: bool,
     /// The unique identity attached to the type variable.
     pub name: Name,
+    /// The source-level text of the type variable.
+    pub text: SmolStr,
     /// The kind of the type variable.
     pub kind: TypeId,
 }
