@@ -1,7 +1,9 @@
 //! Implements core type structures.
 
+pub mod fold;
 pub mod generalise;
 pub mod normalise;
+pub mod walk;
 
 use std::sync::Arc;
 
