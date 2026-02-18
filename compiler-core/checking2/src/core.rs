@@ -112,7 +112,7 @@ pub enum Type {
     Row(RowTypeId),
 
     /// A bound skolem variable that can only unify with itself.
-    Rigid(Name, TypeId),
+    Rigid(Name, Depth, TypeId),
     /// A unification variable that can be solved to another [`Type`].
     Unification(u32),
 

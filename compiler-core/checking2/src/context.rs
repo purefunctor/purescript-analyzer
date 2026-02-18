@@ -14,7 +14,7 @@ use sugar::{Bracketed, Sectioned};
 
 use crate::ExternalQueries;
 use crate::core::{
-    ForallBinder, ForallBinderId, Name, RowType, RowTypeId, Synonym, SynonymId, Type, TypeId,
+    Depth, ForallBinder, ForallBinderId, Name, RowType, RowTypeId, Synonym, SynonymId, Type, TypeId,
 };
 
 /// The read-only environment threaded through the type checking algorithm.
@@ -171,8 +171,8 @@ where
     }
 
     /// Interns a [`Type::Rigid`] node.
-    pub fn intern_rigid(&self, name: Name, kind: TypeId) -> TypeId {
-        self.queries.intern_type(Type::Rigid(name, kind))
+    pub fn intern_rigid(&self, name: Name, depth: Depth, kind: TypeId) -> TypeId {
+        self.queries.intern_type(Type::Rigid(name, depth, kind))
     }
 
     /// Interns a [`Type::Application`]-based function.
