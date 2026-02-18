@@ -5,9 +5,9 @@ use building_types::QueryResult;
 use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::substitute::SubstituteName;
-use crate::core::{RowTypeId, Type, TypeId, normalise};
+use crate::core::{Name, RowTypeId, Type, TypeId, normalise};
 use crate::error::ErrorKind;
-use crate::state::CheckState;
+use crate::state::{CheckState, UnificationEntry};
 
 /// Determines if constraints are elaborated during [`subtype`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -247,7 +247,7 @@ where
 }
 
 /// Solves a unification variable to a given type.
-fn solve<Q>(
+pub fn solve<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     unification_id: u32,
@@ -256,8 +256,207 @@ fn solve<Q>(
 where
     Q: ExternalQueries,
 {
-    let _ = (state, context, unification_id, solution);
-    Ok(false)
+    let solution = normalise::normalise(state, context, solution)?;
+
+    match promote_type(state, context, unification_id, solution)? {
+        PromoteResult::Ok => {}
+        PromoteResult::OccursCheck => {
+            // TODO: pretty-print types for error messages
+            let t1 = context.queries.intern_smol_str("?".into());
+            let t2 = context.queries.intern_smol_str("?".into());
+            state.insert_error(ErrorKind::CannotUnify { t1, t2 });
+            return Ok(false);
+        }
+        PromoteResult::SkolemEscape => {
+            // TODO: pretty-print types for error messages
+            let t1 = context.queries.intern_smol_str("?".into());
+            let t2 = context.queries.intern_smol_str("?".into());
+            state.insert_error(ErrorKind::CannotUnify { t1, t2 });
+            return Ok(false);
+        }
+    }
+
+    let unification_kind = state.unifications.get(unification_id).kind;
+    // TODO: unify kinds once kind elaboration is available
+    let _ = unification_kind;
+
+    state.unifications.solve(unification_id, solution);
+    Ok(true)
+}
+
+enum PromoteResult {
+    Ok,
+    OccursCheck,
+    SkolemEscape,
+}
+
+impl PromoteResult {
+    fn and_then(
+        self,
+        f: impl FnOnce() -> QueryResult<PromoteResult>,
+    ) -> QueryResult<PromoteResult> {
+        match self {
+            PromoteResult::Ok => f(),
+            result => Ok(result),
+        }
+    }
+}
+
+/// Checks that solving a unification variable is safe.
+///
+/// This function has several responsibilities:
+/// - the [occurs check], where a solution that contains the unification
+///   variable being solved is rejected. This avoids infinite types;
+/// - the [skolem escape check], where a solution that contains a rigid
+///   type variable deeper than the unification variable is rejected;
+/// - lastly, promotion which solves deeper unification variables into
+///   fresh unification variables as shallow as the one being solved.
+///
+/// Since PureScript is an impredicative language i.e. it allows unification
+/// variables to be solved to [`Type::Forall`], we keep track of the names
+/// bound in the context specifically to allow `?t := forall a. a -> a` to
+/// skip the skolem escape check completely.
+///
+/// [occurs check]: PromoteResult::OccursCheck
+/// [skolem escape check]: PromoteResult::SkolemEscape
+fn promote_type<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    unification_id: u32,
+    solution: TypeId,
+) -> QueryResult<PromoteResult>
+where
+    Q: ExternalQueries,
+{
+    struct PromotionState {
+        unification_id: u32,
+        unification_depth: crate::core::Depth,
+        bound_names: Vec<Name>,
+    }
+
+    fn check<Q>(
+        promote: &mut PromotionState,
+        state: &mut CheckState,
+        context: &CheckContext<Q>,
+        id: TypeId,
+    ) -> QueryResult<PromoteResult>
+    where
+        Q: ExternalQueries,
+    {
+        let id = normalise::normalise(state, context, id)?;
+        let t = context.queries.lookup_type(id);
+
+        match t {
+            Type::Application(function, argument) | Type::KindApplication(function, argument) => {
+                check(promote, state, context, function)?
+                    .and_then(|| check(promote, state, context, argument))
+            }
+
+            Type::OperatorApplication(_, _, left, right) => check(promote, state, context, left)?
+                .and_then(|| check(promote, state, context, right)),
+
+            Type::SynonymApplication(synonym_id) => {
+                let synonym = context.lookup_synonym(synonym_id);
+                for &argument in synonym.arguments.iter() {
+                    let result = check(promote, state, context, argument)?;
+                    if !matches!(result, PromoteResult::Ok) {
+                        return Ok(result);
+                    }
+                }
+                Ok(PromoteResult::Ok)
+            }
+
+            Type::Forall(binder_id, inner) => {
+                let binder = context.lookup_forall_binder(binder_id);
+
+                let on_kind = check(promote, state, context, binder.kind)?;
+                if !matches!(on_kind, PromoteResult::Ok) {
+                    return Ok(on_kind);
+                }
+
+                promote.bound_names.push(binder.name);
+                let on_inner = check(promote, state, context, inner)?;
+                promote.bound_names.pop();
+
+                Ok(on_inner)
+            }
+
+            Type::Constrained(constraint, inner) => check(promote, state, context, constraint)?
+                .and_then(|| check(promote, state, context, inner)),
+
+            Type::Function(argument, result) => check(promote, state, context, argument)?
+                .and_then(|| check(promote, state, context, result)),
+
+            Type::Kinded(inner, kind) => check(promote, state, context, inner)?
+                .and_then(|| check(promote, state, context, kind)),
+
+            Type::Constructor(_, _) | Type::OperatorConstructor(_, _) => Ok(PromoteResult::Ok),
+            Type::Integer(_) | Type::String(_, _) => Ok(PromoteResult::Ok),
+
+            Type::Row(row_id) => {
+                let row = context.lookup_row_type(row_id);
+                for field in row.fields.iter() {
+                    let on_field = check(promote, state, context, field.id)?;
+                    if !matches!(on_field, PromoteResult::Ok) {
+                        return Ok(on_field);
+                    }
+                }
+                if let Some(tail) = row.tail {
+                    check(promote, state, context, tail)
+                } else {
+                    Ok(PromoteResult::Ok)
+                }
+            }
+
+            Type::Rigid(name, rigid_depth, kind) => {
+                if promote.bound_names.contains(&name) {
+                    check(promote, state, context, kind)
+                } else if rigid_depth > promote.unification_depth {
+                    Ok(PromoteResult::SkolemEscape)
+                } else {
+                    check(promote, state, context, kind)
+                }
+            }
+
+            Type::Unification(id) => {
+                // Disallow `?t := ?t`
+                if id == promote.unification_id {
+                    return Ok(PromoteResult::OccursCheck);
+                }
+                // When solving `a` to a deeper unification variable `b`,
+                //
+                //   ?a[0] := ?b[1]
+                //
+                // we create a fresh variable `c` as shallow as `a`,
+                //
+                //   ?b[1] := ?c[0]
+                //
+                // which would be pruned into the final solution
+                //
+                //   ?a[0] := ?c[0]
+                //
+                // This process eliminates unsolved unification variables
+                // at depth markers that are not in scope, and replaces
+                // them with unification variables that are in scope.
+                let UnificationEntry { depth, kind, .. } = *state.unifications.get(id);
+                if depth > promote.unification_depth {
+                    let promoted = state.unifications.fresh(promote.unification_depth, kind);
+                    let promoted = context.queries.intern_type(Type::Unification(promoted));
+                    state.unifications.solve(id, promoted);
+                }
+
+                Ok(PromoteResult::Ok)
+            }
+
+            Type::Free(_) | Type::Unknown(_) => Ok(PromoteResult::Ok),
+        }
+    }
+
+    let unification_depth = state.unifications.get(unification_id).depth;
+    let bound_names = vec![];
+
+    let mut promote = PromotionState { unification_id, unification_depth, bound_names };
+    check(&mut promote, state, context, solution)
 }
 
 fn unify_rows<Q>(
