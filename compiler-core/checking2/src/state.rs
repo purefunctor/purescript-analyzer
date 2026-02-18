@@ -4,6 +4,7 @@ use files::FileId;
 
 use crate::CheckedModule;
 use crate::core::{Depth, Name, TypeId};
+use crate::error::{CheckError, ErrorCrumb, ErrorKind};
 
 /// Manages [`Name`] values for [`CheckState`].
 pub struct Names {
@@ -73,8 +74,11 @@ impl Unifications {
 /// The core state structure threaded through the algorithm.
 pub struct CheckState {
     pub checked: CheckedModule,
+
     pub names: Names,
     pub unifications: Unifications,
+
+    pub crumbs: Vec<ErrorCrumb>,
 }
 
 impl CheckState {
@@ -83,6 +87,22 @@ impl CheckState {
             checked: Default::default(),
             names: Names::new(file_id),
             unifications: Default::default(),
+            crumbs: Default::default(),
         }
+    }
+
+    pub fn with_error_crumb<F, T>(&mut self, crumb: ErrorCrumb, f: F) -> T
+    where
+        F: FnOnce(&mut CheckState) -> T,
+    {
+        self.crumbs.push(crumb);
+        let result = f(self);
+        self.crumbs.pop();
+        result
+    }
+
+    pub fn insert_error(&mut self, kind: ErrorKind) {
+        let crumbs = self.crumbs.iter().copied().collect();
+        self.checked.errors.push(CheckError { kind, crumbs });
     }
 }

@@ -1,5 +1,6 @@
 pub mod context;
 pub mod core;
+pub mod error;
 pub mod safety;
 pub mod source;
 pub mod state;
@@ -16,6 +17,7 @@ use smol_str::SmolStr;
 use crate::core::{
     ForallBinder, ForallBinderId, Role, RowType, RowTypeId, Synonym, SynonymId, Type, TypeId,
 };
+use crate::error::CheckError;
 
 pub trait ExternalQueries:
     QueryProxy<
@@ -50,6 +52,7 @@ pub trait ExternalQueries:
 pub struct CheckedModule {
     pub types: FxHashMap<TypeItemId, TypeId>,
     pub roles: FxHashMap<TypeItemId, Arc<[Role]>>,
+    pub errors: Vec<CheckError>,
 }
 
 impl CheckedModule {
