@@ -81,12 +81,8 @@ where
         }
 
         (Type::Constrained(constraint, inner), _) if mode == ElaborationMode::Yes => {
-            // TODO: implication constraints
-            //
-            // state.push_wanted(constraint);
-            // subtype_with_mode(state, context, inner, t2, mode)
-            let _ = (constraint, inner);
-            Ok(false)
+            state.push_wanted(constraint);
+            subtype_with_mode(state, context, mode, inner, t2)
         }
 
         (

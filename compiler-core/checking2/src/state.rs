@@ -6,6 +6,7 @@ use files::FileId;
 
 use crate::core::{Depth, Name, Type, TypeId};
 use crate::error::{CheckError, ErrorCrumb, ErrorKind};
+use crate::implication::Implications;
 use crate::{CheckedModule, ExternalQueries};
 
 /// Manages [`Name`] values for [`CheckState`].
@@ -79,6 +80,7 @@ pub struct CheckState {
 
     pub names: Names,
     pub unifications: Unifications,
+    pub implications: Implications,
     pub depth: Depth,
 
     pub crumbs: Vec<ErrorCrumb>,
@@ -90,6 +92,7 @@ impl CheckState {
             checked: Default::default(),
             names: Names::new(file_id),
             unifications: Default::default(),
+            implications: Default::default(),
             depth: Depth(0),
             crumbs: Default::default(),
         }
@@ -128,5 +131,20 @@ impl CheckState {
     pub fn insert_error(&mut self, kind: ErrorKind) {
         let crumbs = self.crumbs.iter().copied().collect();
         self.checked.errors.push(CheckError { kind, crumbs });
+    }
+
+    pub fn push_wanted(&mut self, constraint: TypeId) {
+        self.implications.current_mut().wanted.push_back(constraint);
+    }
+
+    pub fn push_given(&mut self, constraint: TypeId) {
+        self.implications.current_mut().given.push(constraint);
+    }
+
+    pub fn with_implication<T>(&mut self, f: impl FnOnce(&mut CheckState) -> T) -> T {
+        let id = self.implications.push();
+        let result = f(self);
+        self.implications.pop(id);
+        result
     }
 }
