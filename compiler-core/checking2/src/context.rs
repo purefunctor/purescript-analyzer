@@ -13,7 +13,9 @@ use stabilizing::StabilizedModule;
 use sugar::{Bracketed, Sectioned};
 
 use crate::ExternalQueries;
-use crate::core::{Type, TypeId};
+use crate::core::{
+    ForallBinder, ForallBinderId, Name, RowType, RowTypeId, Synonym, SynonymId, Type, TypeId,
+};
 
 /// The read-only environment threaded through the type checking algorithm.
 ///
@@ -113,7 +115,122 @@ where
     }
 }
 
-struct PrimLookup<'r, 'q, Q: ExternalQueries> {
+impl<'q, Q> CheckContext<'q, Q>
+where
+    Q: ExternalQueries,
+{
+    /// Interns a [`Type::Application`] node.
+    pub fn intern_application(&self, function: TypeId, argument: TypeId) -> TypeId {
+        self.queries.intern_type(Type::Application(function, argument))
+    }
+
+    /// Interns a [`Type::KindApplication`] node.
+    pub fn intern_kind_application(&self, function: TypeId, argument: TypeId) -> TypeId {
+        self.queries.intern_type(Type::KindApplication(function, argument))
+    }
+
+    /// Interns a [`Type::OperatorApplication`] node.
+    pub fn intern_operator_application(
+        &self,
+        file_id: FileId,
+        type_id: TypeItemId,
+        left: TypeId,
+        right: TypeId,
+    ) -> TypeId {
+        self.queries.intern_type(Type::OperatorApplication(file_id, type_id, left, right))
+    }
+
+    /// Interns a [`Type::SynonymApplication`] node.
+    pub fn intern_synonym_application(&self, synonym_id: SynonymId) -> TypeId {
+        self.queries.intern_type(Type::SynonymApplication(synonym_id))
+    }
+
+    /// Interns a [`Type::Forall`] node.
+    pub fn intern_forall(&self, binder_id: ForallBinderId, inner: TypeId) -> TypeId {
+        self.queries.intern_type(Type::Forall(binder_id, inner))
+    }
+
+    /// Interns a [`Type::Constrained`] node.
+    pub fn intern_constrained(&self, constraint: TypeId, inner: TypeId) -> TypeId {
+        self.queries.intern_type(Type::Constrained(constraint, inner))
+    }
+
+    /// Interns a [`Type::Function`] node.
+    pub fn intern_function(&self, argument: TypeId, result: TypeId) -> TypeId {
+        self.queries.intern_type(Type::Function(argument, result))
+    }
+
+    /// Interns a [`Type::Kinded`] node.
+    pub fn intern_kinded(&self, inner: TypeId, kind: TypeId) -> TypeId {
+        self.queries.intern_type(Type::Kinded(inner, kind))
+    }
+
+    /// Interns a [`Type::Row`] node.
+    pub fn intern_row(&self, row_id: RowTypeId) -> TypeId {
+        self.queries.intern_type(Type::Row(row_id))
+    }
+
+    /// Interns a [`Type::Rigid`] node.
+    pub fn intern_rigid(&self, name: Name, kind: TypeId) -> TypeId {
+        self.queries.intern_type(Type::Rigid(name, kind))
+    }
+
+    /// Interns a [`Type::Application`]-based function.
+    ///
+    /// The types `Function a b` and `a -> b` are equivalent, represented by
+    /// [`Type::Application`] and [`Type::Function`] respectively. Normalising
+    /// into the application-based form is generally more useful, such as in
+    /// the following example:
+    ///
+    /// ```text
+    /// unify(?function_a b, a -> b)
+    ///   unify(?function_a b, Function a b) = [ ?function_a := Function a ]
+    /// ```
+    pub fn intern_function_application(&self, argument: TypeId, result: TypeId) -> TypeId {
+        let function_argument = self.intern_application(self.prim.function, argument);
+        self.intern_application(function_argument, result)
+    }
+
+    /// Looks up the [`Type`] for the given [`TypeId`].
+    pub fn lookup_type(&self, id: TypeId) -> Type {
+        self.queries.lookup_type(id)
+    }
+
+    /// Looks up the [`ForallBinder`] for the given [`ForallBinderId`].
+    pub fn lookup_forall_binder(&self, id: ForallBinderId) -> ForallBinder {
+        self.queries.lookup_forall_binder(id)
+    }
+
+    /// Looks up the [`RowType`] for the given [`RowTypeId`].
+    pub fn lookup_row_type(&self, id: RowTypeId) -> RowType {
+        self.queries.lookup_row_type(id)
+    }
+
+    /// Looks up the [`Synonym`] for the given [`SynonymId`].
+    pub fn lookup_synonym(&self, id: SynonymId) -> Synonym {
+        self.queries.lookup_synonym(id)
+    }
+
+    /// Interns a [`ForallBinder`], returning its [`ForallBinderId`].
+    pub fn intern_forall_binder(&self, binder: ForallBinder) -> ForallBinderId {
+        self.queries.intern_forall_binder(binder)
+    }
+
+    /// Interns a [`RowType`], returning its [`RowTypeId`].
+    pub fn intern_row_type(&self, row: RowType) -> RowTypeId {
+        self.queries.intern_row_type(row)
+    }
+
+    /// Interns a [`Synonym`], returning its [`SynonymId`].
+    pub fn intern_synonym(&self, synonym: Synonym) -> SynonymId {
+        self.queries.intern_synonym(synonym)
+    }
+}
+
+struct PrimLookup<'r, 'q, Q>
+where
+    Q: ExternalQueries,
+{
     resolved: &'r ResolvedModule,
     queries: &'q Q,
     module_name: &'static str,
