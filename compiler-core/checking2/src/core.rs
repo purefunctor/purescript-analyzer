@@ -24,6 +24,12 @@ pub struct Name {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Depth(pub u32);
 
+impl Depth {
+    pub fn increment(self) -> Depth {
+        Depth(self.0 + 1)
+    }
+}
+
 /// Carries information about a type variable under a forall.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ForallBinder {

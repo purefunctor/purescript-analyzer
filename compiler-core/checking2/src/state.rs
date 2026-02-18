@@ -1,5 +1,7 @@
 //! Implements the algorithm's core state structures.
 
+use std::mem;
+
 use files::FileId;
 
 use crate::CheckedModule;
@@ -77,6 +79,7 @@ pub struct CheckState {
 
     pub names: Names,
     pub unifications: Unifications,
+    pub depth: Depth,
 
     pub crumbs: Vec<ErrorCrumb>,
 }
@@ -87,8 +90,19 @@ impl CheckState {
             checked: Default::default(),
             names: Names::new(file_id),
             unifications: Default::default(),
+            depth: Depth(0),
             crumbs: Default::default(),
         }
+    }
+
+    pub fn with_depth<T>(&mut self, f: impl FnOnce(&mut CheckState) -> T) -> T {
+        let depth = self.depth.increment();
+
+        let previous = mem::replace(&mut self.depth, depth);
+        let result = f(self);
+        self.depth = previous;
+
+        result
     }
 
     pub fn with_error_crumb<F, T>(&mut self, crumb: ErrorCrumb, f: F) -> T
