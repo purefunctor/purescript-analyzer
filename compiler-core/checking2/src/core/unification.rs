@@ -1,11 +1,15 @@
 //! Implements the subtyping and unification algorithms.
 
+use std::sync::Arc;
+
 use building_types::QueryResult;
+use itertools::{EitherOrBoth, Itertools};
+use smol_str::SmolStr;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::substitute::SubstituteName;
-use crate::core::{Depth, Name, RowTypeId, Type, TypeId, normalise, pretty};
+use crate::core::{Depth, Name, RowField, RowType, RowTypeId, Type, TypeId, normalise, pretty};
 use crate::error::ErrorKind;
 use crate::state::{CheckState, UnificationEntry};
 
@@ -464,9 +468,28 @@ fn unify_rows<Q>(
 where
     Q: ExternalQueries,
 {
-    // TODO: implement row unification
-    let _ = (state, context, t1, t2);
-    Ok(false)
+    let t1_row = context.lookup_row_type(t1);
+    let t2_row = context.lookup_row_type(t2);
+
+    let (left_only, right_only, ok) = partition_row_fields(state, context, &t1_row, &t2_row)?;
+
+    if !ok {
+        return Ok(false);
+    }
+
+    if t1_row.tail.is_none() && t2_row.tail.is_none() {
+        return Ok(left_only.is_empty() && right_only.is_empty());
+    }
+
+    if t2_row.tail.is_none() && !left_only.is_empty() {
+        return Ok(false);
+    }
+
+    if t1_row.tail.is_none() && !right_only.is_empty() {
+        return Ok(false);
+    }
+
+    unify_row_tails(state, context, t1_row.tail, t2_row.tail, left_only, right_only)
 }
 
 fn subtype_rows<Q>(
@@ -479,7 +502,132 @@ fn subtype_rows<Q>(
 where
     Q: ExternalQueries,
 {
-    // TODO: implement row subtyping
-    let _ = (state, context, mode, t1, t2);
-    Ok(false)
+    let t1_row = context.lookup_row_type(t1);
+    let t2_row = context.lookup_row_type(t2);
+
+    let (left_only, right_only, ok) = partition_row_fields_with(
+        state,
+        context,
+        &t1_row,
+        &t2_row,
+        |state, context, left, right| subtype_with_mode(state, context, mode, left, right),
+    )?;
+
+    if !ok {
+        return Ok(false);
+    }
+
+    let mut failed = false;
+
+    if t1_row.tail.is_none() && !right_only.is_empty() {
+        let labels = Arc::from_iter(right_only.iter().map(|field| SmolStr::clone(&field.label)));
+        state.insert_error(ErrorKind::PropertyIsMissing { labels });
+        failed = true;
+    }
+
+    if t2_row.tail.is_none() && !left_only.is_empty() {
+        let labels = Arc::from_iter(left_only.iter().map(|field| SmolStr::clone(&field.label)));
+        state.insert_error(ErrorKind::AdditionalProperty { labels });
+        failed = true;
+    }
+
+    if failed {
+        return Ok(false);
+    }
+
+    unify_row_tails(state, context, t1_row.tail, t2_row.tail, left_only, right_only)
+}
+
+fn partition_row_fields<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    t1_row: &RowType,
+    t2_row: &RowType,
+) -> QueryResult<(Vec<RowField>, Vec<RowField>, bool)>
+where
+    Q: ExternalQueries,
+{
+    partition_row_fields_with(state, context, t1_row, t2_row, unify)
+}
+
+fn partition_row_fields_with<Q, F>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    t1_row: &RowType,
+    t2_row: &RowType,
+    mut field_check: F,
+) -> QueryResult<(Vec<RowField>, Vec<RowField>, bool)>
+where
+    Q: ExternalQueries,
+    F: FnMut(&mut CheckState, &CheckContext<Q>, TypeId, TypeId) -> QueryResult<bool>,
+{
+    let mut extras_left = vec![];
+    let mut extras_right = vec![];
+    let mut ok = true;
+
+    let t1_fields = t1_row.fields.iter();
+    let t2_fields = t2_row.fields.iter();
+
+    for field in t1_fields.merge_join_by(t2_fields, |left, right| left.label.cmp(&right.label)) {
+        match field {
+            EitherOrBoth::Both(left, right) => {
+                if !field_check(state, context, left.id, right.id)? {
+                    ok = false;
+                }
+            }
+            EitherOrBoth::Left(left) => extras_left.push(left.clone()),
+            EitherOrBoth::Right(right) => extras_right.push(right.clone()),
+        }
+    }
+
+    Ok((extras_left, extras_right, ok))
+}
+
+fn unify_row_tails<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    t1_tail: Option<TypeId>,
+    t2_tail: Option<TypeId>,
+    extras_left: Vec<RowField>,
+    extras_right: Vec<RowField>,
+) -> QueryResult<bool>
+where
+    Q: ExternalQueries,
+{
+    match (t1_tail, t2_tail) {
+        (None, None) => Ok(true),
+
+        (Some(t1_tail), None) => {
+            let row = RowType::new(extras_right, None);
+            let row_id = context.intern_row_type(row);
+            let row_ty = context.intern_row(row_id);
+            unify(state, context, t1_tail, row_ty)
+        }
+
+        (None, Some(t2_tail)) => {
+            let row = RowType::new(extras_left, None);
+            let row_id = context.intern_row_type(row);
+            let row_ty = context.intern_row(row_id);
+            unify(state, context, t2_tail, row_ty)
+        }
+
+        (Some(t1_tail), Some(t2_tail)) => {
+            if extras_left.is_empty() && extras_right.is_empty() {
+                return unify(state, context, t1_tail, t2_tail);
+            }
+
+            let tail = Some(state.fresh_unification(context.queries, context.prim.row_type));
+
+            let left_tail_row = RowType::new(extras_right, tail);
+            let left_tail_row_id = context.intern_row_type(left_tail_row);
+            let left_tail_ty = context.intern_row(left_tail_row_id);
+
+            let right_tail_row = RowType::new(extras_left, tail);
+            let right_tail_row_id = context.intern_row_type(right_tail_row);
+            let right_tail_ty = context.intern_row(right_tail_row_id);
+
+            Ok(unify(state, context, t1_tail, left_tail_ty)?
+                && unify(state, context, t2_tail, right_tail_ty)?)
+        }
+    }
 }
