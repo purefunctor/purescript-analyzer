@@ -30,18 +30,25 @@ where
     Q: ExternalQueries,
 {
     state.with_error_crumb(ErrorCrumb::CheckingKind(source_type), |state| {
-        let (inferred_type, inferred_kind) = infer_kind(state, context, source_type)?;
-        let (inferred_type, inferred_kind) = instantiate_kind_applications(
-            state,
-            context,
-            inferred_type,
-            inferred_kind,
-            expected_kind,
-        )?;
-
-        unification::subtype(state, context, inferred_kind, expected_kind)?;
-        Ok((inferred_type, inferred_kind))
+        check_kind_core(state, context, source_type, expected_kind)
     })
+}
+
+fn check_kind_core<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    source_type: lowering::TypeId,
+    expected_kind: TypeId,
+) -> QueryResult<(TypeId, TypeId)>
+where
+    Q: ExternalQueries,
+{
+    let (inferred_type, inferred_kind) = infer_kind(state, context, source_type)?;
+    let (inferred_type, inferred_kind) =
+        instantiate_kind_applications(state, context, inferred_type, inferred_kind, expected_kind)?;
+
+    unification::subtype(state, context, inferred_kind, expected_kind)?;
+    Ok((inferred_type, inferred_kind))
 }
 
 pub fn infer_kind<Q>(
@@ -53,256 +60,257 @@ where
     Q: ExternalQueries,
 {
     state.with_error_crumb(ErrorCrumb::InferringKind(id), |state| {
-        let unknown = |message: &str| {
-            let u = context.unknown(message);
-            (u, u)
-        };
+        infer_kind_core(state, context, id)
+    })
+}
 
-        let Some(kind) = context.lowered.info.get_type_kind(id) else {
-            return Ok(unknown("missing syntax"));
-        };
+fn infer_kind_core<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    id: lowering::TypeId,
+) -> QueryResult<(TypeId, TypeId)>
+where
+    Q: ExternalQueries,
+{
+    let unknown = |message: &str| {
+        let u = context.unknown(message);
+        (u, u)
+    };
 
-        match kind {
-            lowering::TypeKind::ApplicationChain { function, arguments } => {
-                let Some(function) = function else {
-                    return Ok(unknown("missing application function"));
-                };
+    let Some(kind) = context.lowered.info.get_type_kind(id) else {
+        return Ok(unknown("missing syntax"));
+    };
 
-                if let Some(synonym) =
-                    synonym::parse_synonym_application(state, context, *function)?
-                {
-                    return synonym::infer_synonym_application(
-                        state, context, id, synonym, arguments,
-                    );
-                }
+    match kind {
+        lowering::TypeKind::ApplicationChain { function, arguments } => {
+            let Some(function) = function else {
+                return Ok(unknown("missing application function"));
+            };
 
-                let (mut t, mut k) = infer_kind(state, context, *function)?;
+            if let Some(synonym) = synonym::parse_synonym_application(state, context, *function)? {
+                return synonym::infer_synonym_application(state, context, id, synonym, arguments);
+            }
 
-                for argument in arguments.iter() {
-                    (t, k) = infer_application_kind(state, context, (t, k), *argument)?;
-                }
+            let (mut t, mut k) = infer_kind(state, context, *function)?;
+
+            for argument in arguments.iter() {
+                (t, k) = infer_application_kind(state, context, (t, k), *argument)?;
+            }
+
+            Ok((t, k))
+        }
+
+        lowering::TypeKind::Arrow { argument, result } => {
+            let argument = if let Some(argument) = argument {
+                let (argument, _) = check_kind(state, context, *argument, context.prim.t)?;
+                argument
+            } else {
+                context.unknown("missing function argument")
+            };
+
+            let result = if let Some(result) = result {
+                let (result, _) = check_kind(state, context, *result, context.prim.t)?;
+                result
+            } else {
+                context.unknown("missing function result")
+            };
+
+            let t = context.intern_function(argument, result);
+            let k = context.prim.t;
+
+            Ok((t, k))
+        }
+
+        lowering::TypeKind::Constrained { constraint, constrained } => {
+            let constraint = if let Some(constraint) = constraint {
+                let (constraint, _) =
+                    check_kind(state, context, *constraint, context.prim.constraint)?;
+                constraint
+            } else {
+                context.unknown("missing constraint")
+            };
+
+            let constrained = if let Some(constrained) = constrained {
+                // TODO: allow `Constraint` in this position
+                let (constrained, _) = check_kind(state, context, *constrained, context.prim.t)?;
+                constrained
+            } else {
+                context.unknown("missing constrained")
+            };
+
+            let t = context.intern_constrained(constraint, constrained);
+            let k = context.prim.t;
+
+            Ok((t, k))
+        }
+
+        lowering::TypeKind::Constructor { resolution } => {
+            let Some((file_id, type_id)) = *resolution else {
+                return Ok(unknown("missing constructor"));
+            };
+
+            if let Some((synonym, kind)) =
+                synonym::lookup_file_synonym(state, context, file_id, type_id)?
+            {
+                let synonym = (file_id, type_id, synonym, kind);
+                return synonym::infer_synonym_constructor(state, context, synonym, id);
+            }
+            let t = context.queries.intern_type(Type::Constructor(file_id, type_id));
+            let k = lookup_file_type(state, context, file_id, type_id)?;
+
+            Ok((t, k))
+        }
+
+        lowering::TypeKind::Forall { bindings, inner } => {
+            let binders = bindings
+                .iter()
+                .map(|binding| check_type_variable_binding(state, context, binding))
+                .collect::<QueryResult<Vec<_>>>()?;
+
+            let inner = if let Some(inner) = inner {
+                // TODO: allow `Constraint` in this position
+                let (inner, _) = check_kind(state, context, *inner, context.prim.t)?;
+                inner
+            } else {
+                context.unknown("missing forall inner")
+            };
+
+            let t = binders.iter().rfold(inner, |inner, binder| {
+                let binder_id = context.intern_forall_binder(binder.clone());
+                context.intern_forall(binder_id, inner)
+            });
+
+            let k = context.prim.t;
+
+            Ok((t, k))
+        }
+
+        lowering::TypeKind::Hole => {
+            let k = state.fresh_unification(context.queries, context.prim.t);
+            let t = state.fresh_unification(context.queries, k);
+            Ok((t, k))
+        }
+
+        lowering::TypeKind::Integer { value } => {
+            let t = if let Some(value) = value {
+                context.queries.intern_type(Type::Integer(*value))
+            } else {
+                context.unknown("missing integer value")
+            };
+            Ok((t, context.prim.int))
+        }
+
+        lowering::TypeKind::Kinded { type_, kind } => {
+            let k = if let Some(kind) = kind {
+                let (k, _) = infer_kind(state, context, *kind)?;
+                k
+            } else {
+                context.unknown("missing kinded kind")
+            };
+            let t = if let Some(type_) = type_ {
+                let (t, _) = check_kind(state, context, *type_, k)?;
+                t
+            } else {
+                context.unknown("missing kinded type")
+            };
+            Ok((t, k))
+        }
+
+        lowering::TypeKind::Operator { resolution } => {
+            let Some((file_id, type_id)) = *resolution else {
+                return Ok(unknown("missing operator"));
+            };
+
+            let t = context.queries.intern_type(Type::OperatorConstructor(file_id, type_id));
+            let k = lookup_file_type(state, context, file_id, type_id)?;
+
+            Ok((t, k))
+        }
+
+        lowering::TypeKind::OperatorChain { .. } => {
+            todo!("operator chain inference")
+        }
+
+        lowering::TypeKind::String { kind, value } => {
+            let value = value.clone().unwrap_or(MISSING_NAME);
+            let id = context.queries.intern_smol_str(value);
+
+            let t = context.queries.intern_type(Type::String(*kind, id));
+            let k = context.prim.symbol;
+
+            Ok((t, k))
+        }
+
+        lowering::TypeKind::Variable { name, resolution } => match resolution {
+            Some(lowering::TypeVariableResolution::Forall(forall)) => {
+                let (n, k) = state
+                    .kind_scope
+                    .lookup_forall(*forall)
+                    .expect("invariant violated: KindScope::bind_forall");
+
+                let t = context.intern_rigid(n, state.depth, k);
 
                 Ok((t, k))
             }
 
-            lowering::TypeKind::Arrow { argument, result } => {
-                let argument = if let Some(argument) = argument {
-                    let (argument, _) = check_kind(state, context, *argument, context.prim.t)?;
-                    argument
+            Some(lowering::TypeVariableResolution::Implicit(implicit)) => {
+                if implicit.binding {
+                    let n = state.names.fresh();
+                    let k = state.fresh_unification(context.queries, context.prim.t);
+
+                    state.kind_scope.bind_implicit(implicit.node, implicit.id, n, k);
+                    let t = context.intern_rigid(n, state.depth, k);
+
+                    Ok((t, k))
                 } else {
-                    context.unknown("missing function argument")
-                };
-
-                let result = if let Some(result) = result {
-                    let (result, _) = check_kind(state, context, *result, context.prim.t)?;
-                    result
-                } else {
-                    context.unknown("missing function result")
-                };
-
-                let t = context.intern_function(argument, result);
-                let k = context.prim.t;
-
-                Ok((t, k))
-            }
-
-            lowering::TypeKind::Constrained { constraint, constrained } => {
-                let constraint = if let Some(constraint) = constraint {
-                    let (constraint, _) =
-                        check_kind(state, context, *constraint, context.prim.constraint)?;
-                    constraint
-                } else {
-                    context.unknown("missing constraint")
-                };
-
-                let constrained = if let Some(constrained) = constrained {
-                    // TODO: allow `Constraint` in this position
-                    let (constrained, _) =
-                        check_kind(state, context, *constrained, context.prim.t)?;
-                    constrained
-                } else {
-                    context.unknown("missing constrained")
-                };
-
-                let t = context.intern_constrained(constraint, constrained);
-                let k = context.prim.t;
-
-                Ok((t, k))
-            }
-
-            lowering::TypeKind::Constructor { resolution } => {
-                let Some((file_id, type_id)) = *resolution else {
-                    return Ok(unknown("missing constructor"));
-                };
-
-                if let Some((synonym, kind)) =
-                    synonym::lookup_file_synonym(state, context, file_id, type_id)?
-                {
-                    let synonym = (file_id, type_id, synonym, kind);
-                    return synonym::infer_synonym_constructor(
-                        state,
-                        context,
-                        synonym,
-                        id,
-                    );
-                }
-                let t = context.queries.intern_type(Type::Constructor(file_id, type_id));
-                let k = lookup_file_type(state, context, file_id, type_id)?;
-
-                Ok((t, k))
-            }
-
-            lowering::TypeKind::Forall { bindings, inner } => {
-                let binders = bindings
-                    .iter()
-                    .map(|binding| check_type_variable_binding(state, context, binding))
-                    .collect::<QueryResult<Vec<_>>>()?;
-
-                let inner = if let Some(inner) = inner {
-                    // TODO: allow `Constraint` in this position
-                    let (inner, _) = check_kind(state, context, *inner, context.prim.t)?;
-                    inner
-                } else {
-                    context.unknown("missing forall inner")
-                };
-
-                let t = binders.iter().rfold(inner, |inner, binder| {
-                    let binder_id = context.intern_forall_binder(binder.clone());
-                    context.intern_forall(binder_id, inner)
-                });
-
-                let k = context.prim.t;
-
-                Ok((t, k))
-            }
-
-            lowering::TypeKind::Hole => {
-                let k = state.fresh_unification(context.queries, context.prim.t);
-                let t = state.fresh_unification(context.queries, k);
-                Ok((t, k))
-            }
-
-            lowering::TypeKind::Integer { value } => {
-                let t = if let Some(value) = value {
-                    context.queries.intern_type(Type::Integer(*value))
-                } else {
-                    context.unknown("missing integer value")
-                };
-                Ok((t, context.prim.int))
-            }
-
-            lowering::TypeKind::Kinded { type_, kind } => {
-                let k = if let Some(kind) = kind {
-                    let (k, _) = infer_kind(state, context, *kind)?;
-                    k
-                } else {
-                    context.unknown("missing kinded kind")
-                };
-                let t = if let Some(type_) = type_ {
-                    let (t, _) = check_kind(state, context, *type_, k)?;
-                    t
-                } else {
-                    context.unknown("missing kinded type")
-                };
-                Ok((t, k))
-            }
-
-            lowering::TypeKind::Operator { resolution } => {
-                let Some((file_id, type_id)) = *resolution else {
-                    return Ok(unknown("missing operator"));
-                };
-
-                let t = context.queries.intern_type(Type::OperatorConstructor(file_id, type_id));
-                let k = lookup_file_type(state, context, file_id, type_id)?;
-
-                Ok((t, k))
-            }
-
-            lowering::TypeKind::OperatorChain { .. } => {
-                todo!("operator chain inference")
-            }
-
-            lowering::TypeKind::String { kind, value } => {
-                let value = value.clone().unwrap_or(MISSING_NAME);
-                let id = context.queries.intern_smol_str(value);
-
-                let t = context.queries.intern_type(Type::String(*kind, id));
-                let k = context.prim.symbol;
-
-                Ok((t, k))
-            }
-
-            lowering::TypeKind::Variable { name, resolution } => match resolution {
-                Some(lowering::TypeVariableResolution::Forall(forall)) => {
                     let (n, k) = state
                         .kind_scope
-                        .lookup_forall(*forall)
-                        .expect("invariant violated: KindScope::bind_forall");
+                        .lookup_implicit(implicit.node, implicit.id)
+                        .expect("invariant violated: KindScope::bind_implicit");
 
                     let t = context.intern_rigid(n, state.depth, k);
 
                     Ok((t, k))
                 }
+            }
 
-                Some(lowering::TypeVariableResolution::Implicit(implicit)) => {
-                    if implicit.binding {
-                        let n = state.names.fresh();
-                        let k = state.fresh_unification(context.queries, context.prim.t);
+            None => {
+                let name = name.clone().unwrap_or(MISSING_NAME);
+                let id = context.queries.intern_smol_str(name);
 
-                        state.kind_scope.bind_implicit(implicit.node, implicit.id, n, k);
-                        let t = context.intern_rigid(n, state.depth, k);
-
-                        Ok((t, k))
-                    } else {
-                        let (n, k) = state
-                            .kind_scope
-                            .lookup_implicit(implicit.node, implicit.id)
-                            .expect("invariant violated: KindScope::bind_implicit");
-
-                        let t = context.intern_rigid(n, state.depth, k);
-
-                        Ok((t, k))
-                    }
-                }
-
-                None => {
-                    let name = name.clone().unwrap_or(MISSING_NAME);
-                    let id = context.queries.intern_smol_str(name);
-
-                    let t = context.queries.intern_type(Type::Free(id));
-                    let k = state.fresh_unification(context.queries, context.prim.t);
-
-                    Ok((t, k))
-                }
-            },
-
-            lowering::TypeKind::Wildcard => {
+                let t = context.queries.intern_type(Type::Free(id));
                 let k = state.fresh_unification(context.queries, context.prim.t);
-                let t = state.fresh_unification(context.queries, k);
-                Ok((t, k))
-            }
-
-            lowering::TypeKind::Record { items, tail } => {
-                let (row_type, row_kind) = infer_row_kind(state, context, items, tail)?;
-                unification::subtype(state, context, row_kind, context.prim.row_type)?;
-
-                let t = context.intern_application(context.prim.record, row_type);
-                let k = context.prim.t;
 
                 Ok((t, k))
             }
+        },
 
-            lowering::TypeKind::Row { items, tail } => infer_row_kind(state, context, items, tail),
+        lowering::TypeKind::Wildcard => {
+            let k = state.fresh_unification(context.queries, context.prim.t);
+            let t = state.fresh_unification(context.queries, k);
+            Ok((t, k))
+        }
 
-            lowering::TypeKind::Parenthesized { parenthesized } => {
-                if let Some(parenthesized) = parenthesized {
-                    infer_kind(state, context, *parenthesized)
-                } else {
-                    Ok(unknown("missing parenthesized"))
-                }
+        lowering::TypeKind::Record { items, tail } => {
+            let (row_type, row_kind) = infer_row_kind(state, context, items, tail)?;
+            unification::subtype(state, context, row_kind, context.prim.row_type)?;
+
+            let t = context.intern_application(context.prim.record, row_type);
+            let k = context.prim.t;
+
+            Ok((t, k))
+        }
+
+        lowering::TypeKind::Row { items, tail } => infer_row_kind(state, context, items, tail),
+
+        lowering::TypeKind::Parenthesized { parenthesized } => {
+            if let Some(parenthesized) = parenthesized {
+                infer_kind(state, context, *parenthesized)
+            } else {
+                Ok(unknown("missing parenthesized"))
             }
         }
-    })
+    }
 }
 
 /// Instantiates kind-level foralls using [`Type::KindApplication`].
