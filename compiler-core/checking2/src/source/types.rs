@@ -131,8 +131,7 @@ where
             };
 
             let constrained = if let Some(constrained) = constrained {
-                // TODO: allow `Constraint` in this position
-                let (constrained, _) = check_kind(state, context, *constrained, context.prim.t)?;
+                let (constrained, _) = infer_kind(state, context, *constrained)?;
                 constrained
             } else {
                 context.unknown("missing constrained")
@@ -168,8 +167,7 @@ where
                 .collect::<QueryResult<Vec<_>>>()?;
 
             let inner = if let Some(inner) = inner {
-                // TODO: allow `Constraint` in this position
-                let (inner, _) = check_kind(state, context, *inner, context.prim.t)?;
+                let (inner, _) = infer_kind(state, context, *inner)?;
                 inner
             } else {
                 context.unknown("missing forall inner")
