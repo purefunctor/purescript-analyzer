@@ -231,7 +231,9 @@ where
     let t2_core = context.queries.lookup_type(t2);
 
     let unifies = match (t1_core, t2_core) {
-        // TODO: document impredicativity
+        // PureScript has an impredicative type system i.e. unification
+        // variables can be solved to Type::Forall. These rules must
+        // be placed before the one-sided Type::Forall skolemisation.
         (Type::Unification(id), _) => return solve(state, context, t1, id, t2),
         (_, Type::Unification(id)) => return solve(state, context, t2, id, t1),
 
@@ -258,6 +260,15 @@ where
             unify(state, context, t1_left, t2_left)? && unify(state, context, t1_right, t2_right)?
         }
 
+        // Forall-Forall
+        //
+        //   forall a. A ~ forall b. B
+        //     A[a := c] ~ B[b := c]
+        //
+        // The rigid variable c is scoped within both `forall`. Unlike
+        // subtyping that has directionality, unification needs both
+        // types to be instantiated with the same fresh varible. It
+        // does not make sense for Forall to instantiate either side.
         (Type::Forall(t1_binder_id, t1_inner), Type::Forall(t2_binder_id, t2_inner)) => {
             let t1_binder = context.lookup_forall_binder(t1_binder_id);
             let t2_binder = context.lookup_forall_binder(t2_binder_id);
@@ -272,13 +283,26 @@ where
             state.with_depth(|state| unify(state, context, t1_inner, t2_inner))?
         }
 
+        // Forall-B, A-Forall
+        //
+        // The Type::Unification pattern above is an early catch-all that
+        // enables impredicativity. In practice, this unifies the following:
+        //
+        //   (forall a. a -> a) ~ (?b -> ?b)
+        //           (a' -> a') ~ (?b -> ?b)
+        //
+        // with the substitution [?b := 'a], and
+        //
+        //   (?a -> ?a) ~ (forall b. b -> b)
+        //   (?a -> ?a) ~ (b' -> b')
+        //
+        // with the substitution [?a := 'b].
         (Type::Forall(binder_id, inner), _) => {
             let binder = context.lookup_forall_binder(binder_id);
             let skolem = state.fresh_rigid(context.queries, binder.kind);
             let inner = SubstituteName::one(state, context, binder.name, skolem, inner)?;
             state.with_depth(|state| unify(state, context, inner, t2))?
         }
-
         (_, Type::Forall(binder_id, inner)) => {
             let binder = context.lookup_forall_binder(binder_id);
             let skolem = state.fresh_rigid(context.queries, binder.kind);
@@ -338,7 +362,6 @@ where
     if !unifies {
         let t1 = state.pretty_id(context, t1);
         let t2 = state.pretty_id(context, t2);
-
         state.insert_error(ErrorKind::CannotUnify { t1, t2 });
     }
 
@@ -363,7 +386,6 @@ where
         PromoteResult::OccursCheck | PromoteResult::SkolemEscape => {
             let t1 = state.pretty_id(context, unification);
             let t2 = state.pretty_id(context, solution);
-
             state.insert_error(ErrorKind::CannotUnify { t1, t2 });
             return Ok(false);
         }
@@ -552,6 +574,13 @@ where
     check(&mut promote, state, context, solution)
 }
 
+/// Unification on row types.
+///
+/// Algorithmically, `t1 ~ t2` checks shared labels field-by-field via [`unify`].
+/// - if both are closed, then additional fields are disallowed
+/// - if `t1` is closed, additional fields in `t2` are disallowed
+/// - if `t2` is closed, additional fields in `t1` are disallowed
+/// - finally, [`unify_row_tails`] handles the remaining cases
 fn unify_rows<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -596,8 +625,7 @@ where
 /// Extra labels are only rejected when they appear against a closed row:
 /// - if `t1` is closed, labels exclusive to `t2` are [`PropertyIsMissing`];
 /// - if `t2` is closed, labels exclusive to `t1` are [`AdditionalProperty`].
-///
-/// Open rows permit these extra labels.
+/// - finally, [`unify_row_tails`] handles the remaining cases
 ///
 /// [`PropertyIsMissing`]: ErrorKind::PropertyIsMissing
 /// [`AdditionalProperty`]: ErrorKind::AdditionalProperty
@@ -706,20 +734,33 @@ where
     match (t1_tail, t2_tail) {
         (None, None) => Ok(true),
 
+        // t1_tail ~ ( ...extras_right )
         (Some(t1_tail), None) => {
             let row = RowType::new(extras_right, None);
             let row_id = context.intern_row_type(row);
-            let row_ty = context.intern_row(row_id);
-            unify(state, context, t1_tail, row_ty)
+            let row_type = context.intern_row(row_id);
+            unify(state, context, t1_tail, row_type)
         }
 
+        // ( ...extras_left ) ~ t2_tail
         (None, Some(t2_tail)) => {
             let row = RowType::new(extras_left, None);
             let row_id = context.intern_row_type(row);
-            let row_ty = context.intern_row(row_id);
-            unify(state, context, t2_tail, row_ty)
+            let row_type = context.intern_row(row_id);
+            unify(state, context, t2_tail, row_type)
         }
 
+        // ( | t1_tail ) ~ ( | t2_tail )
+        //
+        // If no additional fields
+        //
+        //   t1_tail ~ t2_tail
+        //
+        // with additional fields
+        //
+        //   t1_tail ~ ( ...extras_right | ?tail )
+        //   t2_tail ~ (  ...extras_left | ?tail )
+        //
         (Some(t1_tail), Some(t2_tail)) => {
             if extras_left.is_empty() && extras_right.is_empty() {
                 return unify(state, context, t1_tail, t2_tail);
@@ -729,14 +770,14 @@ where
 
             let left_tail_row = RowType::new(extras_right, tail);
             let left_tail_row_id = context.intern_row_type(left_tail_row);
-            let left_tail_ty = context.intern_row(left_tail_row_id);
+            let left_tail_row_type = context.intern_row(left_tail_row_id);
 
             let right_tail_row = RowType::new(extras_left, tail);
             let right_tail_row_id = context.intern_row_type(right_tail_row);
-            let right_tail_ty = context.intern_row(right_tail_row_id);
+            let right_tail_row_type = context.intern_row(right_tail_row_id);
 
-            Ok(unify(state, context, t1_tail, left_tail_ty)?
-                && unify(state, context, t2_tail, right_tail_ty)?)
+            Ok(unify(state, context, t1_tail, left_tail_row_type)?
+                && unify(state, context, t2_tail, right_tail_row_type)?)
         }
     }
 }
