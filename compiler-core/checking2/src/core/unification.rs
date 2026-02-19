@@ -107,11 +107,18 @@ where
     let t2_core = context.queries.lookup_type(t2);
 
     match (t1_core, t2_core) {
+        // Function subtyping is contravariant on the argument type and
+        // covariant on the result type. It must also be non-elaborating
+        // on both positions; it's impossible to generate any constraint
+        // dictionaries at this position.
         (Type::Function(t1_argument, t1_result), Type::Function(t2_argument, t2_result)) => {
             Ok(subtype_with::<NonElaborating, Q>(state, context, t2_argument, t1_argument)?
                 && subtype_with::<NonElaborating, Q>(state, context, t1_result, t2_result)?)
         }
 
+        // Normalise Type::Function into Type::Application before unification
+        // This is explained in intern_function_application, it simplifies the
+        // subtyping rule tremendously vs. pattern matching Type::Application
         (Type::Application(_, _), Type::Function(t2_argument, t2_result)) => {
             let t2 = context.intern_function_application(t2_argument, t2_result);
             subtype_with::<P, Q>(state, context, t1, t2)
