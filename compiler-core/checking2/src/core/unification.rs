@@ -185,6 +185,9 @@ where
             P::on_constrained(state, context, t1, constraint, constrained, t2)
         }
 
+        // Record subtyping is implemented through subtype_rows. Unlike
+        // unification, the directionality of subtyping allows us to emit
+        // errors like AdditionalProperty and PropertyIsMissing.
         (
             Type::Application(t1_function, t1_argument),
             Type::Application(t2_function, t2_argument),
@@ -582,6 +585,22 @@ where
     unify_row_tails(state, context, t1_row.tail, t2_row.tail, left_only, right_only)
 }
 
+/// Like [`unify_rows`], but uses [`subtype`] for partitioning.
+///
+/// Additionally, the directionality of the [`subtype`] relation enables the
+/// addition of [`PropertyIsMissing`] and [`AdditionalProperty`] error when
+/// dealing with closed rows.
+///
+/// Algorithmically, `t1 <: t2` checks shared labels field-by-field via [`subtype`].
+///
+/// Extra labels are only rejected when they appear against a closed row:
+/// - if `t1` is closed, labels exclusive to `t2` are [`PropertyIsMissing`];
+/// - if `t2` is closed, labels exclusive to `t1` are [`AdditionalProperty`].
+///
+/// Open rows permit these extra labels.
+///
+/// [`PropertyIsMissing`]: ErrorKind::PropertyIsMissing
+/// [`AdditionalProperty`]: ErrorKind::AdditionalProperty
 fn subtype_rows<P, Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
