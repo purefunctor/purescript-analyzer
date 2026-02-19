@@ -9,7 +9,7 @@ use smol_str::SmolStr;
 use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::substitute::SubstituteName;
-use crate::core::{Depth, Name, RowField, RowType, RowTypeId, Type, TypeId, normalise, pretty};
+use crate::core::{Depth, Name, RowField, RowType, RowTypeId, Type, TypeId, normalise};
 use crate::error::ErrorKind;
 use crate::state::{CheckState, UnificationEntry};
 
@@ -237,11 +237,8 @@ where
     };
 
     if !unifies {
-        let t1 = pretty::print(state, context, t1);
-        let t1 = context.queries.intern_smol_str(t1);
-
-        let t2 = pretty::print(state, context, t2);
-        let t2 = context.queries.intern_smol_str(t2);
+        let t1 = state.pretty_id(context, t1);
+        let t2 = state.pretty_id(context, t2);
 
         state.insert_error(ErrorKind::CannotUnify { t1, t2 });
     }
@@ -265,11 +262,8 @@ where
     match promote_type(state, context, id, solution)? {
         PromoteResult::Ok => {}
         PromoteResult::OccursCheck | PromoteResult::SkolemEscape => {
-            let t1 = pretty::print(state, context, unification);
-            let t1 = context.queries.intern_smol_str(t1);
-
-            let t2 = pretty::print(state, context, solution);
-            let t2 = context.queries.intern_smol_str(t2);
+            let t1 = state.pretty_id(context, unification);
+            let t2 = state.pretty_id(context, solution);
 
             state.insert_error(ErrorKind::CannotUnify { t1, t2 });
             return Ok(false);

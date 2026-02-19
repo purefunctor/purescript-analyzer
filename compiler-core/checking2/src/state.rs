@@ -4,7 +4,7 @@ use std::mem;
 
 use files::FileId;
 
-use crate::core::{Depth, Name, Type, TypeId};
+use crate::core::{Depth, Name, SmolStrId, Type, TypeId};
 use crate::error::{CheckError, ErrorCrumb, ErrorKind};
 use crate::implication::Implications;
 use crate::{CheckedModule, ExternalQueries};
@@ -146,5 +146,17 @@ impl CheckState {
         let result = f(self);
         self.implications.pop(id);
         result
+    }
+
+    pub fn pretty_id<Q>(
+        &mut self,
+        context: &crate::context::CheckContext<Q>,
+        id: TypeId,
+    ) -> SmolStrId
+    where
+        Q: ExternalQueries,
+    {
+        let pretty = crate::core::pretty::print(self, context, id);
+        context.queries.intern_smol_str(pretty)
     }
 }
