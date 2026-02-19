@@ -13,18 +13,65 @@ use crate::core::{Depth, Name, RowField, RowType, RowTypeId, Type, TypeId, norma
 use crate::error::ErrorKind;
 use crate::state::{CheckState, UnificationEntry};
 
-/// Determines if constraints are elaborated during [`subtype`].
+/// Strategy for handling constrained types during [`subtype_with`].
 ///
-/// Elaboration involves pushing constraints as "wanted" and inserting
-/// dictionary placeholders in the generated IR. This behaviour is only
-/// wanted in positions where the type checker can insert dictionaries.
+/// Elaboration involves pushing constraints as "wanted". This behaviour is
+/// only wanted in positions where the type checker can insert dictionaries.
 ///
-/// This is disabled in the subtyping rule for [`Type::Function`] and the
-/// checking rules for binders; it's impossible to add dictionaries there.
+/// For example in [`Type::Function`], subtyping is [`NonElaborating`]
+/// because it's impossible to insert dictionaries there; the same is
+/// true when checking [`lowering::BinderKind`] in arguments and patterns.
+pub trait SubtypePolicy<Q>
+where
+    Q: ExternalQueries,
+{
+    fn on_constrained(
+        state: &mut CheckState,
+        context: &CheckContext<Q>,
+        t1: TypeId,
+        constraint: TypeId,
+        constrained: TypeId,
+        t2: TypeId,
+    ) -> QueryResult<bool>;
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum ElaborationMode {
-    Yes,
-    No,
+pub struct Elaborating;
+
+impl<Q> SubtypePolicy<Q> for Elaborating
+where
+    Q: ExternalQueries,
+{
+    fn on_constrained(
+        state: &mut CheckState,
+        context: &CheckContext<Q>,
+        _t1: TypeId,
+        constraint: TypeId,
+        constrained: TypeId,
+        t2: TypeId,
+    ) -> QueryResult<bool> {
+        state.push_wanted(constraint);
+        subtype_with::<Self, Q>(state, context, constrained, t2)
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct NonElaborating;
+
+impl<Q> SubtypePolicy<Q> for NonElaborating
+where
+    Q: ExternalQueries,
+{
+    fn on_constrained(
+        state: &mut CheckState,
+        context: &CheckContext<Q>,
+        t1: TypeId,
+        _constraint: TypeId,
+        _constrained: TypeId,
+        t2: TypeId,
+    ) -> QueryResult<bool> {
+        unify(state, context, t1, t2)
+    }
 }
 
 pub fn subtype<Q>(
@@ -36,17 +83,17 @@ pub fn subtype<Q>(
 where
     Q: ExternalQueries,
 {
-    subtype_with_mode(state, context, ElaborationMode::Yes, t1, t2)
+    subtype_with::<Elaborating, Q>(state, context, t1, t2)
 }
 
-pub fn subtype_with_mode<Q>(
+pub fn subtype_with<P, Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    mode: ElaborationMode,
     t1: TypeId,
     t2: TypeId,
 ) -> QueryResult<bool>
 where
+    P: SubtypePolicy<Q>,
     Q: ExternalQueries,
 {
     let t1 = normalise::normalise(state, context, t1)?;
@@ -61,18 +108,18 @@ where
 
     match (t1_core, t2_core) {
         (Type::Function(t1_argument, t1_result), Type::Function(t2_argument, t2_result)) => {
-            Ok(subtype_with_mode(state, context, ElaborationMode::No, t2_argument, t1_argument)?
-                && subtype_with_mode(state, context, ElaborationMode::No, t1_result, t2_result)?)
+            Ok(subtype_with::<NonElaborating, Q>(state, context, t2_argument, t1_argument)?
+                && subtype_with::<NonElaborating, Q>(state, context, t1_result, t2_result)?)
         }
 
         (Type::Application(_, _), Type::Function(t2_argument, t2_result)) => {
             let t2 = context.intern_function_application(t2_argument, t2_result);
-            subtype_with_mode(state, context, mode, t1, t2)
+            subtype_with::<P, Q>(state, context, t1, t2)
         }
 
         (Type::Function(t1_argument, t1_result), Type::Application(_, _)) => {
             let t1 = context.intern_function_application(t1_argument, t1_result);
-            subtype_with_mode(state, context, mode, t1, t2)
+            subtype_with::<P, Q>(state, context, t1, t2)
         }
 
         (_, Type::Forall(binder_id, inner)) => {
@@ -80,7 +127,7 @@ where
             let skolem = state.fresh_rigid(context.queries, binder.kind);
 
             let inner = SubstituteName::one(state, context, binder.name, skolem, inner)?;
-            state.with_depth(|state| subtype_with_mode(state, context, mode, t1, inner))
+            state.with_depth(|state| subtype_with::<P, Q>(state, context, t1, inner))
         }
 
         (Type::Forall(binder_id, inner), _) => {
@@ -88,12 +135,11 @@ where
             let unification = state.fresh_unification(context.queries, binder.kind);
 
             let inner = SubstituteName::one(state, context, binder.name, unification, inner)?;
-            subtype_with_mode(state, context, mode, inner, t2)
+            subtype_with::<P, Q>(state, context, inner, t2)
         }
 
-        (Type::Constrained(constraint, inner), _) if mode == ElaborationMode::Yes => {
-            state.push_wanted(constraint);
-            subtype_with_mode(state, context, mode, inner, t2)
+        (Type::Constrained(constraint, constrained), _) => {
+            P::on_constrained(state, context, t1, constraint, constrained, t2)
         }
 
         (
@@ -109,7 +155,7 @@ where
             if let (Type::Row(t1_row_id), Type::Row(t2_row_id)) =
                 (t1_argument_core, t2_argument_core)
             {
-                subtype_rows(state, context, mode, t1_row_id, t2_row_id)
+                subtype_rows::<P, Q>(state, context, t1_row_id, t2_row_id)
             } else {
                 unify(state, context, t1, t2)
             }
@@ -493,14 +539,14 @@ where
     unify_row_tails(state, context, t1_row.tail, t2_row.tail, left_only, right_only)
 }
 
-fn subtype_rows<Q>(
+fn subtype_rows<P, Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    mode: ElaborationMode,
     t1: RowTypeId,
     t2: RowTypeId,
 ) -> QueryResult<bool>
 where
+    P: SubtypePolicy<Q>,
     Q: ExternalQueries,
 {
     let t1_row = context.lookup_row_type(t1);
@@ -511,7 +557,7 @@ where
         context,
         &t1_row,
         &t2_row,
-        |state, context, left, right| subtype_with_mode(state, context, mode, left, right),
+        |state, context, left, right| subtype_with::<P, Q>(state, context, left, right),
     )?;
 
     if !ok {
