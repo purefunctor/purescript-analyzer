@@ -14,6 +14,13 @@ use crate::error::ErrorKind;
 use crate::state::{CheckState, UnificationEntry};
 
 /// Determines if constraints are elaborated during [`subtype`].
+///
+/// Elaboration involves pushing constraints as "wanted" and inserting
+/// dictionary placeholders in the generated IR. This behaviour is only
+/// wanted in positions where the type checker can insert dictionaries.
+///
+/// This is disabled in the subtyping rule for [`Type::Function`] and the
+/// checking rules for binders; it's impossible to add dictionaries there.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ElaborationMode {
     Yes,
