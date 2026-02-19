@@ -7,14 +7,13 @@ use files::FileId;
 use indexing::TypeItemId;
 use smol_str::SmolStr;
 
-use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::substitute::SubstituteName;
-use crate::core::unification;
-use crate::core::{ForallBinder, RowField, RowType, Type, TypeId, normalise};
+use crate::core::{ForallBinder, RowField, RowType, Type, TypeId, normalise, unification};
 use crate::error::{ErrorCrumb, ErrorKind};
-use crate::safe_loop;
+use crate::source::synonym;
 use crate::state::CheckState;
+use crate::{ExternalQueries, safe_loop};
 
 const MISSING_NAME: SmolStr = SmolStr::new_static("<MissingName>");
 
@@ -45,7 +44,7 @@ where
     })
 }
 
-fn infer_kind<Q>(
+pub fn infer_kind<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     id: lowering::TypeId,
@@ -69,19 +68,21 @@ where
                     return Ok(unknown("missing application function"));
                 };
 
-                // Synonym detection is deferred.
-                todo!("synonym detection in ApplicationChain");
-
-                #[allow(unreachable_code)]
+                if let Some(synonym) =
+                    synonym::parse_synonym_application(state, context, *function)?
                 {
-                    let (mut t, mut k) = infer_kind(state, context, *function)?;
-
-                    for argument in arguments.iter() {
-                        (t, k) = infer_application_kind(state, context, (t, k), *argument)?;
-                    }
-
-                    Ok((t, k))
+                    return synonym::infer_synonym_application(
+                        state, context, id, synonym, arguments,
+                    );
                 }
+
+                let (mut t, mut k) = infer_kind(state, context, *function)?;
+
+                for argument in arguments.iter() {
+                    (t, k) = infer_application_kind(state, context, (t, k), *argument)?;
+                }
+
+                Ok((t, k))
             }
 
             lowering::TypeKind::Arrow { argument, result } => {
@@ -134,16 +135,21 @@ where
                     return Ok(unknown("missing constructor"));
                 };
 
-                // Synonym detection is deferred.
-                todo!("synonym detection in Constructor");
-
-                #[allow(unreachable_code)]
+                if let Some((synonym, kind)) =
+                    synonym::lookup_file_synonym(state, context, file_id, type_id)?
                 {
-                    let t = context.queries.intern_type(Type::Constructor(file_id, type_id));
-                    let k = lookup_file_type(state, context, file_id, type_id)?;
-
-                    Ok((t, k))
+                    let synonym = (file_id, type_id, synonym, kind);
+                    return synonym::infer_synonym_constructor(
+                        state,
+                        context,
+                        synonym,
+                        id,
+                    );
                 }
+                let t = context.queries.intern_type(Type::Constructor(file_id, type_id));
+                let k = lookup_file_type(state, context, file_id, type_id)?;
+
+                Ok((t, k))
             }
 
             lowering::TypeKind::Forall { bindings, inner } => {
@@ -378,7 +384,7 @@ where
     Ok(ForallBinder { visible: binding.visible, name, text, kind })
 }
 
-fn infer_application_kind<Q>(
+pub fn infer_application_kind<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     (function_type, function_kind): (TypeId, TypeId),

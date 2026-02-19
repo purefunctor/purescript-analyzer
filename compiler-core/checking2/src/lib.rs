@@ -52,6 +52,7 @@ pub trait ExternalQueries:
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct CheckedModule {
     pub types: FxHashMap<TypeItemId, TypeId>,
+    pub synonyms: FxHashMap<TypeItemId, core::Synonym>,
     pub roles: FxHashMap<TypeItemId, Arc<[Role]>>,
     pub errors: Vec<CheckError>,
 }
@@ -59,6 +60,10 @@ pub struct CheckedModule {
 impl CheckedModule {
     pub fn lookup_type(&self, id: TypeItemId) -> Option<TypeId> {
         self.types.get(&id).copied()
+    }
+
+    pub fn lookup_synonym(&self, id: TypeItemId) -> Option<core::Synonym> {
+        self.synonyms.get(&id).cloned()
     }
 
     pub fn lookup_roles(&self, id: TypeItemId) -> Option<Arc<[Role]>> {

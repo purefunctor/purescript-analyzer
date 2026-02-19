@@ -1,5 +1,6 @@
 //! Implements syntax-driven checking rules for source files.
 
+pub mod synonym;
 pub mod terms;
 pub mod types;
 

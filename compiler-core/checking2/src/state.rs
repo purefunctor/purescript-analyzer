@@ -119,6 +119,7 @@ pub struct CheckState {
     pub unifications: Unifications,
     pub implications: Implications,
     pub kind_scope: KindScope,
+    pub defer_synonym_expansion: bool,
     pub depth: Depth,
 
     pub crumbs: Vec<ErrorCrumb>,
@@ -132,6 +133,7 @@ impl CheckState {
             unifications: Default::default(),
             implications: Default::default(),
             kind_scope: Default::default(),
+            defer_synonym_expansion: Default::default(),
             depth: Depth(0),
             crumbs: Default::default(),
         }
