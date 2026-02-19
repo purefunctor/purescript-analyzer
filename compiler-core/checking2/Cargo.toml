@@ -10,6 +10,7 @@ indexing = { version = "0.1.0", path = "../indexing" }
 interner = { version = "0.1.0", path = "../interner" }
 itertools = "0.14.0"
 lowering = { version = "0.1.0", path = "../lowering" }
+petgraph = "0.8.3"
 pretty = "0.12"
 parsing = { version = "0.1.0", path = "../parsing" }
 resolving = { version = "0.1.0", path = "../resolving" }
