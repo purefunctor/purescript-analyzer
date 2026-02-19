@@ -54,7 +54,10 @@ where
     };
 
     match item {
-        lowering::TypeItemIr::DataGroup { .. } => todo!(),
+        lowering::TypeItemIr::DataGroup { signature, .. } => {
+            let Some(signature) = signature else { return Ok(()) };
+            check_data_signature(state, context, item_id, *signature)?;
+        }
         lowering::TypeItemIr::NewtypeGroup { .. } => todo!(),
         lowering::TypeItemIr::SynonymGroup { .. } => todo!(),
         lowering::TypeItemIr::ClassGroup { .. } => todo!(),
@@ -65,6 +68,21 @@ where
         lowering::TypeItemIr::Operator { .. } => todo!(),
     }
 
+    Ok(())
+}
+
+fn check_data_signature<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    item_id: TypeItemId,
+    signature: lowering::TypeId,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    let (inferred_type, _) = types::check_kind(state, context, signature, context.prim.t)?;
+    let inferred_type = generalise::generalise(state, context, inferred_type)?;
+    state.checked.types.insert(item_id, inferred_type);
     Ok(())
 }
 
