@@ -12,11 +12,11 @@ use crate::state::CheckState;
 
 pub type NameToType = FxHashMap<Name, TypeId>;
 
-/// Substitutes rigid type variables identified by [`Name`] with replacement types.
+/// Implements [`Name`]-based substitution for [`Type::Rigid`] variables.
 ///
-/// Since names are globally unique, no scope tracking is needed. This subsumes
-/// both single-name substitution (for instantiation) and multi-name substitution
-/// (for specialising class superclasses with instance arguments).
+/// Names are globally unique, removing the need for scope tracking and
+/// removing the need for capture-avoiding substitutions. This property
+/// is extremely useful for for instantiation.
 pub struct SubstituteName {
     bindings: NameToType,
 }
