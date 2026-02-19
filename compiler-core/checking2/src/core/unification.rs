@@ -123,12 +123,32 @@ where
             let t2 = context.intern_function_application(t2_argument, t2_result);
             subtype_with::<P, Q>(state, context, t1, t2)
         }
-
         (Type::Function(t1_argument, t1_result), Type::Application(_, _)) => {
             let t1 = context.intern_function_application(t1_argument, t1_result);
             subtype_with::<P, Q>(state, context, t1, t2)
         }
 
+        // Forall-R
+        //
+        //   A <: forall b. B
+        //   A <: B[b := b']
+        //
+        // In practice, this disallows the subtyping
+        //
+        //   (Int -> Int) <: (forall b. b -> b)
+        //   (Int -> Int) <: (b' -> b')
+        //
+        // The rigid variable b' is scoped within the `forall`; this is
+        // enforced through unification and rigid variables carrying
+        // their depth, and promote_type checking that unification
+        // variables cannot be shallower than rigid variable depths.
+        //
+        // The classic example is `runST`
+        //
+        //   runST :: forall a. (forall h. ST h a) -> a
+        //
+        // If `?a` is solved to a type containing `h`, the skolem escape
+        // check is triggered because `h` was defined in a deeper scope.
         (_, Type::Forall(binder_id, inner)) => {
             let binder = context.lookup_forall_binder(binder_id);
             let skolem = state.fresh_rigid(context.queries, binder.kind);
@@ -137,6 +157,22 @@ where
             state.with_depth(|state| subtype_with::<P, Q>(state, context, t1, inner))
         }
 
+        // Forall-L
+        //
+        //   forall a. A <: B
+        //    A[a := ?a] <: B
+        //
+        // In practice, this allows the subtyping
+        //
+        //   (forall a. a -> a) <: Int -> Int
+        //           (?a -> ?a) <: Int -> Int
+        //
+        // with the substitution [?a := Int], and
+        //
+        //   (forall a. a -> a) <: (forall b. b -> b)
+        //           (?a -> ?a) <: (b' -> b')
+        //
+        // with the substitution [?a := b'].
         (Type::Forall(binder_id, inner), _) => {
             let binder = context.lookup_forall_binder(binder_id);
             let unification = state.fresh_unification(context.queries, binder.kind);
