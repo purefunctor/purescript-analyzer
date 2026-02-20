@@ -5,6 +5,7 @@ pub mod generalise;
 pub mod normalise;
 pub mod pretty;
 pub mod substitute;
+pub mod toolkit;
 pub mod unification;
 pub mod walk;
 pub mod zonk;
