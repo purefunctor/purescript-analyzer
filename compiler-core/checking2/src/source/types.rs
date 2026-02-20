@@ -445,11 +445,11 @@ where
             let (argument_type, _) = infer_kind(state, context, argument)?;
 
             let t = context.intern_application(function_type, argument_type);
-            let k = context.unknown("function type cannot be applied");
+            let k = context.unknown("cannot apply function type");
 
-            let function_type = state.pretty_id(context, function_type);
-            let function_kind = state.pretty_id(context, function_kind);
-            let argument_type = state.pretty_id(context, argument_type);
+            let function_type = state.pretty_id(context, function_type)?;
+            let function_kind = state.pretty_id(context, function_kind)?;
+            let argument_type = state.pretty_id(context, argument_type)?;
 
             state.insert_error(ErrorKind::InvalidTypeApplication {
                 function_type,

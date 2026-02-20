@@ -2,10 +2,13 @@
 
 use std::mem;
 
+use building_types::QueryResult;
 use files::FileId;
 use rustc_hash::FxHashMap;
 
-use crate::core::{Depth, Name, SmolStrId, Type, TypeId};
+use crate::context::CheckContext;
+use crate::core::zonk::Zonk;
+use crate::core::{Depth, Name, SmolStrId, Type, TypeId, pretty};
 use crate::error::{CheckError, ErrorCrumb, ErrorKind};
 use crate::implication::Implications;
 use crate::{CheckedModule, ExternalQueries};
@@ -189,15 +192,12 @@ impl CheckState {
         result
     }
 
-    pub fn pretty_id<Q>(
-        &mut self,
-        context: &crate::context::CheckContext<Q>,
-        id: TypeId,
-    ) -> SmolStrId
+    pub fn pretty_id<Q>(&mut self, context: &CheckContext<Q>, id: TypeId) -> QueryResult<SmolStrId>
     where
         Q: ExternalQueries,
     {
-        let pretty = crate::core::pretty::print(self, context, id);
-        context.queries.intern_smol_str(pretty)
+        let id = Zonk::on(self, context, id)?;
+        let pretty = pretty::print(context.queries, id);
+        Ok(context.queries.intern_smol_str(pretty))
     }
 }

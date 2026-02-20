@@ -203,9 +203,11 @@ where
             let (argument_type, _) = types::infer_kind(state, context, argument)?;
 
             {
-                let function_type = state.pretty_id(context, context.unknown("synonym function"));
-                let function_kind = state.pretty_id(context, function_kind);
-                let argument_type = state.pretty_id(context, argument_type);
+                let function_type = context.unknown("unknown function type");
+                let function_type = state.pretty_id(context, function_type)?;
+
+                let function_kind = state.pretty_id(context, function_kind)?;
+                let argument_type = state.pretty_id(context, argument_type)?;
 
                 state.insert_error(ErrorKind::InvalidTypeApplication {
                     function_type,
@@ -214,8 +216,8 @@ where
                 });
             }
 
-            let unknown = context.unknown("synonym function kind cannot be applied");
-            Ok((argument_type, unknown))
+            let k = context.unknown("cannot apply synonym");
+            Ok((argument_type, k))
         }
     }
 }

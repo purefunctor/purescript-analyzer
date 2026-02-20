@@ -7,12 +7,10 @@ use rustc_hash::FxHashMap;
 use smol_str::{SmolStr, SmolStrBuilder};
 
 use crate::ExternalQueries;
-use crate::context::CheckContext;
 use crate::core::{
     ForallBinder, ForallBinderId, Name, RowField, RowType, RowTypeId, SmolStrId, Synonym,
     SynonymId, Type, TypeId,
 };
-use crate::state::CheckState;
 
 type Doc<'a> = DocBuilder<'a, Arena<'a>, ()>;
 
@@ -26,42 +24,29 @@ impl Default for PrettyConfig {
     }
 }
 
-pub fn print<Q>(state: &mut CheckState, context: &CheckContext<Q>, id: TypeId) -> SmolStr
+pub fn print<Q>(queries: &Q, id: TypeId) -> SmolStr
 where
     Q: ExternalQueries,
 {
-    render(state, context, &PrettyConfig::default(), |printer| {
-        printer.traverse(Precedence::Top, id)
-    })
+    render(queries, &PrettyConfig::default(), |printer| printer.traverse(Precedence::Top, id))
 }
 
-pub fn print_with_config<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    id: TypeId,
-    config: &PrettyConfig,
-) -> SmolStr
+pub fn print_with_config<Q>(queries: &Q, id: TypeId, config: &PrettyConfig) -> SmolStr
 where
     Q: ExternalQueries,
 {
-    render(state, context, config, |printer| printer.traverse(Precedence::Top, id))
+    render(queries, config, |printer| printer.traverse(Precedence::Top, id))
 }
 
-pub fn print_signature<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    name: &str,
-    id: TypeId,
-) -> SmolStr
+pub fn print_signature<Q>(queries: &Q, name: &str, id: TypeId) -> SmolStr
 where
     Q: ExternalQueries,
 {
-    render(state, context, &PrettyConfig::default(), |printer| printer.signature(name, id))
+    render(queries, &PrettyConfig::default(), |printer| printer.signature(name, id))
 }
 
 pub fn print_signature_with_config<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
+    queries: &Q,
     name: &str,
     id: TypeId,
     config: &PrettyConfig,
@@ -69,21 +54,20 @@ pub fn print_signature_with_config<Q>(
 where
     Q: ExternalQueries,
 {
-    render(state, context, config, |printer| printer.signature(name, id))
+    render(queries, config, |printer| printer.signature(name, id))
 }
 
 fn render<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
+    queries: &Q,
     config: &PrettyConfig,
-    f: impl for<'a> FnOnce(&mut Printer<'a, '_, Q>) -> Doc<'a>,
+    f: impl for<'a> FnOnce(&mut Printer<'a, Q>) -> Doc<'a>,
 ) -> SmolStr
 where
     Q: ExternalQueries,
 {
     let arena = Arena::new();
     let traversal = TraversalContext::new();
-    let mut printer = Printer::new(&arena, state, context, traversal);
+    let mut printer = Printer::new(&arena, queries, traversal);
 
     let document = f(&mut printer);
     let mut output = SmolStrBuilder::new();
@@ -124,48 +108,41 @@ impl TraversalContext {
     }
 }
 
-struct Printer<'a, 'q, Q>
+struct Printer<'a, Q>
 where
     Q: ExternalQueries,
 {
     arena: &'a Arena<'a>,
-    state: &'a mut CheckState,
-    context: &'a CheckContext<'q, Q>,
+    queries: &'a Q,
     traversal: TraversalContext,
 }
 
-impl<'a, 'q, Q> Printer<'a, 'q, Q>
+impl<'a, Q> Printer<'a, Q>
 where
     Q: ExternalQueries,
 {
-    fn new(
-        arena: &'a Arena<'a>,
-        state: &'a mut CheckState,
-        context: &'a CheckContext<'q, Q>,
-        traversal: TraversalContext,
-    ) -> Printer<'a, 'q, Q> {
-        Printer { arena, state, context, traversal }
+    fn new(arena: &'a Arena<'a>, queries: &'a Q, traversal: TraversalContext) -> Printer<'a, Q> {
+        Printer { arena, queries, traversal }
     }
 
-    fn lookup_type(&mut self, id: TypeId) -> Type {
-        let id = crate::core::normalise::normalise(self.state, self.context, id).unwrap_or(id);
-        self.context.queries.lookup_type(id)
+    fn lookup_type(&self, id: TypeId) -> Type {
+        self.queries.lookup_type(id)
     }
 
     fn lookup_forall_binder(&self, id: ForallBinderId) -> ForallBinder {
-        self.context.queries.lookup_forall_binder(id)
+        self.queries.lookup_forall_binder(id)
     }
 
     fn lookup_row_type(&self, id: RowTypeId) -> RowType {
-        self.context.queries.lookup_row_type(id)
+        self.queries.lookup_row_type(id)
     }
 
     fn lookup_synonym(&self, id: SynonymId) -> Synonym {
-        self.context.queries.lookup_synonym(id)
+        self.queries.lookup_synonym(id)
     }
 
     fn lookup_smol_str(&self, id: SmolStrId) -> smol_str::SmolStr {
-        self.context.queries.lookup_smol_str(id)
+        self.queries.lookup_smol_str(id)
     }
 
     fn lookup_type_name(
@@ -173,8 +150,18 @@ where
         file_id: files::FileId,
         type_id: indexing::TypeItemId,
     ) -> Option<String> {
-        let indexed = self.context.queries.indexed(file_id).ok()?;
+        let indexed = self.queries.indexed(file_id).ok()?;
         indexed.items[type_id].name.as_ref().map(|name| name.to_string())
+    }
+
+    fn is_record_constructor(&self, id: TypeId) -> bool {
+        if let Type::Constructor(file_id, type_id) = self.lookup_type(id)
+            && file_id == self.queries.prim_id()
+            && let Some(name) = self.lookup_type_name(file_id, type_id)
+        {
+            return name == "Record";
+        }
+        false
     }
 
     fn parens_if(&self, condition: bool, doc: Doc<'a>) -> Doc<'a> {
@@ -296,10 +283,7 @@ where
                 self.arena.text(format!("({name} :: ")).append(kind).append(self.arena.text(")"))
             }
 
-            Type::Unification(unification_id) => {
-                let entry = self.state.unifications.get(unification_id);
-                self.arena.text(format!("?{unification_id}[{}]", entry.depth.0))
-            }
+            Type::Unification(unification_id) => self.arena.text(format!("?{unification_id}")),
 
             Type::Free(name_id) => {
                 let name = self.lookup_smol_str(name_id);
@@ -314,7 +298,7 @@ where
     }
 }
 
-impl<'a, 'q, Q> Printer<'a, 'q, Q>
+impl<'a, Q> Printer<'a, Q>
 where
     Q: ExternalQueries,
 {
@@ -324,7 +308,7 @@ where
         mut function: TypeId,
         argument: TypeId,
     ) -> Doc<'a> {
-        if function == self.context.prim.record {
+        if self.is_record_constructor(function) {
             return self.format_record_application(argument);
         }
 
@@ -394,7 +378,7 @@ where
     }
 }
 
-impl<'a, 'q, Q> Printer<'a, 'q, Q>
+impl<'a, Q> Printer<'a, Q>
 where
     Q: ExternalQueries,
 {
@@ -506,7 +490,7 @@ where
     }
 }
 
-impl<'a, 'q, Q> Printer<'a, 'q, Q>
+impl<'a, Q> Printer<'a, Q>
 where
     Q: ExternalQueries,
 {
