@@ -7,6 +7,7 @@ pub mod pretty;
 pub mod substitute;
 pub mod unification;
 pub mod walk;
+pub mod zonk;
 
 use std::sync::Arc;
 

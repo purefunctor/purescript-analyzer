@@ -11,6 +11,7 @@ use lowering::Scc;
 use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::generalise;
+use crate::core::zonk::Zonk;
 use crate::state::CheckState;
 
 /// Checks all type items in topological order.

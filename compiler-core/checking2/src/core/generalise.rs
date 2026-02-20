@@ -24,9 +24,8 @@ use petgraph::prelude::DiGraphMap;
 use rustc_hash::FxHashSet;
 use smol_str::SmolStr;
 
-use crate::core::normalise;
 use crate::core::substitute::{SubstituteUnification, UnificationToType};
-use crate::core::{ForallBinder, Type, TypeId};
+use crate::core::{ForallBinder, Type, TypeId, normalise};
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
