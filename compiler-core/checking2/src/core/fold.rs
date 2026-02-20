@@ -4,14 +4,15 @@ use std::sync::Arc;
 
 use building_types::QueryResult;
 
-use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::normalise::normalise;
 use crate::core::{ForallBinder, Type, TypeId};
 use crate::state::CheckState;
+use crate::{ExternalQueries, safe_loop};
 
 pub enum FoldAction {
     Replace(TypeId),
+    ReplaceThen(TypeId),
     Continue,
 }
 
@@ -37,13 +38,27 @@ where
     Q: ExternalQueries,
     F: TypeFold,
 {
-    let id = normalise(state, context, id)?;
-    let t = context.lookup_type(id);
+    let mut id = normalise(state, context, id)?;
 
-    if let FoldAction::Replace(id) = folder.transform(state, context, id, &t)? {
-        return Ok(id);
+    safe_loop! {
+        let t = context.lookup_type(id);
+        match folder.transform(state, context, id, &t)? {
+            FoldAction::Replace(id) => return Ok(id),
+            FoldAction::ReplaceThen(then_id) => {
+                let then_id = normalise(state, context, then_id)?;
+                if then_id == id {
+                    break;
+                }
+                id = then_id;
+                continue;
+            }
+            FoldAction::Continue => {
+                break;
+            },
+        }
     }
 
+    let t = context.lookup_type(id);
     let result = match t {
         Type::Application(function, argument) => {
             let function = fold_type(state, context, function, folder)?;
