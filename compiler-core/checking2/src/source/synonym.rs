@@ -92,7 +92,7 @@ pub fn infer_synonym_application<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     id: lowering::TypeId,
-    (file_id, type_id, synonym, kind): (FileId, TypeItemId, Synonym, TypeId),
+    (file_id, type_id, synonym, function_kind): (FileId, TypeItemId, Synonym, TypeId),
     arguments: &[lowering::TypeId],
 ) -> QueryResult<(TypeId, TypeId)>
 where
@@ -113,8 +113,13 @@ where
 
     let (synonym_arguments, excess_arguments) = arguments.split_at(expected_arity);
 
-    let (argument_types, synonym_kind) =
-        infer_synonym_application_arguments(state, context, kind, synonym_arguments)?;
+    let function_type = context.queries.intern_type(Type::Constructor(file_id, type_id));
+    let (argument_types, (_, synonym_kind)) = infer_synonym_application_chain(
+        state,
+        context,
+        (function_type, function_kind),
+        synonym_arguments,
+    )?;
 
     let synonym = Synonym {
         saturation: Saturation::Full,
@@ -134,35 +139,35 @@ where
     Ok((synonym_type, synonym_kind))
 }
 
-fn infer_synonym_application_arguments<Q>(
+fn infer_synonym_application_chain<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    kind: TypeId,
+    function: (TypeId, TypeId),
     arguments: &[lowering::TypeId],
-) -> QueryResult<(Vec<TypeId>, TypeId)>
+) -> QueryResult<(Vec<TypeId>, (TypeId, TypeId))>
 where
     Q: ExternalQueries,
 {
     let mut argument_types = vec![];
-    let mut synonym_kind = kind;
+    let mut current_function = function;
 
     for &argument_id in arguments {
-        let (argument_type, result_kind) =
-            infer_synonym_application_argument(state, context, synonym_kind, argument_id)?;
+        let (argument_type, result_function) =
+            infer_synonym_application_kind(state, context, current_function, argument_id)?;
 
         argument_types.push(argument_type);
-        synonym_kind = result_kind;
+        current_function = result_function;
     }
 
-    Ok((argument_types, synonym_kind))
+    Ok((argument_types, current_function))
 }
 
-fn infer_synonym_application_argument<Q>(
+fn infer_synonym_application_kind<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    function_kind: TypeId,
+    (function_type, function_kind): (TypeId, TypeId),
     argument: lowering::TypeId,
-) -> QueryResult<(TypeId, TypeId)>
+) -> QueryResult<(TypeId, (TypeId, TypeId))>
 where
     Q: ExternalQueries,
 {
@@ -172,7 +177,8 @@ where
         Type::Function(argument_kind, result_kind) => {
             let (argument_type, _) = types::check_kind(state, context, argument, argument_kind)?;
             let result_kind = normalise::normalise(state, context, result_kind)?;
-            Ok((argument_type, result_kind))
+            let result_type = context.intern_application(function_type, argument_type);
+            Ok((argument_type, (result_type, result_kind)))
         }
 
         Type::Unification(unification_id) => {
@@ -184,8 +190,9 @@ where
 
             let (argument_type, _) = types::check_kind(state, context, argument, argument_u)?;
             let result_kind = normalise::normalise(state, context, result_u)?;
+            let result_type = context.intern_application(function_type, argument_type);
 
-            Ok((argument_type, result_kind))
+            Ok((argument_type, (result_type, result_kind)))
         }
 
         Type::Forall(binder_id, inner_kind) => {
@@ -193,19 +200,21 @@ where
             let binder_kind = normalise::normalise(state, context, binder.kind)?;
 
             let kind_argument = state.fresh_unification(context.queries, binder_kind);
+            let function_type = context.intern_kind_application(function_type, kind_argument);
             let function_kind =
                 SubstituteName::one(state, context, binder.name, kind_argument, inner_kind)?;
 
-            infer_synonym_application_argument(state, context, function_kind, argument)
+            infer_synonym_application_kind(state, context, (function_type, function_kind), argument)
         }
 
         _ => {
             let (argument_type, _) = types::infer_kind(state, context, argument)?;
 
-            {
-                let function_type = context.unknown("unknown function type");
-                let function_type = state.pretty_id(context, function_type)?;
+            let t = context.intern_application(function_type, argument_type);
+            let k = context.unknown("cannot apply synonym type");
 
+            {
+                let function_type = state.pretty_id(context, function_type)?;
                 let function_kind = state.pretty_id(context, function_kind)?;
                 let argument_type = state.pretty_id(context, argument_type)?;
 
@@ -216,8 +225,7 @@ where
                 });
             }
 
-            let k = context.unknown("cannot apply synonym");
-            Ok((argument_type, k))
+            Ok((argument_type, (t, k)))
         }
     }
 }
