@@ -18,6 +18,15 @@ use crate::error::{ErrorCrumb, ErrorKind};
 use crate::state::CheckState;
 
 /// Checks all type items in topological order.
+///
+/// The order is determined by [`GroupedModule::type_scc`] in [`lowering`].
+/// The algorithm accounts for items that appear in [`RecursiveKinds`] by
+/// filtering and populating these items with [`Type::Unknown`]. This
+/// enables checking of other binding groups, which may be unaffected.
+///
+/// [`GroupedModule::type_scc`]: lowering::GroupedModule::type_scc
+/// [`RecursiveKinds`]: LoweringError::RecursiveKinds
+/// [`Type::Unknown`]: crate::core::Type::Unknown
 pub fn check_type_items<Q>(state: &mut CheckState, context: &CheckContext<Q>) -> QueryResult<()>
 where
     Q: ExternalQueries,
