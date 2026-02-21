@@ -6,7 +6,10 @@ pub mod types;
 
 use building_types::QueryResult;
 use indexing::TypeItemId;
-use lowering::{DataIr, NewtypeIr};
+use lowering::{
+    DataIr, LoweringError, NewtypeIr, RecursiveGroup, Scc, TermItemIr, TypeItemIr,
+    TypeVariableBinding,
+};
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
@@ -20,7 +23,8 @@ where
     Q: ExternalQueries,
 {
     for scc in &context.grouped.type_scc {
-        let items = filter_type_items(context, scc);
+        let (items, skipped) = partition_type_items(context, scc);
+        populate_skipped_items(state, context, &skipped);
 
         for &item in &items {
             check_type_signature(state, context, item)?;
@@ -73,48 +77,49 @@ where
     Ok(())
 }
 
-fn filter_type_items<Q>(
+fn partition_type_items<Q>(
     context: &CheckContext<Q>,
-    scc: &lowering::Scc<TypeItemId>,
-) -> Vec<TypeItemId>
+    scc: &Scc<TypeItemId>,
+) -> (Vec<TypeItemId>, Vec<TypeItemId>)
 where
     Q: ExternalQueries,
 {
-    scc.as_slice()
-        .iter()
-        .copied()
-        .filter(|&item_id| {
-            if has_recursive_kind_error(context, item_id) {
-                return false;
-            }
+    let mut checked = vec![];
+    let mut skipped = vec![];
 
-            // Recursive groups should only contain proper equations.
-            !(scc.is_recursive() && is_foreign_item(context, item_id))
-        })
-        .collect()
+    for &item_id in scc.as_slice() {
+        if is_recursive_kind(context, item_id) {
+            skipped.push(item_id);
+        } else {
+            checked.push(item_id);
+        }
+    }
+
+    (checked, skipped)
 }
 
-fn has_recursive_kind_error<Q>(context: &CheckContext<Q>, item_id: TypeItemId) -> bool
+fn is_recursive_kind<Q>(context: &CheckContext<Q>, item_id: TypeItemId) -> bool
 where
     Q: ExternalQueries,
 {
     context.grouped.cycle_errors.iter().any(|error| {
-        if let lowering::LoweringError::RecursiveKinds(recursive) = error {
-            recursive.group.contains(&item_id)
-        } else {
-            false
-        }
+        let LoweringError::RecursiveKinds(RecursiveGroup { group }) = error else {
+            return false;
+        };
+        group.contains(&item_id)
     })
 }
 
-fn is_foreign_item<Q>(context: &CheckContext<Q>, item_id: TypeItemId) -> bool
-where
+fn populate_skipped_items<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    items: &[TypeItemId],
+) where
     Q: ExternalQueries,
 {
-    matches!(
-        context.lowered.info.get_type_item(item_id),
-        Some(lowering::TypeItemIr::Foreign { .. })
-    )
+    let unknown = context.unknown("invalid recursive type");
+    let skipped = items.iter().map(|item| (*item, unknown));
+    state.checked.types.extend(skipped);
 }
 
 fn check_type_signature<Q>(
@@ -130,21 +135,21 @@ where
     };
 
     match item {
-        lowering::TypeItemIr::DataGroup { signature, .. } => {
+        TypeItemIr::DataGroup { signature, .. } => {
             let Some(signature) = signature else { return Ok(()) };
             check_data_signature(state, context, item_id, *signature)?;
         }
-        lowering::TypeItemIr::NewtypeGroup { signature, .. } => {
+        TypeItemIr::NewtypeGroup { signature, .. } => {
             let Some(signature) = signature else { return Ok(()) };
             check_data_signature(state, context, item_id, *signature)?;
         }
-        lowering::TypeItemIr::SynonymGroup { .. } => todo!(),
-        lowering::TypeItemIr::ClassGroup { .. } => todo!(),
-        lowering::TypeItemIr::Foreign { signature, .. } => {
+        TypeItemIr::SynonymGroup { .. } => todo!(),
+        TypeItemIr::ClassGroup { .. } => todo!(),
+        TypeItemIr::Foreign { signature, .. } => {
             let Some(signature) = signature else { return Ok(()) };
             check_foreign_signature(state, context, item_id, *signature)?;
         }
-        lowering::TypeItemIr::Operator { .. } => todo!(),
+        TypeItemIr::Operator { .. } => todo!(),
     }
 
     Ok(())
@@ -191,18 +196,18 @@ where
     };
 
     match item {
-        lowering::TypeItemIr::DataGroup { signature, data, .. } => {
+        TypeItemIr::DataGroup { signature, data, .. } => {
             let Some(DataIr { variables }) = data else { return Ok(()) };
             check_data_equation(state, context, item_id, *signature, &variables)?;
         }
-        lowering::TypeItemIr::NewtypeGroup { signature, newtype, .. } => {
+        TypeItemIr::NewtypeGroup { signature, newtype, .. } => {
             let Some(NewtypeIr { variables }) = newtype else { return Ok(()) };
             check_data_equation(state, context, item_id, *signature, &variables)?;
         }
-        lowering::TypeItemIr::SynonymGroup { .. } => todo!(),
-        lowering::TypeItemIr::ClassGroup { .. } => todo!(),
-        lowering::TypeItemIr::Foreign { .. } => {}
-        lowering::TypeItemIr::Operator { .. } => todo!(),
+        TypeItemIr::SynonymGroup { .. } => todo!(),
+        TypeItemIr::ClassGroup { .. } => todo!(),
+        TypeItemIr::Foreign { .. } => {}
+        TypeItemIr::Operator { .. } => todo!(),
     }
 
     Ok(())
@@ -213,7 +218,7 @@ fn check_data_equation<Q>(
     context: &CheckContext<Q>,
     item_id: TypeItemId,
     signature: Option<lowering::TypeId>,
-    variables: &[lowering::TypeVariableBinding],
+    variables: &[TypeVariableBinding],
 ) -> QueryResult<()>
 where
     Q: ExternalQueries,
@@ -241,7 +246,7 @@ where
 fn build_data_equation_kind<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    variables: &[lowering::TypeVariableBinding],
+    variables: &[TypeVariableBinding],
     matched_arguments: &[TypeId],
     result: TypeId,
 ) -> QueryResult<TypeId>
@@ -287,7 +292,7 @@ fn check_data_equation_variables<Q>(
     context: &CheckContext<Q>,
     signature_id: lowering::TypeId,
     item_id: TypeItemId,
-    variables: &[lowering::TypeVariableBinding],
+    variables: &[TypeVariableBinding],
 ) -> QueryResult<(Vec<TypeId>, TypeId)>
 where
     Q: ExternalQueries,
@@ -326,7 +331,7 @@ where
     Q: ExternalQueries,
 {
     for constructor_id in context.indexed.pairs.data_constructors(item_id) {
-        let Some(lowering::TermItemIr::Constructor { arguments }) =
+        let Some(TermItemIr::Constructor { arguments }) =
             context.lowered.info.get_term_item(constructor_id)
         else {
             continue;
