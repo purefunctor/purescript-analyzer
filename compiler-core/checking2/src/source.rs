@@ -69,7 +69,7 @@ where
             continue;
         };
 
-        let kind = zonk::Zonk::on(state, context, kind)?;
+        let kind = zonk::zonk(state, context, kind)?;
         let kind = generalise::generalise(state, context, kind)?;
         state.checked.types.insert(item_id, kind);
     }

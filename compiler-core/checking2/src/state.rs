@@ -7,7 +7,7 @@ use files::FileId;
 use rustc_hash::FxHashMap;
 
 use crate::context::CheckContext;
-use crate::core::zonk::Zonk;
+use crate::core::zonk;
 use crate::core::{Depth, Name, SmolStrId, Type, TypeId, pretty};
 use crate::error::{CheckError, ErrorCrumb, ErrorKind};
 use crate::implication::Implications;
@@ -196,7 +196,7 @@ impl CheckState {
     where
         Q: ExternalQueries,
     {
-        let id = Zonk::on(self, context, id)?;
+        let id = zonk::zonk(self, context, id)?;
         let pretty = pretty::print(context.queries, id);
         Ok(context.queries.intern_smol_str(pretty))
     }

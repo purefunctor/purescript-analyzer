@@ -23,15 +23,9 @@ impl TypeFold for Zonk {
     }
 }
 
-impl Zonk {
-    pub fn on<Q>(
-        state: &mut CheckState,
-        context: &CheckContext<Q>,
-        id: TypeId,
-    ) -> QueryResult<TypeId>
-    where
-        Q: ExternalQueries,
-    {
-        fold_type(state, context, id, &mut Zonk)
-    }
+pub fn zonk<Q>(state: &mut CheckState, context: &CheckContext<Q>, id: TypeId) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    fold_type(state, context, id, &mut Zonk)
 }
