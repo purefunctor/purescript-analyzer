@@ -8,8 +8,8 @@ pub mod intermediate;
 pub mod scope;
 pub mod source;
 
-use std::hash::Hash;
 use std::sync::Arc;
+use std::{hash::Hash, slice};
 
 pub use error::*;
 pub use intermediate::*;
@@ -52,6 +52,19 @@ pub enum Scc<T> {
     Recursive(T),
     /// Mutually-recursive
     Mutual(Vec<T>),
+}
+
+impl<T> Scc<T> {
+    pub fn as_slice(&self) -> &[T] {
+        match self {
+            Scc::Base(item) | Scc::Recursive(item) => slice::from_ref(item),
+            Scc::Mutual(items) => items.as_slice(),
+        }
+    }
+
+    pub fn is_recursive(&self) -> bool {
+        matches!(self, Scc::Recursive(..) | Scc::Mutual(..))
+    }
 }
 
 pub fn lower_module(
