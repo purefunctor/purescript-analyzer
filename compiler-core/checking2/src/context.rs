@@ -167,6 +167,11 @@ where
         self.queries.intern_type(Type::Function(argument, result))
     }
 
+    /// Interns a right-associated function chain from arguments to result.
+    pub fn intern_function_chain(&self, arguments: &[TypeId], result: TypeId) -> TypeId {
+        arguments.iter().rfold(result, |result, &argument| self.intern_function(argument, result))
+    }
+
     /// Interns a [`Type::Kinded`] node.
     pub fn intern_kinded(&self, inner: TypeId, kind: TypeId) -> TypeId {
         self.queries.intern_type(Type::Kinded(inner, kind))

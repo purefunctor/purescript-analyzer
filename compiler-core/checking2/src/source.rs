@@ -1,11 +1,13 @@
 //! Implements syntax-driven checking rules for source files.
 
+pub mod signature;
 pub mod synonym;
 pub mod terms;
 pub mod types;
 
 use building_types::QueryResult;
 use indexing::TypeItemId;
+use itertools::Itertools;
 use lowering::{
     DataIr, LoweringError, NewtypeIr, RecursiveGroup, Scc, TermItemIr, TypeItemIr,
     TypeVariableBinding,
@@ -13,8 +15,8 @@ use lowering::{
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::{TypeId, generalise, toolkit, unification, zonk};
-use crate::error::{ErrorCrumb, ErrorKind};
+use crate::core::{TypeId, generalise, unification, zonk};
+use crate::error::ErrorCrumb;
 use crate::state::CheckState;
 
 /// Checks all type items in topological order.
@@ -232,19 +234,12 @@ fn check_data_equation<Q>(
 where
     Q: ExternalQueries,
 {
-    if let Some(signature_id) = signature {
-        let (matched_arguments, result) =
-            check_data_equation_variables(state, context, signature_id, item_id, variables)?;
-        let _ = build_data_equation_kind(state, context, variables, &matched_arguments, result)?;
+    if let Some(signature_id) = signature
+        && let Some(signature_kind) = state.checked.lookup_type(item_id)
+    {
+        check_data_equation_check(state, context, (signature_id, signature_kind), variables)?;
     } else {
-        let inferred_kind =
-            build_data_equation_kind(state, context, variables, &[], context.prim.t)?;
-
-        if let Some(known_kind) = state.checked.lookup_type(item_id) {
-            unification::subtype(state, context, inferred_kind, known_kind)?;
-        } else {
-            state.checked.types.insert(item_id, inferred_kind);
-        }
+        check_data_equation_infer(state, context, item_id, variables)?;
     }
 
     check_data_constructor_arguments(state, context, item_id)?;
@@ -252,83 +247,96 @@ where
     Ok(())
 }
 
-fn build_data_equation_kind<Q>(
+fn check_data_equation_check<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    variables: &[TypeVariableBinding],
-    matched_arguments: &[TypeId],
-    result: TypeId,
+    signature: (lowering::TypeId, TypeId),
+    bindings: &[TypeVariableBinding],
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    let signature = signature::inspect_signature(state, context, signature, &bindings)?;
+    let _ = check_type_variable_bindings(state, context, bindings, &signature.arguments)?;
+    Ok(())
+}
+
+fn check_type_variable_bindings<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    bindings: &[TypeVariableBinding],
+    signature: &[TypeId],
+) -> QueryResult<Vec<TypeId>>
+where
+    Q: ExternalQueries,
+{
+    let mut binding_kinds = Vec::with_capacity(bindings.len());
+
+    for (index, equation_binding) in bindings.iter().enumerate() {
+        let signature_kind = signature.get(index).copied();
+
+        let resolved_kind =
+            resolve_type_variable_binding(state, context, signature_kind, equation_binding)?;
+
+        let name = state.names.fresh();
+        state.kind_scope.bind_forall(equation_binding.id, name, resolved_kind);
+
+        binding_kinds.push(resolved_kind);
+    }
+
+    Ok(binding_kinds)
+}
+
+fn resolve_type_variable_binding<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    signature: Option<TypeId>,
+    binding: &TypeVariableBinding,
 ) -> QueryResult<TypeId>
 where
     Q: ExternalQueries,
 {
-    let mut variable_kinds = Vec::with_capacity(variables.len());
-
-    for (index, binding) in variables.iter().enumerate() {
-        let expected_kind = matched_arguments.get(index).copied();
-
-        let kind = if let Some(expected_kind) = expected_kind {
-            if let Some(kind_id) = binding.kind {
-                let (kind, _) = types::infer_kind(state, context, kind_id)?;
-                let valid = unification::subtype(state, context, expected_kind, kind)?;
-                if valid { kind } else { context.unknown("invalid data equation variable kind") }
-            } else {
-                expected_kind
-            }
-        } else {
-            if let Some(kind_id) = binding.kind {
-                let (kind, _) = types::check_kind(state, context, kind_id, context.prim.t)?;
-                kind
-            } else {
-                state.fresh_unification(context.queries, context.prim.t)
-            }
-        };
-
-        let name = state.names.fresh();
-        state.kind_scope.bind_forall(binding.id, name, kind);
-        variable_kinds.push(kind);
+    match (signature, binding.kind) {
+        (Some(signature_kind), Some(binding_kind)) => {
+            let (binding_kind, _) = types::infer_kind(state, context, binding_kind)?;
+            let valid = unification::subtype(state, context, signature_kind, binding_kind)?;
+            if valid { Ok(binding_kind) } else { Ok(context.unknown("invalid variable kind")) }
+        }
+        (Some(signature_kind), None) => {
+            // Pure checking
+            Ok(signature_kind)
+        }
+        (None, Some(binding_kind)) => {
+            let (binding_kind, _) =
+                types::check_kind(state, context, binding_kind, context.prim.t)?;
+            Ok(binding_kind)
+        }
+        (None, None) => {
+            // Pure inference
+            Ok(state.fresh_unification(context.queries, context.prim.t))
+        }
     }
-
-    let item_kind = variable_kinds
-        .iter()
-        .rfold(result, |result, &argument| context.intern_function(argument, result));
-
-    Ok(item_kind)
 }
 
-fn check_data_equation_variables<Q>(
+fn check_data_equation_infer<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    signature_id: lowering::TypeId,
     item_id: TypeItemId,
-    variables: &[TypeVariableBinding],
-) -> QueryResult<(Vec<TypeId>, TypeId)>
+    bindings: &[TypeVariableBinding],
+) -> QueryResult<()>
 where
     Q: ExternalQueries,
 {
-    let Some(stored_kind) = state.checked.lookup_type(item_id) else {
-        return Ok((vec![], context.unknown("missing checked kind for type item")));
-    };
+    let variable_kinds = check_type_variable_bindings(state, context, bindings, &[])?;
+    let inferred_kind = context.intern_function_chain(&variable_kinds, context.prim.t);
 
-    let (arguments, result) = toolkit::function_components(state, context, stored_kind)?;
-
-    if variables.len() > arguments.len() {
-        state.insert_error(ErrorKind::TypeSignatureVariableMismatch {
-            id: signature_id,
-            expected: arguments.len() as u32,
-            actual: variables.len() as u32,
-        });
+    if let Some(known_kind) = state.checked.lookup_type(item_id) {
+        unification::subtype(state, context, inferred_kind, known_kind)?;
+    } else {
+        state.checked.types.insert(item_id, inferred_kind);
     }
 
-    let matched_count = variables.len().min(arguments.len());
-    let matched_arguments = arguments.iter().take(matched_count).copied().collect::<Vec<_>>();
-
-    let final_kind = arguments
-        .iter()
-        .skip(matched_count)
-        .rfold(result, |result, &argument| context.intern_function(argument, result));
-
-    Ok((matched_arguments, final_kind))
+    Ok(())
 }
 
 fn check_data_constructor_arguments<Q>(
