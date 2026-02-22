@@ -242,7 +242,7 @@ where
         check_data_equation_infer(state, context, item_id, variables)?;
     }
 
-    check_data_constructor_arguments(state, context, item_id)?;
+    check_data_constructors(state, context, item_id)?;
 
     Ok(())
 }
@@ -339,7 +339,7 @@ where
     Ok(())
 }
 
-fn check_data_constructor_arguments<Q>(
+fn check_data_constructors<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     item_id: TypeItemId,
