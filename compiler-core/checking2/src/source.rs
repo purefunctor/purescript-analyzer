@@ -234,13 +234,13 @@ fn check_data_equation<Q>(
 where
     Q: ExternalQueries,
 {
-    if let Some(signature_id) = signature
+    let _ = if let Some(signature_id) = signature
         && let Some(signature_kind) = state.checked.lookup_type(item_id)
     {
-        check_data_equation_check(state, context, (signature_id, signature_kind), variables)?;
+        check_data_equation_check(state, context, (signature_id, signature_kind), variables)?
     } else {
-        check_data_equation_infer(state, context, item_id, variables)?;
-    }
+        check_data_equation_infer(state, context, item_id, variables)?
+    };
 
     check_data_constructors(state, context, item_id)?;
 
@@ -252,13 +252,12 @@ fn check_data_equation_check<Q>(
     context: &CheckContext<Q>,
     signature: (lowering::TypeId, TypeId),
     bindings: &[TypeVariableBinding],
-) -> QueryResult<()>
+) -> QueryResult<Vec<ForallBinder>>
 where
     Q: ExternalQueries,
 {
     let signature = signature::inspect_signature(state, context, signature, &bindings)?;
-    let _ = check_type_variable_bindings(state, context, bindings, &signature.arguments)?;
-    Ok(())
+    check_type_variable_bindings(state, context, bindings, &signature.arguments)
 }
 
 fn check_type_variable_bindings<Q>(
@@ -326,12 +325,12 @@ fn check_data_equation_infer<Q>(
     context: &CheckContext<Q>,
     item_id: TypeItemId,
     bindings: &[TypeVariableBinding],
-) -> QueryResult<()>
+) -> QueryResult<Vec<ForallBinder>>
 where
     Q: ExternalQueries,
 {
     let bindings = check_type_variable_bindings(state, context, bindings, &[])?;
-    let kinds = bindings.into_iter().map(|binder| binder.kind);
+    let kinds = bindings.iter().map(|binder| binder.kind);
     let inferred = context.intern_function_chain(kinds, context.prim.t);
 
     if let Some(expected) = state.checked.lookup_type(item_id) {
@@ -340,7 +339,7 @@ where
         state.checked.types.insert(item_id, inferred);
     }
 
-    Ok(())
+    Ok(bindings)
 }
 
 fn check_data_constructors<Q>(
