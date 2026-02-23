@@ -11,10 +11,11 @@ use lowering::{
     DataIr, LoweringError, NewtypeIr, RecursiveGroup, Scc, TermItemIr, TypeItemIr,
     TypeVariableBinding,
 };
+use smol_str::SmolStr;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::{TypeId, generalise, unification, zonk};
+use crate::core::{ForallBinder, TypeId, generalise, unification, zonk};
 use crate::error::ErrorCrumb;
 use crate::state::CheckState;
 
@@ -265,25 +266,28 @@ fn check_type_variable_bindings<Q>(
     context: &CheckContext<Q>,
     bindings: &[TypeVariableBinding],
     signature: &[TypeId],
-) -> QueryResult<Vec<TypeId>>
+) -> QueryResult<Vec<ForallBinder>>
 where
     Q: ExternalQueries,
 {
-    let mut binding_kinds = Vec::with_capacity(bindings.len());
+    let mut binders = vec![];
 
     for (index, equation_binding) in bindings.iter().enumerate() {
         let signature_kind = signature.get(index).copied();
 
-        let resolved_kind =
-            resolve_type_variable_binding(state, context, signature_kind, equation_binding)?;
+        let kind = resolve_type_variable_binding(state, context, signature_kind, equation_binding)?;
 
         let name = state.names.fresh();
-        state.kind_scope.bind_forall(equation_binding.id, name, resolved_kind);
+        state.kind_scope.bind_forall(equation_binding.id, name, kind);
 
-        binding_kinds.push(resolved_kind);
+        const MISSING: SmolStr = SmolStr::new_static("<MissingName>");
+        let text = equation_binding.name.clone().unwrap_or(MISSING);
+        let visible = equation_binding.visible;
+
+        binders.push(ForallBinder { visible, name, text, kind });
     }
 
-    Ok(binding_kinds)
+    Ok(binders)
 }
 
 fn resolve_type_variable_binding<Q>(
@@ -326,13 +330,14 @@ fn check_data_equation_infer<Q>(
 where
     Q: ExternalQueries,
 {
-    let variable_kinds = check_type_variable_bindings(state, context, bindings, &[])?;
-    let inferred_kind = context.intern_function_chain(variable_kinds, context.prim.t);
+    let bindings = check_type_variable_bindings(state, context, bindings, &[])?;
+    let kinds = bindings.into_iter().map(|binder| binder.kind);
+    let inferred = context.intern_function_chain(kinds, context.prim.t);
 
-    if let Some(known_kind) = state.checked.lookup_type(item_id) {
-        unification::subtype(state, context, inferred_kind, known_kind)?;
+    if let Some(expected) = state.checked.lookup_type(item_id) {
+        unification::subtype(state, context, inferred, expected)?;
     } else {
-        state.checked.types.insert(item_id, inferred_kind);
+        state.checked.types.insert(item_id, inferred);
     }
 
     Ok(())
