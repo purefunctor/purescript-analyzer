@@ -1,16 +1,15 @@
-use std::sync::Arc;
-
 use building_types::QueryResult;
-use lowering::{TypeVariableBinding};
+use lowering::TypeVariableBinding;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::{TypeId, toolkit};
+use crate::core::{ForallBinder, TypeId, toolkit};
 use crate::error::ErrorKind;
 use crate::state::CheckState;
 
 pub struct InspectSignature {
-    pub arguments: Arc<[TypeId]>,
+    pub binders: Vec<ForallBinder>,
+    pub arguments: Vec<TypeId>,
     pub result: TypeId,
 }
 
@@ -24,7 +23,12 @@ where
     Q: ExternalQueries,
 {
     let (signature_id, signature_kind) = signature;
-    let (arguments, result) = toolkit::function_components(state, context, signature_kind)?;
+
+    let toolkit::InspectQuantified { binders, quantified } =
+        toolkit::inspect_quantified(state, context, signature_kind)?;
+
+    let toolkit::InspectFunction { arguments, result } =
+        toolkit::inspect_function(state, context, quantified)?;
 
     if bindings.len() > arguments.len() {
         state.insert_error(ErrorKind::TypeSignatureVariableMismatch {
@@ -37,5 +41,5 @@ where
     let count = bindings.len().min(arguments.len());
     let arguments = arguments.iter().take(count).copied().collect();
 
-    Ok(InspectSignature { arguments, result })
+    Ok(InspectSignature { binders, arguments, result })
 }

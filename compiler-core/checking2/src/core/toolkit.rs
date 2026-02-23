@@ -3,16 +3,50 @@
 use building_types::QueryResult;
 
 use crate::context::CheckContext;
-use crate::core::{Type, TypeId, normalise};
+use crate::core::{ForallBinder, Type, TypeId, normalise};
 use crate::state::CheckState;
 use crate::{ExternalQueries, safe_loop};
 
-/// Splits a function-like type into argument kinds and a result kind.
-pub fn function_components<Q>(
+pub struct InspectQuantified {
+    pub binders: Vec<ForallBinder>,
+    pub quantified: TypeId,
+}
+
+pub struct InspectFunction {
+    pub arguments: Vec<TypeId>,
+    pub result: TypeId,
+}
+
+pub fn inspect_quantified<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     id: TypeId,
-) -> QueryResult<(Vec<TypeId>, TypeId)>
+) -> QueryResult<InspectQuantified>
+where
+    Q: ExternalQueries,
+{
+    let mut binders = vec![];
+    let mut current = id;
+
+    safe_loop! {
+        current = normalise::normalise(state, context, current)?;
+
+        let Type::Forall(binder_id, inner) = context.lookup_type(current) else {
+            break;
+        };
+
+        binders.push(context.lookup_forall_binder(binder_id));
+        current = inner;
+    }
+
+    Ok(InspectQuantified { binders, quantified: current })
+}
+
+pub fn inspect_function<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    id: TypeId,
+) -> QueryResult<InspectFunction>
 where
     Q: ExternalQueries,
 {
@@ -23,9 +57,6 @@ where
         current = normalise::normalise(state, context, current)?;
 
         match context.lookup_type(current) {
-            Type::Forall(_, inner) => {
-                current = inner;
-            }
             Type::Function(argument, result) => {
                 arguments.push(argument);
                 current = result;
@@ -47,5 +78,5 @@ where
         }
     }
 
-    Ok((arguments, current))
+    Ok(InspectFunction { arguments, result: current })
 }
