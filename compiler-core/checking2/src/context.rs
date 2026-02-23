@@ -168,8 +168,14 @@ where
     }
 
     /// Interns a right-associated function chain from arguments to result.
-    pub fn intern_function_chain(&self, arguments: &[TypeId], result: TypeId) -> TypeId {
-        arguments.iter().rfold(result, |result, &argument| self.intern_function(argument, result))
+    pub fn intern_function_chain<I>(&self, arguments: I, result: TypeId) -> TypeId
+    where
+        I: IntoIterator<Item = TypeId>,
+        I::IntoIter: DoubleEndedIterator
+    {
+        arguments
+            .into_iter()
+            .rfold(result, |result, argument| self.intern_function(argument, result))
     }
 
     /// Interns a [`Type::Kinded`] node.

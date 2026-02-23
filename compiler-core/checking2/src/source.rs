@@ -327,7 +327,7 @@ where
     Q: ExternalQueries,
 {
     let variable_kinds = check_type_variable_bindings(state, context, bindings, &[])?;
-    let inferred_kind = context.intern_function_chain(&variable_kinds, context.prim.t);
+    let inferred_kind = context.intern_function_chain(variable_kinds, context.prim.t);
 
     if let Some(known_kind) = state.checked.lookup_type(item_id) {
         unification::subtype(state, context, inferred_kind, known_kind)?;
