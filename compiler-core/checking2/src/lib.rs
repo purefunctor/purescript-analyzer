@@ -10,7 +10,7 @@ use std::sync::Arc;
 
 use building_types::{QueryProxy, QueryResult};
 use files::FileId;
-use indexing::TypeItemId;
+use indexing::{TermItemId, TypeItemId};
 use resolving::ResolvedModule;
 use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
@@ -52,6 +52,7 @@ pub trait ExternalQueries:
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct CheckedModule {
     pub types: FxHashMap<TypeItemId, TypeId>,
+    pub terms: FxHashMap<TermItemId, TypeId>,
     pub synonyms: FxHashMap<TypeItemId, core::Synonym>,
     pub roles: FxHashMap<TypeItemId, Arc<[Role]>>,
     pub errors: Vec<CheckError>,
@@ -60,6 +61,10 @@ pub struct CheckedModule {
 impl CheckedModule {
     pub fn lookup_type(&self, id: TypeItemId) -> Option<TypeId> {
         self.types.get(&id).copied()
+    }
+
+    pub fn lookup_term(&self, id: TermItemId) -> Option<TypeId> {
+        self.terms.get(&id).copied()
     }
 
     pub fn lookup_synonym(&self, id: TypeItemId) -> Option<core::Synonym> {
