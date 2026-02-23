@@ -37,3 +37,7 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_003_data_check_main() { run_test("003_data_check", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_004_data_infer_main() { run_test("004_data_infer", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_005_newtype_check_main() { run_test("005_newtype_check", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_006_newtype_infer_main() { run_test("006_newtype_infer", "Main"); }
