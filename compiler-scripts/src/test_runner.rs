@@ -8,7 +8,7 @@ mod traces;
 mod ui;
 
 pub use category::TestCategory;
-pub use cli::{CategoryCommand, RunArgs, SnapshotArgs};
+pub use cli::RunArgs;
 
 use std::path::PathBuf;
 use std::time::Instant;
@@ -61,16 +61,17 @@ pub struct SnapshotOutcome {
 
 pub fn accept_category(
     category: TestCategory,
-    args: &SnapshotArgs,
+    filters: &[String],
+    confirm: bool,
 ) -> anyhow::Result<SnapshotOutcome> {
-    let snapshots = pending::collect_pending_snapshots(category, &args.filters)?;
+    let snapshots = pending::collect_pending_snapshots(category, filters)?;
 
     if snapshots.is_empty() {
         println!("{}", style("No pending snapshots found.").dim());
         return Ok(SnapshotOutcome { success: true, count: 0 });
     }
 
-    if !args.all && args.filters.is_empty() {
+    if !confirm && filters.is_empty() {
         println!("{} pending snapshot(s) in {}", snapshots.len(), style(category.as_str()).cyan());
         println!();
         for info in &snapshots {
@@ -79,7 +80,7 @@ pub fn accept_category(
         println!();
         println!(
             "To accept all, run: {}",
-            style(format!("just t {} accept --all", category.as_str())).cyan()
+            style(format!("just t {} --accept --confirm", category.as_str())).cyan()
         );
         return Ok(SnapshotOutcome { success: false, count: 0 });
     }
@@ -93,27 +94,13 @@ pub fn accept_category(
 
 pub fn reject_category(
     category: TestCategory,
-    args: &SnapshotArgs,
+    filters: &[String],
 ) -> anyhow::Result<SnapshotOutcome> {
-    let snapshots = pending::collect_pending_snapshots(category, &args.filters)?;
+    let snapshots = pending::collect_pending_snapshots(category, filters)?;
 
     if snapshots.is_empty() {
         println!("{}", style("No pending snapshots found.").dim());
         return Ok(SnapshotOutcome { success: true, count: 0 });
-    }
-
-    if !args.all && args.filters.is_empty() {
-        println!("{} pending snapshot(s) in {}", snapshots.len(), style(category.as_str()).cyan());
-        println!();
-        for info in &snapshots {
-            println!("  {}", style(&info.short_path).dim());
-        }
-        println!();
-        println!(
-            "To reject all, run: {}",
-            style(format!("just t {} reject --all", category.as_str())).cyan()
-        );
-        return Ok(SnapshotOutcome { success: false, count: 0 });
     }
 
     let result = pending::reject_snapshots(&snapshots);

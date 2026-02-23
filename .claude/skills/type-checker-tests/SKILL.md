@@ -48,6 +48,15 @@ test' [x] = x
 just t checking NNN MMM
 ```
 
+### 4. Accept or reject snapshots
+
+```bash
+just t checking NNN --diff        # Inspect a fixture diff
+just t checking NNN --accept      # Accept a specific fixture
+just t checking NNN --reject      # Reject a specific fixture
+just t checking --accept --confirm # Accept all pending snapshots
+```
+
 ## Multi-File Tests
 
 For imports, re-exports, or cross-module behavior:

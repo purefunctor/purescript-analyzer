@@ -2,8 +2,8 @@ use clap::Parser;
 use console::style;
 
 use compiler_scripts::test_runner::{
-    CategoryCommand, DeleteFixtureOutcome, RunArgs, TestCategory, accept_category, create_fixture,
-    delete_fixture, reject_category, run_category,
+    DeleteFixtureOutcome, RunArgs, TestCategory, accept_category, create_fixture, delete_fixture,
+    reject_category, run_category,
 };
 
 #[derive(Parser)]
@@ -78,42 +78,47 @@ fn main() {
         return;
     }
 
-    match &cli.args.command {
-        Some(CategoryCommand::Accept(args)) => {
-            let outcome = match accept_category(cli.category, args) {
-                Ok(outcome) => outcome,
-                Err(error) => {
-                    eprintln!("{:#}", error);
-                    std::process::exit(1);
-                }
-            };
-            if !outcome.success {
+    if cli.args.accept && cli.args.reject {
+        eprintln!("--accept and --reject cannot be used together");
+        std::process::exit(2);
+    }
+
+    if cli.args.accept {
+        let outcome = match accept_category(cli.category, &cli.args.filters, cli.args.confirm) {
+            Ok(outcome) => outcome,
+            Err(error) => {
+                eprintln!("{:#}", error);
                 std::process::exit(1);
             }
+        };
+        if !outcome.success {
+            std::process::exit(1);
         }
-        Some(CategoryCommand::Reject(args)) => {
-            let outcome = match reject_category(cli.category, args) {
-                Ok(outcome) => outcome,
-                Err(error) => {
-                    eprintln!("{:#}", error);
-                    std::process::exit(1);
-                }
-            };
-            if !outcome.success {
+        return;
+    }
+
+    if cli.args.reject {
+        let outcome = match reject_category(cli.category, &cli.args.filters) {
+            Ok(outcome) => outcome,
+            Err(error) => {
+                eprintln!("{:#}", error);
                 std::process::exit(1);
             }
+        };
+        if !outcome.success {
+            std::process::exit(1);
         }
-        None => {
-            let outcome = match run_category(cli.category, &cli.args) {
-                Ok(outcome) => outcome,
-                Err(error) => {
-                    eprintln!("{:#}", error);
-                    std::process::exit(1);
-                }
-            };
-            if !outcome.tests_passed {
-                std::process::exit(1);
-            }
+        return;
+    }
+
+    let outcome = match run_category(cli.category, &cli.args) {
+        Ok(outcome) => outcome,
+        Err(error) => {
+            eprintln!("{:#}", error);
+            std::process::exit(1);
         }
+    };
+    if !outcome.tests_passed {
+        std::process::exit(1);
     }
 }

@@ -28,11 +28,12 @@ just t <category> --delete "name"  # Dry-run fixture deletion (use --confirm)
 ### Snapshot commands
 
 ```bash
-just t <category> accept [--all] [filters...]  # Accept pending snapshots
-just t <category> reject [--all] [filters...]  # Reject pending snapshots
+just t <category> [filters...] --accept             # Accept matching snapshots
+just t <category> [filters...] --reject             # Reject matching snapshots
+just t <category> --accept --confirm                # Accept all pending snapshots
 ```
 
-Requires `--all` flag when no filters provided (safety guardrail).
+For safety, unfiltered `--accept` requires `--confirm`.
 
 ### Exclusion filters
 

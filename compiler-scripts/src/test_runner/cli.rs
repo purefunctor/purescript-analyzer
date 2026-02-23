@@ -1,23 +1,4 @@
-use clap::{Args, Subcommand};
-
-#[derive(Subcommand, Clone, Debug)]
-pub enum CategoryCommand {
-    /// Accept pending snapshots for this category
-    Accept(SnapshotArgs),
-    /// Reject pending snapshots for this category
-    Reject(SnapshotArgs),
-}
-
-#[derive(Args, Clone, Debug)]
-pub struct SnapshotArgs {
-    /// Snapshot filters (same as test filters)
-    #[arg(num_args = 0..)]
-    pub filters: Vec<String>,
-
-    /// Accept/reject all pending snapshots (required when no filters provided)
-    #[arg(long)]
-    pub all: bool,
-}
+use clap::Args;
 
 #[derive(Args, Clone, Debug)]
 pub struct RunArgs {
@@ -29,13 +10,17 @@ pub struct RunArgs {
     #[arg(long, value_name = "NAME")]
     pub delete: Option<String>,
 
-    /// Confirm deletion for --delete
+    /// Confirm destructive/global actions (required for unfiltered --accept and --delete)
     #[arg(long)]
     pub confirm: bool,
 
-    /// Subcommand (accept/reject) or test filters
-    #[command(subcommand)]
-    pub command: Option<CategoryCommand>,
+    /// Accept pending snapshots matching filters
+    #[arg(long)]
+    pub accept: bool,
+
+    /// Reject pending snapshots matching filters
+    #[arg(long)]
+    pub reject: bool,
 
     /// Test name or number filters (passed through to nextest)
     #[arg(num_args = 0..)]
