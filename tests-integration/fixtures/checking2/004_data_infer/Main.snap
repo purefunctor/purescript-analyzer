@@ -1,0 +1,10 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Proxy :: forall (t0 :: Type) (a :: (t0 :: Type)). Proxy @(t0 :: Type) (a :: (t0 :: Type))
+
+Types
+Proxy :: forall (t0 :: Type). (t0 :: Type) -> Type
