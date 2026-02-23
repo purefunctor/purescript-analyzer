@@ -13,6 +13,9 @@ pub struct InspectSignature {
     pub result: TypeId,
 }
 
+// TODO: Inline into check_data_equation_check; inspect_quantified and
+// inspect_function are still needed for error reporting (mismatch), but
+// InspectSignature can be collapsed to just Vec<TypeId> for arguments.
 pub fn inspect_signature<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,

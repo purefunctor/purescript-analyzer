@@ -6,7 +6,7 @@ pub mod terms;
 pub mod types;
 
 use building_types::QueryResult;
-use indexing::TypeItemId;
+use indexing::{TermItemId, TypeItemId};
 use lowering::{
     DataIr, LoweringError, NewtypeIr, RecursiveGroup, Scc, TermItemIr, TypeItemIr,
     TypeVariableBinding,
@@ -15,9 +15,19 @@ use smol_str::SmolStr;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::{ForallBinder, TypeId, generalise, unification, zonk};
+use crate::core::{ForallBinder, Type, TypeId, generalise, toolkit, unification, zonk};
 use crate::error::ErrorCrumb;
 use crate::state::CheckState;
+
+struct PendingDataType {
+    parameters: Vec<ForallBinder>,
+    constructors: Vec<(TermItemId, Vec<TypeId>)>,
+}
+
+#[derive(Default)]
+struct TypeSccState {
+    data: Vec<(TypeItemId, PendingDataType)>,
+}
 
 /// Checks all type items in topological order.
 ///
@@ -45,11 +55,14 @@ where
             prepare_binding_group(state, context, &items);
         }
 
+        let mut scc_state = TypeSccState { data: vec![] };
+
         for &item in &items {
-            check_type_equation(state, context, item)?;
+            check_type_equation(state, context, &mut scc_state, item)?;
         }
 
         finalise_binding_group(state, context, &items)?;
+        finalise_data_constructors(state, context, scc_state)?;
     }
     Ok(())
 }
@@ -197,6 +210,7 @@ where
 fn check_type_equation<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
+    scc: &mut TypeSccState,
     item_id: TypeItemId,
 ) -> QueryResult<()>
 where
@@ -209,11 +223,11 @@ where
     match item {
         TypeItemIr::DataGroup { signature, data, .. } => {
             let Some(DataIr { variables }) = data else { return Ok(()) };
-            check_data_equation(state, context, item_id, *signature, &variables)?;
+            check_data_equation(state, context, scc, item_id, *signature, &variables)?;
         }
         TypeItemIr::NewtypeGroup { signature, newtype, .. } => {
             let Some(NewtypeIr { variables }) = newtype else { return Ok(()) };
-            check_data_equation(state, context, item_id, *signature, &variables)?;
+            check_data_equation(state, context, scc, item_id, *signature, &variables)?;
         }
         TypeItemIr::SynonymGroup { .. } => todo!(),
         TypeItemIr::ClassGroup { .. } => todo!(),
@@ -227,6 +241,7 @@ where
 fn check_data_equation<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
+    scc: &mut TypeSccState,
     item_id: TypeItemId,
     signature: Option<lowering::TypeId>,
     variables: &[TypeVariableBinding],
@@ -234,7 +249,7 @@ fn check_data_equation<Q>(
 where
     Q: ExternalQueries,
 {
-    let _ = if let Some(signature_id) = signature
+    let parameters = if let Some(signature_id) = signature
         && let Some(signature_kind) = state.checked.lookup_type(item_id)
     {
         check_data_equation_check(state, context, (signature_id, signature_kind), variables)?
@@ -242,7 +257,8 @@ where
         check_data_equation_infer(state, context, item_id, variables)?
     };
 
-    check_data_constructors(state, context, item_id)?;
+    let constructors = check_data_constructors(state, context, item_id)?;
+    scc.data.push((item_id, PendingDataType { parameters, constructors }));
 
     Ok(())
 }
@@ -346,10 +362,12 @@ fn check_data_constructors<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     item_id: TypeItemId,
-) -> QueryResult<()>
+) -> QueryResult<Vec<(TermItemId, Vec<TypeId>)>>
 where
     Q: ExternalQueries,
 {
+    let mut constructors = vec![];
+
     for constructor_id in context.indexed.pairs.data_constructors(item_id) {
         let Some(TermItemIr::Constructor { arguments }) =
             context.lowered.info.get_term_item(constructor_id)
@@ -357,11 +375,100 @@ where
             continue;
         };
 
+        let mut checked_arguments = vec![];
         for &argument in arguments.iter() {
             state.with_error_crumb(ErrorCrumb::ConstructorArgument(argument), |state| {
-                let (_, _) = types::check_kind(state, context, argument, context.prim.t)?;
+                let (checked_argument, _) =
+                    types::check_kind(state, context, argument, context.prim.t)?;
+                checked_arguments.push(checked_argument);
                 Ok(())
             })?;
+        }
+        constructors.push((constructor_id, checked_arguments));
+    }
+
+    Ok(constructors)
+}
+
+fn finalise_data_constructors<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    scc: TypeSccState,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    for (item_id, PendingDataType { parameters, constructors }) in scc.data {
+        // constructor_kind should have already been generalised by the
+        // finalise_binding_group function. the kind signature is used
+        // as the source of truth for constructing the kind applications
+        let Some(constructor_kind) = state.checked.types.get(&item_id).copied() else {
+            continue;
+        };
+
+        let toolkit::InspectQuantified { binders: kind_binders, quantified } =
+            toolkit::inspect_quantified(state, context, constructor_kind)?;
+
+        let toolkit::InspectFunction { arguments: parameter_kinds, .. } =
+            toolkit::inspect_function(state, context, quantified)?;
+
+        // parameter_kinds is the post-generalisation kind for each parameter;
+        // we want to replace pre-generalisation kinds carried by parameters
+        // before constructing the signature for the constructor.
+        let get_parameter_kind = |index: usize| {
+            if let Some(kind) = parameter_kinds.get(index) {
+                *kind
+            } else {
+                context.unknown("invalid kind")
+            }
+        };
+
+        let type_reference = context.queries.intern_type(Type::Constructor(context.id, item_id));
+
+        // For the following code loop, let's trace through the declaration:
+        //
+        //   newtype Tagged :: forall k. k -> Type -> Type
+        //
+        for (constructor_id, checked_arguments) in constructors {
+            let mut result = type_reference;
+
+            // Tagged @k
+            for binder in &kind_binders {
+                let rigid = context.intern_rigid(binder.name, state.depth, binder.kind);
+                result = context.intern_kind_application(result, rigid);
+            }
+
+            // Tagged @k t a
+            for (index, parameter) in parameters.iter().enumerate() {
+                let kind = get_parameter_kind(index);
+                let rigid = context.intern_rigid(parameter.name, state.depth, kind);
+                result = context.intern_application(result, rigid);
+            }
+
+            // a -> Tagged @k t a
+            for argument in checked_arguments.into_iter().rev() {
+                let argument = zonk::zonk(state, context, argument)?;
+                result = context.intern_function(argument, result);
+            }
+
+            // forall (a :: Type). a -> Tagged @k t a
+            for (index, parameter) in parameters.iter().enumerate().rev() {
+                let kind = get_parameter_kind(index);
+
+                let parameter = ForallBinder::clone(parameter);
+                let binder = ForallBinder { kind, ..parameter };
+
+                let binder_id = context.intern_forall_binder(binder);
+                result = context.intern_forall(binder_id, result);
+            }
+
+            // forall (k :: Type) (t :: k) (a :: Type). a -> Tagged @k t a
+            for binder in kind_binders.iter().rev() {
+                let binder_id = context.intern_forall_binder(binder.clone());
+                result = context.intern_forall(binder_id, result);
+            }
+
+            state.checked.terms.insert(constructor_id, result);
         }
     }
 
