@@ -2638,6 +2638,7 @@ dependencies = [
  "analyzer",
  "async-lsp",
  "checking",
+ "checking2",
  "diagnostics",
  "files",
  "glob",

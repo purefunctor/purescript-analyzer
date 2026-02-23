@@ -24,7 +24,7 @@ coverage-html:
 @integration *args="":
   cargo nextest run -p tests-integration "$@" --status-level=fail --final-status-level=fail --failure-output=final
 
-[doc("Run integration tests with snapshot diffing: checking|lowering|resolving|lsp")]
+[doc("Run integration tests with snapshot diffing: checking|checking2|lowering|resolving|lsp")]
 @t *args="":
   cargo run -q -p compiler-scripts --release -- "$@"
 

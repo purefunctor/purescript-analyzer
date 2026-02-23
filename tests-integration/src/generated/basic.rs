@@ -2,6 +2,8 @@ use std::fmt::Write;
 
 use analyzer::{QueryEngine, locate};
 use checking::core::pretty;
+use checking2::ExternalQueries;
+use checking2::core::pretty as pretty2;
 use diagnostics::{DiagnosticsContext, ToDiagnostics, format_rustc};
 use files::FileId;
 use indexing::{ImportKind, TermItem, TypeItem, TypeItemId, TypeItemKind};
@@ -447,6 +449,67 @@ pub fn report_checked(engine: &QueryEngine, id: FileId) -> String {
     if !all_diagnostics.is_empty() {
         writeln!(snapshot, "\nDiagnostics").unwrap();
         snapshot.push_str(&format_rustc(&all_diagnostics, &content));
+    }
+
+    snapshot
+}
+
+pub fn report_checked2(engine: &QueryEngine, id: FileId) -> String {
+    let indexed = engine.indexed(id).unwrap();
+    let checked = engine.checked2(id).unwrap();
+
+    let mut snapshot = String::default();
+
+    writeln!(snapshot, "Terms").unwrap();
+    for (id, TermItem { name, .. }) in indexed.items.iter_terms() {
+        let Some(name) = name else { continue };
+        let Some(kind) = checked.lookup_term(id) else { continue };
+        let signature = pretty2::print_signature(engine, name, kind);
+        writeln!(snapshot, "{signature}").unwrap();
+    }
+
+    writeln!(snapshot, "\nTypes").unwrap();
+    for (id, TypeItem { name, .. }) in indexed.items.iter_types() {
+        let Some(name) = name else { continue };
+        let Some(kind) = checked.lookup_type(id) else { continue };
+        let signature = pretty2::print_signature(engine, name, kind);
+        writeln!(snapshot, "{signature}").unwrap();
+    }
+
+    if !checked.synonyms.is_empty() {
+        writeln!(snapshot, "\nSynonyms").unwrap();
+    }
+    for (id, TypeItem { name, .. }) in indexed.items.iter_types() {
+        let Some(name) = name else { continue };
+        let Some(synonym) = checked.lookup_synonym(id) else { continue };
+        let synonym_id = engine.intern_synonym(synonym);
+        let synonym_type =
+            engine.intern_type(checking2::core::Type::SynonymApplication(synonym_id));
+        let synonym = pretty2::print(engine, synonym_type);
+        writeln!(snapshot, "{name} = {synonym}").unwrap();
+    }
+
+    if !checked.roles.is_empty() {
+        writeln!(snapshot, "\nRoles").unwrap();
+    }
+    for (id, TypeItem { name, kind, .. }) in indexed.items.iter_types() {
+        let (TypeItemKind::Data { .. }
+        | TypeItemKind::Newtype { .. }
+        | TypeItemKind::Foreign { .. }) = kind
+        else {
+            continue;
+        };
+        let Some(name) = name else { continue };
+        let Some(roles) = checked.lookup_roles(id) else { continue };
+        let roles_str: Vec<_> = roles.iter().map(|r| format!("{r:?}")).collect();
+        writeln!(snapshot, "{name} = [{}]", roles_str.join(", ")).unwrap();
+    }
+
+    if !checked.errors.is_empty() {
+        writeln!(snapshot, "\nErrors").unwrap();
+    }
+    for error in &checked.errors {
+        writeln!(snapshot, "{error:#?}").unwrap();
     }
 
     snapshot
