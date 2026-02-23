@@ -24,8 +24,7 @@ use petgraph::prelude::DiGraphMap;
 use rustc_hash::FxHashSet;
 use smol_str::SmolStr;
 
-use crate::core::substitute::{SubstituteUnification, UnificationToType};
-use crate::core::{ForallBinder, Type, TypeId, normalise};
+use crate::core::{ForallBinder, Type, TypeId, normalise, zonk};
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
@@ -152,7 +151,6 @@ where
     };
 
     let mut quantified = id;
-    let mut substitutions = UnificationToType::default();
 
     // All rigid type variables in a single generalisation share the same
     // depth, one level deeper than the ambient scope. Note that the depth
@@ -187,8 +185,8 @@ where
         quantified = context.intern_forall(binder, quantified);
 
         let rigid = context.intern_rigid(name, depth, kind);
-        substitutions.insert(unification_id, rigid);
+        state.unifications.solve(unification_id, rigid);
     }
 
-    SubstituteUnification::on(state, context, &substitutions, quantified)
+    zonk::zonk(state, context, quantified)
 }

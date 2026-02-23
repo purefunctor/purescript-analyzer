@@ -7,7 +7,6 @@ pub mod types;
 
 use building_types::QueryResult;
 use indexing::TypeItemId;
-use itertools::Itertools;
 use lowering::{
     DataIr, LoweringError, NewtypeIr, RecursiveGroup, Scc, TermItemIr, TypeItemIr,
     TypeVariableBinding,

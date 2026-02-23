@@ -6,7 +6,7 @@ use crate::core::fold::{FoldAction, TypeFold, fold_type};
 use crate::core::{Type, TypeId};
 use crate::state::CheckState;
 
-pub struct Zonk;
+struct Zonk;
 
 impl TypeFold for Zonk {
     fn transform<Q>(
