@@ -9,18 +9,17 @@ use indexing::TypeItemId;
 use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::substitute::SubstituteName;
-use crate::core::{Saturation, Synonym, Type, TypeId, normalise, unification};
+use crate::core::{CheckedSynonym, Saturation, Synonym, Type, TypeId, normalise, unification};
 use crate::error::ErrorKind;
+use crate::source::types;
 use crate::state::CheckState;
-
-use super::types;
 
 pub fn lookup_file_synonym<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     file_id: FileId,
     type_id: TypeItemId,
-) -> QueryResult<Option<(Synonym, TypeId)>>
+) -> QueryResult<Option<(CheckedSynonym, TypeId)>>
 where
     Q: ExternalQueries,
 {
@@ -38,7 +37,7 @@ pub fn parse_synonym_application<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     function: lowering::TypeId,
-) -> QueryResult<Option<(FileId, TypeItemId, Synonym, TypeId)>>
+) -> QueryResult<Option<(FileId, TypeItemId, TypeId, usize)>>
 where
     Q: ExternalQueries,
 {
@@ -52,17 +51,19 @@ where
         return Ok(None);
     };
 
-    let Some((synonym, kind)) = lookup_file_synonym(state, context, file_id, type_id)? else {
+    let Some((checked_synonym, kind)) = lookup_file_synonym(state, context, file_id, type_id)?
+    else {
         return Ok(None);
     };
 
-    Ok(Some((file_id, type_id, synonym, kind)))
+    let arity = checked_synonym.parameters.len();
+    Ok(Some((file_id, type_id, kind, arity)))
 }
 
 pub fn infer_synonym_constructor<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    (file_id, item_id, mut synonym, kind): (FileId, TypeItemId, Synonym, TypeId),
+    (file_id, item_id, kind, arity): (FileId, TypeItemId, TypeId, usize),
     id: lowering::TypeId,
 ) -> QueryResult<(TypeId, TypeId)>
 where
@@ -72,15 +73,17 @@ where
         state.insert_error(ErrorKind::RecursiveSynonymExpansion { file_id, item_id });
     }
 
-    let expected_arity = expected_synonym_arity(context, file_id, item_id)?;
-    if expected_arity > 0 {
+    if arity > 0 {
         state.insert_error(ErrorKind::PartialSynonymApplication { id });
         let unknown = context.unknown("partial synonym application");
         return Ok((unknown, unknown));
     }
 
-    synonym.saturation = Saturation::Full;
-    synonym.arguments = Arc::default();
+    let synonym = Synonym {
+        saturation: Saturation::Full,
+        reference: (file_id, item_id),
+        arguments: Arc::default(),
+    };
 
     let synonym_id = context.intern_synonym(synonym);
     let synonym_type = context.intern_synonym_application(synonym_id);
@@ -92,7 +95,7 @@ pub fn infer_synonym_application<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     id: lowering::TypeId,
-    (file_id, type_id, synonym, function_kind): (FileId, TypeItemId, Synonym, TypeId),
+    (file_id, type_id, function_kind, arity): (FileId, TypeItemId, TypeId, usize),
     arguments: &[lowering::TypeId],
 ) -> QueryResult<(TypeId, TypeId)>
 where
@@ -102,16 +105,13 @@ where
         state.insert_error(ErrorKind::RecursiveSynonymExpansion { file_id, item_id: type_id });
     }
 
-    let expected_arity = expected_synonym_arity(context, file_id, type_id)?;
-    let actual_arity = arguments.len();
-
-    if actual_arity < expected_arity {
+    if arguments.len() < arity {
         state.insert_error(ErrorKind::PartialSynonymApplication { id });
         let unknown = context.unknown("partial synonym application");
         return Ok((unknown, unknown));
     }
 
-    let (synonym_arguments, excess_arguments) = arguments.split_at(expected_arity);
+    let (synonym_arguments, excess_arguments) = arguments.split_at(arity);
 
     let function_type = context.queries.intern_type(Type::Constructor(file_id, type_id));
     let (argument_types, (_, synonym_kind)) = infer_synonym_application_chain(
@@ -123,7 +123,7 @@ where
 
     let synonym = Synonym {
         saturation: Saturation::Full,
-        reference: synonym.reference,
+        reference: (file_id, type_id),
         arguments: Arc::from(argument_types),
     };
 
@@ -227,33 +227,6 @@ where
 
             Ok((argument_type, (t, k)))
         }
-    }
-}
-
-fn expected_synonym_arity<Q>(
-    context: &CheckContext<Q>,
-    file_id: FileId,
-    type_id: TypeItemId,
-) -> QueryResult<usize>
-where
-    Q: ExternalQueries,
-{
-    let expected_arity = |lowered: &lowering::LoweredModule| {
-        let Some(lowering::TypeItemIr::SynonymGroup { synonym, .. }) =
-            lowered.info.get_type_item(type_id)
-        else {
-            return 0;
-        };
-        let Some(synonym) = synonym else {
-            return 0;
-        };
-        synonym.variables.len()
-    };
-    if file_id == context.id {
-        Ok(expected_arity(&context.lowered))
-    } else {
-        let lowered = context.queries.lowered(file_id)?;
-        Ok(expected_arity(&lowered))
     }
 }
 

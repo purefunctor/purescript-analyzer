@@ -103,6 +103,12 @@ pub struct Synonym {
     pub arguments: Arc<[TypeId]>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CheckedSynonym {
+    pub parameters: Vec<ForallBinder>,
+    pub replacement: TypeId,
+}
+
 /// The core type representation used by the checker after name resolution.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Type {

@@ -2,11 +2,11 @@ use std::fmt::Write;
 
 use analyzer::{QueryEngine, locate};
 use checking::core::pretty;
-use checking2::ExternalQueries;
 use checking2::core::pretty as pretty2;
 use diagnostics::{DiagnosticsContext, ToDiagnostics, format_rustc};
 use files::FileId;
 use indexing::{ImportKind, TermItem, TypeItem, TypeItemId, TypeItemKind};
+use itertools::Itertools;
 use lowering::{
     ExpressionKind, GraphNode, ImplicitTypeVariable, TermVariableResolution, TypeKind,
     TypeVariableResolution,
@@ -481,12 +481,13 @@ pub fn report_checked2(engine: &QueryEngine, id: FileId) -> String {
     }
     for (id, TypeItem { name, .. }) in indexed.items.iter_types() {
         let Some(name) = name else { continue };
-        let Some(synonym) = checked.lookup_synonym(id) else { continue };
-        let synonym_id = engine.intern_synonym(synonym);
-        let synonym_type =
-            engine.intern_type(checking2::core::Type::SynonymApplication(synonym_id));
-        let synonym = pretty2::Pretty::new(engine).render(synonym_type);
-        writeln!(snapshot, "{name} = {synonym}").unwrap();
+        let Some(definition) = checked.lookup_synonym(id) else { continue };
+        let names = definition.parameters.iter().map(|b| (b.name, b.text.clone()));
+        let replacement = pretty2::Pretty::new(engine).names(names).render(definition.replacement);
+        let binders = definition.parameters.iter().map(|b| b.text.as_str()).collect_vec();
+        let binders_formatted =
+            if binders.is_empty() { String::new() } else { format!(" {}", binders.join(" ")) };
+        writeln!(snapshot, "type {name}{binders_formatted} = {replacement}").unwrap();
     }
 
     if !checked.roles.is_empty() {

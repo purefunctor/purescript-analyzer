@@ -5,6 +5,8 @@ pub mod synonym;
 pub mod terms;
 pub mod types;
 
+use std::mem;
+
 use building_types::QueryResult;
 use indexing::{TermItemId, TypeItemId};
 use lowering::{
@@ -15,7 +17,9 @@ use smol_str::SmolStr;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::{ForallBinder, Type, TypeId, generalise, toolkit, unification, zonk};
+use crate::core::{
+    CheckedSynonym, ForallBinder, Type, TypeId, generalise, toolkit, unification, zonk,
+};
 use crate::error::ErrorCrumb;
 use crate::state::CheckState;
 
@@ -24,9 +28,15 @@ struct PendingDataType {
     constructors: Vec<(TermItemId, Vec<TypeId>)>,
 }
 
+struct PendingSynonymType {
+    parameters: Vec<ForallBinder>,
+    replacement: TypeId,
+}
+
 #[derive(Default)]
 struct TypeSccState {
     data: Vec<(TypeItemId, PendingDataType)>,
+    synonym: Vec<(TypeItemId, PendingSynonymType)>,
 }
 
 /// Checks all type items in topological order.
@@ -55,14 +65,15 @@ where
             prepare_binding_group(state, context, &items);
         }
 
-        let mut scc_state = TypeSccState { data: vec![] };
+        let mut scc_state = TypeSccState::default();
 
         for &item in &items {
             check_type_equation(state, context, &mut scc_state, item)?;
         }
 
         finalise_binding_group(state, context, &items)?;
-        finalise_data_constructors(state, context, scc_state)?;
+        finalise_data_constructors(state, context, &mut scc_state)?;
+        finalise_synonym_replacements(state, context, &mut scc_state)?;
     }
     Ok(())
 }
@@ -220,7 +231,7 @@ where
         }
         TypeItemIr::SynonymGroup { signature, synonym, .. } => {
             let Some(SynonymIr { variables, synonym }) = synonym else { return Ok(()) };
-            check_synonym_equation(state, context, item_id, *signature, variables, *synonym)?;
+            check_synonym_equation(state, context, scc, item_id, *signature, variables, *synonym)?;
         }
         TypeItemIr::ClassGroup { .. } => todo!(),
         TypeItemIr::Foreign { .. } => {}
@@ -385,12 +396,12 @@ where
 fn finalise_data_constructors<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    scc: TypeSccState,
+    scc: &mut TypeSccState,
 ) -> QueryResult<()>
 where
     Q: ExternalQueries,
 {
-    for (item_id, PendingDataType { parameters, constructors }) in scc.data {
+    for (item_id, PendingDataType { parameters, constructors }) in mem::take(&mut scc.data) {
         // constructor_kind should have already been generalised by the
         // finalise_binding_group function. the kind signature is used
         // as the source of truth for constructing the kind applications
@@ -470,6 +481,7 @@ where
 fn check_synonym_equation<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
+    scc: &mut TypeSccState,
     item_id: TypeItemId,
     signature: Option<lowering::TypeId>,
     bindings: &[TypeVariableBinding],
@@ -478,24 +490,75 @@ fn check_synonym_equation<Q>(
 where
     Q: ExternalQueries,
 {
-    let (parameter, result) = if let Some(signature_id) = signature
+    let (parameters, result) = if let Some(signature_id) = signature
         && let Some(signature_kind) = state.checked.lookup_type(item_id)
     {
-        let signature =
-            signature::inspect_signature(state, context, (signature_id, signature_kind), bindings)?;
-        let parameters =
-            check_type_variable_bindings(state, context, bindings, &signature.arguments)?;
-        (parameters, signature.result)
+        check_synonym_equation_check(state, context, bindings, (signature_id, signature_kind))?
     } else {
-        todo!()
+        check_synonym_equation_infer(state, context, item_id, bindings)?
     };
 
-    let synonym = if let Some(synonym) = synonym {
+    let replacement = if let Some(synonym) = synonym {
         let (synonym, _) = types::check_kind(state, context, synonym, result)?;
         synonym
     } else {
         context.unknown("invalid synonym type")
     };
 
+    scc.synonym.push((item_id, PendingSynonymType { parameters, replacement }));
+
+    Ok(())
+}
+
+fn check_synonym_equation_check<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    bindings: &[TypeVariableBinding],
+    signature: (lowering::TypeId, TypeId),
+) -> QueryResult<(Vec<ForallBinder>, TypeId)>
+where
+    Q: ExternalQueries,
+{
+    let signature = signature::inspect_signature(state, context, signature, bindings)?;
+    let parameters = check_type_variable_bindings(state, context, bindings, &signature.arguments)?;
+    Ok((parameters, signature.result))
+}
+
+fn check_synonym_equation_infer<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    item_id: TypeItemId,
+    bindings: &[TypeVariableBinding],
+) -> QueryResult<(Vec<ForallBinder>, TypeId)>
+where
+    Q: ExternalQueries,
+{
+    let bindings = check_type_variable_bindings(state, context, bindings, &[])?;
+    let kinds = bindings.iter().map(|binder| binder.kind);
+    let result = state.fresh_unification(context.queries, context.prim.t);
+    let inferred = context.intern_function_chain(kinds, result);
+
+    if let Some(expected) = state.checked.lookup_type(item_id) {
+        unification::subtype(state, context, inferred, expected)?;
+    } else {
+        state.checked.types.insert(item_id, inferred);
+    }
+
+    Ok((bindings, result))
+}
+
+fn finalise_synonym_replacements<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    scc: &mut TypeSccState,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    for (item_id, PendingSynonymType { parameters, replacement }) in mem::take(&mut scc.synonym) {
+        let replacement = zonk::zonk(state, context, replacement)?;
+        let checked_synonym = CheckedSynonym { parameters, replacement };
+        state.checked.synonyms.insert(item_id, checked_synonym);
+    }
     Ok(())
 }

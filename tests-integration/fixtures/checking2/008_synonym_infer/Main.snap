@@ -7,10 +7,10 @@ Terms
 
 Types
 NonZeroInt :: Type
-Identity :: Type -> Type
+Identity :: forall (t1 :: Type). (t1 :: Type) -> (t1 :: Type)
 FourtyTwo :: Int
 
 Synonyms
 type NonZeroInt = Int
-type Identity a = (a :: Type)
+type Identity a = (a :: (t1 :: Type))
 type FourtyTwo = 42

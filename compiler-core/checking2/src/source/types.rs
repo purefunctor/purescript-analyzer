@@ -151,7 +151,7 @@ where
             if let Some((synonym, kind)) =
                 synonym::lookup_file_synonym(state, context, file_id, type_id)?
             {
-                let synonym = (file_id, type_id, synonym, kind);
+                let synonym = (file_id, type_id, kind, synonym.parameters.len());
                 return synonym::infer_synonym_constructor(state, context, synonym, id);
             }
             let t = context.queries.intern_type(Type::Constructor(file_id, type_id));
