@@ -7,8 +7,7 @@ use files::FileId;
 use rustc_hash::FxHashMap;
 
 use crate::context::CheckContext;
-use crate::core::{Depth, Name, SmolStrId, Type, TypeId, pretty};
-use crate::core::zonk;
+use crate::core::{Depth, Name, SmolStrId, Type, TypeId, pretty, zonk};
 use crate::error::{CheckError, ErrorCrumb, ErrorKind};
 use crate::implication::Implications;
 use crate::{CheckedModule, ExternalQueries};

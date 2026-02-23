@@ -223,11 +223,11 @@ where
     match item {
         TypeItemIr::DataGroup { signature, data, .. } => {
             let Some(DataIr { variables }) = data else { return Ok(()) };
-            check_data_equation(state, context, scc, item_id, *signature, &variables)?;
+            check_data_equation(state, context, scc, item_id, *signature, variables)?;
         }
         TypeItemIr::NewtypeGroup { signature, newtype, .. } => {
             let Some(NewtypeIr { variables }) = newtype else { return Ok(()) };
-            check_data_equation(state, context, scc, item_id, *signature, &variables)?;
+            check_data_equation(state, context, scc, item_id, *signature, variables)?;
         }
         TypeItemIr::SynonymGroup { .. } => todo!(),
         TypeItemIr::ClassGroup { .. } => todo!(),
@@ -272,7 +272,7 @@ fn check_data_equation_check<Q>(
 where
     Q: ExternalQueries,
 {
-    let signature = signature::inspect_signature(state, context, signature, &bindings)?;
+    let signature = signature::inspect_signature(state, context, signature, bindings)?;
     check_type_variable_bindings(state, context, bindings, &signature.arguments)
 }
 

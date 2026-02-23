@@ -171,7 +171,7 @@ where
     pub fn intern_function_chain<I>(&self, arguments: I, result: TypeId) -> TypeId
     where
         I: IntoIterator<Item = TypeId>,
-        I::IntoIter: DoubleEndedIterator
+        I::IntoIter: DoubleEndedIterator,
     {
         arguments
             .into_iter()

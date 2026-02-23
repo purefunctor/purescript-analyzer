@@ -8,8 +8,9 @@ pub mod intermediate;
 pub mod scope;
 pub mod source;
 
+use std::hash::Hash;
+use std::slice;
 use std::sync::Arc;
-use std::{hash::Hash, slice};
 
 pub use error::*;
 pub use intermediate::*;
