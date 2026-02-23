@@ -33,9 +33,10 @@ pub trait ExternalQueries:
         Resolved = Arc<ResolvedModule>,
         Bracketed = Arc<sugar::Bracketed>,
         Sectioned = Arc<sugar::Sectioned>,
-        Checked = Arc<CheckedModule>,
     >
 {
+    fn checked2(&self, id: FileId) -> QueryResult<Arc<CheckedModule>>;
+
     fn intern_type(&self, t: Type) -> TypeId;
     fn lookup_type(&self, id: TypeId) -> Type;
 

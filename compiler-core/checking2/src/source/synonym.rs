@@ -27,7 +27,7 @@ where
     let (synonym, kind) = if file_id == context.id {
         (state.checked.lookup_synonym(type_id), state.checked.lookup_type(type_id))
     } else {
-        let checked = context.queries.checked(file_id)?;
+        let checked = context.queries.checked2(file_id)?;
         (checked.lookup_synonym(type_id), checked.lookup_type(type_id))
     };
 

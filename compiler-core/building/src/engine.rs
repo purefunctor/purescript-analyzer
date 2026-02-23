@@ -34,6 +34,7 @@ use building_types::{
     ModuleNameId, ModuleNameInterner, QueryError, QueryKey, QueryProxy, QueryResult,
 };
 use checking::{CheckedModule, TypeInterner};
+use checking2::CheckedModule as CheckedModule2;
 use files::FileId;
 use graph::SnapshotGraph;
 use indexing::IndexedModule;
@@ -99,12 +100,14 @@ struct DerivedStorage {
     bracketed: FxHashMap<FileId, DerivedState<Arc<sugar::Bracketed>>>,
     sectioned: FxHashMap<FileId, DerivedState<Arc<sugar::Sectioned>>>,
     checked: FxHashMap<FileId, DerivedState<Arc<CheckedModule>>>,
+    checked2: FxHashMap<FileId, DerivedState<Arc<CheckedModule2>>>,
 }
 
 #[derive(Default)]
 struct InternedStorage {
     module: ModuleNameInterner,
     types: TypeInterner,
+    checking2: checking2::CoreInterners,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -428,6 +431,7 @@ impl QueryEngine {
                 QueryKey::Bracketed(k) => derived_changed!(bracketed, k),
                 QueryKey::Sectioned(k) => derived_changed!(sectioned, k),
                 QueryKey::Checked(k) => derived_changed!(checked, k),
+                QueryKey::Checked2(k) => derived_changed!(checked2, k),
             }
         }
 
@@ -757,6 +761,18 @@ impl QueryEngine {
             },
         )
     }
+
+    pub fn checked2(&self, id: FileId) -> QueryResult<Arc<CheckedModule2>> {
+        self.query(
+            QueryKey::Checked2(id),
+            |storage| storage.derived.checked2.get(&id),
+            |storage| storage.derived.checked2.entry(id),
+            |this| {
+                let checked = checking2::check_module(this, id)?;
+                Ok(Arc::new(checked))
+            },
+        )
+    }
 }
 
 impl QueryEngine {
@@ -838,6 +854,68 @@ impl checking::ExternalQueries for QueryEngine {
     fn lookup_type(&self, id: checking::TypeId) -> checking::Type {
         let storage = self.storage.read();
         storage.interned.types[id].clone()
+    }
+}
+
+impl checking2::ExternalQueries for QueryEngine {
+    fn checked2(&self, id: FileId) -> QueryResult<Arc<checking2::CheckedModule>> {
+        QueryEngine::checked2(self, id)
+    }
+
+    fn intern_type(&self, t: checking2::core::Type) -> checking2::core::TypeId {
+        let mut storage = self.storage.write();
+        storage.interned.checking2.intern_type(t)
+    }
+
+    fn lookup_type(&self, id: checking2::core::TypeId) -> checking2::core::Type {
+        let storage = self.storage.read();
+        storage.interned.checking2.lookup_type(id)
+    }
+
+    fn intern_forall_binder(
+        &self,
+        binder: checking2::core::ForallBinder,
+    ) -> checking2::core::ForallBinderId {
+        let mut storage = self.storage.write();
+        storage.interned.checking2.intern_forall_binder(binder)
+    }
+
+    fn lookup_forall_binder(
+        &self,
+        id: checking2::core::ForallBinderId,
+    ) -> checking2::core::ForallBinder {
+        let storage = self.storage.read();
+        storage.interned.checking2.lookup_forall_binder(id)
+    }
+
+    fn intern_row_type(&self, row: checking2::core::RowType) -> checking2::core::RowTypeId {
+        let mut storage = self.storage.write();
+        storage.interned.checking2.intern_row_type(row)
+    }
+
+    fn lookup_row_type(&self, id: checking2::core::RowTypeId) -> checking2::core::RowType {
+        let storage = self.storage.read();
+        storage.interned.checking2.lookup_row_type(id)
+    }
+
+    fn intern_synonym(&self, synonym: checking2::core::Synonym) -> checking2::core::SynonymId {
+        let mut storage = self.storage.write();
+        storage.interned.checking2.intern_synonym(synonym)
+    }
+
+    fn lookup_synonym(&self, id: checking2::core::SynonymId) -> checking2::core::Synonym {
+        let storage = self.storage.read();
+        storage.interned.checking2.lookup_synonym(id)
+    }
+
+    fn intern_smol_str(&self, s: smol_str::SmolStr) -> checking2::core::SmolStrId {
+        let mut storage = self.storage.write();
+        storage.interned.checking2.intern_smol_str(s)
+    }
+
+    fn lookup_smol_str(&self, id: checking2::core::SmolStrId) -> smol_str::SmolStr {
+        let storage = self.storage.read();
+        storage.interned.checking2.lookup_smol_str(id)
     }
 }
 

@@ -361,7 +361,7 @@ where
     let result = if file_id == context.id {
         state.checked.types.get(&type_id).copied()
     } else {
-        let checked = context.queries.checked(file_id)?;
+        let checked = context.queries.checked2(file_id)?;
         checked.types.get(&type_id).copied()
     };
     Ok(result.unwrap_or_else(|| context.unknown("kind")))

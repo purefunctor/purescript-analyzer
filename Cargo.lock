@@ -225,6 +225,7 @@ version = "0.1.0"
 dependencies = [
  "building-types",
  "checking",
+ "checking2",
  "files",
  "indexing",
  "interner",
@@ -237,6 +238,7 @@ dependencies = [
  "prim-constants",
  "resolving",
  "rustc-hash 2.1.1",
+ "smol_str",
  "stabilizing",
  "sugar",
  "tempfile",
