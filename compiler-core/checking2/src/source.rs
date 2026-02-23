@@ -8,7 +8,7 @@ pub mod types;
 use building_types::QueryResult;
 use indexing::{TermItemId, TypeItemId};
 use lowering::{
-    DataIr, LoweringError, NewtypeIr, RecursiveGroup, Scc, TermItemIr, TypeItemIr,
+    DataIr, LoweringError, NewtypeIr, RecursiveGroup, Scc, SynonymIr, TermItemIr, TypeItemIr,
     TypeVariableBinding,
 };
 use smol_str::SmolStr;
@@ -161,17 +161,20 @@ where
     match item {
         TypeItemIr::DataGroup { signature, .. } => {
             let Some(signature) = signature else { return Ok(()) };
-            check_data_signature(state, context, item_id, *signature)?;
+            check_signature_type(state, context, item_id, *signature)?;
         }
         TypeItemIr::NewtypeGroup { signature, .. } => {
             let Some(signature) = signature else { return Ok(()) };
-            check_data_signature(state, context, item_id, *signature)?;
+            check_signature_type(state, context, item_id, *signature)?;
         }
-        TypeItemIr::SynonymGroup { .. } => todo!(),
+        TypeItemIr::SynonymGroup { signature, .. } => {
+            let Some(signature) = signature else { return Ok(()) };
+            check_signature_type(state, context, item_id, *signature)?;
+        }
         TypeItemIr::ClassGroup { .. } => todo!(),
         TypeItemIr::Foreign { signature, .. } => {
             let Some(signature) = signature else { return Ok(()) };
-            check_foreign_signature(state, context, item_id, *signature)?;
+            check_signature_type(state, context, item_id, *signature)?;
         }
         TypeItemIr::Operator { .. } => todo!(),
     }
@@ -179,7 +182,7 @@ where
     Ok(())
 }
 
-fn check_data_signature<Q>(
+fn check_signature_type<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     item_id: TypeItemId,
@@ -188,22 +191,8 @@ fn check_data_signature<Q>(
 where
     Q: ExternalQueries,
 {
-    let (inferred_type, _) = types::check_kind(state, context, signature, context.prim.t)?;
-    state.checked.types.insert(item_id, inferred_type);
-    Ok(())
-}
-
-fn check_foreign_signature<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    item_id: TypeItemId,
-    signature: lowering::TypeId,
-) -> QueryResult<()>
-where
-    Q: ExternalQueries,
-{
-    let (inferred_type, _) = types::check_kind(state, context, signature, context.prim.t)?;
-    state.checked.types.insert(item_id, inferred_type);
+    let (checked_type, _) = types::check_kind(state, context, signature, context.prim.t)?;
+    state.checked.types.insert(item_id, checked_type);
     Ok(())
 }
 
@@ -229,7 +218,10 @@ where
             let Some(NewtypeIr { variables }) = newtype else { return Ok(()) };
             check_data_equation(state, context, scc, item_id, *signature, variables)?;
         }
-        TypeItemIr::SynonymGroup { .. } => todo!(),
+        TypeItemIr::SynonymGroup { signature, synonym, .. } => {
+            let Some(SynonymIr { variables, synonym }) = synonym else { return Ok(()) };
+            check_synonym_equation(state, context, item_id, *signature, variables, *synonym)?;
+        }
         TypeItemIr::ClassGroup { .. } => todo!(),
         TypeItemIr::Foreign { .. } => {}
         TypeItemIr::Operator { .. } => todo!(),
@@ -471,6 +463,39 @@ where
             state.checked.terms.insert(constructor_id, result);
         }
     }
+
+    Ok(())
+}
+
+fn check_synonym_equation<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    item_id: TypeItemId,
+    signature: Option<lowering::TypeId>,
+    bindings: &[TypeVariableBinding],
+    synonym: Option<lowering::TypeId>,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    let (parameter, result) = if let Some(signature_id) = signature
+        && let Some(signature_kind) = state.checked.lookup_type(item_id)
+    {
+        let signature =
+            signature::inspect_signature(state, context, (signature_id, signature_kind), bindings)?;
+        let parameters =
+            check_type_variable_bindings(state, context, bindings, &signature.arguments)?;
+        (parameters, signature.result)
+    } else {
+        todo!()
+    };
+
+    let synonym = if let Some(synonym) = synonym {
+        let (synonym, _) = types::check_kind(state, context, synonym, result)?;
+        synonym
+    } else {
+        context.unknown("invalid synonym type")
+    };
 
     Ok(())
 }
