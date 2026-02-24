@@ -414,11 +414,10 @@ fn find_package_dir(packages_dir: &Path, package_name: &str) -> Option<std::path
     for entry in entries.filter_map(Result::ok) {
         let name = entry.file_name();
         let name_str = name.to_string_lossy();
-        if let Some(suffix) = name_str.strip_prefix(&prefix) {
-            if suffix.parse::<semver::Version>().is_ok() && entry.file_type().ok()?.is_dir() {
+        if let Some(suffix) = name_str.strip_prefix(&prefix)
+            && suffix.parse::<semver::Version>().is_ok() && entry.file_type().ok()?.is_dir() {
                 return entry.path().canonicalize().ok();
             }
-        }
     }
     None
 }
