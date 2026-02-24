@@ -11,6 +11,7 @@ use crate::context::CheckContext;
 use crate::core::substitute::SubstituteName;
 use crate::core::{Depth, Name, RowField, RowType, RowTypeId, Type, TypeId, normalise};
 use crate::error::ErrorKind;
+use crate::source::types;
 use crate::state::{CheckState, UnificationEntry};
 
 /// Strategy for handling constrained types during [`subtype_with`].
@@ -392,8 +393,8 @@ where
     }
 
     let unification_kind = state.unifications.get(id).kind;
-    // TODO: unify kinds once kind elaboration is available
-    let _ = unification_kind;
+    let solution_kind = types::elaborate_kind(state, context, solution)?;
+    unify(state, context, unification_kind, solution_kind)?;
 
     state.unifications.solve(id, solution);
     Ok(true)

@@ -15,7 +15,7 @@ type Identity a = (a :: (t1 :: Type))
 Errors
 CheckError {
     kind: InvalidTypeOperator {
-        kind_message: Id<smol_str::SmolStr>(2),
+        kind_message: Id<smol_str::SmolStr>(3),
     },
     crumbs: [],
 }

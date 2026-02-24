@@ -2,6 +2,7 @@
 
 use building_types::QueryResult;
 use files::FileId;
+use indexing::TypeItemId;
 use lowering::IsElement;
 use sugar::OperatorTree;
 use sugar::bracketing::BracketingResult;
@@ -206,6 +207,26 @@ where
         }
 
         _ => Ok(None),
+    }
+}
+
+pub fn elaborate_operator_application_kind<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    file_id: FileId,
+    type_id: TypeItemId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let operator_kind = toolkit::lookup_file_type(state, context, file_id, type_id)?;
+    let operator_kind = instantiate_foralls(state, context, operator_kind)?;
+    let operator_function = toolkit::inspect_function(state, context, operator_kind)?;
+
+    if operator_function.arguments.len() >= 2 {
+        Ok(operator_function.result)
+    } else {
+        Ok(context.unknown("invalid operator kind"))
     }
 }
 

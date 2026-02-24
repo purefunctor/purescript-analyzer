@@ -481,3 +481,122 @@ where
 
     Ok((row_type, row_kind))
 }
+
+pub fn elaborate_kind<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    id: TypeId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let unknown = context.unknown("invalid kind");
+    let id = normalise::normalise(state, context, id)?;
+
+    let kind = match context.lookup_type(id) {
+        Type::Application(function, _) => {
+            let function_kind = elaborate_kind(state, context, function)?;
+            let function_kind = normalise::normalise(state, context, function_kind)?;
+
+            match context.lookup_type(function_kind) {
+                Type::Function(_, result_kind) => result_kind,
+
+                Type::Unification(unification_id) => {
+                    let depth = state.unifications.get(unification_id).depth;
+
+                    let argument_u = state.unifications.fresh(depth, context.prim.t);
+                    let argument_u = context.queries.intern_type(Type::Unification(argument_u));
+
+                    let result_u = state.unifications.fresh(depth, context.prim.t);
+                    let result_u = context.queries.intern_type(Type::Unification(result_u));
+
+                    let function_u = context.intern_function(argument_u, result_u);
+                    unification::solve(state, context, function_kind, unification_id, function_u)?;
+
+                    result_u
+                }
+
+                _ => unknown,
+            }
+        }
+
+        Type::KindApplication(function, argument) => {
+            let function_kind = elaborate_kind(state, context, function)?;
+            let function_kind = normalise::normalise(state, context, function_kind)?;
+
+            match context.lookup_type(function_kind) {
+                Type::Forall(binder_id, inner_kind) => {
+                    let binder = context.lookup_forall_binder(binder_id);
+                    let argument = normalise::normalise(state, context, argument)?;
+                    SubstituteName::one(state, context, binder.name, argument, inner_kind)?
+                }
+                _ => unknown,
+            }
+        }
+
+        Type::Constrained(_, _) => context.prim.t,
+        Type::Forall(_, _) => context.prim.t,
+        Type::Function(_, _) => context.prim.t,
+
+        Type::Constructor(file_id, type_id) => {
+            toolkit::lookup_file_type(state, context, file_id, type_id)?
+        }
+
+        Type::OperatorConstructor(file_id, type_id) => {
+            toolkit::lookup_file_type(state, context, file_id, type_id)?
+        }
+
+        Type::OperatorApplication(file_id, type_id, _, _) => {
+            operator::elaborate_operator_application_kind(state, context, file_id, type_id)?
+        }
+
+        Type::Integer(_) => context.prim.int,
+        Type::String(_, _) => context.prim.symbol,
+        Type::Kinded(_, kind) => kind,
+
+        Type::Row(row_id) => {
+            let row = context.lookup_row_type(row_id);
+            let fields = Arc::clone(&row.fields);
+
+            let field_kind = state.fresh_unification(context.queries, context.prim.t);
+            let tail_kind = context.intern_application(context.prim.row, field_kind);
+
+            for field in fields.iter() {
+                let kind = elaborate_kind(state, context, field.id)?;
+                unification::unify(state, context, field_kind, kind)?;
+            }
+
+            if let Some(tail) = row.tail {
+                let kind = elaborate_kind(state, context, tail)?;
+                unification::unify(state, context, tail_kind, kind)?;
+            }
+
+            context.intern_application(context.prim.row, field_kind)
+        }
+
+        Type::SynonymApplication(synonym_id) => {
+            let synonym = context.lookup_synonym(synonym_id);
+            let (file_id, type_id) = synonym.reference;
+            let arguments = Arc::clone(&synonym.arguments);
+
+            let mut synonym_kind = toolkit::lookup_file_type(state, context, file_id, type_id)?;
+
+            for _ in arguments.iter() {
+                synonym_kind = normalise::normalise(state, context, synonym_kind)?;
+                match context.lookup_type(synonym_kind) {
+                    Type::Function(_, result_kind) => synonym_kind = result_kind,
+                    _ => return Ok(unknown),
+                }
+            }
+
+            synonym_kind
+        }
+
+        Type::Unification(unification_id) => state.unifications.get(unification_id).kind,
+        Type::Rigid(_, _, kind) => kind,
+        Type::Free(_) => unknown,
+        Type::Unknown(_) => unknown,
+    };
+
+    Ok(kind)
+}
