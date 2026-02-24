@@ -47,14 +47,14 @@ U = [Representational]
 V = [Representational, Representational]
 
 Derived
-derive Eq1 (f :: Type -> Type) => Eq (V @Type (f :: Type -> Type) (g :: Int -> Type) :: Type)
-derive Ord1 (f :: Type -> Type) => Ord (V @Type (f :: Type -> Type) (g :: Int -> Type) :: Type)
 derive Eq1 (f :: Type -> Type) => Eq (T @Type (f :: Type -> Type) (g :: Type -> Type) :: Type)
 derive Ord1 (f :: Type -> Type) => Ord (T @Type (f :: Type -> Type) (g :: Type -> Type) :: Type)
 derive Eq (a :: Type) => Eq (Maybe (a :: Type) :: Type)
 derive Ord (a :: Type) => Ord (Maybe (a :: Type) :: Type)
 derive Eq1 (f :: Type -> Type) => Eq (U (f :: Type -> Type) :: Type)
 derive Ord1 (f :: Type -> Type) => Ord (U (f :: Type -> Type) :: Type)
+derive Eq1 (f :: Type -> Type) => Eq (V @Type (f :: Type -> Type) (g :: Int -> Type) :: Type)
+derive Ord1 (f :: Type -> Type) => Ord (V @Type (f :: Type -> Type) (g :: Int -> Type) :: Type)
 
 Diagnostics
 error[NoInstanceFound]: No instance found for: Eq ((g :: Type -> Type) Int)

@@ -52,13 +52,6 @@ Compose = [Representational, Representational, Nominal]
 NoOrd = [Representational]
 
 Derived
-derive forall (t40 :: Type). (Eq1 (f :: Type -> Type), Eq ((g :: (t40 :: Type) -> Type) (a :: (t40 :: Type)))) => Eq (Compose @Type @(t40 :: Type) (f :: Type -> Type) (g :: (t40 :: Type) -> Type) (a :: (t40 :: Type)) :: Type)
-derive forall (t48 :: Type). (Ord1 (f :: Type -> Type), Ord ((g :: (t48 :: Type) -> Type) (a :: (t48 :: Type)))) => Ord (Compose @Type @(t48 :: Type) (f :: Type -> Type) (g :: (t48 :: Type) -> Type) (a :: (t48 :: Type)) :: Type)
-derive Eq1 (f :: Type -> Type) => Eq1 (Compose @Type @Type (f :: Type -> Type) (g :: Type -> Type) :: Type -> Type)
-derive Ord1 (f :: Type -> Type) => Ord1 (Compose @Type @Type (f :: Type -> Type) (g :: Type -> Type) :: Type -> Type)
-derive Eq (a :: Type) => Eq (NoOrd (a :: Type) :: Type)
-derive Eq1 (NoOrd :: Type -> Type)
-derive Ord1 (NoOrd :: Type -> Type)
 derive Eq (a :: Type) => Eq (Id (a :: Type) :: Type)
 derive Eq1 (Id :: Type -> Type)
 derive Ord (a :: Type) => Ord (Id (a :: Type) :: Type)
@@ -67,6 +60,13 @@ derive (Eq1 (f :: Type -> Type), Eq (a :: Type)) => Eq (Wrap @Type (f :: Type ->
 derive Eq1 (f :: Type -> Type) => Eq1 (Wrap @Type (f :: Type -> Type) :: Type -> Type)
 derive (Ord1 (f :: Type -> Type), Ord (a :: Type)) => Ord (Wrap @Type (f :: Type -> Type) (a :: Type) :: Type)
 derive Ord1 (f :: Type -> Type) => Ord1 (Wrap @Type (f :: Type -> Type) :: Type -> Type)
+derive forall (t40 :: Type). (Eq1 (f :: Type -> Type), Eq ((g :: (t40 :: Type) -> Type) (a :: (t40 :: Type)))) => Eq (Compose @Type @(t40 :: Type) (f :: Type -> Type) (g :: (t40 :: Type) -> Type) (a :: (t40 :: Type)) :: Type)
+derive forall (t48 :: Type). (Ord1 (f :: Type -> Type), Ord ((g :: (t48 :: Type) -> Type) (a :: (t48 :: Type)))) => Ord (Compose @Type @(t48 :: Type) (f :: Type -> Type) (g :: (t48 :: Type) -> Type) (a :: (t48 :: Type)) :: Type)
+derive Eq1 (f :: Type -> Type) => Eq1 (Compose @Type @Type (f :: Type -> Type) (g :: Type -> Type) :: Type -> Type)
+derive Ord1 (f :: Type -> Type) => Ord1 (Compose @Type @Type (f :: Type -> Type) (g :: Type -> Type) :: Type -> Type)
+derive Eq (a :: Type) => Eq (NoOrd (a :: Type) :: Type)
+derive Eq1 (NoOrd :: Type -> Type)
+derive Ord1 (NoOrd :: Type -> Type)
 
 Diagnostics
 error[NoInstanceFound]: No instance found for: Eq ((g :: Type -> Type) (~_ :: Type))

@@ -81,13 +81,7 @@ Either' = [Representational]
 NoEq = [Representational]
 
 Derived
-derive Eq1 (f :: Type -> Type) => Eq1 (Wrap @Type (f :: Type -> Type) :: Type -> Type)
-derive forall (t41 :: Type). (Eq1 (f :: Type -> Type), Eq ((g :: (t41 :: Type) -> Type) (a :: (t41 :: Type)))) => Eq (Compose @Type @(t41 :: Type) (f :: Type -> Type) (g :: (t41 :: Type) -> Type) (a :: (t41 :: Type)) :: Type)
-derive Eq1 (f :: Type -> Type) => Eq1 (Compose @Type @Type (f :: Type -> Type) (g :: Type -> Type) :: Type -> Type)
 derive Eq (a :: Type) => Eq (Id (a :: Type) :: Type)
-derive Eq (a :: Type) => Eq (Either' (a :: Type) :: Type)
-derive Eq1 (Either' :: Type -> Type)
-derive Eq1 (NoEq :: Type -> Type)
 derive Eq1 (Id :: Type -> Type)
 derive Eq (a :: Type) => Eq (Pair (a :: Type) :: Type)
 derive Eq1 (Pair :: Type -> Type)
@@ -96,6 +90,12 @@ derive Eq1 (Mixed :: Type -> Type)
 derive Eq (a :: Type) => Eq (Rec (a :: Type) :: Type)
 derive Eq1 (Rec :: Type -> Type)
 derive (Eq1 (f :: Type -> Type), Eq (a :: Type)) => Eq (Wrap @Type (f :: Type -> Type) (a :: Type) :: Type)
+derive Eq1 (f :: Type -> Type) => Eq1 (Wrap @Type (f :: Type -> Type) :: Type -> Type)
+derive forall (t41 :: Type). (Eq1 (f :: Type -> Type), Eq ((g :: (t41 :: Type) -> Type) (a :: (t41 :: Type)))) => Eq (Compose @Type @(t41 :: Type) (f :: Type -> Type) (g :: (t41 :: Type) -> Type) (a :: (t41 :: Type)) :: Type)
+derive Eq1 (f :: Type -> Type) => Eq1 (Compose @Type @Type (f :: Type -> Type) (g :: Type -> Type) :: Type -> Type)
+derive Eq (a :: Type) => Eq (Either' (a :: Type) :: Type)
+derive Eq1 (Either' :: Type -> Type)
+derive Eq1 (NoEq :: Type -> Type)
 
 Diagnostics
 error[NoInstanceFound]: No instance found for: Eq ((g :: Type -> Type) (~_ :: Type))
