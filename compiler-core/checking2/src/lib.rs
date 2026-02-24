@@ -19,8 +19,8 @@ use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
 
 use crate::core::{
-    CheckedSynonym, ForallBinder, ForallBinderId, Role, RowType, RowTypeId, Synonym, SynonymId,
-    Type, TypeId,
+    CheckedClass, CheckedSynonym, ForallBinder, ForallBinderId, Role, RowType, RowTypeId, Synonym,
+    SynonymId, Type, TypeId,
 };
 use crate::error::CheckError;
 
@@ -59,6 +59,7 @@ pub struct CheckedModule {
     pub types: FxHashMap<TypeItemId, TypeId>,
     pub terms: FxHashMap<TermItemId, TypeId>,
     pub synonyms: FxHashMap<TypeItemId, CheckedSynonym>,
+    pub classes: FxHashMap<TypeItemId, CheckedClass>,
     pub roles: FxHashMap<TypeItemId, Arc<[Role]>>,
     pub errors: Vec<CheckError>,
 }
@@ -74,6 +75,10 @@ impl CheckedModule {
 
     pub fn lookup_synonym(&self, id: TypeItemId) -> Option<CheckedSynonym> {
         self.synonyms.get(&id).cloned()
+    }
+
+    pub fn lookup_class(&self, id: TypeItemId) -> Option<CheckedClass> {
+        self.classes.get(&id).cloned()
     }
 
     pub fn lookup_roles(&self, id: TypeItemId) -> Option<Arc<[Role]>> {

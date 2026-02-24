@@ -13,7 +13,7 @@ pub mod zonk;
 use std::sync::Arc;
 
 use files::FileId;
-use indexing::TypeItemId;
+use indexing::{TermItemId, TypeItemId};
 use itertools::Itertools;
 use smol_str::{SmolStr, SmolStrBuilder};
 
@@ -107,6 +107,32 @@ pub struct Synonym {
 pub struct CheckedSynonym {
     pub parameters: Vec<ForallBinder>,
     pub replacement: TypeId,
+}
+
+/// Represents a checked class declaration.
+///
+/// Member types are stored in [`CheckedModule::terms`] quantified and
+/// constrained with [`Type::Forall`] and [`Type::Constrained`]:
+///
+/// ```purescript
+/// eq :: forall a. Eq a => a -> a -> Boolean
+/// ```
+///
+/// [`CheckedModule::terms`]: crate::CheckedModule::terms
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CheckedClass {
+    /// Post-generalisation kind variable binders.
+    pub kind_binders: Vec<ForallBinderId>,
+    /// Post-generalisation type parameter binders.
+    pub type_parameters: Vec<ForallBinderId>,
+    /// Canonical class head, e.g. `Eq a` or `Foo @k a`.
+    pub canonical: TypeId,
+    /// Superclass constraints expressed in terms of the class head's rigids.
+    pub superclasses: Vec<TypeId>,
+    /// Functional dependencies, carried from lowering.
+    pub functional_dependencies: Arc<[lowering::FunctionalDependency]>,
+    /// Class member term item IDs.
+    pub members: Vec<TermItemId>,
 }
 
 /// The core type representation used by the checker after name resolution.
