@@ -55,3 +55,7 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_012_class_polykind_check_main() { run_test("012_class_polykind_check", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_013_class_polykind_infer_main() { run_test("013_class_polykind_infer", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_014_operator_alias_kind_main() { run_test("014_operator_alias_kind", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_015_operator_alias_invalid_kind_main() { run_test("015_operator_alias_invalid_kind", "Main"); }
