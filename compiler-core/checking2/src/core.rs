@@ -15,13 +15,23 @@ use std::sync::Arc;
 use files::FileId;
 use indexing::TypeItemId;
 use itertools::Itertools;
-use smol_str::SmolStr;
+use smol_str::{SmolStr, SmolStrBuilder};
 
 /// A globally unique identity for a rigid type variable.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Name {
     pub file: FileId,
     pub unique: u32,
+}
+
+impl Name {
+    /// Renders this name as a stable textual variable like `t42`.
+    pub fn as_text(self) -> SmolStr {
+        let mut text = SmolStrBuilder::new();
+        text.push('t');
+        text.push_str(&self.unique.to_string());
+        text.finish()
+    }
 }
 
 /// A marker used to represent binding levels of variables.

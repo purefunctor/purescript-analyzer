@@ -5,8 +5,8 @@ expression: report
 ---
 Terms
 Tagged ::
-  forall (t0 :: Type) (t :: (t0 :: Type)) (a :: Type).
-    (a :: Type) -> Tagged @(t0 :: Type) (t :: (t0 :: Type)) (a :: Type)
+  forall (t2 :: Type) (t :: (t2 :: Type)) (a :: Type).
+    (a :: Type) -> Tagged @(t2 :: Type) (t :: (t2 :: Type)) (a :: Type)
 
 Types
-Tagged :: forall (t0 :: Type). (t0 :: Type) -> Type -> Type
+Tagged :: forall (t2 :: Type). (t2 :: Type) -> Type -> Type

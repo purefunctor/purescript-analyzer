@@ -22,12 +22,10 @@ use building_types::QueryResult;
 use petgraph::algo;
 use petgraph::prelude::DiGraphMap;
 use rustc_hash::FxHashSet;
-use smol_str::SmolStr;
-
-use crate::core::{ForallBinder, Type, TypeId, normalise, zonk};
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
+use crate::core::{ForallBinder, Type, TypeId, normalise, zonk};
 use crate::state::{CheckState, UnificationEntry};
 
 type UniGraph = DiGraphMap<u32, ()>;
@@ -126,10 +124,6 @@ where
     aux(graph, state, context, id, None, &mut visited_kinds)
 }
 
-fn generate_type_name(id: u32) -> SmolStr {
-    SmolStr::new(format!("t{id}"))
-}
-
 /// Generalises a given type. See also module-level documentation.
 pub fn generalise<Q>(
     state: &mut CheckState,
@@ -177,8 +171,8 @@ where
     for &unification_id in unsolved.iter() {
         let UnificationEntry { kind, .. } = *state.unifications.get(unification_id);
 
-        let text = generate_type_name(unification_id);
         let name = state.names.fresh();
+        let text = name.as_text();
 
         let binder = ForallBinder { visible: false, name, text, kind };
         let binder = context.intern_forall_binder(binder);
