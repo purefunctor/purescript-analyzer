@@ -33,8 +33,9 @@ struct PendingDataType {
 }
 
 struct PendingSynonymType {
+    kind: TypeId,
     parameters: Vec<ForallBinder>,
-    replacement: TypeId,
+    synonym: TypeId,
 }
 
 struct PendingClassType {
@@ -513,7 +514,7 @@ fn check_synonym_equation<Q>(
 where
     Q: ExternalQueries,
 {
-    let (parameters, result) = if let Some(signature_id) = signature
+    let (parameters, kind, result) = if let Some(signature_id) = signature
         && let Some(signature_kind) = state.checked.lookup_type(item_id)
     {
         check_synonym_equation_check(state, context, bindings, (signature_id, signature_kind))?
@@ -521,14 +522,14 @@ where
         check_synonym_equation_infer(state, context, item_id, bindings)?
     };
 
-    let replacement = if let Some(synonym) = synonym {
+    let synonym = if let Some(synonym) = synonym {
         let (synonym, _) = types::check_kind(state, context, synonym, result)?;
         synonym
     } else {
         context.unknown("invalid synonym type")
     };
 
-    scc.synonym.push((item_id, PendingSynonymType { parameters, replacement }));
+    scc.synonym.push((item_id, PendingSynonymType { kind, parameters, synonym }));
 
     Ok(())
 }
@@ -537,14 +538,15 @@ fn check_synonym_equation_check<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     bindings: &[TypeVariableBinding],
-    signature: (lowering::TypeId, TypeId),
-) -> QueryResult<(Vec<ForallBinder>, TypeId)>
+    (signature_id, signature_kind): (lowering::TypeId, TypeId),
+) -> QueryResult<(Vec<ForallBinder>, TypeId, TypeId)>
 where
     Q: ExternalQueries,
 {
-    let signature = signature::inspect_signature(state, context, signature, bindings)?;
+    let signature =
+        signature::inspect_signature(state, context, (signature_id, signature_kind), bindings)?;
     let parameters = check_type_variable_bindings(state, context, bindings, &signature.arguments)?;
-    Ok((parameters, signature.result))
+    Ok((parameters, signature_kind, signature.result))
 }
 
 fn check_synonym_equation_infer<Q>(
@@ -552,7 +554,7 @@ fn check_synonym_equation_infer<Q>(
     context: &CheckContext<Q>,
     item_id: TypeItemId,
     bindings: &[TypeVariableBinding],
-) -> QueryResult<(Vec<ForallBinder>, TypeId)>
+) -> QueryResult<(Vec<ForallBinder>, TypeId, TypeId)>
 where
     Q: ExternalQueries,
 {
@@ -567,7 +569,7 @@ where
         state.checked.types.insert(item_id, inferred);
     }
 
-    Ok((bindings, result))
+    Ok((bindings, inferred, result))
 }
 
 fn finalise_synonym_replacements<Q>(
@@ -578,10 +580,10 @@ fn finalise_synonym_replacements<Q>(
 where
     Q: ExternalQueries,
 {
-    for (item_id, PendingSynonymType { parameters, replacement }) in mem::take(&mut scc.synonym) {
-        let replacement = zonk::zonk(state, context, replacement)?;
-        let checked_synonym = CheckedSynonym { parameters, replacement };
-        state.checked.synonyms.insert(item_id, checked_synonym);
+    for (item_id, PendingSynonymType { kind, parameters, synonym }) in mem::take(&mut scc.synonym) {
+        let synonym = zonk::zonk(state, context, synonym)?;
+        let synonym = CheckedSynonym { kind, parameters, synonym };
+        state.checked.synonyms.insert(item_id, synonym);
     }
     Ok(())
 }
@@ -807,14 +809,7 @@ where
         return Ok(());
     };
 
-    let kind = if file_id == context.id {
-        state.checked.lookup_type(type_id)
-    } else {
-        let checked = context.queries.checked2(file_id)?;
-        checked.lookup_type(type_id)
-    };
-
-    let kind = if let Some(kind) = kind { kind } else { context.unknown("invalid item kind") };
+    let kind = toolkit::lookup_file_operator(state, context, file_id, type_id)?;
 
     if let Some(expected) = state.checked.lookup_type(item_id) {
         unification::subtype(state, context, kind, expected)?;

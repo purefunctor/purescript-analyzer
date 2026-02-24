@@ -9,29 +9,10 @@ use indexing::TypeItemId;
 use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::substitute::SubstituteName;
-use crate::core::{CheckedSynonym, Saturation, Synonym, Type, TypeId, normalise, unification};
+use crate::core::{Saturation, Synonym, Type, TypeId, normalise, toolkit, unification};
 use crate::error::ErrorKind;
 use crate::source::types;
 use crate::state::CheckState;
-
-pub fn lookup_file_synonym<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    file_id: FileId,
-    type_id: TypeItemId,
-) -> QueryResult<Option<(CheckedSynonym, TypeId)>>
-where
-    Q: ExternalQueries,
-{
-    let (synonym, kind) = if file_id == context.id {
-        (state.checked.lookup_synonym(type_id), state.checked.lookup_type(type_id))
-    } else {
-        let checked = context.queries.checked2(file_id)?;
-        (checked.lookup_synonym(type_id), checked.lookup_type(type_id))
-    };
-
-    Ok(synonym.zip(kind))
-}
 
 pub fn parse_synonym_application<Q>(
     state: &mut CheckState,
@@ -51,12 +32,14 @@ where
         return Ok(None);
     };
 
-    let Some((checked_synonym, kind)) = lookup_file_synonym(state, context, file_id, type_id)?
+    let Some(checked_synonym) = toolkit::lookup_file_synonym(state, context, file_id, type_id)?
     else {
         return Ok(None);
     };
 
+    let kind = checked_synonym.kind;
     let arity = checked_synonym.parameters.len();
+
     Ok(Some((file_id, type_id, kind, arity)))
 }
 

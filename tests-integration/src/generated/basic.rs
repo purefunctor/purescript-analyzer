@@ -483,7 +483,7 @@ pub fn report_checked2(engine: &QueryEngine, id: FileId) -> String {
         let Some(name) = name else { continue };
         let Some(definition) = checked.lookup_synonym(id) else { continue };
         let names = definition.parameters.iter().map(|b| (b.name, b.text.clone()));
-        let replacement = pretty2::Pretty::new(engine).names(names).render(definition.replacement);
+        let replacement = pretty2::Pretty::new(engine).names(names).render(definition.synonym);
         let binders = definition.parameters.iter().map(|b| b.text.as_str()).collect_vec();
         let binders_formatted =
             if binders.is_empty() { String::new() } else { format!(" {}", binders.join(" ")) };

@@ -1,9 +1,11 @@
 //! Implements shared utilities for core type operations.
 
 use building_types::QueryResult;
+use files::FileId;
+use indexing::{TermItemId, TypeItemId};
 
 use crate::context::CheckContext;
-use crate::core::{ForallBinder, Type, TypeId, normalise};
+use crate::core::{CheckedSynonym, ForallBinder, Type, TypeId, normalise};
 use crate::state::CheckState;
 use crate::{ExternalQueries, safe_loop};
 
@@ -15,6 +17,80 @@ pub struct InspectQuantified {
 pub struct InspectFunction {
     pub arguments: Vec<TypeId>,
     pub result: TypeId,
+}
+
+pub fn lookup_file_type<Q>(
+    state: &CheckState,
+    context: &CheckContext<Q>,
+    file_id: FileId,
+    type_id: TypeItemId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let kind = if file_id == context.id {
+        state.checked.lookup_type(type_id)
+    } else {
+        let checked = context.queries.checked2(file_id)?;
+        checked.lookup_type(type_id)
+    };
+
+    if let Some(kind) = kind { Ok(kind) } else { Ok(context.unknown("invalid type item")) }
+}
+
+pub fn lookup_file_term<Q>(
+    state: &CheckState,
+    context: &CheckContext<Q>,
+    file_id: FileId,
+    term_id: TermItemId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let term = if file_id == context.id {
+        state.checked.lookup_term(term_id)
+    } else {
+        let checked = context.queries.checked2(file_id)?;
+        checked.lookup_term(term_id)
+    };
+
+    if let Some(term) = term { Ok(term) } else { Ok(context.unknown("invalid term item")) }
+}
+
+pub fn lookup_file_synonym<Q>(
+    state: &CheckState,
+    context: &CheckContext<Q>,
+    file_id: FileId,
+    type_id: TypeItemId,
+) -> QueryResult<Option<CheckedSynonym>>
+where
+    Q: ExternalQueries,
+{
+    if file_id == context.id {
+        Ok(state.checked.lookup_synonym(type_id))
+    } else {
+        let checked = context.queries.checked2(file_id)?;
+        Ok(checked.lookup_synonym(type_id))
+    }
+}
+
+pub fn lookup_file_operator<Q>(
+    state: &CheckState,
+    context: &CheckContext<Q>,
+    file_id: FileId,
+    type_id: TypeItemId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let kind = if file_id == context.id {
+        state.checked.lookup_type(type_id)
+    } else {
+        let checked = context.queries.checked2(file_id)?;
+        checked.lookup_type(type_id)
+    };
+
+    if let Some(kind) = kind { Ok(kind) } else { Ok(context.unknown("invalid operator item")) }
 }
 
 pub fn inspect_quantified<Q>(

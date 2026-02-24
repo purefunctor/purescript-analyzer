@@ -3,13 +3,11 @@
 use std::sync::Arc;
 
 use building_types::QueryResult;
-use files::FileId;
-use indexing::TypeItemId;
 use smol_str::SmolStr;
 
 use crate::context::CheckContext;
 use crate::core::substitute::SubstituteName;
-use crate::core::{ForallBinder, RowField, RowType, Type, TypeId, normalise, unification};
+use crate::core::{ForallBinder, RowField, RowType, Type, TypeId, normalise, toolkit, unification};
 use crate::error::{ErrorCrumb, ErrorKind};
 use crate::source::synonym;
 use crate::state::CheckState;
@@ -148,14 +146,13 @@ where
                 return Ok(unknown("missing constructor"));
             };
 
-            if let Some((synonym, kind)) =
-                synonym::lookup_file_synonym(state, context, file_id, type_id)?
+            if let Some(synonym) = toolkit::lookup_file_synonym(state, context, file_id, type_id)?
             {
-                let synonym = (file_id, type_id, kind, synonym.parameters.len());
+                let synonym = (file_id, type_id, synonym.kind, synonym.parameters.len());
                 return synonym::infer_synonym_constructor(state, context, synonym, id);
             }
             let t = context.queries.intern_type(Type::Constructor(file_id, type_id));
-            let k = lookup_file_type(state, context, file_id, type_id)?;
+            let k = toolkit::lookup_file_type(state, context, file_id, type_id)?;
 
             Ok((t, k))
         }
@@ -220,7 +217,7 @@ where
             };
 
             let t = context.queries.intern_type(Type::OperatorConstructor(file_id, type_id));
-            let k = lookup_file_type(state, context, file_id, type_id)?;
+            let k = toolkit::lookup_file_type(state, context, file_id, type_id)?;
 
             Ok((t, k))
         }
@@ -347,24 +344,6 @@ where
     }
 
     Ok((t, k))
-}
-
-fn lookup_file_type<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    file_id: FileId,
-    type_id: TypeItemId,
-) -> QueryResult<TypeId>
-where
-    Q: ExternalQueries,
-{
-    let result = if file_id == context.id {
-        state.checked.types.get(&type_id).copied()
-    } else {
-        let checked = context.queries.checked2(file_id)?;
-        checked.types.get(&type_id).copied()
-    };
-    Ok(result.unwrap_or_else(|| context.unknown("kind")))
 }
 
 fn check_type_variable_binding<Q>(

@@ -105,8 +105,9 @@ pub struct Synonym {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CheckedSynonym {
+    pub kind: TypeId,
     pub parameters: Vec<ForallBinder>,
-    pub replacement: TypeId,
+    pub synonym: TypeId,
 }
 
 /// Represents a checked class declaration.
