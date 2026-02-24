@@ -9,6 +9,7 @@ use std::mem;
 use std::sync::Arc;
 
 use building_types::QueryResult;
+use files::FileId;
 use indexing::{TermItemId, TypeItemId};
 use itertools::Itertools;
 use lowering::{
@@ -23,7 +24,7 @@ use crate::core::{
     CheckedClass, CheckedSynonym, ForallBinder, Type, TypeId, generalise, toolkit, unification,
     zonk,
 };
-use crate::error::ErrorCrumb;
+use crate::error::{ErrorCrumb, ErrorKind};
 use crate::state::CheckState;
 
 struct PendingDataType {
@@ -48,6 +49,7 @@ struct TypeSccState {
     data: Vec<(TypeItemId, PendingDataType)>,
     synonym: Vec<(TypeItemId, PendingSynonymType)>,
     class: Vec<(TypeItemId, PendingClassType)>,
+    operator: Vec<TypeItemId>,
 }
 
 /// Checks all type items in topological order.
@@ -86,6 +88,7 @@ where
         finalise_data_constructors(state, context, &mut scc_state)?;
         finalise_synonym_replacements(state, context, &mut scc_state)?;
         finalise_classes(state, context, &mut scc_state)?;
+        finalise_operators(state, context, &mut scc_state)?;
     }
     Ok(())
 }
@@ -202,7 +205,7 @@ where
             let Some(signature) = signature else { return Ok(()) };
             check_signature_type(state, context, item_id, *signature)?;
         }
-        TypeItemIr::Operator { .. } => todo!(),
+        TypeItemIr::Operator { .. } => {}
     }
 
     Ok(())
@@ -253,7 +256,9 @@ where
             check_class_equation(state, context, scc, item_id, *signature, class)?;
         }
         TypeItemIr::Foreign { .. } => {}
-        TypeItemIr::Operator { .. } => todo!(),
+        TypeItemIr::Operator { resolution, .. } => {
+            check_operator_equation(state, context, scc, item_id, *resolution)?;
+        }
     }
 
     Ok(())
@@ -786,4 +791,77 @@ where
     }
 
     Ok(())
+}
+
+fn check_operator_equation<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    scc: &mut TypeSccState,
+    item_id: TypeItemId,
+    resolution: Option<(FileId, TypeItemId)>,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    let Some((file_id, type_id)) = resolution else {
+        return Ok(());
+    };
+
+    let kind = if file_id == context.id {
+        state.checked.lookup_type(type_id)
+    } else {
+        let checked = context.queries.checked2(file_id)?;
+        checked.lookup_type(type_id)
+    };
+
+    let kind = if let Some(kind) = kind { kind } else { context.unknown("invalid item kind") };
+
+    if let Some(expected) = state.checked.lookup_type(item_id) {
+        unification::subtype(state, context, kind, expected)?;
+    } else {
+        state.checked.types.insert(item_id, kind);
+    }
+
+    scc.operator.push(item_id);
+
+    Ok(())
+}
+
+fn finalise_operators<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    scc: &mut TypeSccState,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    for item_id in mem::take(&mut scc.operator) {
+        let Some(kind) = state.checked.types.get(&item_id).copied() else {
+            continue;
+        };
+
+        if !is_binary_operator_type(state, context, kind)? {
+            let kind_message = state.pretty_id(context, kind)?;
+            state.insert_error(ErrorKind::InvalidTypeOperator { kind_message });
+        }
+    }
+
+    Ok(())
+}
+
+fn is_binary_operator_type<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    kind: TypeId,
+) -> QueryResult<bool>
+where
+    Q: ExternalQueries,
+{
+    let toolkit::InspectQuantified { quantified, .. } =
+        toolkit::inspect_quantified(state, context, kind)?;
+
+    let toolkit::InspectFunction { arguments, .. } =
+        toolkit::inspect_function(state, context, quantified)?;
+
+    Ok(arguments.len() == 2)
 }
