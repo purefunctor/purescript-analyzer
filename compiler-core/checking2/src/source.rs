@@ -1,6 +1,7 @@
 //! Implements syntax-driven checking rules for source files.
 
 pub mod operator;
+pub mod roles;
 pub mod signature;
 pub mod synonym;
 pub mod terms;
@@ -22,8 +23,8 @@ use smol_str::SmolStr;
 use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::{
-    CheckedClass, CheckedSynonym, ForallBinder, Type, TypeId, generalise, toolkit, unification,
-    zonk,
+    CheckedClass, CheckedSynonym, ForallBinder, Role, Type, TypeId, generalise, toolkit,
+    unification, zonk,
 };
 use crate::error::{ErrorCrumb, ErrorKind};
 use crate::state::CheckState;
@@ -31,6 +32,7 @@ use crate::state::CheckState;
 struct PendingDataType {
     parameters: Vec<ForallBinder>,
     constructors: Vec<(TermItemId, Vec<TypeId>)>,
+    declared_roles: Arc<[lowering::Role]>,
 }
 
 struct PendingSynonymType {
@@ -51,6 +53,7 @@ struct TypeSccState {
     data: Vec<(TypeItemId, PendingDataType)>,
     synonym: Vec<(TypeItemId, PendingSynonymType)>,
     class: Vec<(TypeItemId, PendingClassType)>,
+    foreign: Vec<(TypeItemId, Arc<[lowering::Role]>)>,
     operator: Vec<TypeItemId>,
 }
 
@@ -87,6 +90,7 @@ where
         }
 
         finalise_binding_group(state, context, &items)?;
+        finalise_roles(state, context, &mut scc_state)?;
         finalise_data_constructors(state, context, &mut scc_state)?;
         finalise_synonym_replacements(state, context, &mut scc_state)?;
         finalise_classes(state, context, &mut scc_state)?;
@@ -241,13 +245,13 @@ where
     };
 
     match item {
-        TypeItemIr::DataGroup { signature, data, .. } => {
+        TypeItemIr::DataGroup { signature, data, roles } => {
             let Some(DataIr { variables }) = data else { return Ok(()) };
-            check_data_equation(state, context, scc, item_id, *signature, variables)?;
+            check_data_equation(state, context, scc, item_id, *signature, variables, roles)?;
         }
-        TypeItemIr::NewtypeGroup { signature, newtype, .. } => {
+        TypeItemIr::NewtypeGroup { signature, newtype, roles } => {
             let Some(NewtypeIr { variables }) = newtype else { return Ok(()) };
-            check_data_equation(state, context, scc, item_id, *signature, variables)?;
+            check_data_equation(state, context, scc, item_id, *signature, variables, roles)?;
         }
         TypeItemIr::SynonymGroup { signature, synonym, .. } => {
             let Some(SynonymIr { variables, synonym }) = synonym else { return Ok(()) };
@@ -257,7 +261,9 @@ where
             let Some(class) = class else { return Ok(()) };
             check_class_equation(state, context, scc, item_id, *signature, class)?;
         }
-        TypeItemIr::Foreign { .. } => {}
+        TypeItemIr::Foreign { roles, .. } => {
+            scc.foreign.push((item_id, Arc::clone(roles)));
+        }
         TypeItemIr::Operator { resolution, .. } => {
             check_operator_equation(state, context, scc, item_id, *resolution)?;
         }
@@ -273,6 +279,7 @@ fn check_data_equation<Q>(
     item_id: TypeItemId,
     signature: Option<lowering::TypeId>,
     variables: &[TypeVariableBinding],
+    declared_roles: &Arc<[lowering::Role]>,
 ) -> QueryResult<()>
 where
     Q: ExternalQueries,
@@ -286,7 +293,9 @@ where
     };
 
     let constructors = check_data_constructors(state, context, item_id)?;
-    scc.data.push((item_id, PendingDataType { parameters, constructors }));
+    let declared_roles = Arc::clone(declared_roles);
+
+    scc.data.push((item_id, PendingDataType { parameters, constructors, declared_roles }));
 
     Ok(())
 }
@@ -431,7 +440,7 @@ fn finalise_data_constructors<Q>(
 where
     Q: ExternalQueries,
 {
-    for (item_id, PendingDataType { parameters, constructors }) in mem::take(&mut scc.data) {
+    for (item_id, PendingDataType { parameters, constructors, .. }) in mem::take(&mut scc.data) {
         // constructor_kind should have already been generalised by the
         // finalise_binding_group function. the kind signature is used
         // as the source of truth for constructing the kind applications
@@ -502,6 +511,38 @@ where
 
             state.checked.terms.insert(constructor_id, result);
         }
+    }
+
+    Ok(())
+}
+
+fn finalise_roles<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    scc: &mut TypeSccState,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    for (item_id, pending) in &scc.data {
+        let PendingDataType { parameters, constructors, declared_roles } = pending;
+        let inferred_roles = roles::infer_data_roles(state, context, parameters, constructors)?;
+        let resolved_roles =
+            roles::check_declared_roles(state, *item_id, &inferred_roles, declared_roles, false);
+        state.checked.roles.insert(*item_id, resolved_roles);
+    }
+
+    for (item_id, declared_roles) in mem::take(&mut scc.foreign) {
+        let Some(kind) = state.checked.lookup_type(item_id) else {
+            continue;
+        };
+
+        let parameter_count = roles::count_kind_arguments(state, context, kind)?;
+        let inferred_roles = vec![Role::Nominal; parameter_count];
+        let resolved_roles =
+            roles::check_declared_roles(state, item_id, &inferred_roles, &declared_roles, true);
+
+        state.checked.roles.insert(item_id, resolved_roles);
     }
 
     Ok(())

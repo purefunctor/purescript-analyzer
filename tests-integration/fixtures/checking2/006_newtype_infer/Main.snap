@@ -10,3 +10,6 @@ Tagged ::
 
 Types
 Tagged :: forall (t2 :: Type). (t2 :: Type) -> Type -> Type
+
+Roles
+Tagged = [Phantom, Representational]

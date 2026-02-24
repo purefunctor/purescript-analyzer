@@ -9,3 +9,8 @@ Types
 M :: Type -> Type
 P :: forall (k :: Type). (k :: Type) -> Type
 T :: forall (t2 :: Type) (k :: (t2 :: Type)). P @(t2 :: Type) (k :: (t2 :: Type)) -> Type
+
+Roles
+M = [Nominal]
+P = [Nominal]
+T = [Nominal]

@@ -8,3 +8,6 @@ Proxy :: forall (t1 :: Type) (a :: (t1 :: Type)). Proxy @(t1 :: Type) (a :: (t1 
 
 Types
 Proxy :: forall (t1 :: Type). (t1 :: Type) -> Type
+
+Roles
+Proxy = [Phantom]
