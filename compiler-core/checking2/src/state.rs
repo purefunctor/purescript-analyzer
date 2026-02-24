@@ -196,7 +196,7 @@ impl CheckState {
         Q: ExternalQueries,
     {
         let id = zonk::zonk(self, context, id)?;
-        let pretty = pretty::print(context.queries, id);
+        let pretty = pretty::Pretty::new(context.queries).render(id);
         Ok(context.queries.intern_smol_str(pretty))
     }
 }

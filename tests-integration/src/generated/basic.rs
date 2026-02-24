@@ -464,7 +464,7 @@ pub fn report_checked2(engine: &QueryEngine, id: FileId) -> String {
     for (id, TermItem { name, .. }) in indexed.items.iter_terms() {
         let Some(name) = name else { continue };
         let Some(kind) = checked.lookup_term(id) else { continue };
-        let signature = pretty2::print_signature(engine, name, kind);
+        let signature = pretty2::Pretty::new(engine).signature(name).render(kind);
         writeln!(snapshot, "{signature}").unwrap();
     }
 
@@ -472,7 +472,7 @@ pub fn report_checked2(engine: &QueryEngine, id: FileId) -> String {
     for (id, TypeItem { name, .. }) in indexed.items.iter_types() {
         let Some(name) = name else { continue };
         let Some(kind) = checked.lookup_type(id) else { continue };
-        let signature = pretty2::print_signature(engine, name, kind);
+        let signature = pretty2::Pretty::new(engine).signature(name).render(kind);
         writeln!(snapshot, "{signature}").unwrap();
     }
 
@@ -485,7 +485,7 @@ pub fn report_checked2(engine: &QueryEngine, id: FileId) -> String {
         let synonym_id = engine.intern_synonym(synonym);
         let synonym_type =
             engine.intern_type(checking2::core::Type::SynonymApplication(synonym_id));
-        let synonym = pretty2::print(engine, synonym_type);
+        let synonym = pretty2::Pretty::new(engine).render(synonym_type);
         writeln!(snapshot, "{name} = {synonym}").unwrap();
     }
 

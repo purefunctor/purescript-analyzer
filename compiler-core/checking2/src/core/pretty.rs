@@ -14,68 +14,50 @@ use crate::core::{
 
 type Doc<'a> = DocBuilder<'a, Arena<'a>, ()>;
 
-pub struct PrettyConfig {
-    pub width: usize,
+pub struct Pretty<'a, Q> {
+    queries: &'a Q,
+    width: usize,
+    signature: Option<&'a str>,
+    names: FxHashMap<Name, SmolStr>,
 }
 
-impl Default for PrettyConfig {
-    fn default() -> PrettyConfig {
-        PrettyConfig { width: 100 }
+impl<'a, Q: ExternalQueries> Pretty<'a, Q> {
+    pub fn new(queries: &'a Q) -> Self {
+        Pretty { queries, width: 100, signature: None, names: FxHashMap::default() }
     }
-}
 
-pub fn print<Q>(queries: &Q, id: TypeId) -> SmolStr
-where
-    Q: ExternalQueries,
-{
-    render(queries, &PrettyConfig::default(), |printer| printer.traverse(Precedence::Top, id))
-}
+    pub fn width(mut self, width: usize) -> Self {
+        self.width = width;
+        self
+    }
 
-pub fn print_with_config<Q>(queries: &Q, id: TypeId, config: &PrettyConfig) -> SmolStr
-where
-    Q: ExternalQueries,
-{
-    render(queries, config, |printer| printer.traverse(Precedence::Top, id))
-}
+    pub fn signature(mut self, name: &'a str) -> Self {
+        self.signature = Some(name);
+        self
+    }
 
-pub fn print_signature<Q>(queries: &Q, name: &str, id: TypeId) -> SmolStr
-where
-    Q: ExternalQueries,
-{
-    render(queries, &PrettyConfig::default(), |printer| printer.signature(name, id))
-}
+    pub fn names(mut self, names: impl IntoIterator<Item = (Name, SmolStr)>) -> Self {
+        self.names.extend(names);
+        self
+    }
 
-pub fn print_signature_with_config<Q>(
-    queries: &Q,
-    name: &str,
-    id: TypeId,
-    config: &PrettyConfig,
-) -> SmolStr
-where
-    Q: ExternalQueries,
-{
-    render(queries, config, |printer| printer.signature(name, id))
-}
+    pub fn render(self, id: TypeId) -> SmolStr {
+        let arena = Arena::new();
+        let mut printer = Printer::new(&arena, self.queries);
+        printer.names = self.names;
 
-fn render<Q>(
-    queries: &Q,
-    config: &PrettyConfig,
-    f: impl for<'a> FnOnce(&mut Printer<'a, Q>) -> Doc<'a>,
-) -> SmolStr
-where
-    Q: ExternalQueries,
-{
-    let arena = Arena::new();
-    let traversal = TraversalContext::new();
-    let mut printer = Printer::new(&arena, queries, traversal);
+        let document = if let Some(name) = self.signature {
+            printer.signature(name, id)
+        } else {
+            printer.traverse(Precedence::Top, id)
+        };
 
-    let document = f(&mut printer);
-    let mut output = SmolStrBuilder::new();
-    document
-        .render_fmt(config.width, &mut output)
-        .expect("critical failure: failed to render type");
-
-    output.finish()
+        let mut output = SmolStrBuilder::new();
+        document
+            .render_fmt(self.width, &mut output)
+            .expect("critical failure: failed to render type");
+        output.finish()
+    }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -87,42 +69,21 @@ enum Precedence {
     Atom,
 }
 
-struct TraversalContext {
-    names: FxHashMap<Name, String>,
-    next: u32,
-}
-
-impl TraversalContext {
-    fn new() -> TraversalContext {
-        TraversalContext { names: FxHashMap::default(), next: 0 }
-    }
-
-    fn render_name(&mut self, name: Name) -> String {
-        let unique = &mut self.next;
-        let name = self.names.entry(name).or_insert_with(|| {
-            let index = *unique;
-            *unique += 1;
-            format!("t{index}")
-        });
-        String::clone(name)
-    }
-}
-
 struct Printer<'a, Q>
 where
     Q: ExternalQueries,
 {
     arena: &'a Arena<'a>,
     queries: &'a Q,
-    traversal: TraversalContext,
+    names: FxHashMap<Name, SmolStr>,
 }
 
 impl<'a, Q> Printer<'a, Q>
 where
     Q: ExternalQueries,
 {
-    fn new(arena: &'a Arena<'a>, queries: &'a Q, traversal: TraversalContext) -> Printer<'a, Q> {
-        Printer { arena, queries, traversal }
+    fn new(arena: &'a Arena<'a>, queries: &'a Q) -> Printer<'a, Q> {
+        Printer { arena, queries, names: FxHashMap::default() }
     }
 
     fn lookup_type(&self, id: TypeId) -> Type {
@@ -278,7 +239,8 @@ where
             }
 
             Type::Rigid(name, _, kind) => {
-                let name = self.traversal.render_name(name);
+                let name = self.names.entry(name).or_insert_with(|| name.as_text());
+                let name = SmolStr::clone(name);
                 let kind = self.traverse(Precedence::Top, kind);
                 self.arena.text(format!("({name} :: ")).append(kind).append(self.arena.text(")"))
             }
@@ -399,7 +361,7 @@ where
         // Register source-level names so rigid variables in the body
         // display their original names instead of synthetic ones.
         for binder in &binders {
-            self.traversal.names.insert(binder.name, binder.text.to_string());
+            self.names.insert(binder.name, SmolStr::clone(&binder.text));
         }
 
         let binders = binders
