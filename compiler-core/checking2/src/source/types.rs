@@ -146,8 +146,7 @@ where
                 return Ok(unknown("missing constructor"));
             };
 
-            if let Some(synonym) = toolkit::lookup_file_synonym(state, context, file_id, type_id)?
-            {
+            if let Some(synonym) = toolkit::lookup_file_synonym(state, context, file_id, type_id)? {
                 let synonym = (file_id, type_id, synonym.kind, synonym.parameters.len());
                 return synonym::infer_synonym_constructor(state, context, synonym, id);
             }
@@ -354,8 +353,6 @@ fn check_type_variable_binding<Q>(
 where
     Q: ExternalQueries,
 {
-    let text = binding.name.clone().unwrap_or(MISSING_NAME);
-
     let kind = if let Some(kind_id) = binding.kind {
         let (kind, _) = check_kind(state, context, kind_id, context.prim.t)?;
         kind
@@ -363,10 +360,12 @@ where
         state.fresh_unification(context.queries, context.prim.t)
     };
 
+    let visible = binding.visible;
     let name = state.names.fresh();
-    state.kind_scope.bind_forall(binding.id, name, kind);
+    let text = if let Some(name) = &binding.name { SmolStr::clone(name) } else { name.as_text() };
 
-    Ok(ForallBinder { visible: binding.visible, name, text, kind })
+    state.kind_scope.bind_forall(binding.id, name, kind);
+    Ok(ForallBinder { visible, name, text, kind })
 }
 
 pub fn infer_application_kind<Q>(

@@ -16,7 +16,6 @@ use lowering::{
     ClassIr, DataIr, LoweringError, NewtypeIr, RecursiveGroup, Scc, SynonymIr, TermItemIr,
     TypeItemIr, TypeVariableBinding,
 };
-use smol_str::SmolStr;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
@@ -322,8 +321,7 @@ where
         let name = state.names.fresh();
         state.kind_scope.bind_forall(equation_binding.id, name, kind);
 
-        const MISSING: SmolStr = SmolStr::new_static("<MissingName>");
-        let text = equation_binding.name.clone().unwrap_or(MISSING);
+        let text = equation_binding.name.clone().unwrap_or_else(|| name.as_text());
         let visible = equation_binding.visible;
 
         binders.push(ForallBinder { visible, name, text, kind });
