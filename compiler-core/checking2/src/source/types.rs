@@ -9,7 +9,7 @@ use crate::context::CheckContext;
 use crate::core::substitute::SubstituteName;
 use crate::core::{ForallBinder, RowField, RowType, Type, TypeId, normalise, toolkit, unification};
 use crate::error::{ErrorCrumb, ErrorKind};
-use crate::source::synonym;
+use crate::source::{operator, synonym};
 use crate::state::CheckState;
 use crate::{ExternalQueries, safe_loop};
 
@@ -222,7 +222,7 @@ where
         }
 
         lowering::TypeKind::OperatorChain { .. } => {
-            todo!("operator chain inference")
+            operator::infer_operator_chain(state, context, id)
         }
 
         lowering::TypeKind::String { kind, value } => {
