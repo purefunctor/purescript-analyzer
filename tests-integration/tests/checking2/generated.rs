@@ -59,3 +59,13 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_014_operator_alias_kind_main() { run_test("014_operator_alias_kind", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_015_operator_alias_invalid_kind_main() { run_test("015_operator_alias_invalid_kind", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_016_type_operator_chain_infer_main() { run_test("016_type_operator_chain_infer", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_017_type_operator_chain_check_main() { run_test("017_type_operator_chain_check", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_018_type_operator_chain_polykind_main() { run_test("018_type_operator_chain_polykind", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_019_type_operator_chain_precedence_main() { run_test("019_type_operator_chain_precedence", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_020_type_operator_chain_kind_error_main() { run_test("020_type_operator_chain_kind_error", "Main"); }

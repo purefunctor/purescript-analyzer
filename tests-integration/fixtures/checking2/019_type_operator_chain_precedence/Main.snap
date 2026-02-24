@@ -1,0 +1,24 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+
+Types
+Add :: forall (t3 :: Type) (t2 :: Type). (t3 :: Type) -> (t2 :: Type) -> (t3 :: Type)
+:+: :: forall (t3 :: Type) (t2 :: Type). (t3 :: Type) -> (t2 :: Type) -> (t3 :: Type)
+Mul :: forall (t7 :: Type) (t6 :: Type). (t7 :: Type) -> (t6 :: Type) -> (t7 :: Type)
+:*: :: forall (t7 :: Type) (t6 :: Type). (t7 :: Type) -> (t6 :: Type) -> (t7 :: Type)
+Chain ::
+  forall (t13 :: Type) (t12 :: Type) (t11 :: Type).
+    (t13 :: Type) -> (t12 :: Type) -> (t11 :: Type) -> (t13 :: Type)
+ChainParen ::
+  forall (t19 :: Type) (t18 :: Type) (t17 :: Type).
+    (t19 :: Type) -> (t18 :: Type) -> (t17 :: Type) -> (t19 :: Type)
+
+Synonyms
+type Add a b = (a :: (t3 :: Type))
+type Mul a b = (a :: (t7 :: Type))
+type Chain a b c = (a :: (t13 :: Type)) :+: (b :: (t12 :: Type)) :*: (c :: (t11 :: Type))
+type ChainParen a b c = (a :: (t19 :: Type)) :+: (b :: (t18 :: Type)) :*: (c :: (t17 :: Type))

@@ -1,0 +1,34 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+
+Types
+Add :: Type -> Type -> Type
++ :: Type -> Type -> Type
+Bad :: Type
+
+Synonyms
+type Add a b = (a :: Type)
+type Bad = Int + "hello"
+
+Errors
+CheckError {
+    kind: CannotUnify {
+        t1: Id<smol_str::SmolStr>(5),
+        t2: Id<smol_str::SmolStr>(6),
+    },
+    crumbs: [
+        CheckingKind(
+            AstId<syntax::cst::Type>(17),
+        ),
+        InferringKind(
+            AstId<syntax::cst::Type>(17),
+        ),
+        CheckingKind(
+            AstId<syntax::cst::Type>(21),
+        ),
+    ],
+}
