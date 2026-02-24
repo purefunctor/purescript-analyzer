@@ -490,6 +490,42 @@ pub fn report_checked2(engine: &QueryEngine, id: FileId) -> String {
         writeln!(snapshot, "type {name}{binders_formatted} = {replacement}").unwrap();
     }
 
+    if !checked.classes.is_empty() {
+        writeln!(snapshot, "\nClasses").unwrap();
+    }
+    for (id, TypeItem { .. }) in indexed.items.iter_types() {
+        let Some(class) = checked.lookup_class(id) else { continue };
+
+        let canonical = pretty2::Pretty::new(engine).render(class.canonical);
+
+        let mut superclasses = String::new();
+        if !class.superclasses.is_empty() {
+            let formatted = class
+                .superclasses
+                .iter()
+                .map(|&superclass| pretty2::Pretty::new(engine).render(superclass))
+                .collect_vec();
+            superclasses = format!(" <= {}", formatted.join(", "));
+        }
+
+        let members = class
+            .members
+            .iter()
+            .filter_map(|&mid| {
+                let member_name = indexed.items[mid].name.as_deref()?;
+                let member_type = checked.lookup_term(mid)?;
+                let signature =
+                    pretty2::Pretty::new(engine).signature(member_name).render(member_type);
+                Some(format!("  {signature}"))
+            })
+            .collect_vec();
+
+        writeln!(snapshot, "class {canonical}{superclasses}").unwrap();
+        for member in &members {
+            writeln!(snapshot, "{member}").unwrap();
+        }
+    }
+
     if !checked.roles.is_empty() {
         writeln!(snapshot, "\nRoles").unwrap();
     }
