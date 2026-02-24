@@ -69,3 +69,15 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_019_type_operator_chain_precedence_main() { run_test("019_type_operator_chain_precedence", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_020_type_operator_chain_kind_error_main() { run_test("020_type_operator_chain_kind_error", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_021_role_inference_phantom_main() { run_test("021_role_inference_phantom", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_022_role_inference_representational_main() { run_test("022_role_inference_representational", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_023_role_inference_nominal_parametric_main() { run_test("023_role_inference_nominal_parametric", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_024_role_declaration_strengthen_main() { run_test("024_role_declaration_strengthen", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_025_role_declaration_loosen_error_main() { run_test("025_role_declaration_loosen_error", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_026_role_declaration_foreign_main() { run_test("026_role_declaration_foreign", "Main"); }
