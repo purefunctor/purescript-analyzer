@@ -6,19 +6,22 @@ pub mod terms;
 pub mod types;
 
 use std::mem;
+use std::sync::Arc;
 
 use building_types::QueryResult;
 use indexing::{TermItemId, TypeItemId};
+use itertools::Itertools;
 use lowering::{
-    DataIr, LoweringError, NewtypeIr, RecursiveGroup, Scc, SynonymIr, TermItemIr, TypeItemIr,
-    TypeVariableBinding,
+    ClassIr, DataIr, LoweringError, NewtypeIr, RecursiveGroup, Scc, SynonymIr, TermItemIr,
+    TypeItemIr, TypeVariableBinding,
 };
 use smol_str::SmolStr;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::{
-    CheckedSynonym, ForallBinder, Type, TypeId, generalise, toolkit, unification, zonk,
+    CheckedClass, CheckedSynonym, ForallBinder, Type, TypeId, generalise, toolkit, unification,
+    zonk,
 };
 use crate::error::ErrorCrumb;
 use crate::state::CheckState;
@@ -33,10 +36,18 @@ struct PendingSynonymType {
     replacement: TypeId,
 }
 
+struct PendingClassType {
+    parameters: Vec<ForallBinder>,
+    superclasses: Vec<TypeId>,
+    functional_dependencies: std::sync::Arc<[lowering::FunctionalDependency]>,
+    members: Vec<(TermItemId, TypeId)>,
+}
+
 #[derive(Default)]
 struct TypeSccState {
     data: Vec<(TypeItemId, PendingDataType)>,
     synonym: Vec<(TypeItemId, PendingSynonymType)>,
+    class: Vec<(TypeItemId, PendingClassType)>,
 }
 
 /// Checks all type items in topological order.
@@ -74,6 +85,7 @@ where
         finalise_binding_group(state, context, &items)?;
         finalise_data_constructors(state, context, &mut scc_state)?;
         finalise_synonym_replacements(state, context, &mut scc_state)?;
+        finalise_classes(state, context, &mut scc_state)?;
     }
     Ok(())
 }
@@ -182,7 +194,10 @@ where
             let Some(signature) = signature else { return Ok(()) };
             check_signature_type(state, context, item_id, *signature)?;
         }
-        TypeItemIr::ClassGroup { .. } => todo!(),
+        TypeItemIr::ClassGroup { signature, .. } => {
+            let Some(signature) = signature else { return Ok(()) };
+            check_signature_type(state, context, item_id, *signature)?;
+        }
         TypeItemIr::Foreign { signature, .. } => {
             let Some(signature) = signature else { return Ok(()) };
             check_signature_type(state, context, item_id, *signature)?;
@@ -233,7 +248,10 @@ where
             let Some(SynonymIr { variables, synonym }) = synonym else { return Ok(()) };
             check_synonym_equation(state, context, scc, item_id, *signature, variables, *synonym)?;
         }
-        TypeItemIr::ClassGroup { .. } => todo!(),
+        TypeItemIr::ClassGroup { signature, class } => {
+            let Some(class) = class else { return Ok(()) };
+            check_class_equation(state, context, scc, item_id, *signature, class)?;
+        }
         TypeItemIr::Foreign { .. } => {}
         TypeItemIr::Operator { .. } => todo!(),
     }
@@ -560,5 +578,212 @@ where
         let checked_synonym = CheckedSynonym { parameters, replacement };
         state.checked.synonyms.insert(item_id, checked_synonym);
     }
+    Ok(())
+}
+
+fn check_class_equation<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    scc: &mut TypeSccState,
+    item_id: TypeItemId,
+    signature: Option<lowering::TypeId>,
+    class: &ClassIr,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    let ClassIr { constraints, variables, functional_dependencies } = class;
+
+    let parameters = if let Some(signature_id) = signature
+        && let Some(signature_kind) = state.checked.lookup_type(item_id)
+    {
+        check_class_equation_check(state, context, variables, (signature_id, signature_kind))?
+    } else {
+        check_class_equation_infer(state, context, item_id, variables)?
+    };
+
+    let mut superclasses = vec![];
+    for &constraint in constraints.iter() {
+        let (superclass, _) =
+            types::check_kind(state, context, constraint, context.prim.constraint)?;
+        superclasses.push(superclass);
+    }
+
+    let functional_dependencies = Arc::clone(functional_dependencies);
+    let members = check_class_members(state, context, item_id)?;
+
+    scc.class.push((
+        item_id,
+        PendingClassType { parameters, superclasses, functional_dependencies, members },
+    ));
+
+    Ok(())
+}
+
+fn check_class_equation_check<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    bindings: &[TypeVariableBinding],
+    signature: (lowering::TypeId, TypeId),
+) -> QueryResult<Vec<ForallBinder>>
+where
+    Q: ExternalQueries,
+{
+    let signature = signature::inspect_signature(state, context, signature, bindings)?;
+    check_type_variable_bindings(state, context, bindings, &signature.arguments)
+}
+
+fn check_class_equation_infer<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    item_id: TypeItemId,
+    bindings: &[TypeVariableBinding],
+) -> QueryResult<Vec<ForallBinder>>
+where
+    Q: ExternalQueries,
+{
+    let bindings = check_type_variable_bindings(state, context, bindings, &[])?;
+    let kinds = bindings.iter().map(|binder| binder.kind);
+    let inferred = context.intern_function_chain(kinds, context.prim.constraint);
+
+    if let Some(expected) = state.checked.lookup_type(item_id) {
+        unification::subtype(state, context, inferred, expected)?;
+    } else {
+        state.checked.types.insert(item_id, inferred);
+    }
+
+    Ok(bindings)
+}
+
+fn check_class_members<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    item_id: TypeItemId,
+) -> QueryResult<Vec<(TermItemId, TypeId)>>
+where
+    Q: ExternalQueries,
+{
+    let mut members = vec![];
+
+    for member_id in context.indexed.pairs.class_members(item_id) {
+        let Some(TermItemIr::ClassMember { signature }) =
+            context.lowered.info.get_term_item(member_id)
+        else {
+            continue;
+        };
+
+        let Some(signature_id) = signature else { continue };
+
+        let (member_type, _) = types::check_kind(state, context, *signature_id, context.prim.t)?;
+        members.push((member_id, member_type));
+    }
+
+    Ok(members)
+}
+
+fn finalise_classes<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    scc: &mut TypeSccState,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    for (item_id, pending) in mem::take(&mut scc.class) {
+        let PendingClassType { parameters, superclasses, functional_dependencies, members } =
+            pending;
+
+        let Some(class_kind) = state.checked.types.get(&item_id).copied() else {
+            continue;
+        };
+
+        let toolkit::InspectQuantified { binders: class_binders, quantified: class_inner } =
+            toolkit::inspect_quantified(state, context, class_kind)?;
+
+        let toolkit::InspectFunction { arguments: class_parameters, .. } =
+            toolkit::inspect_function(state, context, class_inner)?;
+
+        let get_parameter_kind = |index: usize| {
+            if let Some(kind) = class_parameters.get(index) {
+                *kind
+            } else {
+                context.unknown("invalid kind")
+            }
+        };
+
+        let kind_binders = class_binders
+            .iter()
+            .cloned()
+            .map(|binder| context.intern_forall_binder(binder))
+            .collect_vec();
+
+        let type_parameters = parameters
+            .iter()
+            .cloned()
+            .enumerate()
+            .map(|(index, parameter)| {
+                let kind = get_parameter_kind(index);
+                let binder = ForallBinder { kind, ..parameter };
+                context.intern_forall_binder(binder)
+            })
+            .collect_vec();
+
+        let mut canonical = context.queries.intern_type(Type::Constructor(context.id, item_id));
+
+        for binder in &class_binders {
+            let rigid = context.intern_rigid(binder.name, state.depth, binder.kind);
+            canonical = context.intern_kind_application(canonical, rigid);
+        }
+
+        for (index, parameter) in parameters.iter().enumerate() {
+            let kind = get_parameter_kind(index);
+            let rigid = context.intern_rigid(parameter.name, state.depth, kind);
+            canonical = context.intern_application(canonical, rigid);
+        }
+
+        let superclasses = superclasses
+            .into_iter()
+            .map(|superclass| zonk::zonk(state, context, superclass))
+            .collect::<QueryResult<Vec<_>>>()?;
+
+        for (member_id, member_type) in members.iter() {
+            let member_type = zonk::zonk(state, context, *member_type)?;
+
+            let toolkit::InspectQuantified { binders: member_binders, quantified: member_inner } =
+                toolkit::inspect_quantified(state, context, member_type)?;
+
+            let mut result = context.intern_constrained(canonical, member_inner);
+
+            for member_binder in member_binders.iter().cloned().rev() {
+                let binder_id = context.intern_forall_binder(member_binder);
+                result = context.intern_forall(binder_id, result);
+            }
+
+            for type_parameter in type_parameters.iter().rev() {
+                result = context.intern_forall(*type_parameter, result);
+            }
+
+            for kind_binder in kind_binders.iter().rev() {
+                result = context.intern_forall(*kind_binder, result);
+            }
+
+            state.checked.terms.insert(*member_id, result);
+        }
+
+        let members = members.into_iter().map(|(item_id, _)| item_id).collect_vec();
+
+        state.checked.classes.insert(
+            item_id,
+            CheckedClass {
+                kind_binders,
+                type_parameters,
+                canonical,
+                superclasses,
+                functional_dependencies,
+                members,
+            },
+        );
+    }
+
     Ok(())
 }
