@@ -45,3 +45,13 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_007_synonym_check_main() { run_test("007_synonym_check", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_008_synonym_infer_main() { run_test("008_synonym_infer", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_009_class_check_main() { run_test("009_class_check", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_010_class_infer_main() { run_test("010_class_infer", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_011_class_superclass_main() { run_test("011_class_superclass", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_012_class_polykind_check_main() { run_test("012_class_polykind_check", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_013_class_polykind_infer_main() { run_test("013_class_polykind_infer", "Main"); }
