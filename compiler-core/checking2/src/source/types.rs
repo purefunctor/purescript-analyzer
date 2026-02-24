@@ -170,7 +170,7 @@ where
             };
 
             let t = binders.iter().rfold(inner, |inner, binder| {
-                let binder_id = context.intern_forall_binder(binder.clone());
+                let binder_id = context.intern_forall_binder(*binder);
                 context.intern_forall(binder_id, inner)
             });
 
@@ -362,7 +362,9 @@ where
 
     let visible = binding.visible;
     let name = state.names.fresh();
+
     let text = if let Some(name) = &binding.name { SmolStr::clone(name) } else { name.as_text() };
+    let text = context.queries.intern_smol_str(text);
 
     state.kind_scope.bind_forall(binding.id, name, kind);
     Ok(ForallBinder { visible, name, text, kind })

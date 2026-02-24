@@ -172,7 +172,7 @@ where
         let UnificationEntry { kind, .. } = *state.unifications.get(unification_id);
 
         let name = state.names.fresh();
-        let text = name.as_text();
+        let text = context.queries.intern_smol_str(name.as_text());
 
         let binder = ForallBinder { visible: false, name, text, kind };
         let binder = context.intern_forall_binder(binder);

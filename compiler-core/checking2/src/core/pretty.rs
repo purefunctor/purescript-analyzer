@@ -361,15 +361,16 @@ where
         // Register source-level names so rigid variables in the body
         // display their original names instead of synthetic ones.
         for binder in &binders {
-            self.names.insert(binder.name, SmolStr::clone(&binder.text));
+            self.names.insert(binder.name, self.lookup_smol_str(binder.text));
         }
 
         let binders = binders
             .iter()
             .map(|binder| {
+                let text = self.lookup_smol_str(binder.text);
                 let kind = self.traverse(Precedence::Top, binder.kind);
                 self.arena
-                    .text(format!("({} :: ", binder.text))
+                    .text(format!("({} :: ", text))
                     .append(kind)
                     .append(self.arena.text(")"))
                     .group()

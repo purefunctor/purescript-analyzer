@@ -17,6 +17,7 @@ use lowering::{
     ClassIr, DataIr, LoweringError, NewtypeIr, RecursiveGroup, Scc, SynonymIr, TermItemIr,
     TypeItemIr, TypeVariableBinding,
 };
+use smol_str::SmolStr;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
@@ -322,7 +323,13 @@ where
         let name = state.names.fresh();
         state.kind_scope.bind_forall(equation_binding.id, name, kind);
 
-        let text = equation_binding.name.clone().unwrap_or_else(|| name.as_text());
+        let text = if let Some(name) = &equation_binding.name {
+            SmolStr::clone(name)
+        } else {
+            name.as_text()
+        };
+
+        let text = context.queries.intern_smol_str(text);
         let visible = equation_binding.visible;
 
         binders.push(ForallBinder { visible, name, text, kind });
@@ -481,8 +488,7 @@ where
             for (index, parameter) in parameters.iter().enumerate().rev() {
                 let kind = get_parameter_kind(index);
 
-                let parameter = ForallBinder::clone(parameter);
-                let binder = ForallBinder { kind, ..parameter };
+                let binder = ForallBinder { kind, ..*parameter };
 
                 let binder_id = context.intern_forall_binder(binder);
                 result = context.intern_forall(binder_id, result);
@@ -490,7 +496,7 @@ where
 
             // forall (k :: Type) (t :: k) (a :: Type). a -> Tagged @k t a
             for binder in kind_binders.iter().rev() {
-                let binder_id = context.intern_forall_binder(binder.clone());
+                let binder_id = context.intern_forall_binder(*binder);
                 result = context.intern_forall(binder_id, result);
             }
 
@@ -719,13 +725,13 @@ where
 
         let kind_binders = class_binders
             .iter()
-            .cloned()
+            .copied()
             .map(|binder| context.intern_forall_binder(binder))
             .collect_vec();
 
         let type_parameters = parameters
             .iter()
-            .cloned()
+            .copied()
             .enumerate()
             .map(|(index, parameter)| {
                 let kind = get_parameter_kind(index);
@@ -760,7 +766,7 @@ where
 
             let mut result = context.intern_constrained(canonical, member_inner);
 
-            for member_binder in member_binders.iter().cloned().rev() {
+            for member_binder in member_binders.iter().copied().rev() {
                 let binder_id = context.intern_forall_binder(member_binder);
                 result = context.intern_forall(binder_id, result);
             }

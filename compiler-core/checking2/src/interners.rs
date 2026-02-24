@@ -29,7 +29,7 @@ impl CoreInterners {
     }
 
     pub fn lookup_forall_binder(&self, id: ForallBinderId) -> ForallBinder {
-        self.forall_binders[id].clone()
+        self.forall_binders[id]
     }
 
     pub fn intern_row_type(&mut self, r: RowType) -> RowTypeId {

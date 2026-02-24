@@ -2,6 +2,7 @@ use std::fmt::Write;
 
 use analyzer::{QueryEngine, locate};
 use checking::core::pretty;
+use checking2::ExternalQueries;
 use checking2::core::pretty as pretty2;
 use diagnostics::{DiagnosticsContext, ToDiagnostics, format_rustc};
 use files::FileId;
@@ -242,9 +243,11 @@ pub fn report_checked2(engine: &QueryEngine, id: FileId) -> String {
     for (id, TypeItem { name, .. }) in indexed.items.iter_types() {
         let Some(name) = name else { continue };
         let Some(definition) = checked.lookup_synonym(id) else { continue };
-        let names = definition.parameters.iter().map(|b| (b.name, b.text.clone()));
+        let names =
+            definition.parameters.iter().map(|b| (b.name, engine.lookup_smol_str(b.text)));
         let replacement = pretty2::Pretty::new(engine).names(names).render(definition.synonym);
-        let binders = definition.parameters.iter().map(|b| b.text.as_str()).collect_vec();
+        let binders =
+            definition.parameters.iter().map(|b| engine.lookup_smol_str(b.text)).collect_vec();
         let binders_formatted =
             if binders.is_empty() { String::new() } else { format!(" {}", binders.join(" ")) };
         writeln!(out, "type {name}{binders_formatted} = {replacement}").unwrap();

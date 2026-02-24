@@ -17,8 +17,8 @@ type Bad = Int + "hello"
 Errors
 CheckError {
     kind: CannotUnify {
-        t1: Id<smol_str::SmolStr>(5),
-        t2: Id<smol_str::SmolStr>(6),
+        t1: Id<smol_str::SmolStr>(7),
+        t2: Id<smol_str::SmolStr>(8),
     },
     crumbs: [
         CheckingKind(
