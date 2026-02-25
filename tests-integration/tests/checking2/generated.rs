@@ -87,3 +87,15 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_028_value_check_main() { run_test("028_value_check", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_029_operator_check_main() { run_test("029_operator_check", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_030_exhaustive_case_infer_main() { run_test("030_exhaustive_case_infer", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_031_exhaustive_case_redundant_main() { run_test("031_exhaustive_case_redundant", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_032_exhaustive_equation_signature_main() { run_test("032_exhaustive_equation_signature", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_033_exhaustive_guards_otherwise_main() { run_test("033_exhaustive_guards_otherwise", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_034_exhaustive_let_pattern_main() { run_test("034_exhaustive_let_pattern", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_035_exhaustive_operator_constructor_main() { run_test("035_exhaustive_operator_constructor", "Main"); }
