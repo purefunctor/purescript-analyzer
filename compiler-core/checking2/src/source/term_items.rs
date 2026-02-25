@@ -7,8 +7,9 @@ use lowering::TermItemIr;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::{generalise, toolkit, unification, zonk};
-use crate::error::ErrorKind;
+use crate::core::{TypeId, generalise, toolkit, unification, zonk};
+use crate::error::{ErrorCrumb, ErrorKind};
+use crate::source::terms::equations;
 use crate::source::types;
 use crate::state::CheckState;
 
@@ -95,9 +96,101 @@ where
         return Ok(());
     };
 
-    if let TermItemIr::Operator { resolution, .. } = item {
-        check_term_operator(state, context, scc, item_id, *resolution)?;
+    match item {
+        TermItemIr::Operator { resolution, .. } => {
+            check_term_operator(state, context, scc, item_id, *resolution)?;
+        }
+        TermItemIr::ValueGroup { signature, equations } => {
+            check_value_group(state, context, item_id, *signature, equations)?;
+        }
+        _ => (),
     }
+
+    Ok(())
+}
+
+fn check_value_group<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    item_id: TermItemId,
+    signature: Option<lowering::TypeId>,
+    equations: &[lowering::Equation],
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    state.with_error_crumb(ErrorCrumb::TermDeclaration(item_id), |state| {
+        check_value_group_core(state, context, item_id, signature, equations)
+    })
+}
+
+fn check_value_group_core<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    item_id: TermItemId,
+    signature: Option<lowering::TypeId>,
+    equations: &[lowering::Equation],
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    if let Some(signature_id) = signature
+        && let Some(signature_type) = state.checked.lookup_term(item_id)
+    {
+        check_value_group_core_check(state, context, signature_id, signature_type, equations)?;
+    } else {
+        check_value_group_core_infer(state, context, item_id, equations)?;
+    }
+
+    Ok(())
+}
+
+fn check_value_group_core_check<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    signature_id: lowering::TypeId,
+    signature_type: TypeId,
+    equations: &[lowering::Equation],
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    let toolkit::InspectQuantified { quantified, .. } =
+        toolkit::inspect_quantified(state, context, signature_type)?;
+
+    let toolkit::InspectFunction { arguments, result } =
+        toolkit::inspect_function(state, context, quantified)?;
+
+    let function = {
+        let arguments = arguments.iter().copied();
+        context.intern_function_chain(arguments, result)
+    };
+
+    equations::check_equations_core(
+        state,
+        context,
+        signature_id,
+        &arguments,
+        result,
+        function,
+        equations,
+    )?;
+
+    Ok(())
+}
+
+fn check_value_group_core_infer<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    item_id: TermItemId,
+    equations: &[lowering::Equation],
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    let group_type = state.fresh_unification(context.queries, context.prim.t);
+    state.checked.terms.insert(item_id, group_type);
+    equations::infer_equations_core(state, context, group_type, equations)?;
 
     Ok(())
 }
