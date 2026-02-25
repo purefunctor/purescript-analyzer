@@ -1,5 +1,6 @@
 //! Implements syntax-driven checking rules for source files.
 
+pub mod binder;
 pub mod operator;
 pub mod roles;
 pub mod signature;
