@@ -4,7 +4,7 @@ use building_types::QueryResult;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::{TypeId, unification};
+use crate::core::{TypeId, exhaustive, toolkit, unification};
 use crate::error::ErrorKind;
 use crate::source::terms::form_let;
 use crate::source::{binder, terms};
@@ -46,6 +46,13 @@ where
             unification::subtype(state, context, inferred_type, result_type)?;
         }
     }
+
+    let toolkit::InspectFunction { arguments, .. } =
+        toolkit::inspect_function(state, context, group_type)?;
+
+    let exhaustiveness =
+        exhaustive::check_equation_patterns(state, context, &arguments, equations)?;
+    state.report_exhaustiveness(context, exhaustiveness);
 
     Ok(())
 }
@@ -103,6 +110,9 @@ where
             check_guarded_expression(state, context, guarded, expected_type)?;
         }
     }
+
+    let exhaustiveness = exhaustive::check_equation_patterns(state, context, arguments, equations)?;
+    state.report_exhaustiveness(context, exhaustiveness);
 
     Ok(())
 }

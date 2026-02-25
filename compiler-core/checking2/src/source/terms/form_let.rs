@@ -2,7 +2,7 @@ use building_types::QueryResult;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::toolkit;
+use crate::core::{exhaustive, toolkit};
 use crate::error::ErrorCrumb;
 use crate::source::terms::equations;
 use crate::source::{binder, types};
@@ -54,7 +54,17 @@ where
         expression_type
     };
 
-    binder::check_binder(state, context, binder, expression_type)?;
+    let binder_type = binder::check_binder(state, context, binder, expression_type)?;
+
+    let exhaustiveness =
+        exhaustive::check_lambda_patterns(state, context, &[binder_type], &[binder])?;
+
+    let has_missing = exhaustiveness.missing.is_some();
+    state.report_exhaustiveness(context, exhaustiveness);
+
+    if has_missing {
+        state.push_wanted(context.prim.partial);
+    }
 
     Ok(())
 }

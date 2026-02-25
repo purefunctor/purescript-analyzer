@@ -1,12 +1,16 @@
 //! Implements the algorithm's core state structures.
 
 use std::mem;
+use std::sync::Arc;
 
 use building_types::QueryResult;
 use files::FileId;
 use rustc_hash::FxHashMap;
 
 use crate::context::CheckContext;
+use crate::core::exhaustive::{
+    ExhaustivenessReport, Pattern, PatternConstructor, PatternId, PatternKind, PatternStorage,
+};
 use crate::core::{Depth, Name, SmolStrId, Type, TypeId, pretty, zonk};
 use crate::error::{CheckError, ErrorCrumb, ErrorKind};
 use crate::implication::Implications;
@@ -120,6 +124,7 @@ pub struct CheckState {
     pub names: Names,
     pub unifications: Unifications,
     pub implications: Implications,
+    pub patterns: PatternStorage,
     pub kind_scope: KindScope,
     pub defer_synonym_expansion: bool,
     pub depth: Depth,
@@ -134,6 +139,7 @@ impl CheckState {
             names: Names::new(file_id),
             unifications: Default::default(),
             implications: Default::default(),
+            patterns: Default::default(),
             kind_scope: Default::default(),
             defer_synonym_expansion: Default::default(),
             depth: Depth(0),
@@ -198,5 +204,44 @@ impl CheckState {
         let id = zonk::zonk(self, context, id)?;
         let pretty = pretty::Pretty::new(context.queries).render(id);
         Ok(context.queries.intern_smol_str(pretty))
+    }
+
+    pub fn report_exhaustiveness<Q>(
+        &mut self,
+        context: &CheckContext<Q>,
+        exhaustiveness: ExhaustivenessReport,
+    ) where
+        Q: ExternalQueries,
+    {
+        if let Some(patterns) = exhaustiveness.missing {
+            let patterns: Vec<_> = patterns
+                .into_iter()
+                .map(|pattern| context.queries.intern_smol_str(pattern))
+                .collect();
+            self.insert_error(ErrorKind::MissingPatterns { patterns: Arc::from(patterns) });
+        }
+
+        if !exhaustiveness.redundant.is_empty() {
+            let patterns = Arc::from(exhaustiveness.redundant);
+            self.insert_error(ErrorKind::RedundantPatterns { patterns });
+        }
+    }
+
+    pub fn allocate_pattern(&mut self, kind: PatternKind, t: TypeId) -> PatternId {
+        let pattern = Pattern { kind, t };
+        self.patterns.intern(pattern)
+    }
+
+    pub fn allocate_constructor(
+        &mut self,
+        constructor: PatternConstructor,
+        t: TypeId,
+    ) -> PatternId {
+        let kind = PatternKind::Constructor { constructor };
+        self.allocate_pattern(kind, t)
+    }
+
+    pub fn allocate_wildcard(&mut self, t: TypeId) -> PatternId {
+        self.allocate_pattern(PatternKind::Wildcard, t)
     }
 }

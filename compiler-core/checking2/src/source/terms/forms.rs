@@ -2,7 +2,7 @@ use building_types::QueryResult;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::{TypeId, toolkit, unification};
+use crate::core::{TypeId, exhaustive, toolkit, unification};
 use crate::source::terms::{equations, form_let};
 use crate::source::{binder, terms};
 use crate::state::CheckState;
@@ -84,7 +84,19 @@ where
         state.fresh_unification(context.queries, context.prim.t)
     };
 
-    Ok(context.intern_function_chain(argument_types.iter().copied(), result_type))
+    let function_type = context.intern_function_chain(argument_types.iter().copied(), result_type);
+
+    let exhaustiveness =
+        exhaustive::check_lambda_patterns(state, context, &argument_types, binders)?;
+
+    let has_missing = exhaustiveness.missing.is_some();
+    state.report_exhaustiveness(context, exhaustiveness);
+
+    if has_missing {
+        Ok(context.intern_constrained(context.prim.partial, function_type))
+    } else {
+        Ok(function_type)
+    }
 }
 
 pub fn check_lambda<Q>(
@@ -119,7 +131,18 @@ where
         state.fresh_unification(context.queries, context.prim.t)
     };
 
-    Ok(context.intern_function_chain(arguments.iter().copied(), result_type))
+    let function_type = context.intern_function_chain(arguments.iter().copied(), result_type);
+
+    let exhaustiveness = exhaustive::check_lambda_patterns(state, context, &arguments, binders)?;
+
+    let has_missing = exhaustiveness.missing.is_some();
+    state.report_exhaustiveness(context, exhaustiveness);
+
+    if has_missing {
+        state.push_wanted(context.prim.partial);
+    }
+
+    Ok(function_type)
 }
 
 pub fn instantiate_trunk_types<Q>(
@@ -172,7 +195,16 @@ where
         }
     }
 
-    Ok(result_type)
+    let exhaustiveness = exhaustive::check_case_patterns(state, context, &trunk_types, branches)?;
+
+    let has_missing = exhaustiveness.missing.is_some();
+    state.report_exhaustiveness(context, exhaustiveness);
+
+    if has_missing {
+        Ok(context.intern_constrained(context.prim.partial, result_type))
+    } else {
+        Ok(result_type)
+    }
 }
 
 pub fn check_case_of<Q>(
@@ -200,6 +232,15 @@ where
         if let Some(guarded) = &branch.guarded_expression {
             equations::check_guarded_expression(state, context, guarded, expected)?;
         }
+    }
+
+    let exhaustiveness = exhaustive::check_case_patterns(state, context, &trunk_types, branches)?;
+
+    let has_missing = exhaustiveness.missing.is_some();
+    state.report_exhaustiveness(context, exhaustiveness);
+
+    if has_missing {
+        state.push_wanted(context.prim.partial);
     }
 
     Ok(expected)

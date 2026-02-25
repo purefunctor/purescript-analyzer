@@ -11,7 +11,7 @@ use crate::context::CheckContext;
 use crate::core::substitute::SubstituteName;
 use crate::core::{RowField, RowType, Type, TypeId, normalise, toolkit, unification};
 use crate::error::{ErrorCrumb, ErrorKind};
-use crate::source::types;
+use crate::source::{operator, types};
 use crate::state::CheckState;
 
 #[derive(Copy, Clone, Debug)]
@@ -131,8 +131,7 @@ where
         }
 
         lowering::BinderKind::OperatorChain { .. } => {
-            // TODO(operators): implement IsOperator for BinderId
-            let inferred_type = context.unknown("operator chain binder");
+            let (_, inferred_type) = operator::infer_operator_chain(state, context, binder_id)?;
 
             if let BinderMode::Check { expected_type, elaborating } = mode {
                 subtype_for_mode(state, context, inferred_type, expected_type, elaborating)?;
