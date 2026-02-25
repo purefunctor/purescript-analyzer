@@ -6,7 +6,7 @@ use indexing::{TermItemId, TypeItemId};
 
 use crate::context::CheckContext;
 use crate::core::substitute::SubstituteName;
-use crate::core::{CheckedSynonym, ForallBinder, Type, TypeId, normalise};
+use crate::core::{CheckedSynonym, ForallBinder, Type, TypeId, normalise, unification};
 use crate::state::CheckState;
 use crate::{ExternalQueries, safe_loop};
 
@@ -146,6 +146,33 @@ where
     Ok(InspectQuantified { binders, quantified: current })
 }
 
+fn try_function<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    id: TypeId,
+) -> QueryResult<Option<(TypeId, TypeId)>>
+where
+    Q: ExternalQueries,
+{
+    let id = normalise::normalise(state, context, id)?;
+
+    match context.lookup_type(id) {
+        Type::Function(argument, result) => Ok(Some((argument, result))),
+
+        Type::Application(function_argument, result) => {
+            let function_argument = normalise::normalise(state, context, function_argument)?;
+            let Type::Application(function, argument) = context.lookup_type(function_argument)
+            else {
+                return Ok(None);
+            };
+            let function = normalise::normalise(state, context, function)?;
+            if function == context.prim.function { Ok(Some((argument, result))) } else { Ok(None) }
+        }
+
+        _ => Ok(None),
+    }
+}
+
 pub fn inspect_function<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -158,31 +185,49 @@ where
     let mut current = id;
 
     safe_loop! {
-        current = normalise::normalise(state, context, current)?;
-
-        match context.lookup_type(current) {
-            Type::Function(argument, result) => {
-                arguments.push(argument);
-                current = result;
-            }
-            Type::Application(function_argument, result) => {
-                let function_argument = normalise::normalise(state, context, function_argument)?;
-                let Type::Application(function, argument) = context.lookup_type(function_argument) else {
-                    break;
-                };
-                let function = normalise::normalise(state, context, function)?;
-                if function == context.prim.function {
-                    arguments.push(argument);
-                    current = result;
-                } else {
-                    break;
-                }
-            }
-            _ => break,
-        }
+        let Some((argument, result)) = try_function(state, context, current)? else {
+            break;
+        };
+        arguments.push(argument);
+        current = result;
     }
 
     Ok(InspectFunction { arguments, result: current })
+}
+
+pub fn decompose_function_kind<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    id: TypeId,
+) -> QueryResult<Option<(TypeId, TypeId)>>
+where
+    Q: ExternalQueries,
+{
+    let id = normalise::normalise(state, context, id)?;
+
+    match context.lookup_type(id) {
+        Type::Unification(unification_id) => {
+            let argument_u = state.fresh_unification(context.queries, context.prim.t);
+            let result_u = state.fresh_unification(context.queries, context.prim.t);
+
+            let function_u = context.intern_function(argument_u, result_u);
+            let _ = unification::solve(state, context, id, unification_id, function_u)?;
+
+            Ok(Some((argument_u, result_u)))
+        }
+
+        Type::Forall(binder_id, inner) => {
+            let binder = context.lookup_forall_binder(binder_id);
+            let binder_kind = normalise::normalise(state, context, binder.kind)?;
+
+            let replacement = state.fresh_unification(context.queries, binder_kind);
+            let inner = SubstituteName::one(state, context, binder.name, replacement, inner)?;
+
+            decompose_function_kind(state, context, inner)
+        }
+
+        _ => try_function(state, context, id),
+    }
 }
 
 pub fn instantiate_unifications<Q>(

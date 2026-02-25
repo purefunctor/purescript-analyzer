@@ -7,12 +7,11 @@ use lowering::IsElement;
 use sugar::OperatorTree;
 use sugar::bracketing::BracketingResult;
 
+use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::substitute::SubstituteName;
-use crate::core::{Type, TypeId, normalise, toolkit, unification};
+use crate::core::{TypeId, normalise, toolkit, unification};
 use crate::source::types;
 use crate::state::CheckState;
-use crate::{ExternalQueries, safe_loop};
 
 #[derive(Copy, Clone, Debug)]
 enum OperatorKindMode {
@@ -115,12 +114,14 @@ where
 
     let operator_type = toolkit::instantiate_unifications(state, context, operator_type)?;
 
-    let Some((left_type, operator_type)) = decompose_function_kind(state, context, operator_type)?
+    let Some((left_type, operator_type)) =
+        toolkit::decompose_function_kind(state, context, operator_type)?
     else {
         return Ok(unknown);
     };
 
-    let Some((right_type, result_type)) = decompose_function_kind(state, context, operator_type)?
+    let Some((right_type, result_type)) =
+        toolkit::decompose_function_kind(state, context, operator_type)?
     else {
         return Ok(unknown);
     };
@@ -146,43 +147,6 @@ where
     )?;
 
     E::build(state, context, operator, (left, right), result_type)
-}
-
-fn decompose_function_kind<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    id: TypeId,
-) -> QueryResult<Option<(TypeId, TypeId)>>
-where
-    Q: ExternalQueries,
-{
-    let id = normalise::normalise(state, context, id)?;
-
-    match context.lookup_type(id) {
-        Type::Function(argument, result) => Ok(Some((argument, result))),
-
-        Type::Unification(unification_id) => {
-            let argument_u = state.fresh_unification(context.queries, context.prim.t);
-            let result_u = state.fresh_unification(context.queries, context.prim.t);
-
-            let function_u = context.intern_function(argument_u, result_u);
-            let _ = unification::solve(state, context, id, unification_id, function_u)?;
-
-            Ok(Some((argument_u, result_u)))
-        }
-
-        Type::Forall(binder_id, inner) => {
-            let binder = context.lookup_forall_binder(binder_id);
-            let binder_kind = normalise::normalise(state, context, binder.kind)?;
-
-            let replacement = state.fresh_unification(context.queries, binder_kind);
-            let inner = SubstituteName::one(state, context, binder.name, replacement, inner)?;
-
-            decompose_function_kind(state, context, inner)
-        }
-
-        _ => Ok(None),
-    }
 }
 
 pub fn elaborate_operator_application_kind<Q>(
