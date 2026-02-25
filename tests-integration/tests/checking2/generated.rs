@@ -85,3 +85,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_027_foreign_check_main() { run_test("027_foreign_check", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_028_value_check_main() { run_test("028_value_check", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_029_operator_check_main() { run_test("029_operator_check", "Main"); }
