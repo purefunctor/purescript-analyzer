@@ -74,7 +74,7 @@ where
     }
 }
 
-pub fn lookup_file_operator<Q>(
+pub fn lookup_file_type_operator<Q>(
     state: &CheckState,
     context: &CheckContext<Q>,
     file_id: FileId,
@@ -83,14 +83,41 @@ pub fn lookup_file_operator<Q>(
 where
     Q: ExternalQueries,
 {
-    let kind = if file_id == context.id {
+    let operator_kind = if file_id == context.id {
         state.checked.lookup_type(type_id)
     } else {
         let checked = context.queries.checked2(file_id)?;
         checked.lookup_type(type_id)
     };
 
-    if let Some(kind) = kind { Ok(kind) } else { Ok(context.unknown("invalid operator item")) }
+    if let Some(operator_kind) = operator_kind {
+        Ok(operator_kind)
+    } else {
+        Ok(context.unknown("invalid operator item"))
+    }
+}
+
+pub fn lookup_file_term_operator<Q>(
+    state: &CheckState,
+    context: &CheckContext<Q>,
+    file_id: FileId,
+    term_id: TermItemId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let operator_type = if file_id == context.id {
+        state.checked.lookup_term(term_id)
+    } else {
+        let checked = context.queries.checked2(file_id)?;
+        checked.lookup_term(term_id)
+    };
+
+    if let Some(operator_type) = operator_type {
+        Ok(operator_type)
+    } else {
+        Ok(context.unknown("invalid operator item"))
+    }
 }
 
 pub fn inspect_quantified<Q>(

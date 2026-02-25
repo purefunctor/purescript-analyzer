@@ -303,7 +303,7 @@ impl<Q: ExternalQueries> IsOperator<Q> for lowering::TypeId {
         file_id: FileId,
         item_id: Self::ItemId,
     ) -> QueryResult<TypeId> {
-        toolkit::lookup_file_operator(state, context, file_id, item_id)
+        toolkit::lookup_file_type_operator(state, context, file_id, item_id)
     }
 
     fn infer_surface(
