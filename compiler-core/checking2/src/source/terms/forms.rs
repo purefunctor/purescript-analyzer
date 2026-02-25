@@ -84,7 +84,7 @@ where
         state.fresh_unification(context.queries, context.prim.t)
     };
 
-    let function_type = context.intern_function_chain(argument_types.iter().copied(), result_type);
+    let function_type = context.intern_function_chain(&argument_types, result_type);
 
     let exhaustiveness =
         exhaustive::check_lambda_patterns(state, context, &argument_types, binders)?;
@@ -131,7 +131,7 @@ where
         state.fresh_unification(context.queries, context.prim.t)
     };
 
-    let function_type = context.intern_function_chain(arguments.iter().copied(), result_type);
+    let function_type = context.intern_function_chain(&arguments, result_type);
 
     let exhaustiveness = exhaustive::check_lambda_patterns(state, context, &arguments, binders)?;
 

@@ -81,7 +81,7 @@ where
 
     unification::subtype(state, context, result_type, current)?;
 
-    let function_type = context.intern_function_chain(parameters.iter().copied(), result_type);
+    let function_type = context.intern_function_chain(&parameters, result_type);
     Ok(function_type)
 }
 
@@ -181,7 +181,7 @@ where
     let result_type = infer_expression_core(state, context, expression)?;
     let result_type = toolkit::instantiate_constrained(state, context, result_type)?;
 
-    Ok(context.intern_function_chain(parameter_types.iter().copied(), result_type))
+    Ok(context.intern_function_chain(&parameter_types, result_type))
 }
 
 fn infer_expression_core<Q>(

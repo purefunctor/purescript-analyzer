@@ -145,7 +145,7 @@ where
         let toolkit::InspectFunction { arguments, result } =
             toolkit::inspect_function(state, context, quantified)?;
 
-        let function = context.intern_function_chain(arguments.iter().copied(), result);
+        let function = context.intern_function_chain(&arguments, result);
 
         equations::check_equations_core(
             state,

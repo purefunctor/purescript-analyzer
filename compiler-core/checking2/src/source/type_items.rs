@@ -381,7 +381,7 @@ where
 {
     let bindings = check_type_variable_bindings(state, context, bindings, &[])?;
     let kinds = bindings.iter().map(|binder| binder.kind);
-    let inferred = context.intern_function_chain(kinds, context.prim.t);
+    let inferred = context.intern_function_chain_iter(kinds, context.prim.t);
 
     if let Some(expected) = state.checked.lookup_type(item_id) {
         unification::subtype(state, context, inferred, expected)?;
@@ -614,7 +614,7 @@ where
     let bindings = check_type_variable_bindings(state, context, bindings, &[])?;
     let kinds = bindings.iter().map(|binder| binder.kind);
     let result = state.fresh_unification(context.queries, context.prim.t);
-    let inferred = context.intern_function_chain(kinds, result);
+    let inferred = context.intern_function_chain_iter(kinds, result);
 
     if let Some(expected) = state.checked.lookup_type(item_id) {
         unification::subtype(state, context, inferred, expected)?;
@@ -704,7 +704,7 @@ where
 {
     let bindings = check_type_variable_bindings(state, context, bindings, &[])?;
     let kinds = bindings.iter().map(|binder| binder.kind);
-    let inferred = context.intern_function_chain(kinds, context.prim.constraint);
+    let inferred = context.intern_function_chain_iter(kinds, context.prim.constraint);
 
     if let Some(expected) = state.checked.lookup_type(item_id) {
         unification::subtype(state, context, inferred, expected)?;

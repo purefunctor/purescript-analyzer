@@ -37,8 +37,7 @@ where
         let result_type = state.fresh_unification(context.queries, context.prim.t);
 
         let argument_types = &argument_types[..minimum_equation_arity];
-        let equation_type =
-            context.intern_function_chain(argument_types.iter().copied(), result_type);
+        let equation_type = context.intern_function_chain(argument_types, result_type);
         unification::subtype(state, context, equation_type, group_type)?;
 
         if let Some(guarded) = &equation.guarded {
@@ -103,7 +102,7 @@ where
             result
         } else {
             let remaining = &arguments[equation_arity..];
-            context.intern_function_chain(remaining.iter().copied(), result)
+            context.intern_function_chain(remaining, result)
         };
 
         if let Some(guarded) = &equation.guarded {

@@ -168,7 +168,13 @@ where
     }
 
     /// Interns a right-associated function chain from arguments to result.
-    pub fn intern_function_chain<I>(&self, arguments: I, result: TypeId) -> TypeId
+    pub fn intern_function_chain(&self, arguments: &[TypeId], result: TypeId) -> TypeId {
+        let arguments = arguments.iter().copied();
+        self.intern_function_chain_iter(arguments, result)
+    }
+
+    /// Interns a right-associated function chain from iterator arguments to result.
+    pub fn intern_function_chain_iter<I>(&self, arguments: I, result: TypeId) -> TypeId
     where
         I: IntoIterator<Item = TypeId>,
         I::IntoIter: DoubleEndedIterator,
