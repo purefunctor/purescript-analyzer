@@ -113,7 +113,7 @@ where
         OperatorKindMode::Check { expected_type } => (unknown_elaborated, expected_type),
     };
 
-    let operator_type = instantiate_foralls(state, context, operator_type)?;
+    let operator_type = toolkit::instantiate_unifications(state, context, operator_type)?;
 
     let Some((left_type, operator_type)) = decompose_function_kind(state, context, operator_type)?
     else {
@@ -146,31 +146,6 @@ where
     )?;
 
     E::build(state, context, operator, (left, right), result_type)
-}
-
-fn instantiate_foralls<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    mut id: TypeId,
-) -> QueryResult<TypeId>
-where
-    Q: ExternalQueries,
-{
-    safe_loop! {
-        id = normalise::normalise(state, context, id)?;
-
-        let Type::Forall(binder_id, inner) = context.lookup_type(id) else {
-            break;
-        };
-
-        let binder = context.lookup_forall_binder(binder_id);
-        let binder_kind = normalise::normalise(state, context, binder.kind)?;
-
-        let replacement = state.fresh_unification(context.queries, binder_kind);
-        id = SubstituteName::one(state, context, binder.name, replacement, inner)?;
-    }
-
-    Ok(id)
 }
 
 fn decompose_function_kind<Q>(
@@ -220,7 +195,7 @@ where
     Q: ExternalQueries,
 {
     let operator_kind = toolkit::lookup_file_type(state, context, file_id, type_id)?;
-    let operator_kind = instantiate_foralls(state, context, operator_kind)?;
+    let operator_kind = toolkit::instantiate_unifications(state, context, operator_kind)?;
     let operator_function = toolkit::inspect_function(state, context, operator_kind)?;
 
     if operator_function.arguments.len() >= 2 {

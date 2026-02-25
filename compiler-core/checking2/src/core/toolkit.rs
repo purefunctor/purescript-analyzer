@@ -5,6 +5,7 @@ use files::FileId;
 use indexing::{TermItemId, TypeItemId};
 
 use crate::context::CheckContext;
+use crate::core::substitute::SubstituteName;
 use crate::core::{CheckedSynonym, ForallBinder, Type, TypeId, normalise};
 use crate::state::CheckState;
 use crate::{ExternalQueries, safe_loop};
@@ -182,4 +183,29 @@ where
     }
 
     Ok(InspectFunction { arguments, result: current })
+}
+
+pub fn instantiate_unifications<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    mut id: TypeId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    safe_loop! {
+        id = normalise::normalise(state, context, id)?;
+
+        let Type::Forall(binder_id, inner) = context.lookup_type(id) else {
+            break;
+        };
+
+        let binder = context.lookup_forall_binder(binder_id);
+        let binder_kind = normalise::normalise(state, context, binder.kind)?;
+
+        let replacement = state.fresh_unification(context.queries, binder_kind);
+        id = SubstituteName::one(state, context, binder.name, replacement, inner)?;
+    }
+
+    Ok(id)
 }
