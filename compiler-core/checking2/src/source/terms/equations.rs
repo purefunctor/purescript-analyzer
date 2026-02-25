@@ -6,7 +6,8 @@ use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::{TypeId, unification};
 use crate::error::ErrorKind;
-use crate::source::binder;
+use crate::source::terms::form_let;
+use crate::source::{binder, terms};
 use crate::state::CheckState;
 
 /// Infers the type of value group equations.
@@ -36,7 +37,8 @@ where
         let result_type = state.fresh_unification(context.queries, context.prim.t);
 
         let argument_types = &argument_types[..minimum_equation_arity];
-        let equation_type = context.intern_function_chain(argument_types.iter().copied(), result_type);
+        let equation_type =
+            context.intern_function_chain(argument_types.iter().copied(), result_type);
         unification::subtype(state, context, equation_type, group_type)?;
 
         if let Some(guarded) = &equation.guarded {
@@ -105,7 +107,7 @@ where
     Ok(())
 }
 
-fn infer_guarded_expression<Q>(
+pub fn infer_guarded_expression<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     guarded: &lowering::GuardedExpression,
@@ -135,7 +137,7 @@ where
     }
 }
 
-fn check_guarded_expression<Q>(
+pub fn check_guarded_expression<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     guarded: &lowering::GuardedExpression,
@@ -178,8 +180,7 @@ where
         return Ok(());
     };
 
-    // TODO(expressions): implement expression inference
-    let expression_type = super::infer_expression_stub(state, context, expression)?;
+    let expression_type = super::infer_expression(state, context, expression)?;
 
     let Some(binder) = guard.binder else {
         return Ok(());
@@ -190,7 +191,7 @@ where
     Ok(())
 }
 
-fn infer_where_expression<Q>(
+pub fn infer_where_expression<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     where_expression: &lowering::WhereExpression,
@@ -198,11 +199,13 @@ fn infer_where_expression<Q>(
 where
     Q: ExternalQueries,
 {
-    // TODO(let-bindings): check_let_chunks for where_expression.bindings
+    form_let::check_let_chunks(state, context, &where_expression.bindings)?;
+
     let Some(expression) = where_expression.expression else {
         return Ok(context.unknown("missing where expression"));
     };
-    super::infer_expression_stub(state, context, expression)
+
+    terms::infer_expression(state, context, expression)
 }
 
 fn check_where_expression<Q>(
@@ -214,9 +217,11 @@ fn check_where_expression<Q>(
 where
     Q: ExternalQueries,
 {
-    // TODO(let-bindings): check_let_chunks for where_expression.bindings
+    form_let::check_let_chunks(state, context, &where_expression.bindings)?;
+
     let Some(expression) = where_expression.expression else {
         return Ok(context.unknown("missing where expression"));
     };
-    super::check_expression_stub(state, context, expression, expected)
+
+    terms::check_expression(state, context, expression, expected)
 }

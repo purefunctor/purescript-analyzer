@@ -58,6 +58,36 @@ where
     if let Some(term) = term { Ok(term) } else { Ok(context.unknown("invalid term item")) }
 }
 
+pub fn lookup_term_variable<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    resolution: lowering::TermVariableResolution,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    match resolution {
+        lowering::TermVariableResolution::Binder(binder_id) => Ok(state
+            .checked
+            .nodes
+            .lookup_binder(binder_id)
+            .unwrap_or_else(|| context.unknown("unresolved binder"))),
+        lowering::TermVariableResolution::Let(let_binding_id) => Ok(state
+            .checked
+            .nodes
+            .lookup_let(let_binding_id)
+            .unwrap_or_else(|| context.unknown("unresolved let"))),
+        lowering::TermVariableResolution::RecordPun(pun_id) => Ok(state
+            .checked
+            .nodes
+            .lookup_pun(pun_id)
+            .unwrap_or_else(|| context.unknown("unresolved pun"))),
+        lowering::TermVariableResolution::Reference(file_id, term_id) => {
+            lookup_file_term(state, context, file_id, term_id)
+        }
+    }
+}
+
 pub fn lookup_file_synonym<Q>(
     state: &CheckState,
     context: &CheckContext<Q>,
@@ -146,33 +176,6 @@ where
     Ok(InspectQuantified { binders, quantified: current })
 }
 
-fn try_function<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    id: TypeId,
-) -> QueryResult<Option<(TypeId, TypeId)>>
-where
-    Q: ExternalQueries,
-{
-    let id = normalise::normalise(state, context, id)?;
-
-    match context.lookup_type(id) {
-        Type::Function(argument, result) => Ok(Some((argument, result))),
-
-        Type::Application(function_argument, result) => {
-            let function_argument = normalise::normalise(state, context, function_argument)?;
-            let Type::Application(function, argument) = context.lookup_type(function_argument)
-            else {
-                return Ok(None);
-            };
-            let function = normalise::normalise(state, context, function)?;
-            if function == context.prim.function { Ok(Some((argument, result))) } else { Ok(None) }
-        }
-
-        _ => Ok(None),
-    }
-}
-
 pub fn inspect_function<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -185,49 +188,33 @@ where
     let mut current = id;
 
     safe_loop! {
-        let Some((argument, result)) = try_function(state, context, current)? else {
-            break;
-        };
-        arguments.push(argument);
-        current = result;
+        current = normalise::normalise(state, context, current)?;
+        match context.lookup_type(current) {
+            Type::Function(argument, result) => {
+                arguments.push(argument);
+                current = result;
+            }
+            Type::Application(function_argument, result) => {
+                let function_argument = normalise::normalise(state, context, function_argument)?;
+
+                let Type::Application(function, argument) = context.lookup_type(function_argument)
+                else {
+                    break;
+                };
+
+                let function = normalise::normalise(state, context, function)?;
+                if function == context.prim.function {
+                    arguments.push(argument);
+                    current = result;
+                } else {
+                    break;
+                }
+            }
+            _ => break,
+        }
     }
 
     Ok(InspectFunction { arguments, result: current })
-}
-
-pub fn decompose_function_kind<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    id: TypeId,
-) -> QueryResult<Option<(TypeId, TypeId)>>
-where
-    Q: ExternalQueries,
-{
-    let id = normalise::normalise(state, context, id)?;
-
-    match context.lookup_type(id) {
-        Type::Unification(unification_id) => {
-            let argument_u = state.fresh_unification(context.queries, context.prim.t);
-            let result_u = state.fresh_unification(context.queries, context.prim.t);
-
-            let function_u = context.intern_function(argument_u, result_u);
-            let _ = unification::solve(state, context, id, unification_id, function_u)?;
-
-            Ok(Some((argument_u, result_u)))
-        }
-
-        Type::Forall(binder_id, inner) => {
-            let binder = context.lookup_forall_binder(binder_id);
-            let binder_kind = normalise::normalise(state, context, binder.kind)?;
-
-            let replacement = state.fresh_unification(context.queries, binder_kind);
-            let inner = SubstituteName::one(state, context, binder.name, replacement, inner)?;
-
-            decompose_function_kind(state, context, inner)
-        }
-
-        _ => try_function(state, context, id),
-    }
 }
 
 pub fn instantiate_unifications<Q>(
@@ -253,4 +240,133 @@ where
     }
 
     Ok(id)
+}
+
+/// Replaces forall binders with rigid (skolem) variables.
+pub fn skolemise_forall<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    mut id: TypeId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    safe_loop! {
+        id = normalise::normalise(state, context, id)?;
+
+        let Type::Forall(binder_id, inner) = context.lookup_type(id) else {
+            break;
+        };
+
+        let binder = context.lookup_forall_binder(binder_id);
+        let binder_kind = normalise::normalise(state, context, binder.kind)?;
+
+        let rigid = state.fresh_rigid(context.queries, binder_kind);
+        id = SubstituteName::one(state, context, binder.name, rigid, inner)?;
+    }
+
+    Ok(id)
+}
+
+/// Peels constraint layers, pushing each as a wanted.
+pub fn collect_wanteds<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    mut id: TypeId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    safe_loop! {
+        id = normalise::normalise(state, context, id)?;
+        match context.lookup_type(id) {
+            Type::Constrained(constraint, constrained) => {
+                state.push_wanted(constraint);
+                id = constrained;
+            }
+            _ => return Ok(id),
+        }
+    }
+}
+
+/// Peels constraint layers, pushing each as a given.
+pub fn collect_givens<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    mut id: TypeId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    safe_loop! {
+        id = normalise::normalise(state, context, id)?;
+        match context.lookup_type(id) {
+            Type::Constrained(constraint, constrained) => {
+                state.push_given(constraint);
+                id = constrained;
+            }
+            _ => return Ok(id),
+        }
+    }
+}
+
+/// Instantiates forall binders and collects wanted constraints.
+pub fn instantiate_constrained<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    id: TypeId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let id = instantiate_unifications(state, context, id)?;
+    collect_wanteds(state, context, id)
+}
+
+pub fn decompose_function<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    t: TypeId,
+) -> QueryResult<Option<(TypeId, TypeId)>>
+where
+    Q: ExternalQueries,
+{
+    let t = normalise::normalise(state, context, t)?;
+
+    match context.lookup_type(t) {
+        Type::Function(argument, result) => Ok(Some((argument, result))),
+
+        Type::Unification(unification_id) => {
+            let argument = state.fresh_unification(context.queries, context.prim.t);
+            let result = state.fresh_unification(context.queries, context.prim.t);
+
+            let function = context.intern_function(argument, result);
+            unification::solve(state, context, t, unification_id, function)?;
+
+            Ok(Some((argument, result)))
+        }
+
+        Type::Application(partial, result) => {
+            let partial = normalise::normalise(state, context, partial)?;
+            if let Type::Application(constructor, argument) = context.lookup_type(partial) {
+                let constructor = normalise::normalise(state, context, constructor)?;
+                if constructor == context.prim.function {
+                    return Ok(Some((argument, result)));
+                }
+                if let Type::Unification(unification_id) = context.lookup_type(constructor) {
+                    unification::solve(
+                        state,
+                        context,
+                        constructor,
+                        unification_id,
+                        context.prim.function,
+                    )?;
+                    return Ok(Some((argument, result)));
+                }
+            }
+            Ok(None)
+        }
+
+        _ => Ok(None),
+    }
 }
