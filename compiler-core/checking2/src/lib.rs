@@ -2,11 +2,11 @@ pub mod context;
 pub mod core;
 pub mod error;
 pub mod implication;
-pub mod interners;
 pub mod safety;
 pub mod source;
 pub mod state;
 
+pub mod interners;
 pub use interners::CoreInterners;
 
 use std::sync::Arc;
@@ -61,7 +61,27 @@ pub struct CheckedModule {
     pub synonyms: FxHashMap<TypeItemId, CheckedSynonym>,
     pub classes: FxHashMap<TypeItemId, CheckedClass>,
     pub roles: FxHashMap<TypeItemId, Arc<[Role]>>,
+    pub nodes: CheckedNodes,
     pub errors: Vec<CheckError>,
+}
+
+#[derive(Debug, Default, PartialEq, Eq)]
+pub struct CheckedNodes {
+    pub types: FxHashMap<lowering::TypeId, TypeId>,
+    pub expressions: FxHashMap<lowering::ExpressionId, TypeId>,
+    pub binders: FxHashMap<lowering::BinderId, TypeId>,
+    pub lets: FxHashMap<lowering::LetBindingNameGroupId, TypeId>,
+    pub puns: FxHashMap<lowering::RecordPunId, TypeId>,
+    pub sections: FxHashMap<lowering::ExpressionId, TypeId>,
+    pub term_operator: FxHashMap<lowering::TermOperatorId, OperatorBranchTypes>,
+    pub type_operator: FxHashMap<lowering::TypeOperatorId, OperatorBranchTypes>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct OperatorBranchTypes {
+    pub left: TypeId,
+    pub right: TypeId,
+    pub result: TypeId,
 }
 
 impl CheckedModule {
@@ -83,6 +103,46 @@ impl CheckedModule {
 
     pub fn lookup_roles(&self, id: TypeItemId) -> Option<Arc<[Role]>> {
         self.roles.get(&id).cloned()
+    }
+}
+
+impl CheckedNodes {
+    pub fn lookup_expression(&self, id: lowering::ExpressionId) -> Option<TypeId> {
+        self.expressions.get(&id).copied()
+    }
+
+    pub fn lookup_type(&self, id: lowering::TypeId) -> Option<TypeId> {
+        self.types.get(&id).copied()
+    }
+
+    pub fn lookup_binder(&self, id: lowering::BinderId) -> Option<TypeId> {
+        self.binders.get(&id).copied()
+    }
+
+    pub fn lookup_let(&self, id: lowering::LetBindingNameGroupId) -> Option<TypeId> {
+        self.lets.get(&id).copied()
+    }
+
+    pub fn lookup_pun(&self, id: lowering::RecordPunId) -> Option<TypeId> {
+        self.puns.get(&id).copied()
+    }
+
+    pub fn lookup_section(&self, id: lowering::ExpressionId) -> Option<TypeId> {
+        self.sections.get(&id).copied()
+    }
+
+    pub fn lookup_type_operator(
+        &self,
+        id: lowering::TypeOperatorId,
+    ) -> Option<OperatorBranchTypes> {
+        self.type_operator.get(&id).copied()
+    }
+
+    pub fn lookup_term_operator(
+        &self,
+        id: lowering::TermOperatorId,
+    ) -> Option<OperatorBranchTypes> {
+        self.term_operator.get(&id).copied()
     }
 }
 
