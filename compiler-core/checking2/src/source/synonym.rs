@@ -1,5 +1,6 @@
 //! Implements syntax-driven checking rules for synonym detection.
 
+use std::mem;
 use std::sync::Arc;
 
 use building_types::QueryResult;
@@ -52,14 +53,19 @@ pub fn infer_synonym_constructor<Q>(
 where
     Q: ExternalQueries,
 {
-    if is_recursive_synonym(context, file_id, item_id)? {
-        state.insert_error(ErrorKind::RecursiveSynonymExpansion { file_id, item_id });
-    }
-
     if arity > 0 {
+        if state.defer_synonym_expansion {
+            let synonym_type = context.queries.intern_type(Type::Constructor(file_id, item_id));
+            return Ok((synonym_type, kind));
+        }
+
         state.insert_error(ErrorKind::PartialSynonymApplication { id });
         let unknown = context.unknown("partial synonym application");
         return Ok((unknown, unknown));
+    }
+
+    if is_recursive_synonym(context, file_id, item_id)? {
+        state.insert_error(ErrorKind::RecursiveSynonymExpansion { file_id, item_id });
     }
 
     let synonym = Synonym {
@@ -89,6 +95,16 @@ where
     }
 
     if arguments.len() < arity {
+        if state.defer_synonym_expansion {
+            return infer_partial_synonym_application(
+                state,
+                context,
+                (file_id, type_id),
+                function_kind,
+                arguments,
+            );
+        }
+
         state.insert_error(ErrorKind::PartialSynonymApplication { id });
         let unknown = context.unknown("partial synonym application");
         return Ok((unknown, unknown));
@@ -97,12 +113,16 @@ where
     let (synonym_arguments, excess_arguments) = arguments.split_at(arity);
 
     let function_type = context.queries.intern_type(Type::Constructor(file_id, type_id));
-    let (argument_types, (_, synonym_kind)) = infer_synonym_application_chain(
+    let defer_synonym_expansion = mem::replace(&mut state.defer_synonym_expansion, true);
+    let chain_result = infer_synonym_application_chain(
         state,
         context,
         (function_type, function_kind),
         synonym_arguments,
-    )?;
+    );
+    state.defer_synonym_expansion = defer_synonym_expansion;
+
+    let (argument_types, (_, synonym_kind)) = chain_result?;
 
     let synonym = Synonym {
         saturation: Saturation::Full,
@@ -118,6 +138,32 @@ where
         (synonym_type, synonym_kind) =
             types::infer_application_kind(state, context, (synonym_type, synonym_kind), argument)?;
     }
+
+    Ok((synonym_type, synonym_kind))
+}
+
+fn infer_partial_synonym_application<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    (file_id, type_id): (FileId, TypeItemId),
+    function_kind: TypeId,
+    arguments: &[lowering::TypeId],
+) -> QueryResult<(TypeId, TypeId)>
+where
+    Q: ExternalQueries,
+{
+    let function_type = context.queries.intern_type(Type::Constructor(file_id, type_id));
+    let (argument_types, (_, synonym_kind)) =
+        infer_synonym_application_chain(state, context, (function_type, function_kind), arguments)?;
+
+    let synonym = Synonym {
+        saturation: Saturation::Partial,
+        reference: (file_id, type_id),
+        arguments: Arc::from(argument_types),
+    };
+
+    let synonym_id = context.intern_synonym(synonym);
+    let synonym_type = context.intern_synonym_application(synonym_id);
 
     Ok((synonym_type, synonym_kind))
 }

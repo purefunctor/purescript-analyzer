@@ -99,3 +99,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_034_exhaustive_let_pattern_main() { run_test("034_exhaustive_let_pattern", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_035_exhaustive_operator_constructor_main() { run_test("035_exhaustive_operator_constructor", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_036_synonym_partial_defer_main() { run_test("036_synonym_partial_defer", "Main"); }

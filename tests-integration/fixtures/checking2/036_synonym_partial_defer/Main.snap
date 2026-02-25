@@ -1,0 +1,50 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Identity :: forall (a :: Type). (a :: Type) -> Identity (a :: Type)
+
+Types
+Identity :: Type -> Type
+ReaderT :: Type -> (Type -> Type) -> Type -> Type
+Apply ::
+  forall (k1 :: Type) (k2 :: Type). ((k1 :: Type) -> (k2 :: Type)) -> (k1 :: Type) -> (k2 :: Type)
+Good :: Type
+Bad :: ?[partial synonym application]
+
+Synonyms
+type ReaderT r m a = (r :: Type) -> (m :: Type -> Type) (a :: Type)
+type Apply f a = (f :: (t4 :: Type) -> (t5 :: Type)) (a :: (t4 :: Type))
+type Good = Apply (Apply (ReaderT Int) Identity) String
+type Bad = ?[partial synonym application]
+
+Roles
+Identity = [Representational]
+
+Errors
+CheckError {
+    kind: PartialSynonymApplication {
+        id: AstId<syntax::cst::Type>(60),
+    },
+    crumbs: [
+        CheckingKind(
+            AstId<syntax::cst::Type>(60),
+        ),
+        InferringKind(
+            AstId<syntax::cst::Type>(60),
+        ),
+    ],
+}
+CheckError {
+    kind: CannotUnify {
+        t1: Id<smol_str::SmolStr>(10),
+        t2: Id<smol_str::SmolStr>(11),
+    },
+    crumbs: [
+        CheckingKind(
+            AstId<syntax::cst::Type>(60),
+        ),
+    ],
+}
