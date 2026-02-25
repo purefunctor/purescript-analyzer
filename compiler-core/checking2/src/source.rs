@@ -89,7 +89,7 @@ where
             check_type_equation(state, context, &mut scc_state, item)?;
         }
 
-        finalise_binding_group(state, context, &items)?;
+        finalise_type_binding_group(state, context, &items)?;
         finalise_roles(state, context, &mut scc_state)?;
         finalise_data_constructors(state, context, &mut scc_state)?;
         finalise_synonym_replacements(state, context, &mut scc_state)?;
@@ -112,7 +112,7 @@ where
     }
 }
 
-fn finalise_binding_group<Q>(
+fn finalise_type_binding_group<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     items: &[TypeItemId],
@@ -193,23 +193,23 @@ where
     match item {
         TypeItemIr::DataGroup { signature, .. } => {
             let Some(signature) = signature else { return Ok(()) };
-            check_signature_type(state, context, item_id, *signature)?;
+            check_signature_kind(state, context, item_id, *signature)?;
         }
         TypeItemIr::NewtypeGroup { signature, .. } => {
             let Some(signature) = signature else { return Ok(()) };
-            check_signature_type(state, context, item_id, *signature)?;
+            check_signature_kind(state, context, item_id, *signature)?;
         }
         TypeItemIr::SynonymGroup { signature, .. } => {
             let Some(signature) = signature else { return Ok(()) };
-            check_signature_type(state, context, item_id, *signature)?;
+            check_signature_kind(state, context, item_id, *signature)?;
         }
         TypeItemIr::ClassGroup { signature, .. } => {
             let Some(signature) = signature else { return Ok(()) };
-            check_signature_type(state, context, item_id, *signature)?;
+            check_signature_kind(state, context, item_id, *signature)?;
         }
         TypeItemIr::Foreign { signature, .. } => {
             let Some(signature) = signature else { return Ok(()) };
-            check_signature_type(state, context, item_id, *signature)?;
+            check_signature_kind(state, context, item_id, *signature)?;
         }
         TypeItemIr::Operator { .. } => {}
     }
@@ -217,7 +217,7 @@ where
     Ok(())
 }
 
-fn check_signature_type<Q>(
+fn check_signature_kind<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     item_id: TypeItemId,
@@ -226,8 +226,8 @@ fn check_signature_type<Q>(
 where
     Q: ExternalQueries,
 {
-    let (checked_type, _) = types::check_kind(state, context, signature, context.prim.t)?;
-    state.checked.types.insert(item_id, checked_type);
+    let (checked_kind, _) = types::check_kind(state, context, signature, context.prim.t)?;
+    state.checked.types.insert(item_id, checked_kind);
     Ok(())
 }
 
@@ -905,4 +905,86 @@ where
         toolkit::inspect_function(state, context, quantified)?;
 
     Ok(arguments.len() == 2)
+}
+
+// ------------------------------ Term Items ------------------------------- //
+
+pub fn check_term_items<Q>(state: &mut CheckState, context: &CheckContext<Q>) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    for scc in &context.grouped.term_scc {
+        let items = scc.as_slice();
+
+        for &item in items {
+            check_term_signature(state, context, item)?;
+        }
+
+        finalise_term_binding_group(state, context, items)?;
+    }
+
+    Ok(())
+}
+
+fn check_term_signature<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    item_id: TermItemId,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    let Some(item) = context.lowered.info.get_term_item(item_id) else {
+        return Ok(());
+    };
+
+    match item {
+        TermItemIr::Foreign { signature } => {
+            let Some(signature) = signature else { return Ok(()) };
+            check_signature_type(state, context, item_id, *signature)?;
+        }
+        TermItemIr::Operator { .. } => todo!("Operator"),
+        TermItemIr::ValueGroup { signature, .. } => {
+            let Some(signature) = signature else { return Ok(()) };
+            check_signature_type(state, context, item_id, *signature)?;
+        }
+        _ => (),
+    }
+
+    Ok(())
+}
+
+fn check_signature_type<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    item_id: TermItemId,
+    signature: lowering::TypeId,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    let (checked_kind, _) = types::check_kind(state, context, signature, context.prim.t)?;
+    state.checked.terms.insert(item_id, checked_kind);
+    Ok(())
+}
+
+fn finalise_term_binding_group<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    items: &[TermItemId],
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    for &item_id in items {
+        let Some(kind) = state.checked.terms.get(&item_id).copied() else {
+            continue;
+        };
+
+        let kind = zonk::zonk(state, context, kind)?;
+        let kind = generalise::generalise(state, context, kind)?;
+        state.checked.terms.insert(item_id, kind);
+    }
+
+    Ok(())
 }

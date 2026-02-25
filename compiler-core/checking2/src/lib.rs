@@ -96,6 +96,7 @@ fn check_source(queries: &impl ExternalQueries, file_id: FileId) -> QueryResult<
     let context = context::CheckContext::new(queries, file_id)?;
 
     source::check_type_items(&mut state, &context)?;
+    source::check_term_items(&mut state, &context)?;
 
     Ok(state.checked)
 }
