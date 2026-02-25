@@ -43,7 +43,12 @@ where
     Q: ExternalQueries,
 {
     state.with_error_crumb(ErrorCrumb::CheckingBinder(binder_id), |state| {
-        binder_core(state, context, binder_id, BinderMode::Check { expected_type, elaborating: true })
+        binder_core(
+            state,
+            context,
+            binder_id,
+            BinderMode::Check { expected_type, elaborating: true },
+        )
     })
 }
 
@@ -357,8 +362,7 @@ where
             let binder_kind = normalise::normalise(state, context, binder.kind)?;
 
             let replacement = state.fresh_unification(context.queries, binder_kind);
-            let function_t =
-                SubstituteName::one(state, context, binder.name, replacement, inner)?;
+            let function_t = SubstituteName::one(state, context, binder.name, replacement, inner)?;
             check_function_application_core(state, context, function_t, argument_id, check_argument)
         }
 

@@ -45,7 +45,7 @@ where
         let m_a = context.intern_application(m, a);
         let m_b = context.intern_application(m, b);
         let a_to_m_b = context.intern_function(a, m_b);
-        Ok(context.intern_function_chain([m_a, a_to_m_b].into_iter(), m_b))
+        Ok(context.intern_function_chain([m_a, a_to_m_b], m_b))
     }
 }
 
@@ -80,7 +80,7 @@ where
         let f_a = context.intern_application(f, a);
         let f_b = context.intern_application(f, b);
         let a_to_b = context.intern_function(a, b);
-        Ok(context.intern_function_chain([a_to_b, f_a].into_iter(), f_b))
+        Ok(context.intern_function_chain([a_to_b, f_a], f_b))
     }
 }
 
@@ -103,7 +103,7 @@ where
         let f_a_to_b = context.intern_application(f, a_to_b);
         let f_a = context.intern_application(f, a);
         let f_b = context.intern_application(f, b);
-        Ok(context.intern_function_chain([f_a_to_b, f_a].into_iter(), f_b))
+        Ok(context.intern_function_chain([f_a_to_b, f_a], f_b))
     }
 }
 

@@ -243,8 +243,7 @@ pub fn report_checked2(engine: &QueryEngine, id: FileId) -> String {
     for (id, TypeItem { name, .. }) in indexed.items.iter_types() {
         let Some(name) = name else { continue };
         let Some(definition) = checked.lookup_synonym(id) else { continue };
-        let names =
-            definition.parameters.iter().map(|b| (b.name, engine.lookup_smol_str(b.text)));
+        let names = definition.parameters.iter().map(|b| (b.name, engine.lookup_smol_str(b.text)));
         let replacement = pretty2::Pretty::new(engine).names(names).render(definition.synonym);
         let binders =
             definition.parameters.iter().map(|b| engine.lookup_smol_str(b.text)).collect_vec();
