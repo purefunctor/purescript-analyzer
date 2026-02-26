@@ -10,5 +10,5 @@ Types
 Eq :: Type -> Constraint
 
 Classes
-class Eq (t0 :: Type)
+class forall (a :: Type). Eq (a :: Type)
   eq :: forall (a :: Type). Eq (a :: Type) => (a :: Type) -> (a :: Type) -> Boolean

@@ -3,6 +3,7 @@ use std::fmt::Write;
 use analyzer::{QueryEngine, locate};
 use checking::core::pretty;
 use checking2::ExternalQueries;
+use checking2::core as core2;
 use checking2::core::pretty as pretty2;
 use diagnostics::{DiagnosticsContext, ToDiagnostics, format_rustc};
 use files::FileId;
@@ -258,19 +259,50 @@ pub fn report_checked2(engine: &QueryEngine, id: FileId) -> String {
     for (id, TypeItem { .. }) in indexed.items.iter_types() {
         let Some(class) = checked.lookup_class(id) else { continue };
 
-        let canonical = pretty2::Pretty::new(engine).render(class.canonical);
+        let class_binders =
+            class.kind_binders.iter().chain(class.type_parameters.iter()).copied().collect_vec();
 
-        let mut superclasses = String::new();
-        if !class.superclasses.is_empty() {
-            let formatted = class
-                .superclasses
-                .iter()
-                .map(|&superclass| pretty2::Pretty::new(engine).render(superclass))
-                .collect_vec();
-            superclasses = format!(" <= {}", formatted.join(", "));
+        let binder_names = class_binders
+            .iter()
+            .map(|&binder_id| {
+                let binder = engine.lookup_forall_binder(binder_id);
+                (binder.name, engine.lookup_smol_str(binder.text))
+            })
+            .collect_vec();
+
+        let render_with_binders = |type_id| {
+            pretty2::Pretty::new(engine).names(binder_names.iter().cloned()).render(type_id)
+        };
+
+        let mut class_head = class.canonical;
+        while let core2::Type::Forall(_, inner) = engine.lookup_type(class_head) {
+            class_head = inner;
         }
 
-        writeln!(out, "class {canonical}{superclasses}").unwrap();
+        let canonical = render_with_binders(class_head);
+        let forall_prefix = if class_binders.is_empty() {
+            String::new()
+        } else {
+            let binders = class_binders
+                .iter()
+                .map(|&binder_id| {
+                    let binder = engine.lookup_forall_binder(binder_id);
+                    let text = engine.lookup_smol_str(binder.text);
+                    let kind = render_with_binders(binder.kind);
+                    format!("({text} :: {kind})")
+                })
+                .join(" ");
+            format!("forall {binders}. ")
+        };
+
+        if class.superclasses.is_empty() {
+            writeln!(out, "class {forall_prefix}{canonical}").unwrap();
+        } else {
+            let superclasses =
+                class.superclasses.iter().map(|&superclass| render_with_binders(superclass)).join(", ");
+            writeln!(out, "class {forall_prefix}{superclasses} <= {canonical}").unwrap();
+        }
+
         for &mid in &class.members {
             let Some(member_name) = indexed.items[mid].name.as_deref() else { continue };
             let Some(member_type) = checked.lookup_term(mid) else { continue };

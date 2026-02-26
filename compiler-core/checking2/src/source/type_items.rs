@@ -797,17 +797,25 @@ where
             })
             .collect_vec();
 
-        let mut canonical = context.queries.intern_type(Type::Constructor(context.id, item_id));
+        let mut class_head = context.queries.intern_type(Type::Constructor(context.id, item_id));
 
         for binder in &class_binders {
             let rigid = context.intern_rigid(binder.name, state.depth, binder.kind);
-            canonical = context.intern_kind_application(canonical, rigid);
+            class_head = context.intern_kind_application(class_head, rigid);
         }
 
         for (index, parameter) in parameters.iter().enumerate() {
             let kind = get_parameter_kind(index);
             let rigid = context.intern_rigid(parameter.name, state.depth, kind);
-            canonical = context.intern_application(canonical, rigid);
+            class_head = context.intern_application(class_head, rigid);
+        }
+
+        let mut canonical = class_head;
+        for type_parameter in type_parameters.iter().rev() {
+            canonical = context.intern_forall(*type_parameter, canonical);
+        }
+        for kind_binder in kind_binders.iter().rev() {
+            canonical = context.intern_forall(*kind_binder, canonical);
         }
 
         let superclasses = superclasses
@@ -821,7 +829,7 @@ where
             let toolkit::InspectQuantified { binders: member_binders, quantified: member_inner } =
                 toolkit::inspect_quantified(state, context, member_type)?;
 
-            let mut result = context.intern_constrained(canonical, member_inner);
+            let mut result = context.intern_constrained(class_head, member_inner);
 
             for member_binder in member_binders.iter().copied().rev() {
                 let binder_id = context.intern_forall_binder(member_binder);

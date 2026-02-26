@@ -12,7 +12,7 @@ Eq :: Type -> Constraint
 Ord :: Type -> Constraint
 
 Classes
-class Eq (t0 :: Type)
+class forall (a :: Type). Eq (a :: Type)
   eq :: forall (a :: Type). Eq (a :: Type) => (a :: Type) -> (a :: Type) -> Boolean
-class Ord (t1 :: Type) <= Eq (t1 :: Type)
+class forall (a :: Type). Eq (a :: Type) <= Ord (a :: Type)
   compare :: forall (a :: Type). Ord (a :: Type) => (a :: Type) -> (a :: Type) -> Int

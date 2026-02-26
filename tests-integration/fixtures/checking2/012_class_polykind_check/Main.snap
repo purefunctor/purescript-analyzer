@@ -13,7 +13,7 @@ Types
 HasKind :: forall (k :: Type). (k :: Type) -> Constraint
 
 Classes
-class HasKind @(t0 :: Type) (t1 :: (t0 :: Type))
+class forall (k :: Type) (a :: (k :: Type)). HasKind @(k :: Type) (a :: (k :: Type))
   reflectKind ::
   forall (k :: Type) (a :: (k :: Type)) (p :: (k :: Type) -> Type).
     HasKind @(k :: Type) (a :: (k :: Type)) =>
