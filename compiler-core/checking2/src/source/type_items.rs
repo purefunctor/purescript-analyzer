@@ -322,7 +322,7 @@ where
         let kind = resolve_type_variable_binding(state, context, signature_kind, equation_binding)?;
 
         let name = state.names.fresh();
-        state.kind_scope.bind_forall(equation_binding.id, name, kind);
+        state.bindings.bind_forall(equation_binding.id, name, kind);
 
         let text = if let Some(name) = &equation_binding.name {
             SmolStr::clone(name)

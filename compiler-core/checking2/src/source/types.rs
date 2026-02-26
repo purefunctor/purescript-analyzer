@@ -238,7 +238,7 @@ where
         lowering::TypeKind::Variable { name, resolution } => match resolution {
             Some(lowering::TypeVariableResolution::Forall(forall)) => {
                 let (n, k) = state
-                    .kind_scope
+                    .bindings
                     .lookup_forall(*forall)
                     .expect("invariant violated: KindScope::bind_forall");
 
@@ -252,13 +252,13 @@ where
                     let n = state.names.fresh();
                     let k = state.fresh_unification(context.queries, context.prim.t);
 
-                    state.kind_scope.bind_implicit(implicit.node, implicit.id, n, k);
+                    state.bindings.bind_implicit(implicit.node, implicit.id, n, k);
                     let t = context.intern_rigid(n, state.depth, k);
 
                     Ok((t, k))
                 } else {
                     let (n, k) = state
-                        .kind_scope
+                        .bindings
                         .lookup_implicit(implicit.node, implicit.id)
                         .expect("invariant violated: KindScope::bind_implicit");
 
@@ -366,7 +366,7 @@ where
     let text = if let Some(name) = &binding.name { SmolStr::clone(name) } else { name.as_text() };
     let text = context.queries.intern_smol_str(text);
 
-    state.kind_scope.bind_forall(binding.id, name, kind);
+    state.bindings.bind_forall(binding.id, name, kind);
     Ok(ForallBinder { visible, name, text, kind })
 }
 

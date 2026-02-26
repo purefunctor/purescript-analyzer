@@ -9,7 +9,7 @@ use rustc_hash::FxHashMap;
 
 use crate::context::CheckContext;
 use crate::core::exhaustive::{
-    ExhaustivenessReport, Pattern, PatternConstructor, PatternId, PatternKind, PatternStorage,
+    ExhaustivenessReport, Pattern, PatternConstructor, PatternId, PatternInterner, PatternKind,
 };
 use crate::core::{Depth, Name, SmolStrId, Type, TypeId, pretty, zonk};
 use crate::error::{CheckError, ErrorCrumb, ErrorKind};
@@ -83,13 +83,13 @@ impl Unifications {
 
 /// Tracks type variable bindings during kind inference.
 #[derive(Default)]
-pub struct KindScope {
+pub struct Bindings {
     forall_bindings: FxHashMap<lowering::TypeVariableBindingId, (Name, TypeId)>,
     implicit_bindings:
         FxHashMap<(lowering::GraphNodeId, lowering::ImplicitBindingId), (Name, TypeId)>,
 }
 
-impl KindScope {
+impl Bindings {
     pub fn bind_forall(&mut self, id: lowering::TypeVariableBindingId, name: Name, kind: TypeId) {
         self.forall_bindings.insert(id, (name, kind));
     }
@@ -122,11 +122,13 @@ pub struct CheckState {
     pub checked: CheckedModule,
 
     pub names: Names,
+    pub bindings: Bindings,
+    pub patterns: PatternInterner,
+
     pub unifications: Unifications,
     pub implications: Implications,
-    pub patterns: PatternStorage,
-    pub kind_scope: KindScope,
-    pub defer_synonym_expansion: bool,
+
+    pub defer_expansion: bool,
     pub depth: Depth,
 
     pub crumbs: Vec<ErrorCrumb>,
@@ -137,11 +139,11 @@ impl CheckState {
         CheckState {
             checked: Default::default(),
             names: Names::new(file_id),
+            bindings: Default::default(),
+            patterns: Default::default(),
             unifications: Default::default(),
             implications: Default::default(),
-            patterns: Default::default(),
-            kind_scope: Default::default(),
-            defer_synonym_expansion: Default::default(),
+            defer_expansion: Default::default(),
             depth: Depth(0),
             crumbs: Default::default(),
         }

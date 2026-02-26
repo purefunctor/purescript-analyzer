@@ -167,7 +167,7 @@ impl MissingConstructor {
 }
 
 pub type PatternId = interner::Id<Pattern>;
-pub type PatternStorage = interner::Interner<Pattern>;
+pub type PatternInterner = interner::Interner<Pattern>;
 
 type PatternVector = Vec<PatternId>;
 type PatternMatrix = Vec<PatternVector>;

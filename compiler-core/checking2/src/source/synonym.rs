@@ -54,7 +54,7 @@ where
     Q: ExternalQueries,
 {
     if arity > 0 {
-        if state.defer_synonym_expansion {
+        if state.defer_expansion {
             let synonym_type = context.queries.intern_type(Type::Constructor(file_id, item_id));
             return Ok((synonym_type, kind));
         }
@@ -95,7 +95,7 @@ where
     }
 
     if arguments.len() < arity {
-        if state.defer_synonym_expansion {
+        if state.defer_expansion {
             return infer_partial_synonym_application(
                 state,
                 context,
@@ -111,16 +111,16 @@ where
     }
 
     let (synonym_arguments, excess_arguments) = arguments.split_at(arity);
-
     let function_type = context.queries.intern_type(Type::Constructor(file_id, type_id));
-    let defer_synonym_expansion = mem::replace(&mut state.defer_synonym_expansion, true);
+
+    let defer_expansion = mem::replace(&mut state.defer_expansion, true);
     let chain_result = infer_synonym_application_chain(
         state,
         context,
         (function_type, function_kind),
         synonym_arguments,
     );
-    state.defer_synonym_expansion = defer_synonym_expansion;
+    state.defer_expansion = defer_expansion;
 
     let (argument_types, (_, synonym_kind)) = chain_result?;
 

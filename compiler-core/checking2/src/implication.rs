@@ -23,6 +23,7 @@ impl Implication {
     }
 }
 
+/// Keeps track of implications for the type checker.
 pub struct Implications {
     nodes: Vec<Implication>,
     current: ImplicationId,
