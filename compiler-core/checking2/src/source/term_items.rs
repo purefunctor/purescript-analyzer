@@ -29,6 +29,10 @@ where
             check_term_signature(state, context, item)?;
         }
 
+        if scc.is_recursive() {
+            prepare_binding_group(state, context, &items);
+        }
+
         let mut term_scc = TermSccState::default();
 
         for &item in items {
@@ -40,6 +44,19 @@ where
     }
 
     Ok(())
+}
+
+fn prepare_binding_group<Q>(state: &mut CheckState, context: &CheckContext<Q>, items: &[TermItemId])
+where
+    Q: ExternalQueries,
+{
+    for &item_id in items {
+        if state.checked.terms.contains_key(&item_id) {
+            continue;
+        }
+        let t = state.fresh_unification(context.queries, context.prim.t);
+        state.checked.terms.insert(item_id, t);
+    }
 }
 
 fn check_term_signature<Q>(
@@ -200,13 +217,21 @@ fn finalise_term_binding_group<Q>(
 where
     Q: ExternalQueries,
 {
+    let mut pending = Vec::with_capacity(items.len());
+
     for &item_id in items {
         let Some(kind) = state.checked.terms.get(&item_id).copied() else {
             continue;
         };
 
         let kind = zonk::zonk(state, context, kind)?;
-        let kind = generalise::generalise(state, context, kind)?;
+        let unsolved = generalise::unsolved_unifications(state, context, kind)?;
+
+        pending.push((item_id, kind, unsolved));
+    }
+
+    for (item_id, kind, unsolved) in pending {
+        let kind = generalise::generalise_unsolved(state, context, kind, &unsolved)?;
         state.checked.terms.insert(item_id, kind);
     }
 

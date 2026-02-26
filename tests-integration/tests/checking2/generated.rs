@@ -101,3 +101,15 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_035_exhaustive_operator_constructor_main() { run_test("035_exhaustive_operator_constructor", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_036_synonym_partial_defer_main() { run_test("036_synonym_partial_defer", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_037_value_recursive_check_main() { run_test("037_value_recursive_check", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_038_value_recursive_infer_main() { run_test("038_value_recursive_infer", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_039_value_mutual_check_main() { run_test("039_value_mutual_check", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_040_value_mutual_infer_main() { run_test("040_value_mutual_infer", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_041_data_mutual_check_main() { run_test("041_data_mutual_check", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_042_data_mutual_infer_main() { run_test("042_data_mutual_infer", "Main"); }

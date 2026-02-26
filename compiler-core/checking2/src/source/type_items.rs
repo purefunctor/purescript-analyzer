@@ -112,13 +112,21 @@ fn finalise_type_binding_group<Q>(
 where
     Q: ExternalQueries,
 {
+    let mut pending = Vec::with_capacity(items.len());
+
     for &item_id in items {
         let Some(kind) = state.checked.types.get(&item_id).copied() else {
             continue;
         };
 
         let kind = zonk::zonk(state, context, kind)?;
-        let kind = generalise::generalise(state, context, kind)?;
+        let unsolved = generalise::unsolved_unifications(state, context, kind)?;
+
+        pending.push((item_id, kind, unsolved));
+    }
+
+    for (item_id, kind, unsolved) in pending {
+        let kind = generalise::generalise_unsolved(state, context, kind, &unsolved)?;
         state.checked.types.insert(item_id, kind);
     }
 
