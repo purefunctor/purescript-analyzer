@@ -311,6 +311,16 @@ pub fn report_checked2(engine: &QueryEngine, id: FileId) -> String {
         }
     }
 
+    if !checked.instances.is_empty() {
+        writeln!(out, "\nInstances").unwrap();
+    }
+    let mut instance_entries: Vec<_> = checked.instances.iter().collect();
+    instance_entries.sort_by_key(|(id, _)| *id);
+    for (_instance_id, instance) in instance_entries {
+        let canonical = pretty2::Pretty::new(engine).render(instance.canonical);
+        writeln!(out, "instance {canonical}").unwrap();
+    }
+
     if !checked.roles.is_empty() {
         writeln!(out, "\nRoles").unwrap();
     }

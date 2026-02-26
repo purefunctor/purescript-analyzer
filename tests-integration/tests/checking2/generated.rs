@@ -113,3 +113,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_041_data_mutual_check_main() { run_test("041_data_mutual_check", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_042_data_mutual_infer_main() { run_test("042_data_mutual_infer", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_043_instance_check_main() { run_test("043_instance_check", "Main"); }
