@@ -13,14 +13,14 @@ use std::sync::Arc;
 
 use building_types::{QueryProxy, QueryResult};
 use files::FileId;
-use indexing::{TermItemId, TypeItemId};
+use indexing::{InstanceId, TermItemId, TypeItemId};
 use resolving::ResolvedModule;
 use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
 
 use crate::core::{
-    CheckedClass, CheckedSynonym, ForallBinder, ForallBinderId, Role, RowType, RowTypeId, Synonym,
-    SynonymId, Type, TypeId,
+    CheckedClass, CheckedInstance, CheckedSynonym, ForallBinder, ForallBinderId, Role, RowType,
+    RowTypeId, Synonym, SynonymId, Type, TypeId,
 };
 use crate::error::CheckError;
 
@@ -60,6 +60,7 @@ pub struct CheckedModule {
     pub terms: FxHashMap<TermItemId, TypeId>,
     pub synonyms: FxHashMap<TypeItemId, CheckedSynonym>,
     pub classes: FxHashMap<TypeItemId, CheckedClass>,
+    pub instances: FxHashMap<InstanceId, CheckedInstance>,
     pub roles: FxHashMap<TypeItemId, Arc<[Role]>>,
     pub nodes: CheckedNodes,
     pub errors: Vec<CheckError>,
@@ -99,6 +100,10 @@ impl CheckedModule {
 
     pub fn lookup_class(&self, id: TypeItemId) -> Option<CheckedClass> {
         self.classes.get(&id).cloned()
+    }
+
+    pub fn lookup_instance(&self, id: InstanceId) -> Option<CheckedInstance> {
+        self.instances.get(&id).cloned()
     }
 
     pub fn lookup_roles(&self, id: TypeItemId) -> Option<Arc<[Role]>> {

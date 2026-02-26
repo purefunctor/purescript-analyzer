@@ -25,7 +25,8 @@ use rustc_hash::FxHashSet;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::{ForallBinder, Type, TypeId, normalise, zonk};
+use crate::core::walk::{self, TypeWalker, WalkAction};
+use crate::core::{ForallBinder, Name, Type, TypeId, normalise, zonk};
 use crate::state::{CheckState, UnificationEntry, UnificationState};
 
 type UniGraph = DiGraphMap<u32, ()>;
@@ -236,4 +237,107 @@ where
 {
     let unsolved = unsolved_unifications(state, context, id)?;
     generalise_unsolved(state, context, id, &unsolved)
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+enum ImplicitOrUnification {
+    Implicit(Name, TypeId),
+    Unification(u32, TypeId),
+}
+
+#[derive(Default)]
+struct GeneraliseImplicit {
+    owner: Option<ImplicitOrUnification>,
+    graph: DiGraphMap<ImplicitOrUnification, ()>,
+    bound: FxHashSet<Name>,
+}
+
+impl TypeWalker for GeneraliseImplicit {
+    fn visit<Q>(
+        &mut self,
+        state: &mut CheckState,
+        context: &CheckContext<Q>,
+        _id: TypeId,
+        t: &Type,
+    ) -> QueryResult<WalkAction>
+    where
+        Q: ExternalQueries,
+    {
+        match t {
+            Type::Rigid(name, _, kind) => {
+                let next_owner = ImplicitOrUnification::Implicit(*name, *kind);
+                let prev_owner = self.owner.replace(next_owner);
+
+                self.graph.add_node(next_owner);
+                if let Some(prev_owner) = prev_owner {
+                    self.graph.add_edge(prev_owner, next_owner, ());
+                }
+
+                walk::walk_type(state, context, *kind, self)?;
+                self.owner = prev_owner;
+            }
+            Type::Unification(id) => {
+                let UnificationEntry { kind, .. } = state.unifications.get(*id);
+
+                let next_owner = ImplicitOrUnification::Unification(*id, *kind);
+                let prev_owner = self.owner.replace(next_owner);
+
+                self.graph.add_node(next_owner);
+                if let Some(prev_owner) = prev_owner {
+                    self.graph.add_edge(prev_owner, next_owner, ());
+                }
+
+                walk::walk_type(state, context, *kind, self)?;
+                self.owner = prev_owner;
+            }
+            _ => {}
+        }
+        Ok(WalkAction::Continue)
+    }
+
+    fn visit_binder(&mut self, binder: &ForallBinder) {
+        self.bound.insert(binder.name);
+    }
+}
+
+pub fn generalise_implicit<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    id: TypeId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let mut walker = GeneraliseImplicit::default();
+    walk::walk_type(state, context, id, &mut walker)?;
+
+    let Ok(implicits_unifications) = algo::toposort(&walker.graph, None) else {
+        return Ok(context.unknown("invalid recursive graph"));
+    };
+
+    let depth = state.depth.increment();
+
+    let mut binders = vec![];
+    for implicit_unification in implicits_unifications {
+        match implicit_unification {
+            ImplicitOrUnification::Implicit(name, kind) => {
+                let text = context.queries.intern_smol_str(name.as_text());
+                binders.push(ForallBinder { visible: false, name, text, kind })
+            }
+            ImplicitOrUnification::Unification(id, kind) => {
+                let name = state.names.fresh();
+                let text = context.queries.intern_smol_str(name.as_text());
+                let rigid = context.intern_rigid(name, depth, kind);
+                state.unifications.solve(id, rigid);
+                binders.push(ForallBinder { visible: false, name, text, kind })
+            }
+        }
+    }
+
+    let id = binders.into_iter().fold(id, |inner, binder| {
+        let binder = context.intern_forall_binder(binder);
+        context.intern_forall(binder, inner)
+    });
+
+    zonk::zonk(state, context, id)
 }

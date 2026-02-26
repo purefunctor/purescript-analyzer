@@ -137,6 +137,15 @@ pub struct CheckedClass {
     pub members: Vec<TermItemId>,
 }
 
+/// Represents a checked instance declaration head.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CheckedInstance {
+    /// Type class reference.
+    pub resolution: (FileId, TypeItemId),
+    /// Canonical instance type, e.g. `forall a. Eq a => Eq (Array a)`.
+    pub canonical: TypeId,
+}
+
 /// The core type representation used by the checker after name resolution.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Type {
