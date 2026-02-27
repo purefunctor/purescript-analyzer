@@ -6,11 +6,11 @@ use pretty::{Arena, DocAllocator, DocBuilder};
 use rustc_hash::FxHashMap;
 use smol_str::{SmolStr, SmolStrBuilder};
 
-use crate::ExternalQueries;
 use crate::core::{
     ForallBinder, ForallBinderId, Name, RowField, RowType, RowTypeId, SmolStrId, Synonym,
     SynonymId, Type, TypeId,
 };
+use crate::{CheckedModule, ExternalQueries};
 
 type Doc<'a> = DocBuilder<'a, Arena<'a>, ()>;
 
@@ -18,12 +18,12 @@ pub struct Pretty<'a, Q> {
     queries: &'a Q,
     width: usize,
     signature: Option<&'a str>,
-    names: FxHashMap<Name, SmolStr>,
+    checked: &'a CheckedModule,
 }
 
 impl<'a, Q: ExternalQueries> Pretty<'a, Q> {
-    pub fn new(queries: &'a Q) -> Self {
-        Pretty { queries, width: 100, signature: None, names: FxHashMap::default() }
+    pub fn new(queries: &'a Q, checked: &'a CheckedModule) -> Self {
+        Pretty { queries, width: 100, signature: None, checked }
     }
 
     pub fn width(mut self, width: usize) -> Self {
@@ -36,15 +36,9 @@ impl<'a, Q: ExternalQueries> Pretty<'a, Q> {
         self
     }
 
-    pub fn names(mut self, names: impl IntoIterator<Item = (Name, SmolStr)>) -> Self {
-        self.names.extend(names);
-        self
-    }
-
     pub fn render(self, id: TypeId) -> SmolStr {
         let arena = Arena::new();
-        let mut printer = Printer::new(&arena, self.queries);
-        printer.names = self.names;
+        let mut printer = Printer::new(&arena, self.queries, &self.checked.names);
 
         let document = if let Some(name) = self.signature {
             printer.signature(name, id)
@@ -75,15 +69,19 @@ where
 {
     arena: &'a Arena<'a>,
     queries: &'a Q,
-    names: FxHashMap<Name, SmolStr>,
+    names: &'a FxHashMap<Name, SmolStrId>,
 }
 
 impl<'a, Q> Printer<'a, Q>
 where
     Q: ExternalQueries,
 {
-    fn new(arena: &'a Arena<'a>, queries: &'a Q) -> Printer<'a, Q> {
-        Printer { arena, queries, names: FxHashMap::default() }
+    fn new(
+        arena: &'a Arena<'a>,
+        queries: &'a Q,
+        names: &'a FxHashMap<Name, SmolStrId>,
+    ) -> Printer<'a, Q> {
+        Printer { arena, queries, names }
     }
 
     fn lookup_type(&self, id: TypeId) -> Type {
@@ -239,10 +237,12 @@ where
             }
 
             Type::Rigid(name, _, kind) => {
-                let name = self.names.entry(name).or_insert_with(|| name.as_text());
-                let name = SmolStr::clone(name);
+                let text = match self.names.get(&name) {
+                    Some(&id) => self.lookup_smol_str(id),
+                    None => name.as_text(),
+                };
                 let kind = self.traverse(Precedence::Top, kind);
-                self.arena.text(format!("({name} :: ")).append(kind).append(self.arena.text(")"))
+                self.arena.text(format!("({text} :: ")).append(kind).append(self.arena.text(")"))
             }
 
             Type::Unification(unification_id) => self.arena.text(format!("?{unification_id}")),
@@ -358,16 +358,13 @@ where
             inner = next_inner;
         }
 
-        // Register source-level names so rigid variables in the body
-        // display their original names instead of synthetic ones.
-        for binder in &binders {
-            self.names.insert(binder.name, self.lookup_smol_str(binder.text));
-        }
-
         let binders = binders
             .iter()
             .map(|binder| {
-                let text = self.lookup_smol_str(binder.text);
+                let text = match self.names.get(&binder.name) {
+                    Some(&id) => self.lookup_smol_str(id),
+                    None => binder.name.as_text(),
+                };
                 let kind = self.traverse(Precedence::Top, binder.kind);
                 self.arena
                     .text(format!("({} :: ", text))

@@ -52,8 +52,6 @@ pub struct ForallBinder {
     pub visible: bool,
     /// The unique identity attached to the type variable.
     pub name: Name,
-    /// The source-level text of the type variable.
-    pub text: SmolStrId,
     /// The kind of the type variable.
     pub kind: TypeId,
 }

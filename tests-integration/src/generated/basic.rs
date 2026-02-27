@@ -2,9 +2,8 @@ use std::fmt::Write;
 
 use analyzer::{QueryEngine, locate};
 use checking::core::pretty;
-use checking2::ExternalQueries;
-use checking2::core as core2;
 use checking2::core::pretty as pretty2;
+use checking2::{ExternalQueries, core as core2};
 use diagnostics::{DiagnosticsContext, ToDiagnostics, format_rustc};
 use files::FileId;
 use indexing::{ImportKind, TermItem, TypeItem, TypeItemId, TypeItemKind};
@@ -220,13 +219,26 @@ pub fn report_checked2(engine: &QueryEngine, id: FileId) -> String {
     let indexed = engine.indexed(id).unwrap();
     let checked = engine.checked2(id).unwrap();
 
+    let name_text = |name: core2::Name| -> String {
+        checked
+            .lookup_name(name)
+            .map(|id| engine.lookup_smol_str(id).to_string())
+            .unwrap_or_else(|| name.as_text().to_string())
+    };
+
+    let pretty = |type_id| pretty2::Pretty::new(engine, &checked).render(type_id);
+
+    let pretty_signature = |name: &str, type_id| {
+        pretty2::Pretty::new(engine, &checked).signature(name).render(type_id)
+    };
+
     let mut out = String::default();
 
     writeln!(out, "Terms").unwrap();
     for (id, TermItem { name, .. }) in indexed.items.iter_terms() {
         let Some(name) = name else { continue };
         let Some(kind) = checked.lookup_term(id) else { continue };
-        let signature = pretty2::Pretty::new(engine).signature(name).render(kind);
+        let signature = pretty_signature(name, kind);
         writeln!(out, "{signature}").unwrap();
     }
 
@@ -234,7 +246,7 @@ pub fn report_checked2(engine: &QueryEngine, id: FileId) -> String {
     for (id, TypeItem { name, .. }) in indexed.items.iter_types() {
         let Some(name) = name else { continue };
         let Some(kind) = checked.lookup_type(id) else { continue };
-        let signature = pretty2::Pretty::new(engine).signature(name).render(kind);
+        let signature = pretty_signature(name, kind);
         writeln!(out, "{signature}").unwrap();
     }
 
@@ -244,10 +256,8 @@ pub fn report_checked2(engine: &QueryEngine, id: FileId) -> String {
     for (id, TypeItem { name, .. }) in indexed.items.iter_types() {
         let Some(name) = name else { continue };
         let Some(definition) = checked.lookup_synonym(id) else { continue };
-        let names = definition.parameters.iter().map(|b| (b.name, engine.lookup_smol_str(b.text)));
-        let replacement = pretty2::Pretty::new(engine).names(names).render(definition.synonym);
-        let binders =
-            definition.parameters.iter().map(|b| engine.lookup_smol_str(b.text)).collect_vec();
+        let replacement = pretty(definition.synonym);
+        let binders = definition.parameters.iter().map(|b| name_text(b.name)).collect_vec();
         let binders_formatted =
             if binders.is_empty() { String::new() } else { format!(" {}", binders.join(" ")) };
         writeln!(out, "type {name}{binders_formatted} = {replacement}").unwrap();
@@ -262,24 +272,12 @@ pub fn report_checked2(engine: &QueryEngine, id: FileId) -> String {
         let class_binders =
             class.kind_binders.iter().chain(class.type_parameters.iter()).copied().collect_vec();
 
-        let binder_names = class_binders
-            .iter()
-            .map(|&binder_id| {
-                let binder = engine.lookup_forall_binder(binder_id);
-                (binder.name, engine.lookup_smol_str(binder.text))
-            })
-            .collect_vec();
-
-        let render_with_binders = |type_id| {
-            pretty2::Pretty::new(engine).names(binder_names.iter().cloned()).render(type_id)
-        };
-
         let mut class_head = class.canonical;
         while let core2::Type::Forall(_, inner) = engine.lookup_type(class_head) {
             class_head = inner;
         }
 
-        let canonical = render_with_binders(class_head);
+        let canonical = pretty(class_head);
         let forall_prefix = if class_binders.is_empty() {
             String::new()
         } else {
@@ -287,8 +285,8 @@ pub fn report_checked2(engine: &QueryEngine, id: FileId) -> String {
                 .iter()
                 .map(|&binder_id| {
                     let binder = engine.lookup_forall_binder(binder_id);
-                    let text = engine.lookup_smol_str(binder.text);
-                    let kind = render_with_binders(binder.kind);
+                    let text = name_text(binder.name);
+                    let kind = pretty(binder.kind);
                     format!("({text} :: {kind})")
                 })
                 .join(" ");
@@ -299,14 +297,14 @@ pub fn report_checked2(engine: &QueryEngine, id: FileId) -> String {
             writeln!(out, "class {forall_prefix}{canonical}").unwrap();
         } else {
             let superclasses =
-                class.superclasses.iter().map(|&superclass| render_with_binders(superclass)).join(", ");
+                class.superclasses.iter().map(|&superclass| pretty(superclass)).join(", ");
             writeln!(out, "class {forall_prefix}{superclasses} <= {canonical}").unwrap();
         }
 
         for &mid in &class.members {
             let Some(member_name) = indexed.items[mid].name.as_deref() else { continue };
             let Some(member_type) = checked.lookup_term(mid) else { continue };
-            let signature = pretty2::Pretty::new(engine).signature(member_name).render(member_type);
+            let signature = pretty_signature(member_name, member_type);
             writeln!(out, "  {signature}").unwrap();
         }
     }
@@ -317,7 +315,7 @@ pub fn report_checked2(engine: &QueryEngine, id: FileId) -> String {
     let mut instance_entries: Vec<_> = checked.instances.iter().collect();
     instance_entries.sort_by_key(|(id, _)| *id);
     for (_instance_id, instance) in instance_entries {
-        let canonical = pretty2::Pretty::new(engine).render(instance.canonical);
+        let canonical = pretty(instance.canonical);
         writeln!(out, "instance {canonical}").unwrap();
     }
 

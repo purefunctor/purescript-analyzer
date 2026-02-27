@@ -216,9 +216,7 @@ where
             }
         };
 
-        let text = context.queries.intern_smol_str(name.as_text());
-
-        let binder = ForallBinder { visible: false, name, text, kind };
+        let binder = ForallBinder { visible: false, name, kind };
         let binder = context.intern_forall_binder(binder);
         quantified = context.intern_forall(binder, quantified);
     }
@@ -321,15 +319,13 @@ where
     for implicit_unification in implicits_unifications {
         match implicit_unification {
             ImplicitOrUnification::Implicit(name, kind) => {
-                let text = context.queries.intern_smol_str(name.as_text());
-                binders.push(ForallBinder { visible: false, name, text, kind })
+                binders.push(ForallBinder { visible: false, name, kind })
             }
             ImplicitOrUnification::Unification(id, kind) => {
                 let name = state.names.fresh();
-                let text = context.queries.intern_smol_str(name.as_text());
                 let rigid = context.intern_rigid(name, depth, kind);
                 state.unifications.solve(id, rigid);
-                binders.push(ForallBinder { visible: false, name, text, kind })
+                binders.push(ForallBinder { visible: false, name, kind })
             }
         }
     }

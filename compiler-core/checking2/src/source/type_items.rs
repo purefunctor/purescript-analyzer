@@ -339,9 +339,10 @@ where
         };
 
         let text = context.queries.intern_smol_str(text);
+        state.checked.names.insert(name, text);
         let visible = equation_binding.visible;
 
-        binders.push(ForallBinder { visible, name, text, kind });
+        binders.push(ForallBinder { visible, name, kind });
     }
 
     Ok(binders)

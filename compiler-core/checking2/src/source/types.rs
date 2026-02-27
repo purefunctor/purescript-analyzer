@@ -366,8 +366,9 @@ where
     let text = if let Some(name) = &binding.name { SmolStr::clone(name) } else { name.as_text() };
     let text = context.queries.intern_smol_str(text);
 
+    state.checked.names.insert(name, text);
     state.bindings.bind_forall(binding.id, name, kind);
-    Ok(ForallBinder { visible, name, text, kind })
+    Ok(ForallBinder { visible, name, kind })
 }
 
 pub fn infer_application_kind<Q>(
