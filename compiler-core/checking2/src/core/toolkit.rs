@@ -1,5 +1,7 @@
 //! Implements shared utilities for core type operations.
 
+use std::sync::Arc;
+
 use building_types::QueryResult;
 use files::FileId;
 use indexing::{TermItemId, TypeItemId};
@@ -7,7 +9,7 @@ use indexing::{TermItemId, TypeItemId};
 use crate::context::CheckContext;
 use crate::core::substitute::SubstituteName;
 use crate::core::{
-    CheckedClass, CheckedSynonym, ForallBinder, Type, TypeId, normalise, unification,
+    CheckedClass, CheckedSynonym, ForallBinder, Role, Type, TypeId, normalise, unification,
 };
 use crate::state::CheckState;
 use crate::{ExternalQueries, safe_loop};
@@ -436,4 +438,41 @@ where
 
         _ => Ok(None),
     }
+}
+
+pub fn lookup_file_roles<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    file_id: FileId,
+    item_id: TypeItemId,
+) -> QueryResult<Option<Arc<[Role]>>>
+where
+    Q: ExternalQueries,
+{
+    if file_id == context.id {
+        Ok(state.checked.lookup_roles(item_id))
+    } else {
+        let checked = context.queries.checked2(file_id)?;
+        Ok(checked.lookup_roles(item_id))
+    }
+}
+
+pub fn is_newtype<Q>(
+    context: &CheckContext<Q>,
+    file_id: FileId,
+    item_id: TypeItemId,
+) -> QueryResult<bool>
+where
+    Q: ExternalQueries,
+{
+    let type_item = if file_id == context.id {
+        context.lowered.info.get_type_item(item_id)
+    } else {
+        let lowered = context.queries.lowered(file_id)?;
+        return Ok(matches!(
+            lowered.info.get_type_item(item_id),
+            Some(lowering::TypeItemIr::NewtypeGroup { .. })
+        ));
+    };
+    Ok(matches!(type_item, Some(lowering::TypeItemIr::NewtypeGroup { .. })))
 }

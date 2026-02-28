@@ -1,10 +1,74 @@
 use building_types::QueryResult;
+use smol_str::SmolStr;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
+use crate::core::{RowType, Type, TypeId, normalise};
 use crate::state::CheckState;
 
 use super::{ConstraintApplication, MatchInstance};
+
+pub fn extract_integer<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    id: TypeId,
+) -> QueryResult<Option<i32>>
+where
+    Q: ExternalQueries,
+{
+    let id = normalise::normalise(state, context, id)?;
+    match context.lookup_type(id) {
+        Type::Integer(value) => Ok(Some(value)),
+        _ => Ok(None),
+    }
+}
+
+pub fn extract_symbol<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    id: TypeId,
+) -> QueryResult<Option<SmolStr>>
+where
+    Q: ExternalQueries,
+{
+    let id = normalise::normalise(state, context, id)?;
+    if let Type::String(_, id) = context.lookup_type(id) {
+        Ok(Some(context.queries.lookup_smol_str(id)))
+    } else {
+        Ok(None)
+    }
+}
+
+pub fn extract_row<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    id: TypeId,
+) -> QueryResult<Option<RowType>>
+where
+    Q: ExternalQueries,
+{
+    let id = normalise::normalise(state, context, id)?;
+    if let Type::Row(id) = context.lookup_type(id) {
+        Ok(Some(context.lookup_row_type(id)))
+    } else {
+        Ok(None)
+    }
+}
+
+pub fn intern_symbol<Q>(context: &CheckContext<Q>, value: &str) -> TypeId
+where
+    Q: ExternalQueries,
+{
+    let smol_str_id = context.queries.intern_smol_str(SmolStr::new(value));
+    context.queries.intern_type(Type::String(lowering::StringKind::String, smol_str_id))
+}
+
+pub fn intern_integer<Q>(context: &CheckContext<Q>, value: i32) -> TypeId
+where
+    Q: ExternalQueries,
+{
+    context.queries.intern_type(Type::Integer(value))
+}
 
 pub fn match_compiler_instances<Q>(
     _state: &mut CheckState,
