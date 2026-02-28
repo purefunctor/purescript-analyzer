@@ -1,3 +1,4 @@
+pub mod compiler;
 pub mod functional_dependency;
 pub mod given;
 pub mod instances;
@@ -17,6 +18,7 @@ use crate::core::{Type, TypeId, normalise, toolkit, unification};
 use crate::implication::ImplicationId;
 use crate::state::CheckState;
 
+use compiler::match_compiler_instances;
 use given::{elaborate_given, match_given_instances};
 use instances::{collect_instance_chains, match_instance};
 
@@ -127,6 +129,23 @@ where
                     continue 'work;
                 }
                 Some(MatchInstance::Apart | MatchInstance::Stuck) | None => {}
+            }
+
+            match match_compiler_instances(state, context, &application, &given)? {
+                Some(MatchInstance::Match { constraints, equalities }) => {
+                    for (t1, t2) in equalities {
+                        if unification::unify(state, context, t1, t2)? {
+                            made_progress = true;
+                        }
+                    }
+                    work_queue.extend(constraints);
+                    continue 'work;
+                }
+                Some(MatchInstance::Stuck) => {
+                    residual.push(wanted);
+                    continue 'work;
+                }
+                Some(MatchInstance::Apart) | None => {}
             }
 
             let instance_chains = collect_instance_chains(state, context, &application)?;
