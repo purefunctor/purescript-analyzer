@@ -1,8 +1,13 @@
+mod prim_int;
+mod prim_row_list;
+mod prim_symbol;
+
 use building_types::QueryResult;
 use smol_str::SmolStr;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
+use crate::core::unification::{CanUnify, can_unify};
 use crate::core::{RowType, Type, TypeId, normalise};
 use crate::state::CheckState;
 
@@ -70,66 +75,71 @@ where
     context.queries.intern_type(Type::Integer(value))
 }
 
+fn match_equality<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    actual: TypeId,
+    expected: TypeId,
+) -> QueryResult<MatchInstance>
+where
+    Q: ExternalQueries,
+{
+    Ok(match can_unify(state, context, actual, expected)? {
+        CanUnify::Apart => MatchInstance::Apart,
+        CanUnify::Equal | CanUnify::Unify => {
+            MatchInstance::Match { constraints: vec![], equalities: vec![(actual, expected)] }
+        }
+    })
+}
+
 pub fn match_compiler_instances<Q>(
-    _state: &mut CheckState,
+    state: &mut CheckState,
     context: &CheckContext<Q>,
     wanted: &ConstraintApplication,
-    _given: &[ConstraintApplication],
+    given: &[ConstraintApplication],
 ) -> QueryResult<Option<MatchInstance>>
 where
     Q: ExternalQueries,
 {
-    let ConstraintApplication { file_id, item_id, arguments: _ } = *wanted;
+    let ConstraintApplication { file_id, item_id, arguments } = wanted;
 
-    let match_instance = if file_id == context.prim_int.file_id {
-        if item_id == context.prim_int.add {
-            None
-        } else if item_id == context.prim_int.mul {
-            None
-        } else if item_id == context.prim_int.compare {
-            None
-        } else if item_id == context.prim_int.to_string {
-            None
+    let match_instance = if *file_id == context.prim_int.file_id {
+        if *item_id == context.prim_int.add {
+            prim_int::match_add(state, context, arguments)?
+        } else if *item_id == context.prim_int.mul {
+            prim_int::match_mul(state, context, arguments)?
+        } else if *item_id == context.prim_int.compare {
+            prim_int::match_compare(state, context, arguments, given)?
+        } else if *item_id == context.prim_int.to_string {
+            prim_int::match_to_string(state, context, arguments)?
         } else {
             None
         }
-    } else if file_id == context.prim_symbol.file_id {
-        if item_id == context.prim_symbol.append {
-            None
-        } else if item_id == context.prim_symbol.compare {
-            None
-        } else if item_id == context.prim_symbol.cons {
-            None
+    } else if *file_id == context.prim_symbol.file_id {
+        if *item_id == context.prim_symbol.append {
+            prim_symbol::match_append(state, context, arguments)?
+        } else if *item_id == context.prim_symbol.compare {
+            prim_symbol::match_compare(state, context, arguments)?
+        } else if *item_id == context.prim_symbol.cons {
+            prim_symbol::match_cons(state, context, arguments)?
         } else {
             None
         }
-    } else if file_id == context.prim_row.file_id {
-        if item_id == context.prim_row.union {
-            None
-        } else if item_id == context.prim_row.cons {
-            None
-        } else if item_id == context.prim_row.lacks {
-            None
-        } else if item_id == context.prim_row.nub {
-            None
-        } else {
-            None
-        }
-    } else if file_id == context.prim_row_list.file_id {
-        if item_id == context.prim_row_list.row_to_list { None } else { None }
-    } else if file_id == context.prim_coerce.file_id {
-        if item_id == context.prim_coerce.coercible { None } else { None }
-    } else if file_id == context.prim_type_error.file_id {
-        if item_id == context.prim_type_error.warn {
-            None
-        } else if item_id == context.prim_type_error.fail {
-            None
-        } else {
-            None
-        }
-    } else if context.known_reflectable.is_symbol == Some((file_id, item_id)) {
+    } else if *file_id == context.prim_row.file_id {
         None
-    } else if context.known_reflectable.reflectable == Some((file_id, item_id)) {
+    } else if *file_id == context.prim_row_list.file_id {
+        if *item_id == context.prim_row_list.row_to_list {
+            prim_row_list::match_row_to_list(state, context, arguments)?
+        } else {
+            None
+        }
+    } else if *file_id == context.prim_coerce.file_id {
+        None
+    } else if *file_id == context.prim_type_error.file_id {
+        None
+    } else if context.known_reflectable.is_symbol == Some((*file_id, *item_id)) {
+        prim_symbol::match_is_symbol(state, context, arguments)?
+    } else if context.known_reflectable.reflectable == Some((*file_id, *item_id)) {
         None
     } else {
         None

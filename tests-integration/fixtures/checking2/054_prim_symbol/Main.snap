@@ -1,0 +1,43 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+deriveAppended ::
+  forall (appended :: Symbol).
+    Append "Hello" "World" (appended :: Symbol) => Proxy @Symbol (appended :: Symbol)
+deriveLeft ::
+  forall (left :: Symbol).
+    Append (left :: Symbol) "World" "HelloWorld" => Proxy @Symbol (left :: Symbol)
+deriveRight ::
+  forall (right :: Symbol).
+    Append "Hello" (right :: Symbol) "HelloWorld" => Proxy @Symbol (right :: Symbol)
+compareLT ::
+  forall (ord :: Ordering). Compare "a" "b" (ord :: Ordering) => Proxy @Ordering (ord :: Ordering)
+compareEQ ::
+  forall (ord :: Ordering).
+    Compare "hello" "hello" (ord :: Ordering) => Proxy @Ordering (ord :: Ordering)
+compareGT ::
+  forall (ord :: Ordering). Compare "z" "a" (ord :: Ordering) => Proxy @Ordering (ord :: Ordering)
+deriveCons ::
+  forall (symbol :: Symbol). Cons "H" "ello" (symbol :: Symbol) => Proxy @Symbol (symbol :: Symbol)
+deriveHeadTail ::
+  forall (head :: Symbol) (tail :: Symbol).
+    Cons (head :: Symbol) (tail :: Symbol) "World" => Proxy @Symbol (head :: Symbol)
+symbolValue :: String
+symbolValue' :: String
+forceSolve ::
+  { compareEQ :: Proxy @Ordering EQ
+  , compareGT :: Proxy @Ordering GT
+  , compareLT :: Proxy @Ordering LT
+  , deriveAppended :: Proxy @Symbol "HelloWorld"
+  , deriveCons :: Proxy @Symbol "Hello"
+  , deriveHeadTail :: Proxy @Symbol "W"
+  , deriveLeft :: Proxy @Symbol "Hello"
+  , deriveRight :: Proxy @Symbol "World"
+  , symbolValue :: String
+  , symbolValue' :: String
+  }
+
+Types

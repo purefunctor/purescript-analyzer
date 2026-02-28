@@ -1,0 +1,44 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+invalidAdd :: Add 2 3 10 => Proxy @Int 10
+invalidCompare :: Compare 5 1 LT => Proxy @Ordering LT
+invalidAppend :: Append "hello" "world" "xyz" => Proxy @Symbol "xyz"
+invalidCons :: Cons "hello" "world" "helloworld" => Proxy @Symbol "world"
+forceSolve ::
+  { invalidAdd :: Proxy @Int 10
+  , invalidAppend :: Proxy @Symbol "xyz"
+  , invalidCompare :: Proxy @Ordering LT
+  , invalidCons :: Proxy @Symbol "world"
+  }
+
+Types
+
+Errors
+CheckError {
+    kind: NoInstanceFound {
+        constraint: Id<smol_str::SmolStr>(21),
+    },
+    crumbs: [],
+}
+CheckError {
+    kind: NoInstanceFound {
+        constraint: Id<smol_str::SmolStr>(22),
+    },
+    crumbs: [],
+}
+CheckError {
+    kind: NoInstanceFound {
+        constraint: Id<smol_str::SmolStr>(23),
+    },
+    crumbs: [],
+}
+CheckError {
+    kind: NoInstanceFound {
+        constraint: Id<smol_str::SmolStr>(24),
+    },
+    crumbs: [],
+}

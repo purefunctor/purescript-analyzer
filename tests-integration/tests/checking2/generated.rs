@@ -131,3 +131,13 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_050_given_constraint_let_check_main() { run_test("050_given_constraint_let_check", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_051_given_constraint_operator_check_main() { run_test("051_given_constraint_operator_check", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_052_prim_int_main() { run_test("052_prim_int", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_053_prim_int_compare_transitive_main() { run_test("053_prim_int_compare_transitive", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_054_prim_symbol_main() { run_test("054_prim_symbol", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_055_prim_solver_apart_main() { run_test("055_prim_solver_apart", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_056_prim_row_list_main() { run_test("056_prim_row_list", "Main"); }
