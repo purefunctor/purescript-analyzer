@@ -11,7 +11,7 @@ use crate::context::CheckContext;
 use crate::core::exhaustive::{
     ExhaustivenessReport, Pattern, PatternConstructor, PatternId, PatternInterner, PatternKind,
 };
-use crate::core::{Depth, Name, SmolStrId, Type, TypeId, pretty, zonk};
+use crate::core::{Depth, Name, SmolStrId, Type, TypeId, constraint, pretty, zonk};
 use crate::error::{CheckError, ErrorCrumb, ErrorKind};
 use crate::implication::Implications;
 use crate::{CheckedModule, ExternalQueries};
@@ -197,6 +197,13 @@ impl CheckState {
         let result = f(self);
         self.implications.pop(id);
         result
+    }
+
+    pub fn solve_constraints<Q>(&mut self, context: &CheckContext<Q>) -> QueryResult<Vec<TypeId>>
+    where
+        Q: ExternalQueries,
+    {
+        constraint::solve_implication(self, context)
     }
 
     pub fn pretty_id<Q>(&mut self, context: &CheckContext<Q>, id: TypeId) -> QueryResult<SmolStrId>

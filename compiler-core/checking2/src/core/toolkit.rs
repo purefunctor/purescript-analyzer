@@ -6,7 +6,9 @@ use indexing::{TermItemId, TypeItemId};
 
 use crate::context::CheckContext;
 use crate::core::substitute::SubstituteName;
-use crate::core::{CheckedSynonym, ForallBinder, Type, TypeId, normalise, unification};
+use crate::core::{
+    CheckedClass, CheckedSynonym, ForallBinder, Type, TypeId, normalise, unification,
+};
 use crate::state::CheckState;
 use crate::{ExternalQueries, safe_loop};
 
@@ -18,6 +20,34 @@ pub struct InspectQuantified {
 pub struct InspectFunction {
     pub arguments: Vec<TypeId>,
     pub result: TypeId,
+}
+
+pub fn extract_type_application<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    mut id: TypeId,
+) -> QueryResult<(TypeId, Vec<TypeId>)>
+where
+    Q: ExternalQueries,
+{
+    let mut arguments = vec![];
+
+    safe_loop! {
+        id = normalise::normalise(state, context, id)?;
+        match context.lookup_type(id) {
+            Type::Application(function, argument) => {
+                arguments.push(argument);
+                id = function;
+            }
+            Type::KindApplication(function, _) => {
+                id = function;
+            }
+            _ => break,
+        }
+    }
+
+    arguments.reverse();
+    Ok((id, arguments))
 }
 
 pub fn lookup_file_type<Q>(
@@ -85,6 +115,23 @@ where
         lowering::TermVariableResolution::Reference(file_id, term_id) => {
             lookup_file_term(state, context, file_id, term_id)
         }
+    }
+}
+
+pub fn lookup_file_class<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    file_id: FileId,
+    item_id: TypeItemId,
+) -> QueryResult<Option<CheckedClass>>
+where
+    Q: ExternalQueries,
+{
+    if file_id == context.id {
+        Ok(state.checked.lookup_class(item_id))
+    } else {
+        let checked = context.queries.checked2(file_id)?;
+        Ok(checked.lookup_class(item_id))
     }
 }
 

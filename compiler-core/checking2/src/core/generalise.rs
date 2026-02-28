@@ -19,15 +19,16 @@
 //! [rigid type variables]: crate::core::Type::Rigid
 
 use building_types::QueryResult;
+use itertools::Itertools;
 use petgraph::algo;
 use petgraph::prelude::DiGraphMap;
 use rustc_hash::FxHashSet;
 
-use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::walk::{self, TypeWalker, WalkAction};
-use crate::core::{ForallBinder, Name, Type, TypeId, normalise, zonk};
+use crate::core::{ForallBinder, Name, Type, TypeId, constraint, normalise, zonk};
 use crate::state::{CheckState, UnificationEntry, UnificationState};
+use crate::{ExternalQueries, safe_loop};
 
 type UniGraph = DiGraphMap<u32, ()>;
 
@@ -152,6 +153,19 @@ where
     Ok(unsolved)
 }
 
+fn collect_unification<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    id: TypeId,
+) -> QueryResult<UniGraph>
+where
+    Q: ExternalQueries,
+{
+    let mut graph = UniGraph::new();
+    collect_unification_into(&mut graph, state, context, id)?;
+    Ok(graph)
+}
+
 /// Generalise a type with the given unification variables.
 ///
 /// The `unsolved` parameter should be sourced from [`unsolved_unifications`].
@@ -235,6 +249,136 @@ where
 {
     let unsolved = unsolved_unifications(state, context, id)?;
     generalise_unsolved(state, context, id, &unsolved)
+}
+
+#[derive(Default)]
+pub struct ConstraintErrors {
+    pub ambiguous: Vec<TypeId>,
+    pub unsatisfied: Vec<TypeId>,
+}
+
+pub fn insert_inferred_residuals<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    type_id: TypeId,
+    residuals: Vec<TypeId>,
+    errors: &mut ConstraintErrors,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    if residuals.is_empty() {
+        return Ok(type_id);
+    }
+
+    let mut pending = vec![];
+    let mut latent = vec![];
+
+    for residual in residuals {
+        let residual = zonk::zonk(state, context, residual)?;
+
+        if residual == context.prim.partial {
+            latent.push(residual);
+            continue;
+        }
+
+        let unification: FxHashSet<u32> =
+            collect_unification(state, context, residual)?.nodes().collect();
+
+        if unification.is_empty() {
+            errors.unsatisfied.push(residual);
+        } else {
+            pending.push((residual, unification));
+        }
+    }
+
+    let unifications = collect_unification(state, context, type_id)?.nodes().collect();
+    let generalised = classify_constraints(pending, unifications, errors);
+
+    let generalised = latent.into_iter().chain(generalised).sorted().collect_vec();
+    let generalised = minimize_by_superclasses(state, context, generalised)?;
+
+    let constrained = generalised
+        .into_iter()
+        .rfold(type_id, |inner, constraint| context.intern_constrained(constraint, inner));
+
+    Ok(constrained)
+}
+
+fn minimize_by_superclasses<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    constraints: Vec<TypeId>,
+) -> QueryResult<Vec<TypeId>>
+where
+    Q: ExternalQueries,
+{
+    if constraints.len() <= 1 {
+        return Ok(constraints);
+    }
+
+    let mut superclasses = FxHashSet::default();
+    for &constraint in &constraints {
+        for application in superclass_applications(state, context, constraint)? {
+            superclasses.insert(application);
+        }
+    }
+
+    Ok(constraints
+        .into_iter()
+        .filter(|&constraint| {
+            let application =
+                constraint::constraint_application(state, context, constraint).ok().flatten();
+            application.is_none_or(|constraint| !superclasses.contains(&constraint))
+        })
+        .collect())
+}
+
+fn superclass_applications<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    constraint: TypeId,
+) -> QueryResult<Vec<constraint::ConstraintApplication>>
+where
+    Q: ExternalQueries,
+{
+    let mut superclasses = vec![];
+    constraint::elaborate_superclasses(state, context, constraint, &mut superclasses)?;
+    superclasses
+        .into_iter()
+        .map(|constraint| constraint::constraint_application(state, context, constraint))
+        .filter_map_ok(|constraint| constraint)
+        .collect()
+}
+
+fn classify_constraints(
+    pending: Vec<(TypeId, FxHashSet<u32>)>,
+    unifications: FxHashSet<u32>,
+    errors: &mut ConstraintErrors,
+) -> FxHashSet<TypeId> {
+    let mut reachable = unifications;
+    let mut valid = FxHashSet::default();
+    let mut remaining = pending;
+
+    safe_loop! {
+        let (connected, disconnected): (Vec<_>, Vec<_>) =
+            remaining.into_iter().partition(|(_, unification)| {
+                unification.iter().any(|variable| reachable.contains(variable))
+            });
+
+        if connected.is_empty() {
+            break errors.ambiguous.extend(disconnected.into_iter().map(|(id, _)| id));
+        }
+
+        for (constraint, unification) in connected {
+            valid.insert(constraint);
+            reachable.extend(unification);
+        }
+
+        remaining = disconnected;
+    }
+
+    valid
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]

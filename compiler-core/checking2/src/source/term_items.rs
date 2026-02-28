@@ -4,10 +4,13 @@ use building_types::QueryResult;
 use files::FileId;
 use indexing::{TermItemId, TermItemKind, TypeItemId};
 use lowering::TermItemIr;
+use rustc_hash::FxHashMap;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::{CheckedInstance, Type, TypeId, generalise, toolkit, unification, zonk};
+use crate::core::{
+    CheckedInstance, Type, TypeId, constraint, generalise, toolkit, unification, zonk,
+};
 use crate::error::{ErrorCrumb, ErrorKind};
 use crate::source::terms::equations;
 use crate::source::types;
@@ -16,6 +19,12 @@ use crate::state::CheckState;
 #[derive(Default)]
 struct TermSccState {
     operator: Vec<TermItemId>,
+    value_groups: FxHashMap<TermItemId, PendingValueGroup>,
+}
+
+enum PendingValueGroup {
+    Checked { residuals: Vec<TypeId> },
+    Inferred { residuals: Vec<TypeId> },
 }
 
 pub fn check_term_items<Q>(state: &mut CheckState, context: &CheckContext<Q>) -> QueryResult<()>
@@ -38,9 +47,7 @@ where
         let items = scc.as_slice();
 
         let items = items.iter().filter_map(|&item_id| {
-            let Some(item) = context.lowered.info.get_term_item(item_id) else {
-                return None;
-            };
+            let item = context.lowered.info.get_term_item(item_id)?;
             let TermItemIr::Instance { constraints, resolution, arguments, .. } = item else {
                 return None;
             };
@@ -102,10 +109,16 @@ where
 
     let mut class_type = context.queries.intern_type(Type::Constructor(class_file, class_id));
     let mut class_kind = class_kind;
+    let mut checked_arguments = Vec::with_capacity(arguments.len());
 
     for &argument in arguments {
         (class_type, class_kind) =
             types::infer_application_kind(state, context, (class_type, class_kind), argument)?;
+        let (_, extracted_arguments) =
+            toolkit::extract_type_application(state, context, class_type)?;
+        if let Some(&checked_argument) = extracted_arguments.last() {
+            checked_arguments.push(checked_argument);
+        }
     }
 
     unification::subtype(state, context, class_kind, context.prim.constraint)?;
@@ -121,6 +134,8 @@ where
     for &constraint in checked_constraints.iter().rev() {
         canonical = context.intern_constrained(constraint, canonical);
     }
+
+    constraint::validate_instance_rows(state, context, class_file, class_id, &checked_arguments)?;
 
     let resolution = (class_file, class_id);
     let canonical = zonk::zonk(state, context, canonical)?;
@@ -143,7 +158,7 @@ where
         }
 
         if scc.is_recursive() {
-            prepare_binding_group(state, context, &items);
+            prepare_binding_group(state, context, items);
         }
 
         let mut term_scc = TermSccState::default();
@@ -152,7 +167,7 @@ where
             check_term_equation(state, context, &mut term_scc, item)?;
         }
 
-        finalise_term_binding_group(state, context, items)?;
+        finalise_term_binding_group(state, context, &mut term_scc, items)?;
         finalise_term_operators(state, context, &mut term_scc)?;
     }
 
@@ -231,7 +246,12 @@ where
             check_term_operator(state, context, scc, item_id, *resolution)?;
         }
         TermItemIr::ValueGroup { signature, equations } => {
-            check_value_group(state, context, item_id, *signature, equations)?;
+            let pending = state.with_implication(|state| {
+                check_value_group(state, context, item_id, *signature, equations)
+            })?;
+            if let Some(pending) = pending {
+                scc.value_groups.insert(item_id, pending);
+            }
         }
         _ => (),
     }
@@ -245,7 +265,7 @@ fn check_value_group<Q>(
     item_id: TermItemId,
     signature: Option<lowering::TypeId>,
     equations: &[lowering::Equation],
-) -> QueryResult<()>
+) -> QueryResult<Option<PendingValueGroup>>
 where
     Q: ExternalQueries,
 {
@@ -260,19 +280,20 @@ fn check_value_group_core<Q>(
     item_id: TermItemId,
     signature: Option<lowering::TypeId>,
     equations: &[lowering::Equation],
-) -> QueryResult<()>
+) -> QueryResult<Option<PendingValueGroup>>
 where
     Q: ExternalQueries,
 {
     if let Some(signature_id) = signature
         && let Some(signature_type) = state.checked.lookup_term(item_id)
     {
-        check_value_group_core_check(state, context, signature_id, signature_type, equations)?;
+        let residuals =
+            check_value_group_core_check(state, context, signature_id, signature_type, equations)?;
+        Ok(Some(PendingValueGroup::Checked { residuals }))
     } else {
-        check_value_group_core_infer(state, context, item_id, equations)?;
+        let residuals = check_value_group_core_infer(state, context, item_id, equations)?;
+        Ok(Some(PendingValueGroup::Inferred { residuals }))
     }
-
-    Ok(())
 }
 
 fn check_value_group_core_check<Q>(
@@ -281,7 +302,7 @@ fn check_value_group_core_check<Q>(
     signature_id: lowering::TypeId,
     signature_type: TypeId,
     equations: &[lowering::Equation],
-) -> QueryResult<()>
+) -> QueryResult<Vec<TypeId>>
 where
     Q: ExternalQueries,
 {
@@ -303,7 +324,7 @@ where
         equations,
     )?;
 
-    Ok(())
+    state.solve_constraints(context)
 }
 
 fn check_value_group_core_infer<Q>(
@@ -311,7 +332,7 @@ fn check_value_group_core_infer<Q>(
     context: &CheckContext<Q>,
     item_id: TermItemId,
     equations: &[lowering::Equation],
-) -> QueryResult<()>
+) -> QueryResult<Vec<TypeId>>
 where
     Q: ExternalQueries,
 {
@@ -319,33 +340,67 @@ where
     state.checked.terms.insert(item_id, group_type);
     equations::infer_equations_core(state, context, group_type, equations)?;
 
-    Ok(())
+    state.solve_constraints(context)
 }
 
 fn finalise_term_binding_group<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
+    scc: &mut TermSccState,
     items: &[TermItemId],
 ) -> QueryResult<()>
 where
     Q: ExternalQueries,
 {
-    let mut pending = Vec::with_capacity(items.len());
+    struct Pending {
+        t: TypeId,
+        unsolved: Vec<u32>,
+        errors: generalise::ConstraintErrors,
+    }
+
+    let mut pending = vec![];
 
     for &item_id in items {
-        let Some(kind) = state.checked.terms.get(&item_id).copied() else {
+        let Some(t) = state.checked.terms.get(&item_id).copied() else {
             continue;
         };
 
-        let kind = zonk::zonk(state, context, kind)?;
-        let unsolved = generalise::unsolved_unifications(state, context, kind)?;
+        let group = scc.value_groups.remove(&item_id);
+        let t = zonk::zonk(state, context, t)?;
 
-        pending.push((item_id, kind, unsolved));
+        let mut errors = generalise::ConstraintErrors::default();
+
+        let t = match group {
+            Some(PendingValueGroup::Checked { residuals }) => {
+                errors.unsatisfied.extend(residuals);
+                t
+            }
+            Some(PendingValueGroup::Inferred { residuals }) => {
+                generalise::insert_inferred_residuals(state, context, t, residuals, &mut errors)?
+            }
+            None => t,
+        };
+
+        let t = zonk::zonk(state, context, t)?;
+        let unsolved = generalise::unsolved_unifications(state, context, t)?;
+
+        pending.push((item_id, Pending { t, unsolved, errors }));
     }
 
-    for (item_id, kind, unsolved) in pending {
-        let kind = generalise::generalise_unsolved(state, context, kind, &unsolved)?;
-        state.checked.terms.insert(item_id, kind);
+    for (item_id, Pending { t, unsolved, errors }) in pending {
+        let t = generalise::generalise_unsolved(state, context, t, &unsolved)?;
+        state.checked.terms.insert(item_id, t);
+
+        for constraint in errors.ambiguous {
+            let constraint = zonk::zonk(state, context, constraint)?;
+            let constraint = state.pretty_id(context, constraint)?;
+            state.insert_error(ErrorKind::AmbiguousConstraint { constraint });
+        }
+        for constraint in errors.unsatisfied {
+            let constraint = zonk::zonk(state, context, constraint)?;
+            let constraint = state.pretty_id(context, constraint)?;
+            state.insert_error(ErrorKind::NoInstanceFound { constraint });
+        }
     }
 
     Ok(())

@@ -57,7 +57,7 @@ where
             }
         }
         lowering::BinderKind::Constructor { resolution, arguments } => {
-            convert_constructor_binder(state, context, &resolution, &arguments, t)
+            convert_constructor_binder(state, context, resolution, arguments, t)
         }
         lowering::BinderKind::Variable { .. } => Ok(state.allocate_wildcard(t)),
         lowering::BinderKind::Named { binder, .. } => match binder {
@@ -84,8 +84,8 @@ where
             let constructor = PatternConstructor::Boolean(*boolean);
             Ok(state.allocate_constructor(constructor, t))
         }
-        lowering::BinderKind::Array { array } => lower_array_binder(state, context, &array, t),
-        lowering::BinderKind::Record { record } => lower_record_binder(state, context, &record, t),
+        lowering::BinderKind::Array { array } => lower_array_binder(state, context, array, t),
+        lowering::BinderKind::Record { record } => lower_record_binder(state, context, record, t),
         lowering::BinderKind::Parenthesized { parenthesized } => match parenthesized {
             Some(id) => convert_binder(state, context, *id),
             None => Ok(state.allocate_wildcard(t)),
@@ -167,7 +167,7 @@ where
     for element in record.iter() {
         match element {
             lowering::BinderRecordItem::RecordField { name, value } => {
-                let Some(name) = name.as_ref().map(SmolStr::clone) else {
+                let Some(name) = name.clone() else {
                     continue;
                 };
 
@@ -180,7 +180,7 @@ where
                 provided_patterns.insert(name, pattern);
             }
             lowering::BinderRecordItem::RecordPun { id: _, name } => {
-                let Some(name) = name.as_ref().map(SmolStr::clone) else {
+                let Some(name) = name.clone() else {
                     continue;
                 };
 
