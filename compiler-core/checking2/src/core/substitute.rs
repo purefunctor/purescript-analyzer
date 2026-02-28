@@ -17,11 +17,11 @@ pub type NameToType = FxHashMap<Name, TypeId>;
 /// Names are globally unique, removing the need for scope tracking and
 /// removing the need for capture-avoiding substitutions. This property
 /// is extremely useful for for instantiation.
-pub struct SubstituteName {
-    bindings: NameToType,
+pub struct SubstituteName<'a> {
+    bindings: &'a NameToType,
 }
 
-impl SubstituteName {
+impl SubstituteName<'_> {
     pub fn one<Q>(
         state: &mut CheckState,
         context: &CheckContext<Q>,
@@ -33,13 +33,13 @@ impl SubstituteName {
         Q: ExternalQueries,
     {
         let bindings = NameToType::from_iter([(name, replacement)]);
-        fold_type(state, context, in_type, &mut SubstituteName { bindings })
+        fold_type(state, context, in_type, &mut SubstituteName { bindings: &bindings })
     }
 
     pub fn many<Q>(
         state: &mut CheckState,
         context: &CheckContext<Q>,
-        bindings: NameToType,
+        bindings: &NameToType,
         in_type: TypeId,
     ) -> QueryResult<TypeId>
     where
@@ -49,7 +49,7 @@ impl SubstituteName {
     }
 }
 
-impl TypeFold for SubstituteName {
+impl TypeFold for SubstituteName<'_> {
     fn transform<Q>(
         &mut self,
         _state: &mut CheckState,
