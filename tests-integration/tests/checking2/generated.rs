@@ -115,3 +115,13 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_042_data_mutual_infer_main() { run_test("042_data_mutual_infer", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_043_instance_check_main() { run_test("043_instance_check", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_044_instance_constraint_solving_main() { run_test("044_instance_constraint_solving", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_045_instance_functional_dependency_main() { run_test("045_instance_functional_dependency", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_046_instance_given_constraint_main() { run_test("046_instance_given_constraint", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_047_instance_constraint_generalization_main() { run_test("047_instance_constraint_generalization", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_048_instance_superclass_elaboration_main() { run_test("048_instance_superclass_elaboration", "Main"); }
