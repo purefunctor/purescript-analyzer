@@ -31,6 +31,7 @@ where
 {
     let toolkit::InspectQuantified { quantified, .. } =
         toolkit::inspect_quantified(state, context, kind)?;
+    let quantified = toolkit::without_constraints(state, context, quantified)?;
 
     let toolkit::InspectFunction { arguments, .. } =
         toolkit::inspect_function(state, context, quantified)?;

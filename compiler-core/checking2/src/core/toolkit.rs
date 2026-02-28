@@ -357,6 +357,26 @@ where
     }
 }
 
+/// Peels constraint layers without introducing givens or wanteds.
+pub fn without_constraints<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    mut id: TypeId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    safe_loop! {
+        id = normalise::normalise(state, context, id)?;
+        match context.lookup_type(id) {
+            Type::Constrained(_, constrained) => {
+                id = constrained;
+            }
+            _ => return Ok(id),
+        }
+    }
+}
+
 /// Instantiates forall binders and collects wanted constraints.
 pub fn instantiate_constrained<Q>(
     state: &mut CheckState,

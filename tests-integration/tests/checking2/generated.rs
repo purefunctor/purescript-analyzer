@@ -125,3 +125,9 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_047_instance_constraint_generalization_main() { run_test("047_instance_constraint_generalization", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_048_instance_superclass_elaboration_main() { run_test("048_instance_superclass_elaboration", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_049_given_constraint_check_main() { run_test("049_given_constraint_check", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_050_given_constraint_let_check_main() { run_test("050_given_constraint_let_check", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_051_given_constraint_operator_check_main() { run_test("051_given_constraint_operator_check", "Main"); }

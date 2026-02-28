@@ -142,6 +142,8 @@ where
         let toolkit::InspectQuantified { quantified, .. } =
             toolkit::inspect_quantified(state, context, name_type)?;
 
+        let quantified = toolkit::collect_givens(state, context, quantified)?;
+
         let toolkit::InspectFunction { arguments, result } =
             toolkit::inspect_function(state, context, quantified)?;
 
