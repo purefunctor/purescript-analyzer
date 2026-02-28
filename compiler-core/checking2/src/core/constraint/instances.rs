@@ -15,7 +15,7 @@ use crate::error::ErrorKind;
 use crate::state::CheckState;
 use crate::{CheckedModule, ExternalQueries, safe_loop};
 
-use super::functional_dependency::{Fd, compute_closure, get_all_determined};
+use super::fd::{Fd, compute_closure, get_all_determined};
 use super::{ConstraintApplication, MatchInstance, MatchType, constraint_application};
 
 #[derive(Clone)]

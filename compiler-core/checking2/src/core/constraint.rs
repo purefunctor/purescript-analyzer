@@ -1,5 +1,5 @@
 pub mod compiler;
-pub mod functional_dependency;
+pub mod fd;
 pub mod given;
 pub mod instances;
 
