@@ -8,6 +8,7 @@ use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::context::CheckContext;
 use crate::core::substitute::SubstituteName;
+use crate::core::unification::{CanUnify, can_unify};
 use crate::core::walk::{self, TypeWalker, WalkAction};
 use crate::core::{CheckedInstance, ForallBinder, Name, Type, TypeId, normalise, toolkit};
 use crate::error::ErrorKind;
@@ -16,19 +17,6 @@ use crate::{CheckedModule, ExternalQueries, safe_loop};
 
 use super::functional_dependency::{Fd, compute_closure, get_all_determined};
 use super::{ConstraintApplication, MatchInstance, MatchType, constraint_application};
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum CanUnify {
-    Equal,
-    Apart,
-    Unify,
-}
-
-impl CanUnify {
-    fn and_then(self, f: impl FnOnce() -> QueryResult<CanUnify>) -> QueryResult<CanUnify> {
-        if let CanUnify::Equal = self { f() } else { Ok(self) }
-    }
-}
 
 #[derive(Clone)]
 pub struct CandidateInstance {
@@ -511,93 +499,6 @@ where
             // we can match it directly with a closed wanted row
             Closed => Ok(result),
         },
-    }
-}
-
-/// Determines if two types [`CanUnify`].
-///
-/// This is used in [`match_type`], where if two different types bind to the
-/// same rigid variable, we determine if the types can actually unify before
-/// generating an equality. This is effectively a pure version of the
-/// [`unification::unify`] function.
-fn can_unify<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    t1: TypeId,
-    t2: TypeId,
-) -> QueryResult<CanUnify>
-where
-    Q: ExternalQueries,
-{
-    let t1 = normalise::normalise(state, context, t1)?;
-    let t2 = normalise::normalise(state, context, t2)?;
-
-    if t1 == t2 {
-        return Ok(CanUnify::Equal);
-    }
-
-    let t1_core = context.lookup_type(t1);
-    let t2_core = context.lookup_type(t2);
-
-    match (t1_core, t2_core) {
-        (Type::Unification(_), _) | (_, Type::Unification(_)) => Ok(CanUnify::Unify),
-        (Type::Unknown(_), _) | (_, Type::Unknown(_)) => Ok(CanUnify::Unify),
-        (Type::Row(_), Type::Row(_)) => Ok(CanUnify::Unify),
-
-        (Type::Application(f1, a1), Type::Application(f2, a2)) => {
-            can_unify(state, context, f1, f2)?.and_then(|| can_unify(state, context, a1, a2))
-        }
-        (Type::Function(a1, r1), Type::Function(a2, r2)) => {
-            can_unify(state, context, a1, a2)?.and_then(|| can_unify(state, context, r1, r2))
-        }
-        // Function(a, b) and Application(Application(f, a), b) can
-        // unify when `f` resolves to the Function constructor.
-        (Type::Function(..), Type::Application(..))
-        | (Type::Application(..), Type::Function(..)) => Ok(CanUnify::Unify),
-        (Type::KindApplication(f1, a1), Type::KindApplication(f2, a2)) => {
-            can_unify(state, context, f1, f2)?.and_then(|| can_unify(state, context, a1, a2))
-        }
-        (Type::Kinded(i1, k1), Type::Kinded(i2, k2)) => {
-            can_unify(state, context, i1, i2)?.and_then(|| can_unify(state, context, k1, k2))
-        }
-        (Type::Constrained(c1, i1), Type::Constrained(c2, i2)) => {
-            can_unify(state, context, c1, c2)?.and_then(|| can_unify(state, context, i1, i2))
-        }
-        (Type::Rigid(n1, _, k1), Type::Rigid(n2, _, k2)) => {
-            if n1 == n2 {
-                can_unify(state, context, k1, k2)
-            } else {
-                Ok(CanUnify::Apart)
-            }
-        }
-        (Type::Forall(b1, i1), Type::Forall(b2, i2)) => {
-            let b1 = context.lookup_forall_binder(b1);
-            let b2 = context.lookup_forall_binder(b2);
-            can_unify(state, context, b1.kind, b2.kind)?
-                .and_then(|| can_unify(state, context, i1, i2))
-        }
-        (Type::OperatorApplication(f1, i1, l1, r1), Type::OperatorApplication(f2, i2, l2, r2)) => {
-            if f1 == f2 && i1 == i2 {
-                can_unify(state, context, l1, l2)?.and_then(|| can_unify(state, context, r1, r2))
-            } else {
-                Ok(CanUnify::Apart)
-            }
-        }
-        (Type::SynonymApplication(s1), Type::SynonymApplication(s2)) => {
-            let s1 = context.lookup_synonym(s1);
-            let s2 = context.lookup_synonym(s2);
-            if s1.reference != s2.reference || s1.arguments.len() != s2.arguments.len() {
-                return Ok(CanUnify::Apart);
-            }
-
-            s1.arguments
-                .iter()
-                .zip(s2.arguments.iter())
-                .try_fold(CanUnify::Equal, |result, (&a1, &a2)| {
-                    result.and_then(|| can_unify(state, context, a1, a2))
-                })
-        }
-        _ => Ok(CanUnify::Apart),
     }
 }
 

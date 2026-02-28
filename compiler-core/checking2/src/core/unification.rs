@@ -1,5 +1,6 @@
 //! Implements the subtyping and unification algorithms.
 
+use std::iter;
 use std::sync::Arc;
 
 use building_types::QueryResult;
@@ -13,6 +14,19 @@ use crate::core::{Depth, Name, RowField, RowType, RowTypeId, Type, TypeId, norma
 use crate::error::ErrorKind;
 use crate::source::types;
 use crate::state::{CheckState, UnificationEntry};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CanUnify {
+    Equal,
+    Apart,
+    Unify,
+}
+
+impl CanUnify {
+    pub fn and_then(self, f: impl FnOnce() -> QueryResult<CanUnify>) -> QueryResult<CanUnify> {
+        if let CanUnify::Equal = self { f() } else { Ok(self) }
+    }
+}
 
 /// Strategy for handling constrained types during [`subtype_with`].
 ///
@@ -367,6 +381,116 @@ where
     }
 
     Ok(unifies)
+}
+
+/// Determines if two types [`CanUnify`].
+///
+/// This is a pure, speculative version of [`unify`] that does not perform
+/// any side effects. It is used in instance matching to check whether two
+/// types bound to the same rigid variable can actually unify before
+/// generating an equality.
+pub fn can_unify<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    t1: TypeId,
+    t2: TypeId,
+) -> QueryResult<CanUnify>
+where
+    Q: ExternalQueries,
+{
+    let t1 = normalise::normalise(state, context, t1)?;
+    let t2 = normalise::normalise(state, context, t2)?;
+
+    if t1 == t2 {
+        return Ok(CanUnify::Equal);
+    }
+
+    let t1_core = context.lookup_type(t1);
+    let t2_core = context.lookup_type(t2);
+
+    match (t1_core, t2_core) {
+        (Type::Unification(_), _) | (_, Type::Unification(_)) => Ok(CanUnify::Unify),
+        (Type::Unknown(_), _) | (_, Type::Unknown(_)) => Ok(CanUnify::Unify),
+        (Type::Row(_), Type::Row(_)) => Ok(CanUnify::Unify),
+
+        (
+            Type::Application(t1_function, t1_argument),
+            Type::Application(t2_function, a22t2_argument),
+        ) => can_unify(state, context, t1_function, t2_function)?
+            .and_then(|| can_unify(state, context, t1_argument, a22t2_argument)),
+
+        (Type::Function(t1_argument, t1_result), Type::Function(t2_argument, t2_result)) => {
+            can_unify(state, context, t1_argument, t2_argument)?
+                .and_then(|| can_unify(state, context, t1_result, t2_result))
+        }
+
+        // Function(a, b) and Application(Application(f, a), b) can
+        // unify when `f` resolves to the Function constructor.
+        (Type::Function(..), Type::Application(..))
+        | (Type::Application(..), Type::Function(..)) => Ok(CanUnify::Unify),
+
+        (
+            Type::KindApplication(t1_function, t1_argument),
+            Type::KindApplication(t2_function, t2_argument),
+        ) => can_unify(state, context, t1_function, t2_function)?
+            .and_then(|| can_unify(state, context, t1_argument, t2_argument)),
+
+        (Type::Kinded(t1_inner, t1_kind), Type::Kinded(t2_inner, t2_kind)) => {
+            can_unify(state, context, t1_inner, t2_inner)?
+                .and_then(|| can_unify(state, context, t1_kind, t2_kind))
+        }
+
+        (
+            Type::Constrained(t1_constraint, t1_constrained),
+            Type::Constrained(t2_constraint, t2_constrained),
+        ) => can_unify(state, context, t1_constraint, t2_constraint)?
+            .and_then(|| can_unify(state, context, t1_constrained, t2_constrained)),
+
+        (Type::Rigid(t1_name, _, t1_kind), Type::Rigid(t2_name, _, t2_kind)) => {
+            if t1_name == t2_name {
+                can_unify(state, context, t1_kind, t2_kind)
+            } else {
+                Ok(CanUnify::Apart)
+            }
+        }
+
+        (Type::Forall(t1_binder, t1_inner), Type::Forall(t2_binder, t2_inner)) => {
+            let t1_binder = context.lookup_forall_binder(t1_binder);
+            let t2_binder = context.lookup_forall_binder(t2_binder);
+            can_unify(state, context, t1_binder.kind, t2_binder.kind)?
+                .and_then(|| can_unify(state, context, t1_inner, t2_inner))
+        }
+
+        (
+            Type::OperatorApplication(t1_file, t1_item, t1_left, t1_right),
+            Type::OperatorApplication(t2_file, t2_item, t2_left, t2_right),
+        ) => {
+            if t1_file == t2_file && t1_item == t2_item {
+                can_unify(state, context, t1_left, t2_left)?
+                    .and_then(|| can_unify(state, context, t1_right, t2_right))
+            } else {
+                Ok(CanUnify::Apart)
+            }
+        }
+
+        (Type::SynonymApplication(t1_synonym), Type::SynonymApplication(t2_synonym)) => {
+            let t1_synonym = context.lookup_synonym(t1_synonym);
+            let t2_synonym = context.lookup_synonym(t2_synonym);
+
+            if t1_synonym.reference != t2_synonym.reference
+                || t1_synonym.arguments.len() != t2_synonym.arguments.len()
+            {
+                return Ok(CanUnify::Apart);
+            }
+
+            iter::zip(&*t1_synonym.arguments, &*t2_synonym.arguments)
+                .try_fold(CanUnify::Equal, |result, (&a1, &a2)| {
+                    result.and_then(|| can_unify(state, context, a1, a2))
+                })
+        }
+
+        _ => Ok(CanUnify::Apart),
+    }
 }
 
 /// Solves a unification variable to a given type.
