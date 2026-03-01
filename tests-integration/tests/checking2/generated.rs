@@ -179,3 +179,15 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_074_prim_coercible_transitivity_main() { run_test("074_prim_coercible_transitivity", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_075_prim_coercible_given_symmetry_main() { run_test("075_prim_coercible_given_symmetry", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_076_instance_member_functor_main() { run_test("076_instance_member_functor", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_077_instance_member_signature_head_variable_main() { run_test("077_instance_member_signature_head_variable", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_078_instance_member_missing_constraint_main() { run_test("078_instance_member_missing_constraint", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_079_instance_member_signature_mismatch_main() { run_test("079_instance_member_signature_mismatch", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_080_instance_member_higher_kinded_main() { run_test("080_instance_member_higher_kinded", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_081_instance_member_too_many_binders_main() { run_test("081_instance_member_too_many_binders", "Main"); }

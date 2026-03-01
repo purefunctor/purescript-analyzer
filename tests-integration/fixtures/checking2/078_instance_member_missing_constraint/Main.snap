@@ -1,0 +1,34 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+show :: forall (a :: Type). Show (a :: Type) => (a :: Type) -> String
+Box :: forall (a :: Type). (a :: Type) -> Box (a :: Type)
+
+Types
+Show :: Type -> Constraint
+Box :: Type -> Type
+
+Classes
+class forall (a :: Type). Show (a :: Type)
+  show :: forall (a :: Type). Show (a :: Type) => (a :: Type) -> String
+
+Instances
+instance forall (t2 :: Type). Show (Box (t2 :: Type))
+
+Roles
+Box = [Representational]
+
+Errors
+CheckError {
+    kind: NoInstanceFound {
+        constraint: Id<smol_str::SmolStr>(7),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(2),
+        ),
+    ],
+}
