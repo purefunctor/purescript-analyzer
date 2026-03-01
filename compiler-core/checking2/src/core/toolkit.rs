@@ -476,3 +476,95 @@ where
     };
     Ok(matches!(type_item, Some(lowering::TypeItemIr::NewtypeGroup { .. })))
 }
+
+pub fn extract_type_constructor<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    mut id: TypeId,
+) -> QueryResult<Option<(FileId, TypeItemId)>>
+where
+    Q: ExternalQueries,
+{
+    safe_loop! {
+        id = normalise::normalise(state, context, id)?;
+        match context.lookup_type(id) {
+            Type::Constructor(file_id, item_id) => return Ok(Some((file_id, item_id))),
+            Type::Application(function, _) | Type::KindApplication(function, _) => {
+                id = function;
+            }
+            _ => return Ok(None),
+        }
+    }
+}
+
+pub fn is_constructor_in_scope<Q>(
+    context: &CheckContext<Q>,
+    file_id: FileId,
+    item_id: TypeItemId,
+) -> QueryResult<bool>
+where
+    Q: ExternalQueries,
+{
+    let constructor_term_id = if file_id == context.id {
+        context.indexed.pairs.data_constructors(item_id).next()
+    } else {
+        let indexed = context.queries.indexed(file_id)?;
+        indexed.pairs.data_constructors(item_id).next()
+    };
+
+    let Some(constructor_term_id) = constructor_term_id else {
+        return Ok(false);
+    };
+
+    Ok(context.resolved.is_term_in_scope(&context.prim_resolved, file_id, constructor_term_id))
+}
+
+pub fn get_newtype_inner<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    newtype_file: FileId,
+    newtype_id: TypeItemId,
+    newtype_type: TypeId,
+) -> QueryResult<Option<TypeId>>
+where
+    Q: ExternalQueries,
+{
+    let constructor_term_id = if newtype_file == context.id {
+        context.indexed.pairs.data_constructors(newtype_id).next()
+    } else {
+        let indexed = context.queries.indexed(newtype_file)?;
+        indexed.pairs.data_constructors(newtype_id).next()
+    };
+
+    let Some(constructor_term_id) = constructor_term_id else {
+        return Ok(None);
+    };
+
+    let constructor_type = lookup_file_term(state, context, newtype_file, constructor_term_id)?;
+
+    let (_, arguments) = extract_type_application(state, context, newtype_type)?;
+
+    let mut current = constructor_type;
+    let mut arguments = arguments.iter().copied();
+
+    safe_loop! {
+        current = normalise::normalise(state, context, current)?;
+        let Type::Forall(binder_id, inner) = context.lookup_type(current) else {
+            break;
+        };
+
+        let binder = context.lookup_forall_binder(binder_id);
+        let replacement = arguments.next().unwrap_or_else(|| {
+            state.fresh_rigid(context.queries, binder.kind)
+        });
+
+        current = SubstituteName::one(state, context, binder.name, replacement, inner)?;
+    }
+
+    current = normalise::normalise(state, context, current)?;
+
+    let InspectFunction { arguments, .. } = inspect_function(state, context, current)?;
+    let [argument] = arguments[..] else { return Ok(None) };
+
+    Ok(Some(argument))
+}

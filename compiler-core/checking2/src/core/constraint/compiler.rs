@@ -1,3 +1,4 @@
+mod prim_coerce;
 mod prim_int;
 mod prim_reflectable;
 mod prim_row;
@@ -147,7 +148,11 @@ where
             None
         }
     } else if *file_id == context.prim_coerce.file_id {
-        None
+        if *item_id == context.prim_coerce.coercible {
+            prim_coerce::match_coercible(state, context, arguments)?
+        } else {
+            None
+        }
     } else if *file_id == context.prim_type_error.file_id {
         if *item_id == context.prim_type_error.warn {
             prim_type_error::match_warn(state, context, arguments)?
