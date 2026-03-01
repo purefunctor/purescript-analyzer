@@ -163,3 +163,17 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_066_compiler_solved_superclass_given_main() { run_test("066_compiler_solved_superclass_given", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_067_compiler_solved_superclass_minimisation_main() { run_test("067_compiler_solved_superclass_minimisation", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_068_prim_coercible_reflexivity_main() { run_test("068_prim_coercible_reflexivity", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_069_prim_coercible_newtype_main() { run_test("069_prim_coercible_newtype", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_070_prim_coercible_roles_main() { run_test("070_prim_coercible_roles", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_071_prim_coercible_apart_main() { run_test("071_prim_coercible_apart", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_072_prim_coercible_hidden_constructor_main() { run_test("072_prim_coercible_hidden_constructor", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_073_prim_coercible_higher_kinded_main() { run_test("073_prim_coercible_higher_kinded", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_074_prim_coercible_transitivity_main() { run_test("074_prim_coercible_transitivity", "Main"); }
