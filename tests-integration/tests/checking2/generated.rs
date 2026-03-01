@@ -159,3 +159,7 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_064_prim_type_error_warn_main() { run_test("064_prim_type_error_warn", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_065_prim_type_error_fail_main() { run_test("065_prim_type_error_fail", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_066_compiler_solved_superclass_given_main() { run_test("066_compiler_solved_superclass_given", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_067_compiler_solved_superclass_minimisation_main() { run_test("067_compiler_solved_superclass_minimisation", "Main"); }
