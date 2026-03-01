@@ -1,0 +1,70 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+expression: report
+---
+Terms
+openLeft ::
+  forall (r :: Row Type) (u :: Row Type).
+    Union @Type ( a :: Int | (r :: Row Type) ) ( b :: String ) (u :: Row Type) =>
+    Proxy @(Row Type) (u :: Row Type)
+openRight ::
+  forall (r :: Row Type) (u :: Row Type).
+    Union @Type ( a :: Int ) ( b :: String | (r :: Row Type) ) (u :: Row Type) =>
+    Proxy @(Row Type) (u :: Row Type)
+backwardLeft ::
+  forall (l :: Row Type) (r :: Row Type).
+    Union @Type (l :: Row Type) ( b :: String ) ( a :: Int, b :: String | (r :: Row Type) ) =>
+    Proxy @(Row Type) (l :: Row Type)
+backwardRight ::
+  forall (r :: Row Type) (u :: Row Type).
+    Union @Type ( a :: Int ) (r :: Row Type) ( a :: Int, b :: String | (u :: Row Type) ) =>
+    Proxy @(Row Type) (r :: Row Type)
+consOpen ::
+  forall (r :: Row Type) (row :: Row Type).
+    Cons @Type "x" Int ( a :: String | (r :: Row Type) ) (row :: Row Type) =>
+    Proxy @(Row Type) (row :: Row Type)
+decomposeOpen ::
+  forall (t :: Type) (tail :: Row Type) (r :: Row Type).
+    Cons @Type "x" (t :: Type) (tail :: Row Type) ( a :: String, x :: Int | (r :: Row Type) ) =>
+    Proxy @Type (t :: Type)
+extractTail ::
+  forall (tail :: Row Type) (r :: Row Type).
+    Cons @Type "x" Int (tail :: Row Type) ( a :: String, x :: Int | (r :: Row Type) ) =>
+    Proxy @(Row Type) (tail :: Row Type)
+lacksOpen ::
+  forall (r :: Row Type).
+    Lacks @Type "missing" ( a :: Int, b :: String | (r :: Row Type) ) =>
+    Proxy @(Row Type) (r :: Row Type) -> Int
+lacksPresent ::
+  forall (r :: Row Type).
+    Lacks @Type "a" ( a :: Int | (r :: Row Type) ) => Proxy @(Row Type) (r :: Row Type) -> Int
+forceSolve ::
+  forall (t23 :: Row Type) (t22 :: Row Type) (t21 :: Row Type) (t20 :: Row Type) (t19 :: Row Type)
+    (t18 :: Row Type) (t17 :: Row Type).
+    Union (t23 :: Row Type) ( b :: String ) (t22 :: Row Type) =>
+    { backwardLeft :: Proxy @(Row Type) ( a :: Int | (t21 :: Row Type) )
+    , backwardRight :: Proxy @(Row Type) ( b :: String | (t20 :: Row Type) )
+    , consOpen :: Proxy @(Row Type) ( a :: String, x :: Int | (t19 :: Row Type) )
+    , decomposeOpen :: Proxy @Type Int
+    , extractTail :: Proxy @(Row Type) ( a :: String | (t18 :: Row Type) )
+    , lacksOpen :: Int
+    , lacksPresent :: Int
+    , openLeft :: Proxy @(Row Type) ( a :: Int | (t22 :: Row Type) )
+    , openRight :: Proxy @(Row Type) ( a :: Int, b :: String | (t17 :: Row Type) )
+    }
+
+Types
+
+Errors
+CheckError {
+    kind: AmbiguousConstraint {
+        constraint: Id<smol_str::SmolStr>(22),
+    },
+    crumbs: [],
+}
+CheckError {
+    kind: AmbiguousConstraint {
+        constraint: Id<smol_str::SmolStr>(23),
+    },
+    crumbs: [],
+}

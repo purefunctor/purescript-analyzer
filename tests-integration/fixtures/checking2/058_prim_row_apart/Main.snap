@@ -1,0 +1,33 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+expression: report
+---
+Terms
+unionTypeMismatch ::
+  forall (l :: Row Type).
+    Union @Type (l :: Row Type) ( b :: String ) ( a :: Int, b :: Int ) =>
+    Proxy @(Row Type) (l :: Row Type)
+consMissingLabel ::
+  forall (t :: Row Type).
+    Cons @Type "missing" Int (t :: Row Type) ( a :: Int, b :: String ) =>
+    Proxy @(Row Type) (t :: Row Type)
+lacksPresent ::
+  Lacks @Type "b" ( a :: Int, b :: String ) => Proxy @(Row Type) ( a :: Int, b :: String )
+forceSolve ::
+  forall (t3 :: Row Type) (t2 :: Row Type).
+    Union @Type (t3 :: Row Type) ( b :: String ) ( a :: Int, b :: Int ) =>
+    Cons @Type "missing" Int (t2 :: Row Type) ( a :: Int, b :: String ) =>
+    { consMissingLabel :: Proxy @(Row Type) (t2 :: Row Type)
+    , lacksPresent :: Proxy @(Row Type) ( a :: Int, b :: String )
+    , unionTypeMismatch :: Proxy @(Row Type) (t3 :: Row Type)
+    }
+
+Types
+
+Errors
+CheckError {
+    kind: NoInstanceFound {
+        constraint: Id<smol_str::SmolStr>(18),
+    },
+    crumbs: [],
+}

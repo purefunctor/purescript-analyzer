@@ -141,3 +141,15 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_055_prim_solver_apart_main() { run_test("055_prim_solver_apart", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_056_prim_row_list_main() { run_test("056_prim_row_list", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_057_prim_row_main() { run_test("057_prim_row", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_058_prim_row_apart_main() { run_test("058_prim_row_apart", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_059_prim_row_open_main() { run_test("059_prim_row_open", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_060_prim_row_generalization_main() { run_test("060_prim_row_generalization", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_061_prim_row_nub_left_bias_main() { run_test("061_prim_row_nub_left_bias", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_062_prim_row_record_main() { run_test("062_prim_row_record", "Main"); }
