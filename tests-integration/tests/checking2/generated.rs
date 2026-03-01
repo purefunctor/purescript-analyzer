@@ -177,3 +177,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_073_prim_coercible_higher_kinded_main() { run_test("073_prim_coercible_higher_kinded", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_074_prim_coercible_transitivity_main() { run_test("074_prim_coercible_transitivity", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_075_prim_coercible_given_symmetry_main() { run_test("075_prim_coercible_given_symmetry", "Main"); }

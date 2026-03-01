@@ -10,7 +10,6 @@ use super::{
     ConstraintApplication, MatchInstance, MatchType, constraint_application, elaborate_superclasses,
 };
 
-/// Discovers implied constraints from given constraints.
 pub fn elaborate_given<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -26,11 +25,31 @@ where
         elaborate_superclasses(state, context, constraint, &mut elaborated)?;
     }
 
-    elaborated
+    let mut applications = elaborated
         .into_iter()
         .map(|constraint| constraint_application(state, context, constraint))
         .filter_map_ok(|constraint| constraint)
-        .collect()
+        .collect::<QueryResult<Vec<_>>>()?;
+
+    let symmetric = applications.iter().filter_map(|application| {
+        let is_coercible = application.file_id == context.prim_coerce.file_id
+            && application.item_id == context.prim_coerce.coercible;
+
+        let &[left, right] = application.arguments.as_slice() else {
+            return None;
+        };
+
+        is_coercible.then(|| ConstraintApplication {
+            file_id: application.file_id,
+            item_id: application.item_id,
+            arguments: vec![right, left],
+        })
+    });
+
+    let symmetric = symmetric.collect_vec();
+    applications.extend(symmetric);
+
+    Ok(applications)
 }
 
 /// Matches a wanted constraint to given constraints.
