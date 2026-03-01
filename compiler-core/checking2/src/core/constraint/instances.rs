@@ -10,25 +10,19 @@ use crate::context::CheckContext;
 use crate::core::substitute::SubstituteName;
 use crate::core::unification::{CanUnify, can_unify};
 use crate::core::walk::{self, TypeWalker, WalkAction};
-use crate::core::{CheckedInstance, ForallBinder, Name, Type, TypeId, normalise, toolkit};
+use crate::core::{CheckedInstance, Name, Type, TypeId, normalise, toolkit};
 use crate::error::ErrorKind;
 use crate::state::CheckState;
-use crate::{CheckedModule, ExternalQueries, safe_loop};
+use crate::{CheckedModule, ExternalQueries};
 
 use super::fd::{Fd, compute_closure, get_all_determined};
-use super::{ConstraintApplication, MatchInstance, MatchType, constraint_application};
+use super::{ConstraintApplication, MatchInstance, MatchType};
 
 #[derive(Clone)]
 pub struct CandidateInstance {
     chain_id: Option<InstanceChainId>,
     position: u32,
     checked: CheckedInstance,
-}
-
-struct DecomposedInstance {
-    binders: Vec<ForallBinder>,
-    arguments: Vec<TypeId>,
-    constraints: Vec<TypeId>,
 }
 
 /// Collects instance chains for a constraint from all eligible files.
@@ -170,42 +164,6 @@ where
     Ok(stuck_positions.iter().all(|index| determined.contains(index)))
 }
 
-fn decompose_instance<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    instance: &CheckedInstance,
-) -> QueryResult<Option<DecomposedInstance>>
-where
-    Q: ExternalQueries,
-{
-    let toolkit::InspectQuantified { binders, quantified } =
-        toolkit::inspect_quantified(state, context, instance.canonical)?;
-
-    let mut current = quantified;
-    let mut constraints = vec![];
-
-    safe_loop! {
-        current = normalise::normalise(state, context, current)?;
-        match context.lookup_type(current) {
-            Type::Constrained(constraint, constrained) => {
-                constraints.push(constraint);
-                current = constrained;
-            }
-            _ => break,
-        }
-    }
-
-    let Some(application) = constraint_application(state, context, current)? else {
-        return Ok(None);
-    };
-
-    if (application.file_id, application.item_id) != instance.resolution {
-        return Ok(None);
-    }
-
-    Ok(Some(DecomposedInstance { binders, arguments: application.arguments, constraints }))
-}
-
 /// Matches a wanted constraint to an instance.
 pub fn match_instance<Q>(
     state: &mut CheckState,
@@ -216,7 +174,7 @@ pub fn match_instance<Q>(
 where
     Q: ExternalQueries,
 {
-    let Some(decomposed) = decompose_instance(state, context, &instance.checked)? else {
+    let Some(decomposed) = toolkit::decompose_instance(state, context, &instance.checked)? else {
         return Ok(MatchInstance::Apart);
     };
 

@@ -10,6 +10,39 @@ use crate::source::terms::form_let;
 use crate::source::{binder, terms};
 use crate::state::CheckState;
 
+pub enum EquationTypeOrigin {
+    Explicit(lowering::TypeId),
+    Implicit,
+}
+
+pub fn check_equations_with<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    origin: EquationTypeOrigin,
+    expected_type: TypeId,
+    equations: &[lowering::Equation],
+) -> QueryResult<Vec<TypeId>>
+where
+    Q: ExternalQueries,
+{
+    let toolkit::InspectQuantified { quantified, .. } =
+        toolkit::inspect_quantified(state, context, expected_type)?;
+
+    let quantified = toolkit::collect_givens(state, context, quantified)?;
+
+    let toolkit::InspectFunction { arguments, result } =
+        toolkit::inspect_function(state, context, quantified)?;
+
+    let function = context.intern_function_chain(&arguments, result);
+    check_equations_core(state, context, origin, &arguments, result, function, equations)?;
+
+    let exhaustiveness =
+        exhaustive::check_equation_patterns(state, context, &arguments, equations)?;
+    state.report_exhaustiveness(context, exhaustiveness);
+
+    state.solve_constraints(context)
+}
+
 /// Infers the type of value group equations.
 ///
 /// For each equation: infer binders, create a result unification variable,
@@ -64,7 +97,7 @@ where
 pub fn check_equations_core<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    signature_id: lowering::TypeId,
+    origin: EquationTypeOrigin,
     arguments: &[TypeId],
     result: TypeId,
     function: TypeId,
@@ -80,7 +113,10 @@ where
 
         if equation_arity > expected_arity {
             state.insert_error(ErrorKind::TooManyBinders {
-                signature: signature_id,
+                signature: match origin {
+                    EquationTypeOrigin::Explicit(signature_id) => Some(signature_id),
+                    EquationTypeOrigin::Implicit => None,
+                },
                 expected: expected_arity as u32,
                 actual: equation_arity as u32,
             });
@@ -109,9 +145,6 @@ where
             check_guarded_expression(state, context, guarded, expected_type)?;
         }
     }
-
-    let exhaustiveness = exhaustive::check_equation_patterns(state, context, arguments, equations)?;
-    state.report_exhaustiveness(context, exhaustiveness);
 
     Ok(())
 }

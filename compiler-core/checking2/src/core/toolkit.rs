@@ -9,7 +9,8 @@ use indexing::{TermItemId, TypeItemId};
 use crate::context::CheckContext;
 use crate::core::substitute::SubstituteName;
 use crate::core::{
-    CheckedClass, CheckedSynonym, ForallBinder, Role, Type, TypeId, normalise, unification,
+    CheckedClass, CheckedInstance, CheckedSynonym, ForallBinder, Role, Type, TypeId, constraint,
+    normalise, unification,
 };
 use crate::state::CheckState;
 use crate::{ExternalQueries, safe_loop};
@@ -22,6 +23,12 @@ pub struct InspectQuantified {
 pub struct InspectFunction {
     pub arguments: Vec<TypeId>,
     pub result: TypeId,
+}
+
+pub struct DecomposedInstance {
+    pub binders: Vec<ForallBinder>,
+    pub constraints: Vec<TypeId>,
+    pub arguments: Vec<TypeId>,
 }
 
 pub fn extract_type_application<Q>(
@@ -264,6 +271,44 @@ where
     }
 
     Ok(InspectFunction { arguments, result: current })
+}
+
+pub fn decompose_instance<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    instance: &CheckedInstance,
+) -> QueryResult<Option<DecomposedInstance>>
+where
+    Q: ExternalQueries,
+{
+    let InspectQuantified { binders, quantified } =
+        inspect_quantified(state, context, instance.canonical)?;
+
+    let mut current = quantified;
+    let mut constraints = vec![];
+
+    safe_loop! {
+        current = normalise::normalise(state, context, current)?;
+        match context.lookup_type(current) {
+            Type::Constrained(constraint, constrained) => {
+                constraints.push(constraint);
+                current = constrained;
+            }
+            _ => break,
+        }
+    }
+
+    let Some(constraint::ConstraintApplication { file_id, item_id, arguments }) =
+        constraint::constraint_application(state, context, current)?
+    else {
+        return Ok(None);
+    };
+
+    if (file_id, item_id) != instance.resolution {
+        return Ok(None);
+    }
+
+    Ok(Some(DecomposedInstance { binders, constraints, arguments }))
 }
 
 pub fn instantiate_unifications<Q>(

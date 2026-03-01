@@ -104,7 +104,7 @@ pub enum ErrorKind {
         item_id: indexing::TypeItemId,
     },
     TooManyBinders {
-        signature: lowering::TypeId,
+        signature: Option<lowering::TypeId>,
         expected: u32,
         actual: u32,
     },

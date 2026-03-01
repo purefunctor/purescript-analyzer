@@ -152,7 +152,7 @@ where
         equations::check_equations_core(
             state,
             context,
-            signature_id,
+            equations::EquationTypeOrigin::Explicit(signature_id),
             &arguments,
             result,
             function,
