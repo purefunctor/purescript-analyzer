@@ -1,7 +1,9 @@
 mod prim_int;
+mod prim_reflectable;
 mod prim_row;
 mod prim_row_list;
 mod prim_symbol;
+mod prim_type_error;
 
 use building_types::QueryResult;
 use smol_str::SmolStr;
@@ -147,11 +149,17 @@ where
     } else if *file_id == context.prim_coerce.file_id {
         None
     } else if *file_id == context.prim_type_error.file_id {
-        None
+        if *item_id == context.prim_type_error.warn {
+            prim_type_error::match_warn(state, context, arguments)?
+        } else if *item_id == context.prim_type_error.fail {
+            prim_type_error::match_fail(state, context, arguments)?
+        } else {
+            None
+        }
     } else if context.known_reflectable.is_symbol == Some((*file_id, *item_id)) {
         prim_symbol::match_is_symbol(state, context, arguments)?
     } else if context.known_reflectable.reflectable == Some((*file_id, *item_id)) {
-        None
+        prim_reflectable::match_reflectable(state, context, arguments)?
     } else {
         None
     };
