@@ -1,4 +1,5 @@
 mod prim_int;
+mod prim_row;
 mod prim_row_list;
 mod prim_symbol;
 
@@ -126,7 +127,17 @@ where
             None
         }
     } else if *file_id == context.prim_row.file_id {
-        None
+        if *item_id == context.prim_row.union {
+            prim_row::match_union(state, context, arguments)?
+        } else if *item_id == context.prim_row.cons {
+            prim_row::match_cons(state, context, arguments)?
+        } else if *item_id == context.prim_row.lacks {
+            prim_row::match_lacks(state, context, arguments)?
+        } else if *item_id == context.prim_row.nub {
+            prim_row::match_nub(state, context, arguments)?
+        } else {
+            None
+        }
     } else if *file_id == context.prim_row_list.file_id {
         if *item_id == context.prim_row_list.row_to_list {
             prim_row_list::match_row_to_list(state, context, arguments)?
