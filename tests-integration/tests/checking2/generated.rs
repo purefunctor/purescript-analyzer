@@ -153,3 +153,9 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_061_prim_row_nub_left_bias_main() { run_test("061_prim_row_nub_left_bias", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_062_prim_row_record_main() { run_test("062_prim_row_record", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_063_prim_reflectable_main() { run_test("063_prim_reflectable", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_064_prim_type_error_warn_main() { run_test("064_prim_type_error_warn", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_065_prim_type_error_fail_main() { run_test("065_prim_type_error_fail", "Main"); }
