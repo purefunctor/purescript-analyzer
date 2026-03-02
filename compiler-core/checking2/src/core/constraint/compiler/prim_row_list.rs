@@ -5,7 +5,7 @@ use building_types::QueryResult;
 use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::constraint::MatchInstance;
-use crate::core::{RowField, RowType, TypeId, normalise};
+use crate::core::{RowField, RowType, Type, TypeId, normalise};
 use crate::source::types;
 use crate::state::CheckState;
 
@@ -67,7 +67,7 @@ where
     let row_kind = types::elaborate_kind(state, context, singleton_row_type)?;
 
     let row_kind = normalise::normalise(state, context, row_kind)?;
-    let crate::core::Type::Application(_, element_kind) = context.lookup_type(row_kind) else {
+    let Type::Application(_, element_kind) = context.lookup_type(row_kind) else {
         return Ok(state.fresh_unification(context.queries, context.prim.t));
     };
 

@@ -9,8 +9,8 @@ use rustc_hash::{FxHashMap, FxHashSet};
 use crate::context::CheckContext;
 use crate::core::substitute::SubstituteName;
 use crate::core::unification::{CanUnify, can_unify};
-use crate::core::walk::{self, TypeWalker, WalkAction};
-use crate::core::{CheckedInstance, Name, Type, TypeId, normalise, toolkit};
+use crate::core::walk::{TypeWalker, WalkAction, walk_type};
+use crate::core::{CheckedInstance, Name, RowField, RowType, Type, TypeId, normalise, toolkit};
 use crate::error::ErrorKind;
 use crate::state::CheckState;
 use crate::{CheckedModule, ExternalQueries};
@@ -372,8 +372,8 @@ fn match_row_type<Q>(
     context: &CheckContext<Q>,
     bindings: &mut FxHashMap<Name, TypeId>,
     equalities: &mut Vec<(TypeId, TypeId)>,
-    wanted_row: crate::core::RowType,
-    given_row: crate::core::RowType,
+    wanted_row: RowType,
+    given_row: RowType,
 ) -> QueryResult<MatchType>
 where
     Q: ExternalQueries,
@@ -413,7 +413,7 @@ where
     }
 
     impl RowRest {
-        fn new(only: &[&crate::core::RowField], tail: Option<TypeId>) -> RowRest {
+        fn new(only: &[&RowField], tail: Option<TypeId>) -> RowRest {
             if !only.is_empty() {
                 RowRest::Additional
             } else if let Some(tail) = tail {
@@ -443,9 +443,8 @@ where
         // additional fields and tail from the wanted row
         Open(given_tail) => {
             let fields = wanted_only.into_iter().cloned().collect_vec();
-            let row = context.intern_row(
-                context.intern_row_type(crate::core::RowType::new(fields, wanted_row.tail)),
-            );
+            let row =
+                context.intern_row(context.intern_row_type(RowType::new(fields, wanted_row.tail)));
             result.and_then(|| match_type(state, context, bindings, equalities, row, given_tail))
         }
         // If we have a closed given row
@@ -512,7 +511,7 @@ impl<'a> CollectFileReferences<'a> {
     where
         Q: ExternalQueries,
     {
-        walk::walk_type(state, context, id, &mut CollectFileReferences { files })
+        walk_type(state, context, id, &mut CollectFileReferences { files })
     }
 }
 
@@ -548,7 +547,7 @@ impl HasLabeledRole {
         Q: ExternalQueries,
     {
         let mut walker = HasLabeledRole { contains: false };
-        walk::walk_type(state, context, id, &mut walker)?;
+        walk_type(state, context, id, &mut walker)?;
         Ok(walker.contains)
     }
 }

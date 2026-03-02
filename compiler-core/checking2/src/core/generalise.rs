@@ -25,7 +25,7 @@ use petgraph::prelude::DiGraphMap;
 use rustc_hash::FxHashSet;
 
 use crate::context::CheckContext;
-use crate::core::walk::{self, TypeWalker, WalkAction};
+use crate::core::walk::{TypeWalker, WalkAction, walk_type};
 use crate::core::{ForallBinder, Name, Type, TypeId, constraint, normalise, zonk};
 use crate::state::{CheckState, UnificationEntry, UnificationState};
 use crate::{ExternalQueries, safe_loop};
@@ -415,7 +415,7 @@ impl TypeWalker for GeneraliseImplicit {
                     self.graph.add_edge(prev_owner, next_owner, ());
                 }
 
-                walk::walk_type(state, context, *kind, self)?;
+                walk_type(state, context, *kind, self)?;
                 self.owner = prev_owner;
             }
             Type::Unification(id) => {
@@ -429,7 +429,7 @@ impl TypeWalker for GeneraliseImplicit {
                     self.graph.add_edge(prev_owner, next_owner, ());
                 }
 
-                walk::walk_type(state, context, *kind, self)?;
+                walk_type(state, context, *kind, self)?;
                 self.owner = prev_owner;
             }
             _ => {}
@@ -451,7 +451,7 @@ where
     Q: ExternalQueries,
 {
     let mut walker = GeneraliseImplicit::default();
-    walk::walk_type(state, context, id, &mut walker)?;
+    walk_type(state, context, id, &mut walker)?;
 
     let Ok(implicits_unifications) = algo::toposort(&walker.graph, None) else {
         return Ok(context.unknown("invalid recursive graph"));
