@@ -14,7 +14,7 @@ use crate::core::{
 };
 use crate::error::{ErrorCrumb, ErrorKind};
 use crate::source::terms::equations;
-use crate::source::types;
+use crate::source::{derive, types};
 use crate::state::CheckState;
 
 #[derive(Default)]
@@ -33,8 +33,10 @@ where
     Q: ExternalQueries,
 {
     check_instance_declarations(state, context)?;
+    let derive_results = derive::check_derive_declarations(state, context)?;
     check_value_groups(state, context)?;
     check_instance_members(state, context)?;
+    derive::check_derive_members(state, context, &derive_results)?;
     Ok(())
 }
 

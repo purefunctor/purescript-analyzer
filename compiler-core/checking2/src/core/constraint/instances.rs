@@ -103,6 +103,15 @@ fn collect_instances_from_checked(
                 checked: checked.clone(),
             }),
     );
+
+    output.extend(
+        checked
+            .derived
+            .values()
+            .filter(|instance| instance.resolution == (class_file, class_id))
+            .cloned()
+            .map(|checked| CandidateInstance { chain_id: None, position: 0, checked }),
+    );
 }
 
 fn get_functional_dependencies<Q>(

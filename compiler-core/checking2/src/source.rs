@@ -8,6 +8,7 @@ pub mod synonym;
 pub mod terms;
 pub mod types;
 
+mod derive;
 mod term_items;
 mod type_items;
 

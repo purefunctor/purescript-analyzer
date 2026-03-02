@@ -13,7 +13,7 @@ use std::sync::Arc;
 
 use building_types::{QueryProxy, QueryResult};
 use files::FileId;
-use indexing::{InstanceId, TermItemId, TypeItemId};
+use indexing::{DeriveId, InstanceId, TermItemId, TypeItemId};
 use resolving::ResolvedModule;
 use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
@@ -61,6 +61,7 @@ pub struct CheckedModule {
     pub synonyms: FxHashMap<TypeItemId, CheckedSynonym>,
     pub classes: FxHashMap<TypeItemId, CheckedClass>,
     pub instances: FxHashMap<InstanceId, CheckedInstance>,
+    pub derived: FxHashMap<DeriveId, CheckedInstance>,
     pub roles: FxHashMap<TypeItemId, Arc<[Role]>>,
     pub nodes: CheckedNodes,
     pub errors: Vec<CheckError>,
@@ -105,6 +106,10 @@ impl CheckedModule {
 
     pub fn lookup_instance(&self, id: InstanceId) -> Option<CheckedInstance> {
         self.instances.get(&id).cloned()
+    }
+
+    pub fn lookup_derived(&self, id: DeriveId) -> Option<CheckedInstance> {
+        self.derived.get(&id).cloned()
     }
 
     pub fn lookup_roles(&self, id: TypeItemId) -> Option<Arc<[Role]>> {
