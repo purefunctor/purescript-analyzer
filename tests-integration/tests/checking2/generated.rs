@@ -191,3 +191,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_080_instance_member_higher_kinded_main() { run_test("080_instance_member_higher_kinded", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_081_instance_member_too_many_binders_main() { run_test("081_instance_member_too_many_binders", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_082_derive_pipeline_smoke_main() { run_test("082_derive_pipeline_smoke", "Main"); }
