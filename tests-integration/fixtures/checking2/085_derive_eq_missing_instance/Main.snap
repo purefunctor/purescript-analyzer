@@ -1,0 +1,29 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+MkNoEq :: NoEq
+MkBox :: NoEq -> Box
+
+Types
+NoEq :: Type
+Box :: Type
+
+Roles
+NoEq = []
+Box = []
+
+Errors
+CheckError {
+    kind: DeriveNotSupportedYet {
+        class_file: Idx::<File>(19),
+        class_id: Idx::<TypeItem>(0),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(2),
+        ),
+    ],
+}

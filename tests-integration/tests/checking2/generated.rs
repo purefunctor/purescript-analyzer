@@ -193,3 +193,9 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_081_instance_member_too_many_binders_main() { run_test("081_instance_member_too_many_binders", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_082_derive_pipeline_smoke_main() { run_test("082_derive_pipeline_smoke", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_083_derive_eq_simple_main() { run_test("083_derive_eq_simple", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_084_derive_eq_parameterized_main() { run_test("084_derive_eq_parameterized", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_085_derive_eq_missing_instance_main() { run_test("085_derive_eq_missing_instance", "Main"); }
