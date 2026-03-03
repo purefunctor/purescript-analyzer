@@ -17,6 +17,7 @@ use building_types::QueryResult;
 use files::FileId;
 use indexing::{TermItemId, TypeItemId};
 
+use crate::core::TypeId;
 use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::state::CheckState;
@@ -24,27 +25,28 @@ use crate::state::CheckState;
 #[derive(Clone, Copy)]
 enum DeriveDispatch {
     Eq,
-    Eq1,
-    Ord,
-    Ord1,
-    Functor,
-    Bifunctor,
-    Contravariant,
-    Profunctor,
-    Foldable,
-    Bifoldable,
-    Traversable,
-    Bitraversable,
-    Newtype,
-    Generic,
+    SupportedButNotImplemented,
+    Unsupported,
+}
+
+#[derive(Clone, Copy)]
+pub(super) enum DeriveStrategy {
+    FieldConstraints {
+        data_file: FileId,
+        data_id: TypeItemId,
+        derived_type: TypeId,
+        class: (FileId, TypeItemId),
+    },
     Unsupported,
 }
 
 pub struct DeriveHeadResult {
     item_id: TermItemId,
+    constraints: Vec<TypeId>,
     class_file: FileId,
     class_id: TypeItemId,
-    dispatch: DeriveDispatch,
+    arguments: Vec<TypeId>,
+    strategy: DeriveStrategy,
 }
 
 fn derive_dispatch<Q>(
@@ -58,32 +60,21 @@ where
     let class = Some((class_file, class_id));
     if class == context.known_types.eq {
         DeriveDispatch::Eq
-    } else if class == context.known_types.eq1 {
-        DeriveDispatch::Eq1
-    } else if class == context.known_types.ord {
-        DeriveDispatch::Ord
-    } else if class == context.known_types.ord1 {
-        DeriveDispatch::Ord1
-    } else if class == context.known_types.functor {
-        DeriveDispatch::Functor
-    } else if class == context.known_types.bifunctor {
-        DeriveDispatch::Bifunctor
-    } else if class == context.known_types.contravariant {
-        DeriveDispatch::Contravariant
-    } else if class == context.known_types.profunctor {
-        DeriveDispatch::Profunctor
-    } else if class == context.known_types.foldable {
-        DeriveDispatch::Foldable
-    } else if class == context.known_types.bifoldable {
-        DeriveDispatch::Bifoldable
-    } else if class == context.known_types.traversable {
-        DeriveDispatch::Traversable
-    } else if class == context.known_types.bitraversable {
-        DeriveDispatch::Bitraversable
-    } else if class == context.known_types.newtype {
-        DeriveDispatch::Newtype
-    } else if class == context.known_types.generic {
-        DeriveDispatch::Generic
+    } else if class == context.known_types.eq1
+        || class == context.known_types.ord
+        || class == context.known_types.ord1
+        || class == context.known_types.functor
+        || class == context.known_types.bifunctor
+        || class == context.known_types.contravariant
+        || class == context.known_types.profunctor
+        || class == context.known_types.foldable
+        || class == context.known_types.bifoldable
+        || class == context.known_types.traversable
+        || class == context.known_types.bitraversable
+        || class == context.known_types.newtype
+        || class == context.known_types.generic
+    {
+        DeriveDispatch::SupportedButNotImplemented
     } else {
         DeriveDispatch::Unsupported
     }

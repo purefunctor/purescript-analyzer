@@ -10,7 +10,7 @@ use crate::error::{ErrorCrumb, ErrorKind};
 use crate::source::types;
 use crate::state::CheckState;
 
-use super::{DeriveHeadResult, derive_dispatch};
+use super::{DeriveDispatch, DeriveHeadResult, DeriveStrategy, derive_dispatch, eq_ord};
 
 pub fn check_derive_declarations<Q>(
     state: &mut CheckState,
@@ -161,7 +161,27 @@ where
 
     state.checked.derived.insert(derive_id, CheckedInstance { resolution, canonical });
 
-    let dispatch = derive_dispatch(context, class_file, class_id);
+    let strategy = match derive_dispatch(context, class_file, class_id) {
+        DeriveDispatch::Eq => eq_ord::check_derive_eq(
+            state,
+            context,
+            class_file,
+            class_id,
+            &checked_arguments,
+        )?,
+        DeriveDispatch::SupportedButNotImplemented => Some(DeriveStrategy::Unsupported),
+        DeriveDispatch::Unsupported => {
+            state.insert_error(ErrorKind::CannotDeriveClass { class_file, class_id });
+            None
+        }
+    };
 
-    Ok(Some(DeriveHeadResult { item_id, class_file, class_id, dispatch }))
+    Ok(strategy.map(|strategy| DeriveHeadResult {
+        item_id,
+        constraints: checked_constraints,
+        class_file,
+        class_id,
+        arguments: checked_arguments,
+        strategy,
+    }))
 }

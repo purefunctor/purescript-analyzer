@@ -5,7 +5,7 @@ use crate::context::CheckContext;
 use crate::error::{ErrorCrumb, ErrorKind};
 use crate::state::CheckState;
 
-use super::{DeriveDispatch, DeriveHeadResult};
+use super::{DeriveHeadResult, DeriveStrategy, field, tools};
 
 pub fn check_derive_members<Q>(
     state: &mut CheckState,
@@ -17,7 +17,7 @@ where
 {
     for result in derives {
         state.with_error_crumb(ErrorCrumb::TermDeclaration(result.item_id), |state| {
-            check_derive_member(state, context, result)
+            state.with_implication(|state| check_derive_member(state, context, result))
         })?;
     }
     Ok(())
@@ -25,34 +25,37 @@ where
 
 fn check_derive_member<Q>(
     state: &mut CheckState,
-    _context: &CheckContext<Q>,
+    context: &CheckContext<Q>,
     result: &DeriveHeadResult,
 ) -> QueryResult<()>
 where
     Q: ExternalQueries,
 {
-    match result.dispatch {
-        DeriveDispatch::Eq
-        | DeriveDispatch::Eq1
-        | DeriveDispatch::Ord
-        | DeriveDispatch::Ord1
-        | DeriveDispatch::Functor
-        | DeriveDispatch::Bifunctor
-        | DeriveDispatch::Contravariant
-        | DeriveDispatch::Profunctor
-        | DeriveDispatch::Foldable
-        | DeriveDispatch::Bifoldable
-        | DeriveDispatch::Traversable
-        | DeriveDispatch::Bitraversable
-        | DeriveDispatch::Newtype
-        | DeriveDispatch::Generic => {
-            state.insert_error(ErrorKind::DeriveNotSupportedYet {
-                class_file: result.class_file,
-                class_id: result.class_id,
-            });
+    for &constraint in &result.constraints {
+        state.push_given(constraint);
+    }
+
+    match result.strategy {
+        DeriveStrategy::FieldConstraints { data_file, data_id, derived_type, class } => {
+            tools::emit_superclass_constraints(
+                state,
+                context,
+                result.class_file,
+                result.class_id,
+                &result.arguments,
+            )?;
+            field::generate_field_constraints(
+                state,
+                context,
+                data_file,
+                data_id,
+                derived_type,
+                class,
+            )?;
+            tools::solve_and_report_constraints(state, context)?;
         }
-        DeriveDispatch::Unsupported => {
-            state.insert_error(ErrorKind::CannotDeriveClass {
+        DeriveStrategy::Unsupported => {
+            state.insert_error(ErrorKind::DeriveNotSupportedYet {
                 class_file: result.class_file,
                 class_id: result.class_id,
             });

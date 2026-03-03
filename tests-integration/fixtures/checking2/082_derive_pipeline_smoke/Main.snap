@@ -12,16 +12,3 @@ Box :: Type
 
 Roles
 Box = []
-
-Errors
-CheckError {
-    kind: DeriveNotSupportedYet {
-        class_file: Idx::<File>(19),
-        class_id: Idx::<TypeItem>(0),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(1),
-        ),
-    ],
-}

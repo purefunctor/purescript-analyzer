@@ -17,9 +17,8 @@ Box = []
 
 Errors
 CheckError {
-    kind: DeriveNotSupportedYet {
-        class_file: Idx::<File>(19),
-        class_id: Idx::<TypeItem>(0),
+    kind: NoInstanceFound {
+        constraint: Id<smol_str::SmolStr>(8),
     },
     crumbs: [
         TermDeclaration(
