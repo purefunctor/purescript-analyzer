@@ -200,6 +200,13 @@ where
             class_id,
             &checked_arguments,
         )?,
+        DeriveDispatch::Profunctor => contravariant::check_derive_profunctor(
+            state,
+            context,
+            class_file,
+            class_id,
+            &checked_arguments,
+        )?,
         DeriveDispatch::Ord => eq_ord::check_derive_ord(
             state,
             context,

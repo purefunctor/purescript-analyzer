@@ -20,38 +20,3 @@ Roles
 Fn = [Representational, Representational]
 ConstR = [Representational, Representational, Phantom]
 Choice = [Representational, Representational]
-
-Errors
-CheckError {
-    kind: DeriveNotSupportedYet {
-        class_file: Idx::<File>(27),
-        class_id: Idx::<TypeItem>(0),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(1),
-        ),
-    ],
-}
-CheckError {
-    kind: DeriveNotSupportedYet {
-        class_file: Idx::<File>(27),
-        class_id: Idx::<TypeItem>(0),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(3),
-        ),
-    ],
-}
-CheckError {
-    kind: DeriveNotSupportedYet {
-        class_file: Idx::<File>(27),
-        class_id: Idx::<TypeItem>(0),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(6),
-        ),
-    ],
-}
