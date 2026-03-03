@@ -235,3 +235,9 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_102_derive_bifoldable_simple_main() { run_test("102_derive_bifoldable_simple", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_103_derive_bifoldable_higher_kinded_main() { run_test("103_derive_bifoldable_higher_kinded", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_104_derive_traversable_simple_main() { run_test("104_derive_traversable_simple", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_105_derive_traversable_higher_kinded_main() { run_test("105_derive_traversable_higher_kinded", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_106_derive_traversable_missing_superclass_main() { run_test("106_derive_traversable_missing_superclass", "Main"); }
