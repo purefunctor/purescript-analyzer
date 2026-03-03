@@ -1,0 +1,57 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Predicate :: forall (a :: Type). ((a :: Type) -> Boolean) -> Predicate (a :: Type)
+Reader ::
+  forall (r :: Type) (a :: Type). ((r :: Type) -> (a :: Type)) -> Reader (r :: Type) (a :: Type)
+Cont ::
+  forall (r :: Type) (a :: Type).
+    (((a :: Type) -> (r :: Type)) -> (r :: Type)) -> Cont (r :: Type) (a :: Type)
+
+Types
+Predicate :: Type -> Type
+Reader :: Type -> Type -> Type
+Cont :: Type -> Type -> Type
+
+Roles
+Predicate = [Representational]
+Reader = [Representational, Representational]
+Cont = [Representational, Representational]
+
+Errors
+CheckError {
+    kind: DeriveNotSupportedYet {
+        class_file: Idx::<File>(22),
+        class_id: Idx::<TypeItem>(0),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(1),
+        ),
+    ],
+}
+CheckError {
+    kind: DeriveNotSupportedYet {
+        class_file: Idx::<File>(22),
+        class_id: Idx::<TypeItem>(0),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(3),
+        ),
+    ],
+}
+CheckError {
+    kind: DeriveNotSupportedYet {
+        class_file: Idx::<File>(22),
+        class_id: Idx::<TypeItem>(0),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(5),
+        ),
+    ],
+}

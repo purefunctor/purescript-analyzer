@@ -207,3 +207,9 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_088_derive_eq_1_main() { run_test("088_derive_eq_1", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_089_derive_ord_1_main() { run_test("089_derive_ord_1", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_090_derive_functor_simple_main() { run_test("090_derive_functor_simple", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_091_derive_functor_contravariant_error_main() { run_test("091_derive_functor_contravariant_error", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_092_derive_functor_insufficient_params_main() { run_test("092_derive_functor_insufficient_params", "Main"); }
