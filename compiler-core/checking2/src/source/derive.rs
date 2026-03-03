@@ -25,6 +25,7 @@ use crate::state::CheckState;
 #[derive(Clone, Copy)]
 enum DeriveDispatch {
     Eq,
+    Eq1,
     Ord,
     SupportedButNotImplemented,
     Unsupported,
@@ -35,6 +36,10 @@ pub(super) enum DeriveStrategy {
     FieldConstraints {
         data_file: FileId,
         data_id: TypeItemId,
+        derived_type: TypeId,
+        class: (FileId, TypeItemId),
+    },
+    DelegateConstraint {
         derived_type: TypeId,
         class: (FileId, TypeItemId),
     },
@@ -61,10 +66,11 @@ where
     let class = Some((class_file, class_id));
     if class == context.known_types.eq {
         DeriveDispatch::Eq
+    } else if class == context.known_types.eq1 {
+        DeriveDispatch::Eq1
     } else if class == context.known_types.ord {
         DeriveDispatch::Ord
-    } else if class == context.known_types.eq1
-        || class == context.known_types.ord1
+    } else if class == context.known_types.ord1
         || class == context.known_types.functor
         || class == context.known_types.bifunctor
         || class == context.known_types.contravariant

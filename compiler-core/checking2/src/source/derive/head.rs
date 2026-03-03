@@ -10,7 +10,7 @@ use crate::error::{ErrorCrumb, ErrorKind};
 use crate::source::types;
 use crate::state::CheckState;
 
-use super::{DeriveDispatch, DeriveHeadResult, DeriveStrategy, derive_dispatch, eq_ord};
+use super::{DeriveDispatch, DeriveHeadResult, DeriveStrategy, derive_dispatch, eq1_ord1, eq_ord};
 
 pub fn check_derive_declarations<Q>(
     state: &mut CheckState,
@@ -163,6 +163,13 @@ where
 
     let strategy = match derive_dispatch(context, class_file, class_id) {
         DeriveDispatch::Eq => eq_ord::check_derive_eq(
+            state,
+            context,
+            class_file,
+            class_id,
+            &checked_arguments,
+        )?,
+        DeriveDispatch::Eq1 => eq1_ord1::check_derive_eq1(
             state,
             context,
             class_file,
