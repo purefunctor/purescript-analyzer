@@ -199,3 +199,7 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_084_derive_eq_parameterized_main() { run_test("084_derive_eq_parameterized", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_085_derive_eq_missing_instance_main() { run_test("085_derive_eq_missing_instance", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_086_derive_ord_simple_main() { run_test("086_derive_ord_simple", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_087_derive_ord_1_higher_kinded_main() { run_test("087_derive_ord_1_higher_kinded", "Main"); }

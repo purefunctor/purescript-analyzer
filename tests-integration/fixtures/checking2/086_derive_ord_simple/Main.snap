@@ -1,0 +1,57 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+MkBox :: Int -> Box
+MkPair :: Int -> Boolean -> Pair
+MkNoOrd :: NoOrd
+MkContainsNoOrd :: NoOrd -> ContainsNoOrd
+
+Types
+Box :: Type
+Pair :: Type
+NoOrd :: Type
+ContainsNoOrd :: Type
+
+Roles
+Box = []
+Pair = []
+NoOrd = []
+ContainsNoOrd = []
+
+Errors
+CheckError {
+    kind: DeriveNotSupportedYet {
+        class_file: Idx::<File>(25),
+        class_id: Idx::<TypeItem>(1),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(2),
+        ),
+    ],
+}
+CheckError {
+    kind: DeriveNotSupportedYet {
+        class_file: Idx::<File>(25),
+        class_id: Idx::<TypeItem>(1),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(5),
+        ),
+    ],
+}
+CheckError {
+    kind: DeriveNotSupportedYet {
+        class_file: Idx::<File>(25),
+        class_id: Idx::<TypeItem>(1),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(10),
+        ),
+    ],
+}
