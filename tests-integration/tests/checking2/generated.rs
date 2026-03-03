@@ -293,3 +293,11 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_131_givens_scoped_main() { run_test("131_givens_scoped", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_132_let_constraint_scoping_main() { run_test("132_let_constraint_scoping", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_133_row_open_union_main() { run_test("133_row_open_union", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_134_row_open_cons_main() { run_test("134_row_open_cons", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_135_row_open_lacks_main() { run_test("135_row_open_lacks", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_136_row_open_record_main() { run_test("136_row_open_record", "Main"); }
