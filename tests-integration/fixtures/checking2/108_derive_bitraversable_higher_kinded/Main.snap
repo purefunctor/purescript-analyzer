@@ -1,0 +1,77 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+WrapBoth ::
+  forall (t5 :: Type) (t4 :: Type) (f :: (t5 :: Type) -> Type) (g :: (t4 :: Type) -> Type)
+    (a :: (t5 :: Type)) (b :: (t4 :: Type)).
+    (f :: (t5 :: Type) -> Type) (a :: (t5 :: Type)) ->
+    (g :: (t4 :: Type) -> Type) (b :: (t4 :: Type)) ->
+    WrapBoth @(t5 :: Type) @(t4 :: Type)
+      (f :: (t5 :: Type) -> Type)
+      (g :: (t4 :: Type) -> Type)
+      (a :: (t5 :: Type))
+      (b :: (t4 :: Type))
+
+Types
+WrapBoth ::
+  forall (t5 :: Type) (t4 :: Type).
+    ((t5 :: Type) -> Type) -> ((t4 :: Type) -> Type) -> (t5 :: Type) -> (t4 :: Type) -> Type
+
+Roles
+WrapBoth = [Representational, Representational, Nominal, Nominal]
+
+Errors
+CheckError {
+    kind: NoInstanceFound {
+        constraint: Id<smol_str::SmolStr>(12),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(1),
+        ),
+    ],
+}
+CheckError {
+    kind: NoInstanceFound {
+        constraint: Id<smol_str::SmolStr>(13),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(1),
+        ),
+    ],
+}
+CheckError {
+    kind: NoInstanceFound {
+        constraint: Id<smol_str::SmolStr>(14),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(2),
+        ),
+    ],
+}
+CheckError {
+    kind: NoInstanceFound {
+        constraint: Id<smol_str::SmolStr>(15),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(2),
+        ),
+    ],
+}
+CheckError {
+    kind: DeriveNotSupportedYet {
+        class_file: Idx::<File>(17),
+        class_id: Idx::<TypeItem>(0),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(3),
+        ),
+    ],
+}
