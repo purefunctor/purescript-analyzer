@@ -34,6 +34,7 @@ enum DeriveDispatch {
     Foldable,
     Bifoldable,
     Traversable,
+    Bitraversable,
     Ord,
     Ord1,
     SupportedButNotImplemented,
@@ -97,12 +98,13 @@ where
         DeriveDispatch::Bifoldable
     } else if class == context.known_types.traversable {
         DeriveDispatch::Traversable
+    } else if class == context.known_types.bitraversable {
+        DeriveDispatch::Bitraversable
     } else if class == context.known_types.ord {
         DeriveDispatch::Ord
     } else if class == context.known_types.ord1 {
         DeriveDispatch::Ord1
-    } else if class == context.known_types.bitraversable
-        || class == context.known_types.newtype
+    } else if class == context.known_types.newtype
         || class == context.known_types.generic
     {
         DeriveDispatch::SupportedButNotImplemented
