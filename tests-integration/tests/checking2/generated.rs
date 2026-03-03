@@ -213,3 +213,9 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_091_derive_functor_contravariant_error_main() { run_test("091_derive_functor_contravariant_error", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_092_derive_functor_insufficient_params_main() { run_test("092_derive_functor_insufficient_params", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_093_derive_bifunctor_simple_main() { run_test("093_derive_bifunctor_simple", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_094_derive_bifunctor_missing_functor_main() { run_test("094_derive_bifunctor_missing_functor", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_095_derive_bifunctor_insufficient_params_main() { run_test("095_derive_bifunctor_insufficient_params", "Main"); }

@@ -1,0 +1,58 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Left :: forall (a :: Type) (b :: Type). (a :: Type) -> Either (a :: Type) (b :: Type)
+Right :: forall (a :: Type) (b :: Type). (b :: Type) -> Either (a :: Type) (b :: Type)
+Pair :: forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type) -> Pair (a :: Type) (b :: Type)
+Const2 ::
+  forall (t8 :: Type) (t7 :: Type) (e :: Type) (a :: (t8 :: Type)) (b :: (t7 :: Type)).
+    (e :: Type) ->
+    Const2 @(t8 :: Type) @(t7 :: Type) (e :: Type) (a :: (t8 :: Type)) (b :: (t7 :: Type))
+
+Types
+Either :: Type -> Type -> Type
+Pair :: Type -> Type -> Type
+Const2 :: forall (t8 :: Type) (t7 :: Type). Type -> (t8 :: Type) -> (t7 :: Type) -> Type
+
+Roles
+Either = [Representational, Representational]
+Pair = [Representational, Representational]
+Const2 = [Representational, Phantom, Phantom]
+
+Errors
+CheckError {
+    kind: DeriveNotSupportedYet {
+        class_file: Idx::<File>(16),
+        class_id: Idx::<TypeItem>(0),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(2),
+        ),
+    ],
+}
+CheckError {
+    kind: DeriveNotSupportedYet {
+        class_file: Idx::<File>(16),
+        class_id: Idx::<TypeItem>(0),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(4),
+        ),
+    ],
+}
+CheckError {
+    kind: DeriveNotSupportedYet {
+        class_file: Idx::<File>(16),
+        class_id: Idx::<TypeItem>(0),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(6),
+        ),
+    ],
+}
