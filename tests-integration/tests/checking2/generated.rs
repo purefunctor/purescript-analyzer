@@ -227,3 +227,7 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_098_derive_profunctor_simple_main() { run_test("098_derive_profunctor_simple", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_099_derive_profunctor_error_main() { run_test("099_derive_profunctor_error", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_100_derive_foldable_simple_main() { run_test("100_derive_foldable_simple", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_101_derive_foldable_higher_kinded_main() { run_test("101_derive_foldable_higher_kinded", "Main"); }
