@@ -12,7 +12,7 @@ use crate::state::CheckState;
 
 use super::{
     DeriveDispatch, DeriveHeadResult, DeriveStrategy, contravariant, derive_dispatch, eq1_ord1,
-    eq_ord, foldable, functor,
+    eq_ord, foldable, functor, traversable,
 };
 
 pub fn check_derive_declarations<Q>(
@@ -215,6 +215,13 @@ where
             &checked_arguments,
         )?,
         DeriveDispatch::Bifoldable => foldable::check_derive_bifoldable(
+            state,
+            context,
+            class_file,
+            class_id,
+            &checked_arguments,
+        )?,
+        DeriveDispatch::Traversable => traversable::check_derive_traversable(
             state,
             context,
             class_file,

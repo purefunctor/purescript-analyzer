@@ -63,9 +63,18 @@ CheckError {
     ],
 }
 CheckError {
-    kind: DeriveNotSupportedYet {
-        class_file: Idx::<File>(32),
-        class_id: Idx::<TypeItem>(0),
+    kind: NoInstanceFound {
+        constraint: Id<smol_str::SmolStr>(13),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(3),
+        ),
+    ],
+}
+CheckError {
+    kind: NoInstanceFound {
+        constraint: Id<smol_str::SmolStr>(14),
     },
     crumbs: [
         TermDeclaration(
