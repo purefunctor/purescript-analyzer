@@ -1,0 +1,54 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Predicate :: forall (a :: Type). ((a :: Type) -> Boolean) -> Predicate (a :: Type)
+Comparison :: forall (a :: Type). ((a :: Type) -> (a :: Type) -> Boolean) -> Comparison (a :: Type)
+Op :: forall (a :: Type) (b :: Type). ((b :: Type) -> (a :: Type)) -> Op (a :: Type) (b :: Type)
+
+Types
+Predicate :: Type -> Type
+Comparison :: Type -> Type
+Op :: Type -> Type -> Type
+
+Roles
+Predicate = [Representational]
+Comparison = [Representational]
+Op = [Representational, Representational]
+
+Errors
+CheckError {
+    kind: DeriveNotSupportedYet {
+        class_file: Idx::<File>(21),
+        class_id: Idx::<TypeItem>(0),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(1),
+        ),
+    ],
+}
+CheckError {
+    kind: DeriveNotSupportedYet {
+        class_file: Idx::<File>(21),
+        class_id: Idx::<TypeItem>(0),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(3),
+        ),
+    ],
+}
+CheckError {
+    kind: DeriveNotSupportedYet {
+        class_file: Idx::<File>(21),
+        class_id: Idx::<TypeItem>(0),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(5),
+        ),
+    ],
+}
