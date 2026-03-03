@@ -17,11 +17,11 @@ use building_types::QueryResult;
 use files::FileId;
 use indexing::{TermItemId, TypeItemId};
 
-use crate::core::TypeId;
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::state::CheckState;
+use crate::core::TypeId;
 use crate::source::derive::variance::VarianceConfig;
+use crate::state::CheckState;
 
 #[derive(Clone, Copy)]
 enum DeriveDispatch {

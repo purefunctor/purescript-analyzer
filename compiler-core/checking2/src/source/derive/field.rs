@@ -33,7 +33,8 @@ where
 
     for constructor_id in tools::lookup_data_constructors(context, data_file, data_id)? {
         let constructor_t = toolkit::lookup_file_term(state, context, data_file, constructor_id)?;
-        let field_types = instantiate_constructor_fields(state, context, constructor_t, &arguments)?;
+        let field_types =
+            instantiate_constructor_fields(state, context, constructor_t, &arguments)?;
         for field_type in field_types {
             generate_constraint(state, context, field_type, class, class1)?;
         }
@@ -61,13 +62,13 @@ where
         };
 
         let binder = context.lookup_forall_binder(binder_id);
-        let replacement = arguments.next().unwrap_or_else(|| {
-            state.fresh_rigid(context.queries, binder.kind)
-        });
+        let replacement =
+            arguments.next().unwrap_or_else(|| state.fresh_rigid(context.queries, binder.kind));
         current = SubstituteName::one(state, context, binder.name, replacement, inner)?;
     }
 
-    let toolkit::InspectFunction { arguments, .. } = toolkit::inspect_function(state, context, current)?;
+    let toolkit::InspectFunction { arguments, .. } =
+        toolkit::inspect_function(state, context, current)?;
     Ok(arguments)
 }
 

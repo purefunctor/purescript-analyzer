@@ -123,12 +123,13 @@ where
         (VarianceConfig::Single((expected, class)), [.., a]) => {
             DerivedRigids::Single(DerivedParameter { name: *a, expected, class })
         }
-        (VarianceConfig::Pair((first_expected, first_class), (second_expected, second_class)), [.., a, b]) => {
-            DerivedRigids::Pair(
-                DerivedParameter { name: *a, expected: first_expected, class: first_class },
-                DerivedParameter { name: *b, expected: second_expected, class: second_class },
-            )
-        }
+        (
+            VarianceConfig::Pair((first_expected, first_class), (second_expected, second_class)),
+            [.., a, b],
+        ) => DerivedRigids::Pair(
+            DerivedParameter { name: *a, expected: first_expected, class: first_class },
+            DerivedParameter { name: *b, expected: second_expected, class: second_class },
+        ),
         _ => {
             let type_message = state.pretty_id(context, derived_type)?;
             state.insert_error(ErrorKind::CannotDeriveForType { type_message });

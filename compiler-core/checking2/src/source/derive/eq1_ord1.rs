@@ -73,8 +73,5 @@ where
         return Ok(None);
     }
 
-    Ok(Some(DeriveStrategy::DelegateConstraint {
-        derived_type: *derived_type,
-        class,
-    }))
+    Ok(Some(DeriveStrategy::DelegateConstraint { derived_type: *derived_type, class }))
 }

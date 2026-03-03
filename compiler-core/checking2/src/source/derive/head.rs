@@ -11,7 +11,7 @@ use crate::source::types;
 use crate::state::CheckState;
 
 use super::{
-    DeriveDispatch, DeriveHeadResult, contravariant, derive_dispatch, eq1_ord1, eq_ord, foldable,
+    DeriveDispatch, DeriveHeadResult, contravariant, derive_dispatch, eq_ord, eq1_ord1, foldable,
     functor, generic, newtype, traversable,
 };
 
@@ -33,7 +33,13 @@ where
                 return None;
             };
             let resolution = *resolution;
-            Some(CheckDeriveDeclaration { item_id, newtype: *newtype, constraints, resolution, arguments })
+            Some(CheckDeriveDeclaration {
+                item_id,
+                newtype: *newtype,
+                constraints,
+                resolution,
+                arguments,
+            })
         });
 
         for item in items {
@@ -83,15 +89,19 @@ where
     };
 
     state.with_error_crumb(ErrorCrumb::TermDeclaration(item_id), |state| {
-        check_derive_declaration_core(state, context, CheckDeriveDeclarationCore {
-            derive_id,
-            item_id,
-            newtype,
-            class_file,
-            class_id,
-            constraints,
-            arguments,
-        })
+        check_derive_declaration_core(
+            state,
+            context,
+            CheckDeriveDeclarationCore {
+                derive_id,
+                item_id,
+                newtype,
+                class_file,
+                class_id,
+                constraints,
+                arguments,
+            },
+        )
     })
 }
 
@@ -163,22 +173,12 @@ where
     constraint::instances::validate_rows(state, context, class_file, class_id, &checked_arguments)?;
 
     let strategy = if newtype {
-        newtype::check_derive_newtype(
-            state,
-            context,
-            class_file,
-            class_id,
-            &checked_arguments,
-        )?
+        newtype::check_derive_newtype(state, context, class_file, class_id, &checked_arguments)?
     } else {
         match derive_dispatch(context, class_file, class_id) {
-            DeriveDispatch::Eq => eq_ord::check_derive_eq(
-                state,
-                context,
-                class_file,
-                class_id,
-                &checked_arguments,
-            )?,
+            DeriveDispatch::Eq => {
+                eq_ord::check_derive_eq(state, context, class_file, class_id, &checked_arguments)?
+            }
             DeriveDispatch::Eq1 => eq1_ord1::check_derive_eq1(
                 state,
                 context,
@@ -256,13 +256,9 @@ where
                 class_id,
                 &checked_arguments,
             )?,
-            DeriveDispatch::Ord => eq_ord::check_derive_ord(
-                state,
-                context,
-                class_file,
-                class_id,
-                &checked_arguments,
-            )?,
+            DeriveDispatch::Ord => {
+                eq_ord::check_derive_ord(state, context, class_file, class_id, &checked_arguments)?
+            }
             DeriveDispatch::Ord1 => eq1_ord1::check_derive_ord1(
                 state,
                 context,

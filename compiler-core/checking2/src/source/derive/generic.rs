@@ -4,13 +4,12 @@ use indexing::TermItemId;
 use lowering::StringKind;
 use smol_str::SmolStr;
 
-use crate::ExternalQueries;
 use crate::context::{CheckContext, KnownGeneric};
 use crate::core::substitute::SubstituteName;
 use crate::core::{Type, TypeId, normalise, toolkit, unification};
 use crate::error::ErrorKind;
 use crate::state::CheckState;
-use crate::safe_loop;
+use crate::{ExternalQueries, safe_loop};
 
 use super::{DeriveStrategy, tools};
 
@@ -34,7 +33,8 @@ where
         return Ok(None);
     };
 
-    let Some((data_file, data_id)) = toolkit::extract_type_constructor(state, context, *derived_type)?
+    let Some((data_file, data_id)) =
+        toolkit::extract_type_constructor(state, context, *derived_type)?
     else {
         let type_message = state.pretty_id(context, *derived_type)?;
         state.insert_error(ErrorKind::CannotDeriveForType { type_message });
@@ -74,8 +74,14 @@ where
         build_generic_constructor(state, context, known_generic, data_file, &arguments, *last)?;
 
     for &constructor_id in rest.iter().rev() {
-        let constructor =
-            build_generic_constructor(state, context, known_generic, data_file, &arguments, constructor_id)?;
+        let constructor = build_generic_constructor(
+            state,
+            context,
+            known_generic,
+            data_file,
+            &arguments,
+            constructor_id,
+        )?;
         let applied = context.intern_application(known_generic.sum, constructor);
         rep = context.intern_application(applied, rep);
     }
@@ -100,10 +106,7 @@ where
             .clone()
             .unwrap_or_else(|| SmolStr::new_static("<Unknown>"))
     } else {
-        context
-            .queries
-            .indexed(data_file)?
-            .items[constructor_id]
+        context.queries.indexed(data_file)?.items[constructor_id]
             .name
             .clone()
             .unwrap_or_else(|| SmolStr::new_static("<Unknown>"))
@@ -184,6 +187,7 @@ where
         current = SubstituteName::one(state, context, binder.name, argument_type, inner)?;
     }
 
-    let toolkit::InspectFunction { arguments, .. } = toolkit::inspect_function(state, context, current)?;
+    let toolkit::InspectFunction { arguments, .. } =
+        toolkit::inspect_function(state, context, current)?;
     Ok(arguments)
 }
