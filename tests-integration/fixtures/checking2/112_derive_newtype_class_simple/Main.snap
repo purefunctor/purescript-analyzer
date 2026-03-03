@@ -1,0 +1,13 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+UserId :: Int -> UserId
+
+Types
+UserId :: Type
+
+Roles
+UserId = []

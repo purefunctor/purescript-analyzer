@@ -162,12 +162,6 @@ where
 
     constraint::instances::validate_rows(state, context, class_file, class_id, &checked_arguments)?;
 
-    let resolution = (class_file, class_id);
-    let canonical = zonk::zonk(state, context, canonical)?;
-    let canonical = generalise::generalise_implicit(state, context, canonical)?;
-
-    state.checked.derived.insert(derive_id, CheckedInstance { resolution, canonical });
-
     let strategy = if newtype {
         newtype::check_derive_newtype(
             state,
@@ -248,6 +242,13 @@ where
                 class_id,
                 &checked_arguments,
             )?,
+            DeriveDispatch::Newtype => newtype::check_derive_newtype_class(
+                state,
+                context,
+                class_file,
+                class_id,
+                &checked_arguments,
+            )?,
             DeriveDispatch::Ord => eq_ord::check_derive_ord(
                 state,
                 context,
@@ -269,6 +270,12 @@ where
             }
         }
     };
+
+    let resolution = (class_file, class_id);
+    let canonical = zonk::zonk(state, context, canonical)?;
+    let canonical = generalise::generalise_implicit(state, context, canonical)?;
+
+    state.checked.derived.insert(derive_id, CheckedInstance { resolution, canonical });
 
     Ok(strategy.map(|strategy| DeriveHeadResult {
         item_id,

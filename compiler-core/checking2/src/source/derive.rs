@@ -35,6 +35,7 @@ enum DeriveDispatch {
     Bifoldable,
     Traversable,
     Bitraversable,
+    Newtype,
     Ord,
     Ord1,
     SupportedButNotImplemented,
@@ -56,6 +57,7 @@ pub(super) enum DeriveStrategy {
     NewtypeDeriveConstraint {
         delegate_constraint: TypeId,
     },
+    HeadOnly,
     VarianceConstraints {
         data_file: FileId,
         data_id: TypeItemId,
@@ -103,12 +105,13 @@ where
         DeriveDispatch::Traversable
     } else if class == context.known_types.bitraversable {
         DeriveDispatch::Bitraversable
+    } else if class == context.known_types.newtype {
+        DeriveDispatch::Newtype
     } else if class == context.known_types.ord {
         DeriveDispatch::Ord
     } else if class == context.known_types.ord1 {
         DeriveDispatch::Ord1
-    } else if class == context.known_types.newtype
-        || class == context.known_types.generic
+    } else if class == context.known_types.generic
     {
         DeriveDispatch::SupportedButNotImplemented
     } else {

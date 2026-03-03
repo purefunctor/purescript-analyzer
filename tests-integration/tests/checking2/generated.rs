@@ -251,3 +251,9 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_110_derive_newtype_parameterized_main() { run_test("110_derive_newtype_parameterized", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_111_derive_newtype_not_newtype_main() { run_test("111_derive_newtype_not_newtype", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_112_derive_newtype_class_simple_main() { run_test("112_derive_newtype_class_simple", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_113_derive_newtype_class_parameterized_main() { run_test("113_derive_newtype_class_parameterized", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_114_derive_newtype_class_not_newtype_main() { run_test("114_derive_newtype_class_not_newtype", "Main"); }

@@ -70,6 +70,16 @@ where
             state.push_wanted(delegate_constraint);
             tools::solve_and_report_constraints(state, context)?;
         }
+        DeriveStrategy::HeadOnly => {
+            tools::emit_superclass_constraints(
+                state,
+                context,
+                result.class_file,
+                result.class_id,
+                &result.arguments,
+            )?;
+            tools::solve_and_report_constraints(state, context)?;
+        }
         DeriveStrategy::VarianceConstraints { data_file, data_id, derived_type, config } => {
             tools::emit_superclass_constraints(
                 state,
