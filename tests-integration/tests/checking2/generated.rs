@@ -223,3 +223,7 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_096_derive_contravariant_simple_main() { run_test("096_derive_contravariant_simple", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_097_derive_contravariant_error_main() { run_test("097_derive_contravariant_error", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_098_derive_profunctor_simple_main() { run_test("098_derive_profunctor_simple", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_099_derive_profunctor_error_main() { run_test("099_derive_profunctor_error", "Main"); }

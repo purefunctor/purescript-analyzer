@@ -1,0 +1,43 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+WrongFirst ::
+  forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type) -> WrongFirst (a :: Type) (b :: Type)
+WrongSecond ::
+  forall (a :: Type) (b :: Type).
+    ((b :: Type) -> (a :: Type)) -> WrongSecond (a :: Type) (b :: Type)
+
+Types
+WrongFirst :: Type -> Type -> Type
+WrongSecond :: Type -> Type -> Type
+
+Roles
+WrongFirst = [Representational, Representational]
+WrongSecond = [Representational, Representational]
+
+Errors
+CheckError {
+    kind: DeriveNotSupportedYet {
+        class_file: Idx::<File>(27),
+        class_id: Idx::<TypeItem>(0),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(1),
+        ),
+    ],
+}
+CheckError {
+    kind: DeriveNotSupportedYet {
+        class_file: Idx::<File>(27),
+        class_id: Idx::<TypeItem>(0),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(3),
+        ),
+    ],
+}
