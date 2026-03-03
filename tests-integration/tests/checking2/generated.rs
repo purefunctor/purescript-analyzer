@@ -259,3 +259,31 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_114_derive_newtype_class_not_newtype_main() { run_test("114_derive_newtype_class_not_newtype", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_115_derive_generic_simple_main() { run_test("115_derive_generic_simple", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_116_derive_eq_mutual_visibility_same_module_main() { run_test("116_derive_eq_mutual_visibility_same_module", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_117_derive_newtype_class_coercible_main() { run_test("117_derive_newtype_class_coercible", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_118_derive_newtype_with_given_main() { run_test("118_derive_newtype_with_given", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_119_derive_newtype_missing_instance_main() { run_test("119_derive_newtype_missing_instance", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_120_derive_newtype_missing_given_main() { run_test("120_derive_newtype_missing_given", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_121_derive_newtype_multi_param_main() { run_test("121_derive_newtype_multi_param", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_122_derive_newtype_higher_kinded_main() { run_test("122_derive_newtype_higher_kinded", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_123_derive_newtype_function_main() { run_test("123_derive_newtype_function", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_124_derive_newtype_synonym_inner_main() { run_test("124_derive_newtype_synonym_inner", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_125_derive_eq_1_higher_kinded_main() { run_test("125_derive_eq_1_higher_kinded", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_126_derive_eq_partial_main() { run_test("126_derive_eq_partial", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_127_derive_eq_ord_nested_higher_kinded_main() { run_test("127_derive_eq_ord_nested_higher_kinded", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_128_derive_functor_higher_kinded_main() { run_test("128_derive_functor_higher_kinded", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_129_derive_bifunctor_higher_kinded_main() { run_test("129_derive_bifunctor_higher_kinded", "Main"); }

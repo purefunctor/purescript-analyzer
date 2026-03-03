@@ -1,0 +1,36 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Builder ::
+  forall (a :: Type) (b :: Type). ((a :: Type) -> (b :: Type)) -> Builder (a :: Type) (b :: Type)
+
+Types
+Builder :: Type -> Type -> Type
+
+Roles
+Builder = [Representational, Representational]
+
+Errors
+CheckError {
+    kind: NoInstanceFound {
+        constraint: Id<smol_str::SmolStr>(10),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(1),
+        ),
+    ],
+}
+CheckError {
+    kind: NoInstanceFound {
+        constraint: Id<smol_str::SmolStr>(11),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(2),
+        ),
+    ],
+}
