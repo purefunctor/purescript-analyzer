@@ -17,38 +17,3 @@ Roles
 Predicate = [Representational]
 Comparison = [Representational]
 Op = [Representational, Representational]
-
-Errors
-CheckError {
-    kind: DeriveNotSupportedYet {
-        class_file: Idx::<File>(21),
-        class_id: Idx::<TypeItem>(0),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(1),
-        ),
-    ],
-}
-CheckError {
-    kind: DeriveNotSupportedYet {
-        class_file: Idx::<File>(21),
-        class_id: Idx::<TypeItem>(0),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(3),
-        ),
-    ],
-}
-CheckError {
-    kind: DeriveNotSupportedYet {
-        class_file: Idx::<File>(21),
-        class_id: Idx::<TypeItem>(0),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(5),
-        ),
-    ],
-}

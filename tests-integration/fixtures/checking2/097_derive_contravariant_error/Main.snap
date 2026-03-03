@@ -17,9 +17,8 @@ Producer = [Representational]
 
 Errors
 CheckError {
-    kind: DeriveNotSupportedYet {
-        class_file: Idx::<File>(21),
-        class_id: Idx::<TypeItem>(0),
+    kind: CovariantOccurrence {
+        type_message: Id<smol_str::SmolStr>(6),
     },
     crumbs: [
         TermDeclaration(
@@ -28,9 +27,8 @@ CheckError {
     ],
 }
 CheckError {
-    kind: DeriveNotSupportedYet {
-        class_file: Idx::<File>(21),
-        class_id: Idx::<TypeItem>(0),
+    kind: CovariantOccurrence {
+        type_message: Id<smol_str::SmolStr>(7),
     },
     crumbs: [
         TermDeclaration(
