@@ -32,6 +32,7 @@ enum DeriveDispatch {
     Contravariant,
     Profunctor,
     Foldable,
+    Bifoldable,
     Ord,
     Ord1,
     SupportedButNotImplemented,
@@ -91,12 +92,13 @@ where
         DeriveDispatch::Profunctor
     } else if class == context.known_types.foldable {
         DeriveDispatch::Foldable
+    } else if class == context.known_types.bifoldable {
+        DeriveDispatch::Bifoldable
     } else if class == context.known_types.ord {
         DeriveDispatch::Ord
     } else if class == context.known_types.ord1 {
         DeriveDispatch::Ord1
-    } else if class == context.known_types.bifoldable
-        || class == context.known_types.traversable
+    } else if class == context.known_types.traversable
         || class == context.known_types.bitraversable
         || class == context.known_types.newtype
         || class == context.known_types.generic

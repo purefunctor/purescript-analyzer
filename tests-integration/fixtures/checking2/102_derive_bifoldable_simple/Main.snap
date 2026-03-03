@@ -21,38 +21,3 @@ Roles
 Either = [Representational, Representational]
 Pair = [Representational, Representational]
 Const2 = [Representational, Phantom, Phantom]
-
-Errors
-CheckError {
-    kind: DeriveNotSupportedYet {
-        class_file: Idx::<File>(15),
-        class_id: Idx::<TypeItem>(0),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(2),
-        ),
-    ],
-}
-CheckError {
-    kind: DeriveNotSupportedYet {
-        class_file: Idx::<File>(15),
-        class_id: Idx::<TypeItem>(0),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(4),
-        ),
-    ],
-}
-CheckError {
-    kind: DeriveNotSupportedYet {
-        class_file: Idx::<File>(15),
-        class_id: Idx::<TypeItem>(0),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(6),
-        ),
-    ],
-}

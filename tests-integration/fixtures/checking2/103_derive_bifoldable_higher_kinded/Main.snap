@@ -39,9 +39,8 @@ WrapBothNoConstraint = [Representational, Representational, Nominal, Nominal]
 
 Errors
 CheckError {
-    kind: DeriveNotSupportedYet {
-        class_file: Idx::<File>(15),
-        class_id: Idx::<TypeItem>(0),
+    kind: NoInstanceFound {
+        constraint: Id<smol_str::SmolStr>(9),
     },
     crumbs: [
         TermDeclaration(
@@ -50,9 +49,28 @@ CheckError {
     ],
 }
 CheckError {
-    kind: DeriveNotSupportedYet {
-        class_file: Idx::<File>(15),
-        class_id: Idx::<TypeItem>(0),
+    kind: NoInstanceFound {
+        constraint: Id<smol_str::SmolStr>(10),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(1),
+        ),
+    ],
+}
+CheckError {
+    kind: NoInstanceFound {
+        constraint: Id<smol_str::SmolStr>(11),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(3),
+        ),
+    ],
+}
+CheckError {
+    kind: NoInstanceFound {
+        constraint: Id<smol_str::SmolStr>(12),
     },
     crumbs: [
         TermDeclaration(

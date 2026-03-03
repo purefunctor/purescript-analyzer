@@ -214,6 +214,13 @@ where
             class_id,
             &checked_arguments,
         )?,
+        DeriveDispatch::Bifoldable => foldable::check_derive_bifoldable(
+            state,
+            context,
+            class_file,
+            class_id,
+            &checked_arguments,
+        )?,
         DeriveDispatch::Ord => eq_ord::check_derive_ord(
             state,
             context,
