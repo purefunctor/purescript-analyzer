@@ -245,3 +245,9 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_107_derive_bitraversable_simple_main() { run_test("107_derive_bitraversable_simple", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_108_derive_bitraversable_higher_kinded_main() { run_test("108_derive_bitraversable_higher_kinded", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_109_derive_newtype_simple_main() { run_test("109_derive_newtype_simple", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_110_derive_newtype_parameterized_main() { run_test("110_derive_newtype_parameterized", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_111_derive_newtype_not_newtype_main() { run_test("111_derive_newtype_not_newtype", "Main"); }
