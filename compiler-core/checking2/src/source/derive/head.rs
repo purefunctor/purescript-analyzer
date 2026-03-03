@@ -185,6 +185,13 @@ where
             class_id,
             &checked_arguments,
         )?,
+        DeriveDispatch::Bifunctor => functor::check_derive_bifunctor(
+            state,
+            context,
+            class_file,
+            class_id,
+            &checked_arguments,
+        )?,
         DeriveDispatch::Ord => eq_ord::check_derive_ord(
             state,
             context,

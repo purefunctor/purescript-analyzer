@@ -48,3 +48,41 @@ where
         config,
     }))
 }
+
+pub(super) fn check_derive_bifunctor<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    class_file: FileId,
+    class_id: TypeItemId,
+    arguments: &[crate::core::TypeId],
+) -> QueryResult<Option<DeriveStrategy>>
+where
+    Q: ExternalQueries,
+{
+    let [derived_type] = arguments else {
+        state.insert_error(ErrorKind::DeriveInvalidArity {
+            class_file,
+            class_id,
+            expected: 1,
+            actual: arguments.len(),
+        });
+        return Ok(None);
+    };
+
+    let Some((data_file, data_id)) = toolkit::extract_type_constructor(state, context, *derived_type)?
+    else {
+        let type_message = state.pretty_id(context, *derived_type)?;
+        state.insert_error(ErrorKind::CannotDeriveForType { type_message });
+        return Ok(None);
+    };
+
+    let wrapper = context.known_types.functor;
+    let config = VarianceConfig::Pair((Variance::Covariant, wrapper), (Variance::Covariant, wrapper));
+
+    Ok(Some(DeriveStrategy::VarianceConstraints {
+        data_file,
+        data_id,
+        derived_type: *derived_type,
+        config,
+    }))
+}
