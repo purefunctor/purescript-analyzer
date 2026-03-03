@@ -287,3 +287,9 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_128_derive_functor_higher_kinded_main() { run_test("128_derive_functor_higher_kinded", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_129_derive_bifunctor_higher_kinded_main() { run_test("129_derive_bifunctor_higher_kinded", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_130_givens_retained_main() { run_test("130_givens_retained", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_131_givens_scoped_main() { run_test("131_givens_scoped", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_132_let_constraint_scoping_main() { run_test("132_let_constraint_scoping", "Main"); }
