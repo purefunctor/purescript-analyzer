@@ -231,3 +231,7 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_100_derive_foldable_simple_main() { run_test("100_derive_foldable_simple", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_101_derive_foldable_higher_kinded_main() { run_test("101_derive_foldable_higher_kinded", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_102_derive_bifoldable_simple_main() { run_test("102_derive_bifoldable_simple", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_103_derive_bifoldable_higher_kinded_main() { run_test("103_derive_bifoldable_higher_kinded", "Main"); }
