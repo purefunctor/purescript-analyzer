@@ -12,7 +12,7 @@ use crate::state::CheckState;
 
 use super::{
     DeriveDispatch, DeriveHeadResult, DeriveStrategy, contravariant, derive_dispatch, eq1_ord1,
-    eq_ord, functor,
+    eq_ord, foldable, functor,
 };
 
 pub fn check_derive_declarations<Q>(
@@ -201,6 +201,13 @@ where
             &checked_arguments,
         )?,
         DeriveDispatch::Profunctor => contravariant::check_derive_profunctor(
+            state,
+            context,
+            class_file,
+            class_id,
+            &checked_arguments,
+        )?,
+        DeriveDispatch::Foldable => foldable::check_derive_foldable(
             state,
             context,
             class_file,

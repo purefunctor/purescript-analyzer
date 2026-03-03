@@ -20,38 +20,3 @@ Roles
 Identity = [Representational]
 Maybe = [Representational]
 Const = [Representational, Phantom]
-
-Errors
-CheckError {
-    kind: DeriveNotSupportedYet {
-        class_file: Idx::<File>(20),
-        class_id: Idx::<TypeItem>(0),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(1),
-        ),
-    ],
-}
-CheckError {
-    kind: DeriveNotSupportedYet {
-        class_file: Idx::<File>(20),
-        class_id: Idx::<TypeItem>(0),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(4),
-        ),
-    ],
-}
-CheckError {
-    kind: DeriveNotSupportedYet {
-        class_file: Idx::<File>(20),
-        class_id: Idx::<TypeItem>(0),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(6),
-        ),
-    ],
-}
