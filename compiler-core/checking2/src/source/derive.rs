@@ -36,9 +36,9 @@ enum DeriveDispatch {
     Traversable,
     Bitraversable,
     Newtype,
+    Generic,
     Ord,
     Ord1,
-    SupportedButNotImplemented,
     Unsupported,
 }
 
@@ -64,7 +64,6 @@ pub(super) enum DeriveStrategy {
         derived_type: TypeId,
         config: VarianceConfig,
     },
-    Unsupported,
 }
 
 pub struct DeriveHeadResult {
@@ -107,13 +106,12 @@ where
         DeriveDispatch::Bitraversable
     } else if class == context.known_types.newtype {
         DeriveDispatch::Newtype
+    } else if class == context.known_types.generic {
+        DeriveDispatch::Generic
     } else if class == context.known_types.ord {
         DeriveDispatch::Ord
     } else if class == context.known_types.ord1 {
         DeriveDispatch::Ord1
-    } else if class == context.known_types.generic
-    {
-        DeriveDispatch::SupportedButNotImplemented
     } else {
         DeriveDispatch::Unsupported
     }

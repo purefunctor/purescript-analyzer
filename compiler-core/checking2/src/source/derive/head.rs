@@ -11,8 +11,8 @@ use crate::source::types;
 use crate::state::CheckState;
 
 use super::{
-    DeriveDispatch, DeriveHeadResult, DeriveStrategy, contravariant, derive_dispatch, eq1_ord1,
-    eq_ord, foldable, functor, newtype, traversable,
+    DeriveDispatch, DeriveHeadResult, contravariant, derive_dispatch, eq1_ord1, eq_ord, foldable,
+    functor, generic, newtype, traversable,
 };
 
 pub fn check_derive_declarations<Q>(
@@ -249,6 +249,13 @@ where
                 class_id,
                 &checked_arguments,
             )?,
+            DeriveDispatch::Generic => generic::check_derive_generic(
+                state,
+                context,
+                class_file,
+                class_id,
+                &checked_arguments,
+            )?,
             DeriveDispatch::Ord => eq_ord::check_derive_ord(
                 state,
                 context,
@@ -263,7 +270,6 @@ where
                 class_id,
                 &checked_arguments,
             )?,
-            DeriveDispatch::SupportedButNotImplemented => Some(DeriveStrategy::Unsupported),
             DeriveDispatch::Unsupported => {
                 state.insert_error(ErrorKind::CannotDeriveClass { class_file, class_id });
                 None

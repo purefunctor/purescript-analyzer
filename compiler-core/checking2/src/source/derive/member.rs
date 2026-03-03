@@ -3,7 +3,7 @@ use building_types::QueryResult;
 use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::Type;
-use crate::error::{ErrorCrumb, ErrorKind};
+use crate::error::ErrorCrumb;
 use crate::state::CheckState;
 
 use super::{DeriveHeadResult, DeriveStrategy, field, tools, variance};
@@ -97,12 +97,6 @@ where
                 config,
             )?;
             tools::solve_and_report_constraints(state, context)?;
-        }
-        DeriveStrategy::Unsupported => {
-            state.insert_error(ErrorKind::DeriveNotSupportedYet {
-                class_file: result.class_file,
-                class_id: result.class_id,
-            });
         }
     }
     Ok(())

@@ -26,13 +26,19 @@ getWrapper ::
   forall (a :: Type) (rep :: Type).
     Generic (Wrapper (a :: Type)) (rep :: Type) => Proxy @Type (rep :: Type)
 forceSolve ::
-  forall (t37 :: Type) (t36 :: Type) (t35 :: Type) (t34 :: Type) (t33 :: Type) (t32 :: Type).
-    { getEither :: Proxy @Type (t37 :: Type)
-    , getIdentity :: Proxy @Type (t36 :: Type)
-    , getMyUnit :: Proxy @Type (t35 :: Type)
-    , getTuple :: Proxy @Type (t34 :: Type)
-    , getVoid :: Proxy @Type (t33 :: Type)
-    , getWrapper :: Proxy @Type (t32 :: Type)
+  forall (t31 :: Type) (t30 :: Type) (t29 :: Type) (t28 :: Type) (t27 :: Type) (t26 :: Type).
+    { getEither ::
+        Proxy @Type
+          (Sum
+            (Constructor "Left" (Argument (t31 :: Type)))
+            (Constructor "Right" (Argument (t30 :: Type))))
+    , getIdentity :: Proxy @Type (Constructor "Identity" (Argument (t29 :: Type)))
+    , getMyUnit :: Proxy @Type (Constructor "MyUnit" NoArguments)
+    , getTuple ::
+        Proxy @Type
+          (Constructor "Tuple" (Product (Argument (t28 :: Type)) (Argument (t27 :: Type))))
+    , getVoid :: Proxy @Type NoConstructors
+    , getWrapper :: Proxy @Type (Constructor "Wrapper" (Argument (t26 :: Type)))
     }
 
 Types
@@ -52,71 +58,3 @@ Either = [Representational, Representational]
 Tuple = [Representational, Representational]
 Wrapper = [Representational]
 Proxy = [Phantom]
-
-Errors
-CheckError {
-    kind: DeriveNotSupportedYet {
-        class_file: Idx::<File>(23),
-        class_id: Idx::<TypeItem>(0),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(6),
-        ),
-    ],
-}
-CheckError {
-    kind: DeriveNotSupportedYet {
-        class_file: Idx::<File>(23),
-        class_id: Idx::<TypeItem>(0),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(7),
-        ),
-    ],
-}
-CheckError {
-    kind: DeriveNotSupportedYet {
-        class_file: Idx::<File>(23),
-        class_id: Idx::<TypeItem>(0),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(8),
-        ),
-    ],
-}
-CheckError {
-    kind: DeriveNotSupportedYet {
-        class_file: Idx::<File>(23),
-        class_id: Idx::<TypeItem>(0),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(9),
-        ),
-    ],
-}
-CheckError {
-    kind: DeriveNotSupportedYet {
-        class_file: Idx::<File>(23),
-        class_id: Idx::<TypeItem>(0),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(10),
-        ),
-    ],
-}
-CheckError {
-    kind: DeriveNotSupportedYet {
-        class_file: Idx::<File>(23),
-        class_id: Idx::<TypeItem>(0),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(11),
-        ),
-    ],
-}
