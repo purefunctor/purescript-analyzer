@@ -12,7 +12,7 @@ use crate::state::CheckState;
 
 use super::{
     DeriveDispatch, DeriveHeadResult, DeriveStrategy, contravariant, derive_dispatch, eq1_ord1,
-    eq_ord, foldable, functor, traversable,
+    eq_ord, foldable, functor, newtype, traversable,
 };
 
 pub fn check_derive_declarations<Q>(
@@ -29,11 +29,11 @@ where
 
         let items = items.iter().filter_map(|&item_id| {
             let item = context.lowered.info.get_term_item(item_id)?;
-            let TermItemIr::Derive { constraints, resolution, arguments, .. } = item else {
+            let TermItemIr::Derive { newtype, constraints, resolution, arguments } = item else {
                 return None;
             };
             let resolution = *resolution;
-            Some(CheckDeriveDeclaration { item_id, constraints, resolution, arguments })
+            Some(CheckDeriveDeclaration { item_id, newtype: *newtype, constraints, resolution, arguments })
         });
 
         for item in items {
@@ -48,6 +48,7 @@ where
 
 struct CheckDeriveDeclaration<'a> {
     item_id: TermItemId,
+    newtype: bool,
     constraints: &'a [lowering::TypeId],
     resolution: Option<(FileId, TypeItemId)>,
     arguments: &'a [lowering::TypeId],
@@ -56,6 +57,7 @@ struct CheckDeriveDeclaration<'a> {
 struct CheckDeriveDeclarationCore<'a> {
     derive_id: indexing::DeriveId,
     item_id: TermItemId,
+    newtype: bool,
     class_file: FileId,
     class_id: TypeItemId,
     constraints: &'a [lowering::TypeId],
@@ -70,7 +72,7 @@ fn check_derive_declaration<Q>(
 where
     Q: ExternalQueries,
 {
-    let CheckDeriveDeclaration { item_id, constraints, resolution, arguments } = item;
+    let CheckDeriveDeclaration { item_id, newtype, constraints, resolution, arguments } = item;
 
     let Some((class_file, class_id)) = resolution else {
         return Ok(None);
@@ -84,6 +86,7 @@ where
         check_derive_declaration_core(state, context, CheckDeriveDeclarationCore {
             derive_id,
             item_id,
+            newtype,
             class_file,
             class_id,
             constraints,
@@ -103,6 +106,7 @@ where
     let CheckDeriveDeclarationCore {
         derive_id,
         item_id,
+        newtype,
         class_file,
         class_id,
         constraints,
@@ -164,95 +168,105 @@ where
 
     state.checked.derived.insert(derive_id, CheckedInstance { resolution, canonical });
 
-    let strategy = match derive_dispatch(context, class_file, class_id) {
-        DeriveDispatch::Eq => eq_ord::check_derive_eq(
+    let strategy = if newtype {
+        newtype::check_derive_newtype(
             state,
             context,
             class_file,
             class_id,
             &checked_arguments,
-        )?,
-        DeriveDispatch::Eq1 => eq1_ord1::check_derive_eq1(
-            state,
-            context,
-            class_file,
-            class_id,
-            &checked_arguments,
-        )?,
-        DeriveDispatch::Functor => functor::check_derive_functor(
-            state,
-            context,
-            class_file,
-            class_id,
-            &checked_arguments,
-        )?,
-        DeriveDispatch::Bifunctor => functor::check_derive_bifunctor(
-            state,
-            context,
-            class_file,
-            class_id,
-            &checked_arguments,
-        )?,
-        DeriveDispatch::Contravariant => contravariant::check_derive_contravariant(
-            state,
-            context,
-            class_file,
-            class_id,
-            &checked_arguments,
-        )?,
-        DeriveDispatch::Profunctor => contravariant::check_derive_profunctor(
-            state,
-            context,
-            class_file,
-            class_id,
-            &checked_arguments,
-        )?,
-        DeriveDispatch::Foldable => foldable::check_derive_foldable(
-            state,
-            context,
-            class_file,
-            class_id,
-            &checked_arguments,
-        )?,
-        DeriveDispatch::Bifoldable => foldable::check_derive_bifoldable(
-            state,
-            context,
-            class_file,
-            class_id,
-            &checked_arguments,
-        )?,
-        DeriveDispatch::Traversable => traversable::check_derive_traversable(
-            state,
-            context,
-            class_file,
-            class_id,
-            &checked_arguments,
-        )?,
-        DeriveDispatch::Bitraversable => traversable::check_derive_bitraversable(
-            state,
-            context,
-            class_file,
-            class_id,
-            &checked_arguments,
-        )?,
-        DeriveDispatch::Ord => eq_ord::check_derive_ord(
-            state,
-            context,
-            class_file,
-            class_id,
-            &checked_arguments,
-        )?,
-        DeriveDispatch::Ord1 => eq1_ord1::check_derive_ord1(
-            state,
-            context,
-            class_file,
-            class_id,
-            &checked_arguments,
-        )?,
-        DeriveDispatch::SupportedButNotImplemented => Some(DeriveStrategy::Unsupported),
-        DeriveDispatch::Unsupported => {
-            state.insert_error(ErrorKind::CannotDeriveClass { class_file, class_id });
-            None
+        )?
+    } else {
+        match derive_dispatch(context, class_file, class_id) {
+            DeriveDispatch::Eq => eq_ord::check_derive_eq(
+                state,
+                context,
+                class_file,
+                class_id,
+                &checked_arguments,
+            )?,
+            DeriveDispatch::Eq1 => eq1_ord1::check_derive_eq1(
+                state,
+                context,
+                class_file,
+                class_id,
+                &checked_arguments,
+            )?,
+            DeriveDispatch::Functor => functor::check_derive_functor(
+                state,
+                context,
+                class_file,
+                class_id,
+                &checked_arguments,
+            )?,
+            DeriveDispatch::Bifunctor => functor::check_derive_bifunctor(
+                state,
+                context,
+                class_file,
+                class_id,
+                &checked_arguments,
+            )?,
+            DeriveDispatch::Contravariant => contravariant::check_derive_contravariant(
+                state,
+                context,
+                class_file,
+                class_id,
+                &checked_arguments,
+            )?,
+            DeriveDispatch::Profunctor => contravariant::check_derive_profunctor(
+                state,
+                context,
+                class_file,
+                class_id,
+                &checked_arguments,
+            )?,
+            DeriveDispatch::Foldable => foldable::check_derive_foldable(
+                state,
+                context,
+                class_file,
+                class_id,
+                &checked_arguments,
+            )?,
+            DeriveDispatch::Bifoldable => foldable::check_derive_bifoldable(
+                state,
+                context,
+                class_file,
+                class_id,
+                &checked_arguments,
+            )?,
+            DeriveDispatch::Traversable => traversable::check_derive_traversable(
+                state,
+                context,
+                class_file,
+                class_id,
+                &checked_arguments,
+            )?,
+            DeriveDispatch::Bitraversable => traversable::check_derive_bitraversable(
+                state,
+                context,
+                class_file,
+                class_id,
+                &checked_arguments,
+            )?,
+            DeriveDispatch::Ord => eq_ord::check_derive_ord(
+                state,
+                context,
+                class_file,
+                class_id,
+                &checked_arguments,
+            )?,
+            DeriveDispatch::Ord1 => eq1_ord1::check_derive_ord1(
+                state,
+                context,
+                class_file,
+                class_id,
+                &checked_arguments,
+            )?,
+            DeriveDispatch::SupportedButNotImplemented => Some(DeriveStrategy::Unsupported),
+            DeriveDispatch::Unsupported => {
+                state.insert_error(ErrorKind::CannotDeriveClass { class_file, class_id });
+                None
+            }
         }
     };
 

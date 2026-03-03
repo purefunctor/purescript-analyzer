@@ -11,16 +11,3 @@ Identity :: Type -> Type
 
 Roles
 Identity = [Representational]
-
-Errors
-CheckError {
-    kind: CannotDeriveClass {
-        class_file: Idx::<File>(30),
-        class_id: Idx::<TypeItem>(0),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(1),
-        ),
-    ],
-}

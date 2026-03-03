@@ -14,9 +14,8 @@ Foo = []
 
 Errors
 CheckError {
-    kind: CannotDeriveClass {
-        class_file: Idx::<File>(30),
-        class_id: Idx::<TypeItem>(0),
+    kind: ExpectedNewtype {
+        type_message: Id<smol_str::SmolStr>(7),
     },
     crumbs: [
         TermDeclaration(

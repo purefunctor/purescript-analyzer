@@ -66,6 +66,10 @@ where
             generate_delegate_constraint(state, context, derived_type, class);
             tools::solve_and_report_constraints(state, context)?;
         }
+        DeriveStrategy::NewtypeDeriveConstraint { delegate_constraint } => {
+            state.push_wanted(delegate_constraint);
+            tools::solve_and_report_constraints(state, context)?;
+        }
         DeriveStrategy::VarianceConstraints { data_file, data_id, derived_type, config } => {
             tools::emit_superclass_constraints(
                 state,
