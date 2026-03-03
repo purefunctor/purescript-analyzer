@@ -183,6 +183,13 @@ where
             class_id,
             &checked_arguments,
         )?,
+        DeriveDispatch::Ord1 => eq1_ord1::check_derive_ord1(
+            state,
+            context,
+            class_file,
+            class_id,
+            &checked_arguments,
+        )?,
         DeriveDispatch::SupportedButNotImplemented => Some(DeriveStrategy::Unsupported),
         DeriveDispatch::Unsupported => {
             state.insert_error(ErrorKind::CannotDeriveClass { class_file, class_id });

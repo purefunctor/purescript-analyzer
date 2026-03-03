@@ -28,6 +28,24 @@ where
     check_derive_delegate_constraint(state, context, class_file, class_id, arguments, eq)
 }
 
+pub(super) fn check_derive_ord1<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    class_file: FileId,
+    class_id: TypeItemId,
+    arguments: &[crate::core::TypeId],
+) -> QueryResult<Option<DeriveStrategy>>
+where
+    Q: ExternalQueries,
+{
+    let Some(ord) = context.known_types.ord else {
+        state.insert_error(ErrorKind::CannotDeriveClass { class_file, class_id });
+        return Ok(None);
+    };
+
+    check_derive_delegate_constraint(state, context, class_file, class_id, arguments, ord)
+}
+
 fn check_derive_delegate_constraint<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,

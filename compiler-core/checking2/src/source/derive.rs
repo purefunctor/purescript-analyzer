@@ -27,6 +27,7 @@ enum DeriveDispatch {
     Eq,
     Eq1,
     Ord,
+    Ord1,
     SupportedButNotImplemented,
     Unsupported,
 }
@@ -70,8 +71,9 @@ where
         DeriveDispatch::Eq1
     } else if class == context.known_types.ord {
         DeriveDispatch::Ord
-    } else if class == context.known_types.ord1
-        || class == context.known_types.functor
+    } else if class == context.known_types.ord1 {
+        DeriveDispatch::Ord1
+    } else if class == context.known_types.functor
         || class == context.known_types.bifunctor
         || class == context.known_types.contravariant
         || class == context.known_types.profunctor

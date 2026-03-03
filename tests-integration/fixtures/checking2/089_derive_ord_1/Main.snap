@@ -35,17 +35,6 @@ NoOrd = [Representational]
 
 Errors
 CheckError {
-    kind: DeriveNotSupportedYet {
-        class_file: Idx::<File>(25),
-        class_id: Idx::<TypeItem>(2),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(4),
-        ),
-    ],
-}
-CheckError {
     kind: NoInstanceFound {
         constraint: Id<smol_str::SmolStr>(9),
     },
@@ -62,17 +51,6 @@ CheckError {
     crumbs: [
         TermDeclaration(
             Idx::<TermItem>(8),
-        ),
-    ],
-}
-CheckError {
-    kind: DeriveNotSupportedYet {
-        class_file: Idx::<File>(25),
-        class_id: Idx::<TypeItem>(2),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(9),
         ),
     ],
 }
@@ -107,9 +85,8 @@ CheckError {
     ],
 }
 CheckError {
-    kind: DeriveNotSupportedYet {
-        class_file: Idx::<File>(25),
-        class_id: Idx::<TypeItem>(2),
+    kind: NoInstanceFound {
+        constraint: Id<smol_str::SmolStr>(14),
     },
     crumbs: [
         TermDeclaration(
@@ -118,9 +95,8 @@ CheckError {
     ],
 }
 CheckError {
-    kind: DeriveNotSupportedYet {
-        class_file: Idx::<File>(25),
-        class_id: Idx::<TypeItem>(2),
+    kind: NoInstanceFound {
+        constraint: Id<smol_str::SmolStr>(15),
     },
     crumbs: [
         TermDeclaration(
