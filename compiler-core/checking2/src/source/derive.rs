@@ -25,6 +25,7 @@ use crate::state::CheckState;
 #[derive(Clone, Copy)]
 enum DeriveDispatch {
     Eq,
+    Ord,
     SupportedButNotImplemented,
     Unsupported,
 }
@@ -60,8 +61,9 @@ where
     let class = Some((class_file, class_id));
     if class == context.known_types.eq {
         DeriveDispatch::Eq
+    } else if class == context.known_types.ord {
+        DeriveDispatch::Ord
     } else if class == context.known_types.eq1
-        || class == context.known_types.ord
         || class == context.known_types.ord1
         || class == context.known_types.functor
         || class == context.known_types.bifunctor

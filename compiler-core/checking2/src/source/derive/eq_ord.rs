@@ -20,6 +20,32 @@ pub(super) fn check_derive_eq<Q>(
 where
     Q: ExternalQueries,
 {
+    check_derive_field_constraints(state, context, class_file, class_id, arguments)
+}
+
+pub(super) fn check_derive_ord<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    class_file: FileId,
+    class_id: TypeItemId,
+    arguments: &[crate::core::TypeId],
+) -> QueryResult<Option<DeriveStrategy>>
+where
+    Q: ExternalQueries,
+{
+    check_derive_field_constraints(state, context, class_file, class_id, arguments)
+}
+
+fn check_derive_field_constraints<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    class_file: FileId,
+    class_id: TypeItemId,
+    arguments: &[crate::core::TypeId],
+) -> QueryResult<Option<DeriveStrategy>>
+where
+    Q: ExternalQueries,
+{
     let [derived_type] = arguments else {
         state.insert_error(ErrorKind::DeriveInvalidArity {
             class_file,
