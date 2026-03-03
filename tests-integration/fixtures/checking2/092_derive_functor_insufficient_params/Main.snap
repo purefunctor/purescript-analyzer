@@ -45,9 +45,8 @@ CheckError {
     ],
 }
 CheckError {
-    kind: DeriveNotSupportedYet {
-        class_file: Idx::<File>(22),
-        class_id: Idx::<TypeItem>(0),
+    kind: CannotDeriveForType {
+        type_message: Id<smol_str::SmolStr>(8),
     },
     crumbs: [
         TermDeclaration(
@@ -56,9 +55,8 @@ CheckError {
     ],
 }
 CheckError {
-    kind: DeriveNotSupportedYet {
-        class_file: Idx::<File>(22),
-        class_id: Idx::<TypeItem>(0),
+    kind: CannotDeriveForType {
+        type_message: Id<smol_str::SmolStr>(9),
     },
     crumbs: [
         TermDeclaration(

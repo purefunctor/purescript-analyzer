@@ -21,11 +21,13 @@ use crate::core::TypeId;
 use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::state::CheckState;
+use crate::source::derive::variance::VarianceConfig;
 
 #[derive(Clone, Copy)]
 enum DeriveDispatch {
     Eq,
     Eq1,
+    Functor,
     Ord,
     Ord1,
     SupportedButNotImplemented,
@@ -43,6 +45,12 @@ pub(super) enum DeriveStrategy {
     DelegateConstraint {
         derived_type: TypeId,
         class: (FileId, TypeItemId),
+    },
+    VarianceConstraints {
+        data_file: FileId,
+        data_id: TypeItemId,
+        derived_type: TypeId,
+        config: VarianceConfig,
     },
     Unsupported,
 }
@@ -69,12 +77,13 @@ where
         DeriveDispatch::Eq
     } else if class == context.known_types.eq1 {
         DeriveDispatch::Eq1
+    } else if class == context.known_types.functor {
+        DeriveDispatch::Functor
     } else if class == context.known_types.ord {
         DeriveDispatch::Ord
     } else if class == context.known_types.ord1 {
         DeriveDispatch::Ord1
-    } else if class == context.known_types.functor
-        || class == context.known_types.bifunctor
+    } else if class == context.known_types.bifunctor
         || class == context.known_types.contravariant
         || class == context.known_types.profunctor
         || class == context.known_types.foldable

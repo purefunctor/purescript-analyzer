@@ -6,7 +6,7 @@ use crate::core::Type;
 use crate::error::{ErrorCrumb, ErrorKind};
 use crate::state::CheckState;
 
-use super::{DeriveHeadResult, DeriveStrategy, field, tools};
+use super::{DeriveHeadResult, DeriveStrategy, field, tools, variance};
 
 pub fn check_derive_members<Q>(
     state: &mut CheckState,
@@ -64,6 +64,24 @@ where
                 &result.arguments,
             )?;
             generate_delegate_constraint(state, context, derived_type, class);
+            tools::solve_and_report_constraints(state, context)?;
+        }
+        DeriveStrategy::VarianceConstraints { data_file, data_id, derived_type, config } => {
+            tools::emit_superclass_constraints(
+                state,
+                context,
+                result.class_file,
+                result.class_id,
+                &result.arguments,
+            )?;
+            variance::generate_variance_constraints(
+                state,
+                context,
+                data_file,
+                data_id,
+                derived_type,
+                config,
+            )?;
             tools::solve_and_report_constraints(state, context)?;
         }
         DeriveStrategy::Unsupported => {
