@@ -7,6 +7,5 @@ type NaturalTransformation f g = forall a. f a -> g a
 
 infixr 4 type NaturalTransformation as ~>
 
-type Desugared = NaturalTransformation Array Maybe
-
-type Operator = Array ~> Maybe
+type Test1 = NaturalTransformation Array Maybe
+type Test2 = Array ~> Maybe

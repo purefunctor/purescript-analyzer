@@ -26,7 +26,7 @@ use rustc_hash::FxHashSet;
 
 use crate::context::CheckContext;
 use crate::core::walk::{TypeWalker, WalkAction, walk_type};
-use crate::core::{ForallBinder, Name, Type, TypeId, constraint, normalise, zonk};
+use crate::core::{ForallBinder, KindOrType, Name, Type, TypeId, constraint, normalise, zonk};
 use crate::state::{CheckState, UnificationEntry, UnificationState};
 use crate::{ExternalQueries, safe_loop};
 
@@ -62,7 +62,10 @@ where
             }
             Type::SynonymApplication(synonym_id) => {
                 let synonym = context.lookup_synonym(synonym_id);
-                for &argument in synonym.arguments.iter() {
+                for application in synonym.arguments.iter() {
+                    let argument = match application {
+                        KindOrType::Kind(argument) | KindOrType::Type(argument) => *argument,
+                    };
                     aux(graph, state, context, argument, dependent, visited_kinds)?;
                 }
             }

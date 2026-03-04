@@ -7,8 +7,8 @@ use rustc_hash::FxHashMap;
 use smol_str::{SmolStr, SmolStrBuilder};
 
 use crate::core::{
-    ForallBinder, ForallBinderId, Name, RowField, RowType, RowTypeId, SmolStrId, Synonym,
-    SynonymId, Type, TypeId,
+    ForallBinder, ForallBinderId, KindOrType, Name, RowField, RowType, RowTypeId, SmolStrId,
+    Synonym, SynonymId, Type, TypeId,
 };
 use crate::{CheckedModule, ExternalQueries};
 
@@ -159,7 +159,12 @@ where
                 let arguments = synonym
                     .arguments
                     .iter()
-                    .map(|&argument| self.traverse(Precedence::Atom, argument))
+                    .map(|application| match application {
+                        KindOrType::Kind(argument) => {
+                            self.arena.text("@").append(self.traverse(Precedence::Atom, *argument))
+                        }
+                        KindOrType::Type(argument) => self.traverse(Precedence::Atom, *argument),
+                    })
                     .collect_vec();
 
                 let arguments =

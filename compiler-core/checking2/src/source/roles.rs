@@ -8,7 +8,7 @@ use rustc_hash::FxHashMap;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::{ForallBinder, Name, Role, Type, TypeId, normalise, toolkit};
+use crate::core::{ForallBinder, KindOrType, Name, Role, Type, TypeId, normalise, toolkit};
 use crate::error::{ErrorCrumb, ErrorKind};
 use crate::state::CheckState;
 
@@ -227,12 +227,16 @@ where
 
         Type::SynonymApplication(synonym_id) => {
             let synonym = inference.context.lookup_synonym(synonym_id);
-            for &argument in synonym.arguments.iter() {
+            for application in synonym.arguments.iter() {
+                let argument = match application {
+                    KindOrType::Kind(argument) | KindOrType::Type(argument) => *argument,
+                };
                 infer_roles(inference, argument, mode.child())?;
             }
         }
 
-        Type::Constructor(_, _) | Type::Integer(_)
+        Type::Constructor(_, _)
+        | Type::Integer(_)
         | Type::String(_, _)
         | Type::Unification(_)
         | Type::Free(_)

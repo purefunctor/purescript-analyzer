@@ -9,7 +9,7 @@ use crate::context::CheckContext;
 use crate::core::constraint::MatchInstance;
 use crate::core::substitute::SubstituteName;
 use crate::core::unification::{CanUnify, can_unify};
-use crate::core::{Role, Type, TypeId, normalise, toolkit};
+use crate::core::{KindOrType, Role, Type, TypeId, normalise, toolkit};
 use crate::error::ErrorKind;
 use crate::source::types;
 use crate::state::CheckState;
@@ -426,8 +426,15 @@ where
             }
             let s1_args = Arc::clone(&s1.arguments);
             let s2_args = Arc::clone(&s2.arguments);
-            for (&a1, &a2) in s1_args.iter().zip(s2_args.iter()) {
-                if !try_refl(state, context, a1, a2)? {
+            for (a1, a2) in s1_args.iter().zip(s2_args.iter()) {
+                let equivalent = match (a1, a2) {
+                    (KindOrType::Kind(a1), KindOrType::Kind(a2))
+                    | (KindOrType::Type(a1), KindOrType::Type(a2)) => {
+                        try_refl(state, context, *a1, *a2)?
+                    }
+                    _ => false,
+                };
+                if !equivalent {
                     return Ok(false);
                 }
             }

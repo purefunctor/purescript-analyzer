@@ -6,7 +6,7 @@ use building_types::QueryResult;
 
 use crate::context::CheckContext;
 use crate::core::normalise::normalise;
-use crate::core::{ForallBinder, Type, TypeId};
+use crate::core::{ForallBinder, KindOrType, Type, TypeId};
 use crate::state::CheckState;
 use crate::{ExternalQueries, safe_loop};
 
@@ -75,7 +75,14 @@ where
             synonym.arguments = synonym
                 .arguments
                 .iter()
-                .map(|&argument| fold_type(state, context, argument, folder))
+                .map(|application| match application {
+                    KindOrType::Kind(argument) => {
+                        fold_type(state, context, *argument, folder).map(KindOrType::Kind)
+                    }
+                    KindOrType::Type(argument) => {
+                        fold_type(state, context, *argument, folder).map(KindOrType::Type)
+                    }
+                })
                 .collect::<QueryResult<_>>()?;
             let synonym_id = context.intern_synonym(synonym);
             context.intern_synonym_application(synonym_id)

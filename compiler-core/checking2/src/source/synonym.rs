@@ -10,7 +10,7 @@ use indexing::TypeItemId;
 use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::substitute::SubstituteName;
-use crate::core::{Saturation, Synonym, Type, TypeId, normalise, toolkit, unification};
+use crate::core::{KindOrType, Saturation, Synonym, Type, TypeId, normalise, toolkit, unification};
 use crate::error::ErrorKind;
 use crate::source::types;
 use crate::state::CheckState;
@@ -122,12 +122,12 @@ where
     );
     state.defer_expansion = defer_expansion;
 
-    let (argument_types, (_, synonym_kind)) = chain_result?;
+    let (applications, (_, synonym_kind)) = chain_result?;
 
     let synonym = Synonym {
         saturation: Saturation::Full,
         reference: (file_id, type_id),
-        arguments: Arc::from(argument_types),
+        arguments: Arc::from(applications),
     };
 
     let synonym_id = context.intern_synonym(synonym);
@@ -153,13 +153,13 @@ where
     Q: ExternalQueries,
 {
     let function_type = context.queries.intern_type(Type::Constructor(file_id, type_id));
-    let (argument_types, (_, synonym_kind)) =
+    let (applications, (_, synonym_kind)) =
         infer_synonym_application_chain(state, context, (function_type, function_kind), arguments)?;
 
     let synonym = Synonym {
         saturation: Saturation::Partial,
         reference: (file_id, type_id),
-        arguments: Arc::from(argument_types),
+        arguments: Arc::from(applications),
     };
 
     let synonym_id = context.intern_synonym(synonym);
@@ -173,30 +173,33 @@ fn infer_synonym_application_chain<Q>(
     context: &CheckContext<Q>,
     function: (TypeId, TypeId),
     arguments: &[lowering::TypeId],
-) -> QueryResult<(Vec<TypeId>, (TypeId, TypeId))>
+) -> QueryResult<(Vec<KindOrType>, (TypeId, TypeId))>
 where
     Q: ExternalQueries,
 {
-    let mut argument_types = vec![];
+    let mut applications = vec![];
     let mut current_function = function;
 
     for &argument_id in arguments {
-        let (argument_type, result_function) =
-            infer_synonym_application_kind(state, context, current_function, argument_id)?;
-
-        argument_types.push(argument_type);
-        current_function = result_function;
+        current_function = infer_synonym_application_kind(
+            state,
+            context,
+            &mut applications,
+            current_function,
+            argument_id,
+        )?;
     }
 
-    Ok((argument_types, current_function))
+    Ok((applications, current_function))
 }
 
 fn infer_synonym_application_kind<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
+    applications: &mut Vec<KindOrType>,
     (function_type, function_kind): (TypeId, TypeId),
     argument: lowering::TypeId,
-) -> QueryResult<(TypeId, (TypeId, TypeId))>
+) -> QueryResult<(TypeId, TypeId)>
 where
     Q: ExternalQueries,
 {
@@ -207,7 +210,8 @@ where
             let (argument_type, _) = types::check_kind(state, context, argument, argument_kind)?;
             let result_kind = normalise::normalise(state, context, result_kind)?;
             let result_type = context.intern_application(function_type, argument_type);
-            Ok((argument_type, (result_type, result_kind)))
+            applications.push(KindOrType::Type(argument_type));
+            Ok((result_type, result_kind))
         }
 
         Type::Unification(unification_id) => {
@@ -221,7 +225,8 @@ where
             let result_kind = normalise::normalise(state, context, result_u)?;
             let result_type = context.intern_application(function_type, argument_type);
 
-            Ok((argument_type, (result_type, result_kind)))
+            applications.push(KindOrType::Type(argument_type));
+            Ok((result_type, result_kind))
         }
 
         Type::Forall(binder_id, inner_kind) => {
@@ -233,7 +238,14 @@ where
             let function_kind =
                 SubstituteName::one(state, context, binder.name, kind_argument, inner_kind)?;
 
-            infer_synonym_application_kind(state, context, (function_type, function_kind), argument)
+            applications.push(KindOrType::Kind(kind_argument));
+            infer_synonym_application_kind(
+                state,
+                context,
+                applications,
+                (function_type, function_kind),
+                argument,
+            )
         }
 
         _ => {
@@ -254,7 +266,8 @@ where
                 });
             }
 
-            Ok((argument_type, (t, k)))
+            applications.push(KindOrType::Type(argument_type));
+            Ok((t, k))
         }
     }
 }

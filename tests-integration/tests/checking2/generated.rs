@@ -303,3 +303,7 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_136_row_open_record_main() { run_test("136_row_open_record", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_137_type_operator_synonym_expansion_main() { run_test("137_type_operator_synonym_expansion", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_138_synonym_kind_application_main() { run_test("138_synonym_kind_application", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_139_synonym_operator_alias_main() { run_test("139_synonym_operator_alias", "Main"); }

@@ -7,7 +7,9 @@ use smol_str::SmolStr;
 
 use crate::context::CheckContext;
 use crate::core::substitute::SubstituteName;
-use crate::core::{ForallBinder, RowField, RowType, Type, TypeId, normalise, toolkit, unification};
+use crate::core::{
+    ForallBinder, KindOrType, RowField, RowType, Type, TypeId, normalise, toolkit, unification,
+};
 use crate::error::{ErrorCrumb, ErrorKind};
 use crate::source::{operator, synonym};
 use crate::state::CheckState;
@@ -582,10 +584,22 @@ where
 
             let mut synonym_kind = toolkit::lookup_file_type(state, context, file_id, type_id)?;
 
-            for _ in arguments.iter() {
+            for application in arguments.iter() {
                 synonym_kind = normalise::normalise(state, context, synonym_kind)?;
-                match context.lookup_type(synonym_kind) {
-                    Type::Function(_, result_kind) => synonym_kind = result_kind,
+                match (application, context.lookup_type(synonym_kind)) {
+                    (KindOrType::Kind(argument), Type::Forall(binder_id, inner_kind)) => {
+                        let binder = context.lookup_forall_binder(binder_id);
+                        synonym_kind = SubstituteName::one(
+                            state,
+                            context,
+                            binder.name,
+                            *argument,
+                            inner_kind,
+                        )?;
+                    }
+                    (KindOrType::Type(_), Type::Function(_, result_kind)) => {
+                        synonym_kind = result_kind;
+                    }
                     _ => return Ok(unknown),
                 }
             }

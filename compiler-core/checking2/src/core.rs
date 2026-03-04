@@ -92,6 +92,12 @@ pub enum Saturation {
     Partial,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum KindOrType {
+    Kind(TypeId),
+    Type(TypeId),
+}
+
 /// Represents a type synonym.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Synonym {
@@ -99,8 +105,8 @@ pub struct Synonym {
     pub saturation: Saturation,
     /// The reference to the synonym type.
     pub reference: (FileId, TypeItemId),
-    /// Arguments to the synonym constructor.
-    pub arguments: Arc<[TypeId]>,
+    /// Kind and type arguments to the synonym constructor.
+    pub arguments: Arc<[KindOrType]>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

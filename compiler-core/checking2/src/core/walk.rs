@@ -5,7 +5,7 @@ use building_types::QueryResult;
 use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::normalise::normalise;
-use crate::core::{ForallBinder, Type, TypeId};
+use crate::core::{ForallBinder, KindOrType, Type, TypeId};
 use crate::state::CheckState;
 
 pub enum WalkAction {
@@ -49,7 +49,10 @@ where
         }
         Type::SynonymApplication(synonym_id) => {
             let synonym = context.queries.lookup_synonym(synonym_id);
-            for &argument in synonym.arguments.iter() {
+            for application in synonym.arguments.iter() {
+                let argument = match application {
+                    KindOrType::Kind(argument) | KindOrType::Type(argument) => *argument,
+                };
                 walk_type(state, context, argument, walker)?;
             }
         }

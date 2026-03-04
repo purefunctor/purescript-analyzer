@@ -10,7 +10,9 @@ use crate::context::CheckContext;
 use crate::core::substitute::SubstituteName;
 use crate::core::unification::{CanUnify, can_unify};
 use crate::core::walk::{TypeWalker, WalkAction, walk_type};
-use crate::core::{CheckedInstance, Name, RowField, RowType, Type, TypeId, normalise, toolkit};
+use crate::core::{
+    CheckedInstance, KindOrType, Name, RowField, RowType, Type, TypeId, normalise, toolkit,
+};
 use crate::error::ErrorKind;
 use crate::state::CheckState;
 use crate::{CheckedModule, ExternalQueries};
@@ -353,8 +355,14 @@ where
 
             wsyn.arguments.iter().zip(gsyn.arguments.iter()).try_fold(
                 MatchType::Match,
-                |result, (&wa, &ga)| {
-                    result.and_then(|| match_type(state, context, bindings, equalities, wa, ga))
+                |result, (wa, ga)| {
+                    result.and_then(|| match (wa, ga) {
+                        (KindOrType::Kind(wa), KindOrType::Kind(ga))
+                        | (KindOrType::Type(wa), KindOrType::Type(ga)) => {
+                            match_type(state, context, bindings, equalities, *wa, *ga)
+                        }
+                        _ => Ok(MatchType::Apart),
+                    })
                 },
             )
         }

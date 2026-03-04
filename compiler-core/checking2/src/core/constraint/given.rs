@@ -3,7 +3,7 @@ use itertools::Itertools;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::{Type, TypeId, normalise};
+use crate::core::{KindOrType, Type, TypeId, normalise};
 use crate::state::CheckState;
 
 use super::{
@@ -216,12 +216,18 @@ where
                 return Ok(MatchType::Apart);
             }
 
-            wsyn.arguments
-                .iter()
-                .zip(gsyn.arguments.iter())
-                .try_fold(MatchType::Match, |result, (&wa, &ga)| {
-                    result.and_then(|| match_given_type(state, context, wa, ga))
-                })
+            wsyn.arguments.iter().zip(gsyn.arguments.iter()).try_fold(
+                MatchType::Match,
+                |result, (wa, ga)| {
+                    result.and_then(|| match (wa, ga) {
+                        (KindOrType::Kind(wa), KindOrType::Kind(ga))
+                        | (KindOrType::Type(wa), KindOrType::Type(ga)) => {
+                            match_given_type(state, context, *wa, *ga)
+                        }
+                        _ => Ok(MatchType::Apart),
+                    })
+                },
+            )
         }
 
         _ => Ok(MatchType::Apart),

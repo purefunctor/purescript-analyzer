@@ -17,7 +17,7 @@ Operator :: Type
 Synonyms
 type NaturalTransformation f g = forall (a :: (k :: Type)).
   (f :: (k :: Type) -> Type) (a :: (k :: Type)) -> (g :: (k :: Type) -> Type) (a :: (k :: Type))
-type Desugared = NaturalTransformation Array Maybe
+type Desugared = NaturalTransformation @Type Array Maybe
 type Operator = NaturalTransformation @Type Array Maybe
 
 Roles

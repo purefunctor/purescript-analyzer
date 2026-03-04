@@ -5,7 +5,7 @@ use indexing::TypeItemId;
 use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::substitute::SubstituteName;
-use crate::core::{Name, Type, TypeId, normalise, toolkit};
+use crate::core::{KindOrType, Name, Type, TypeId, normalise, toolkit};
 use crate::error::ErrorKind;
 use crate::state::CheckState;
 
@@ -245,7 +245,10 @@ where
         Type::SynonymApplication(synonym_id) => {
             let synonym = context.lookup_synonym(synonym_id);
             let mut contains = false;
-            for &argument in synonym.arguments.iter() {
+            for application in synonym.arguments.iter() {
+                let argument = match application {
+                    KindOrType::Kind(argument) | KindOrType::Type(argument) => *argument,
+                };
                 contains |= contains_rigid_name(state, context, argument, name)?;
             }
             contains

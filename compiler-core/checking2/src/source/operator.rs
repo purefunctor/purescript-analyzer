@@ -356,7 +356,8 @@ impl<Q: ExternalQueries> IsOperator<Q> for lowering::TypeId {
         };
 
         let operator_kind = toolkit::lookup_file_type(state, context, file_id, item_id)?;
-        let function_type = context.queries.intern_type(Type::Constructor(target_file_id, target_item_id));
+        let function_type =
+            context.queries.intern_type(Type::Constructor(target_file_id, target_item_id));
         let (function_type, function_kind) =
             apply_type_argument(state, context, (function_type, operator_kind), left, left_kind)?;
         let (elaborated_type, _) =

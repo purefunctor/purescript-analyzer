@@ -10,7 +10,7 @@ use smol_str::SmolStr;
 use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::substitute::SubstituteName;
-use crate::core::{Depth, Name, RowField, RowType, RowTypeId, Type, TypeId, normalise};
+use crate::core::{Depth, KindOrType, Name, RowField, RowType, RowTypeId, Type, TypeId, normalise};
 use crate::error::ErrorKind;
 use crate::source::types;
 use crate::state::{CheckState, UnificationEntry};
@@ -459,10 +459,18 @@ where
                 return Ok(CanUnify::Apart);
             }
 
-            iter::zip(&*t1_synonym.arguments, &*t2_synonym.arguments)
-                .try_fold(CanUnify::Equal, |result, (&a1, &a2)| {
-                    result.and_then(|| can_unify(state, context, a1, a2))
-                })
+            iter::zip(&*t1_synonym.arguments, &*t2_synonym.arguments).try_fold(
+                CanUnify::Equal,
+                |result, (a1, a2)| {
+                    result.and_then(|| match (a1, a2) {
+                        (KindOrType::Kind(a1), KindOrType::Kind(a2))
+                        | (KindOrType::Type(a1), KindOrType::Type(a2)) => {
+                            can_unify(state, context, *a1, *a2)
+                        }
+                        _ => Ok(CanUnify::Apart),
+                    })
+                },
+            )
         }
 
         _ => Ok(CanUnify::Apart),
@@ -570,7 +578,10 @@ where
 
             Type::SynonymApplication(synonym_id) => {
                 let synonym = context.lookup_synonym(synonym_id);
-                for &argument in synonym.arguments.iter() {
+                for application in synonym.arguments.iter() {
+                    let argument = match application {
+                        KindOrType::Kind(argument) | KindOrType::Type(argument) => *argument,
+                    };
                     let result = check(promote, state, context, argument)?;
                     if !matches!(result, PromoteResult::Ok) {
                         return Ok(result);
