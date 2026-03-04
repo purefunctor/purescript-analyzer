@@ -213,11 +213,6 @@ where
             infer_roles(inference, kind, mode.child())?;
         }
 
-        Type::OperatorApplication(_, _, left, right) => {
-            infer_roles(inference, left, mode.child())?;
-            infer_roles(inference, right, mode.child())?;
-        }
-
         Type::Row(row_id) => {
             let row = inference.context.lookup_row_type(row_id);
 
@@ -237,9 +232,7 @@ where
             }
         }
 
-        Type::Constructor(_, _)
-        | Type::OperatorConstructor(_, _)
-        | Type::Integer(_)
+        Type::Constructor(_, _) | Type::Integer(_)
         | Type::String(_, _)
         | Type::Unification(_)
         | Type::Free(_)

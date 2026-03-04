@@ -268,13 +268,6 @@ where
                 && unify(state, context, t1_argument, t2_argument)?
         }
 
-        (
-            Type::OperatorApplication(t1_file, t1_type, t1_left, t1_right),
-            Type::OperatorApplication(t2_file, t2_type, t2_left, t2_right),
-        ) if t1_file == t2_file && t1_type == t2_type => {
-            unify(state, context, t1_left, t2_left)? && unify(state, context, t1_right, t2_right)?
-        }
-
         // Forall-Forall
         //
         //   forall a. A ~ forall b. B
@@ -347,11 +340,6 @@ where
         {
             true
         }
-
-        (
-            Type::OperatorConstructor(t1_file, t1_item),
-            Type::OperatorConstructor(t2_file, t2_item),
-        ) if t1_file == t2_file && t1_item == t2_item => true,
 
         (Type::Integer(t1_value), Type::Integer(t2_value)) if t1_value == t2_value => true,
 
@@ -459,18 +447,6 @@ where
             let t2_binder = context.lookup_forall_binder(t2_binder);
             can_unify(state, context, t1_binder.kind, t2_binder.kind)?
                 .and_then(|| can_unify(state, context, t1_inner, t2_inner))
-        }
-
-        (
-            Type::OperatorApplication(t1_file, t1_item, t1_left, t1_right),
-            Type::OperatorApplication(t2_file, t2_item, t2_left, t2_right),
-        ) => {
-            if t1_file == t2_file && t1_item == t2_item {
-                can_unify(state, context, t1_left, t2_left)?
-                    .and_then(|| can_unify(state, context, t1_right, t2_right))
-            } else {
-                Ok(CanUnify::Apart)
-            }
         }
 
         (Type::SynonymApplication(t1_synonym), Type::SynonymApplication(t2_synonym)) => {
@@ -592,9 +568,6 @@ where
                     .and_then(|| check(promote, state, context, argument))
             }
 
-            Type::OperatorApplication(_, _, left, right) => check(promote, state, context, left)?
-                .and_then(|| check(promote, state, context, right)),
-
             Type::SynonymApplication(synonym_id) => {
                 let synonym = context.lookup_synonym(synonym_id);
                 for &argument in synonym.arguments.iter() {
@@ -630,7 +603,7 @@ where
             Type::Kinded(inner, kind) => check(promote, state, context, inner)?
                 .and_then(|| check(promote, state, context, kind)),
 
-            Type::Constructor(_, _) | Type::OperatorConstructor(_, _) => Ok(PromoteResult::Ok),
+            Type::Constructor(_, _) => Ok(PromoteResult::Ok),
             Type::Integer(_) | Type::String(_, _) => Ok(PromoteResult::Ok),
 
             Type::Row(row_id) => {

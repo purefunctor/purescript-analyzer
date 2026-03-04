@@ -152,8 +152,6 @@ pub enum Type {
     Application(TypeId, TypeId),
     /// Kind application, `Proxy @Int`.
     KindApplication(TypeId, TypeId),
-    /// Binary type operator application, `Fields + ()`.
-    OperatorApplication(FileId, TypeItemId, TypeId, TypeId),
     /// Type synonym application, see [`Synonym`].
     SynonymApplication(SynonymId),
 
@@ -168,8 +166,6 @@ pub enum Type {
 
     /// A resolved type constructor reference.
     Constructor(FileId, TypeItemId),
-    /// A resolved type operator reference.
-    OperatorConstructor(FileId, TypeItemId),
 
     /// A type-level integer literal, `42`.
     Integer(i32),

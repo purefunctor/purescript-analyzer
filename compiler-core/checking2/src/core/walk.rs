@@ -47,10 +47,6 @@ where
             walk_type(state, context, function, walker)?;
             walk_type(state, context, argument, walker)?;
         }
-        Type::OperatorApplication(_, _, left, right) => {
-            walk_type(state, context, left, walker)?;
-            walk_type(state, context, right, walker)?;
-        }
         Type::SynonymApplication(synonym_id) => {
             let synonym = context.queries.lookup_synonym(synonym_id);
             for &argument in synonym.arguments.iter() {
@@ -75,7 +71,7 @@ where
             walk_type(state, context, inner, walker)?;
             walk_type(state, context, kind, walker)?;
         }
-        Type::Constructor(_, _) | Type::OperatorConstructor(_, _) => {}
+        Type::Constructor(_, _) => {}
         Type::Integer(_) | Type::String(_, _) => {}
         Type::Row(row_id) => {
             let row = context.queries.lookup_row_type(row_id);

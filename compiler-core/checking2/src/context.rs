@@ -136,17 +136,6 @@ where
         self.queries.intern_type(Type::KindApplication(function, argument))
     }
 
-    /// Interns a [`Type::OperatorApplication`] node.
-    pub fn intern_operator_application(
-        &self,
-        file_id: FileId,
-        type_id: TypeItemId,
-        left: TypeId,
-        right: TypeId,
-    ) -> TypeId {
-        self.queries.intern_type(Type::OperatorApplication(file_id, type_id, left, right))
-    }
-
     /// Interns a [`Type::SynonymApplication`] node.
     pub fn intern_synonym_application(&self, synonym_id: SynonymId) -> TypeId {
         self.queries.intern_type(Type::SynonymApplication(synonym_id))

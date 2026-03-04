@@ -242,10 +242,6 @@ where
             contains_rigid_name(state, context, function, name)?
                 || contains_rigid_name(state, context, argument, name)?
         }
-        Type::OperatorApplication(_, _, left, right) => {
-            contains_rigid_name(state, context, left, name)?
-                || contains_rigid_name(state, context, right, name)?
-        }
         Type::SynonymApplication(synonym_id) => {
             let synonym = context.lookup_synonym(synonym_id);
             let mut contains = false;

@@ -215,7 +215,13 @@ where
                 return Ok(unknown("missing operator"));
             };
 
-            let t = context.queries.intern_type(Type::OperatorConstructor(file_id, type_id));
+            let Some((file_id, type_id)) =
+                toolkit::resolve_type_operator_target(context, file_id, type_id)?
+            else {
+                return Ok(unknown("missing operator"));
+            };
+
+            let t = context.queries.intern_type(Type::Constructor(file_id, type_id));
             let k = toolkit::lookup_file_type(state, context, file_id, type_id)?;
 
             Ok((t, k))
@@ -543,14 +549,6 @@ where
 
         Type::Constructor(file_id, type_id) => {
             toolkit::lookup_file_type(state, context, file_id, type_id)?
-        }
-
-        Type::OperatorConstructor(file_id, type_id) => {
-            toolkit::lookup_file_type(state, context, file_id, type_id)?
-        }
-
-        Type::OperatorApplication(file_id, type_id, _, _) => {
-            operator::elaborate_operator_application_kind(state, context, file_id, type_id)?
         }
 
         Type::Integer(_) => context.prim.int,

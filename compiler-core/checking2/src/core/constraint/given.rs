@@ -208,13 +208,6 @@ where
                 .and_then(|| match_given_type(state, context, wa, ga))
         }
 
-        (Type::OperatorApplication(wf, wi, wl, wr), Type::OperatorApplication(gf, gi, gl, gr))
-            if wf == gf && wi == gi =>
-        {
-            match_given_type(state, context, wl, gl)?
-                .and_then(|| match_given_type(state, context, wr, gr))
-        }
-
         (Type::SynonymApplication(wsyn), Type::SynonymApplication(gsyn)) => {
             let wsyn = context.lookup_synonym(wsyn);
             let gsyn = context.lookup_synonym(gsyn);

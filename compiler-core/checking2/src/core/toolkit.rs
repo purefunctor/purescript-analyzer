@@ -5,6 +5,7 @@ use std::sync::Arc;
 use building_types::QueryResult;
 use files::FileId;
 use indexing::{TermItemId, TypeItemId};
+use lowering::TypeItemIr;
 
 use crate::context::CheckContext;
 use crate::core::substitute::SubstituteName;
@@ -181,6 +182,29 @@ where
         Ok(operator_kind)
     } else {
         Ok(context.unknown("invalid operator item"))
+    }
+}
+
+pub fn resolve_type_operator_target<Q>(
+    context: &CheckContext<Q>,
+    file_id: FileId,
+    type_id: TypeItemId,
+) -> QueryResult<Option<(FileId, TypeItemId)>>
+where
+    Q: ExternalQueries,
+{
+    let resolve = |lowered: &lowering::LoweredModule| {
+        lowered.info.get_type_item(type_id).and_then(|item| match item {
+            TypeItemIr::Operator { resolution, .. } => *resolution,
+            _ => None,
+        })
+    };
+
+    if file_id == context.id {
+        Ok(resolve(&context.lowered))
+    } else {
+        let lowered = context.queries.lowered(file_id)?;
+        Ok(resolve(&lowered))
     }
 }
 

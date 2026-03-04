@@ -301,3 +301,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_135_row_open_lacks_main() { run_test("135_row_open_lacks", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_136_row_open_record_main() { run_test("136_row_open_record", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_137_type_operator_synonym_expansion_main() { run_test("137_type_operator_synonym_expansion", "Main"); }

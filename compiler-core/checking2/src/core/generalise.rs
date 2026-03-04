@@ -60,10 +60,6 @@ where
                 aux(graph, state, context, function, dependent, visited_kinds)?;
                 aux(graph, state, context, argument, dependent, visited_kinds)?;
             }
-            Type::OperatorApplication(_, _, left, right) => {
-                aux(graph, state, context, left, dependent, visited_kinds)?;
-                aux(graph, state, context, right, dependent, visited_kinds)?;
-            }
             Type::SynonymApplication(synonym_id) => {
                 let synonym = context.lookup_synonym(synonym_id);
                 for &argument in synonym.arguments.iter() {
@@ -112,7 +108,6 @@ where
                 }
             }
             Type::Constructor(_, _)
-            | Type::OperatorConstructor(_, _)
             | Type::Integer(_)
             | Type::String(_, _)
             | Type::Free(_)

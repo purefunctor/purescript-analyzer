@@ -13,5 +13,5 @@ ChainParen :: forall (k :: Type). (k :: Type) -> (k :: Type) -> (k :: Type) -> (
 
 Synonyms
 type Add a b = (a :: (k :: Type))
-type Chain a b c = (a :: (k :: Type)) + (b :: (k :: Type)) + (c :: (k :: Type))
-type ChainParen a b c = (a :: (k :: Type)) + (b :: (k :: Type)) + (c :: (k :: Type))
+type Chain a b c = Add @(k :: Type) (Add @(k :: Type) (a :: (k :: Type)) (b :: (k :: Type))) (c :: (k :: Type))
+type ChainParen a b c = Add @(k :: Type) (Add @(k :: Type) (a :: (k :: Type)) (b :: (k :: Type))) (c :: (k :: Type))

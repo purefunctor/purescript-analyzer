@@ -418,12 +418,6 @@ where
             Ok(try_refl(state, context, b1.kind, b2.kind)? && try_refl(state, context, i1, i2)?)
         }
 
-        (Type::OperatorApplication(f1, i1, l1, r1), Type::OperatorApplication(f2, i2, l2, r2)) => {
-            Ok((f1, i1) == (f2, i2)
-                && try_refl(state, context, l1, l2)?
-                && try_refl(state, context, r1, r2)?)
-        }
-
         (Type::SynonymApplication(s1), Type::SynonymApplication(s2)) => {
             let s1 = context.lookup_synonym(s1);
             let s2 = context.lookup_synonym(s2);

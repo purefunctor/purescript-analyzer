@@ -2,13 +2,15 @@
 
 use building_types::QueryResult;
 use files::FileId;
-use indexing::{TermItemId, TypeItemId};
+use indexing::TermItemId;
 use lowering::IsElement;
 use sugar::OperatorTree;
 use sugar::bracketing::BracketingResult;
 
 use crate::context::CheckContext;
-use crate::core::{TypeId, normalise, toolkit, unification};
+use crate::core::substitute::SubstituteName;
+use crate::core::{Type, TypeId, normalise, toolkit, unification};
+use crate::error::ErrorKind;
 use crate::source::{binder, terms, types};
 use crate::state::CheckState;
 use crate::{ExternalQueries, OperatorBranchTypes};
@@ -159,27 +161,7 @@ where
         OperatorKindMode::Check { expected_type: right_type },
     )?;
 
-    E::build(state, context, operator, (left, right), result_type)
-}
-
-pub fn elaborate_operator_application_kind<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    file_id: FileId,
-    type_id: TypeItemId,
-) -> QueryResult<TypeId>
-where
-    Q: ExternalQueries,
-{
-    let operator_kind = toolkit::lookup_file_type(state, context, file_id, type_id)?;
-    let operator_kind = toolkit::instantiate_unifications(state, context, operator_kind)?;
-    let operator_function = toolkit::inspect_function(state, context, operator_kind)?;
-
-    if operator_function.arguments.len() >= 2 {
-        Ok(operator_function.result)
-    } else {
-        Ok(context.unknown("invalid operator kind"))
-    }
+    E::build(state, context, operator, (left, right), (left_type, right_type), result_type)
 }
 
 pub trait IsOperator<Q: ExternalQueries>: IsElement {
@@ -223,6 +205,7 @@ pub trait IsOperator<Q: ExternalQueries>: IsElement {
         context: &CheckContext<Q>,
         operator: (FileId, Self::ItemId),
         result_tree: (Self::Elaborated, Self::Elaborated),
+        argument_types: (TypeId, TypeId),
         result_type: TypeId,
     ) -> QueryResult<(Self::Elaborated, TypeId)>;
 
@@ -288,6 +271,7 @@ impl<Q: ExternalQueries> IsOperator<Q> for lowering::ExpressionId {
         _context: &CheckContext<Q>,
         (_, _): (FileId, Self::ItemId),
         (_, _): (Self::Elaborated, Self::Elaborated),
+        (_, _): (TypeId, TypeId),
         result_type: TypeId,
     ) -> QueryResult<(Self::Elaborated, TypeId)> {
         Ok(((), result_type))
@@ -361,9 +345,22 @@ impl<Q: ExternalQueries> IsOperator<Q> for lowering::TypeId {
         context: &CheckContext<Q>,
         (file_id, item_id): (FileId, Self::ItemId),
         (left, right): (Self::Elaborated, Self::Elaborated),
+        (left_kind, right_kind): (TypeId, TypeId),
         result_kind: TypeId,
     ) -> QueryResult<(Self::Elaborated, TypeId)> {
-        let elaborated_type = context.intern_operator_application(file_id, item_id, left, right);
+        let Some((target_file_id, target_item_id)) =
+            toolkit::resolve_type_operator_target(context, file_id, item_id)?
+        else {
+            let unknown = context.unknown("missing operator resolution");
+            return Ok((unknown, unknown));
+        };
+
+        let operator_kind = toolkit::lookup_file_type(state, context, file_id, item_id)?;
+        let function_type = context.queries.intern_type(Type::Constructor(target_file_id, target_item_id));
+        let (function_type, function_kind) =
+            apply_type_argument(state, context, (function_type, operator_kind), left, left_kind)?;
+        let (elaborated_type, _) =
+            apply_type_argument(state, context, (function_type, function_kind), right, right_kind)?;
         let result_kind = normalise::normalise(state, context, result_kind)?;
         Ok((elaborated_type, result_kind))
     }
@@ -436,6 +433,7 @@ impl<Q: ExternalQueries> IsOperator<Q> for lowering::BinderId {
         _context: &CheckContext<Q>,
         (_, _): (FileId, Self::ItemId),
         (_, _): (Self::Elaborated, Self::Elaborated),
+        (_, _): (TypeId, TypeId),
         result_type: TypeId,
     ) -> QueryResult<(Self::Elaborated, TypeId)> {
         Ok(((), result_type))
@@ -453,5 +451,59 @@ impl<Q: ExternalQueries> IsOperator<Q> for lowering::BinderId {
             .nodes
             .term_operator
             .insert(operator_id, OperatorBranchTypes { left, right, result });
+    }
+}
+
+fn apply_type_argument<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    (mut function_type, mut function_kind): (TypeId, TypeId),
+    argument_type: TypeId,
+    argument_kind: TypeId,
+) -> QueryResult<(TypeId, TypeId)>
+where
+    Q: ExternalQueries,
+{
+    loop {
+        function_kind = normalise::normalise(state, context, function_kind)?;
+
+        match context.lookup_type(function_kind) {
+            Type::Function(expected_kind, result_kind) => {
+                unification::subtype(state, context, argument_kind, expected_kind)?;
+                let result_type = context.intern_application(function_type, argument_type);
+                let result_kind = normalise::normalise(state, context, result_kind)?;
+                return Ok((result_type, result_kind));
+            }
+
+            Type::Unification(unification_id) => {
+                let result_u = state.fresh_unification(context.queries, context.prim.t);
+                let function_u = context.intern_function(argument_kind, result_u);
+                unification::solve(state, context, function_kind, unification_id, function_u)?;
+                function_kind = result_u;
+            }
+
+            Type::Forall(binder_id, inner_kind) => {
+                let binder = context.lookup_forall_binder(binder_id);
+                let binder_kind = normalise::normalise(state, context, binder.kind)?;
+                let kind_argument = state.fresh_unification(context.queries, binder_kind);
+                function_type = context.intern_kind_application(function_type, kind_argument);
+                function_kind =
+                    SubstituteName::one(state, context, binder.name, kind_argument, inner_kind)?;
+            }
+
+            _ => {
+                let invalid = context.intern_application(function_type, argument_type);
+                let function_type_message = state.pretty_id(context, function_type)?;
+                let function_kind_message = state.pretty_id(context, function_kind)?;
+                let argument_type_message = state.pretty_id(context, argument_type)?;
+                state.insert_error(ErrorKind::InvalidTypeApplication {
+                    function_type: function_type_message,
+                    function_kind: function_kind_message,
+                    argument_type: argument_type_message,
+                });
+                let unknown = context.unknown("cannot apply operator type");
+                return Ok((invalid, unknown));
+            }
+        }
     }
 }

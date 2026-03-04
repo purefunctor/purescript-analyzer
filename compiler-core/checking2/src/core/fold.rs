@@ -70,11 +70,6 @@ where
             let argument = fold_type(state, context, argument, folder)?;
             context.intern_kind_application(function, argument)
         }
-        Type::OperatorApplication(file_id, type_id, left, right) => {
-            let left = fold_type(state, context, left, folder)?;
-            let right = fold_type(state, context, right, folder)?;
-            context.intern_operator_application(file_id, type_id, left, right)
-        }
         Type::SynonymApplication(synonym_id) => {
             let mut synonym = context.lookup_synonym(synonym_id);
             synonym.arguments = synonym
@@ -108,7 +103,7 @@ where
             let kind = fold_type(state, context, kind, folder)?;
             context.intern_kinded(inner, kind)
         }
-        Type::Constructor(_, _) | Type::OperatorConstructor(_, _) => id,
+        Type::Constructor(_, _) => id,
         Type::Integer(_) | Type::String(_, _) => id,
         Type::Row(row_id) => {
             let mut row = context.lookup_row_type(row_id);

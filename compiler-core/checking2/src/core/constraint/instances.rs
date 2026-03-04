@@ -343,13 +343,6 @@ where
                 .and_then(|| match_type(state, context, bindings, equalities, wk, gk))
         }
 
-        (Type::OperatorApplication(wf, wi, wl, wr), Type::OperatorApplication(gf, gi, gl, gr))
-            if wf == gf && wi == gi =>
-        {
-            match_type(state, context, bindings, equalities, wl, gl)?
-                .and_then(|| match_type(state, context, bindings, equalities, wr, gr))
-        }
-
         (Type::SynonymApplication(wsyn), Type::SynonymApplication(gsyn)) => {
             let wsyn = context.lookup_synonym(wsyn);
             let gsyn = context.lookup_synonym(gsyn);

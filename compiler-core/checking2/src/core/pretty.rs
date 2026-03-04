@@ -143,18 +143,6 @@ where
                 self.traverse_kind_application(precedence, function, argument)
             }
 
-            Type::OperatorApplication(file_id, type_id, left, right) => {
-                let operator = self
-                    .lookup_type_name(file_id, type_id)
-                    .unwrap_or_else(|| "<InvalidName>".to_string());
-
-                let left = self.traverse(Precedence::Application, left);
-                let right = self.traverse(Precedence::Application, right);
-
-                let operator = left.append(self.arena.text(format!(" {operator} "))).append(right);
-                self.parens_if(precedence > Precedence::Application, operator)
-            }
-
             Type::SynonymApplication(synonym_id) => {
                 let synonym = self.lookup_synonym(synonym_id);
                 let (file_id, type_id) = synonym.reference;
@@ -201,13 +189,6 @@ where
             }
 
             Type::Constructor(file_id, type_id) => {
-                let name = self
-                    .lookup_type_name(file_id, type_id)
-                    .unwrap_or_else(|| "<InvalidName>".to_string());
-                self.arena.text(name)
-            }
-
-            Type::OperatorConstructor(file_id, type_id) => {
                 let name = self
                     .lookup_type_name(file_id, type_id)
                     .unwrap_or_else(|| "<InvalidName>".to_string());

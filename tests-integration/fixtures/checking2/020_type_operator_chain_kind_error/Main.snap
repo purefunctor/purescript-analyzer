@@ -12,7 +12,7 @@ Bad :: Type
 
 Synonyms
 type Add a b = (a :: Type)
-type Bad = Int + "hello"
+type Bad = Add Int "hello"
 
 Errors
 CheckError {
