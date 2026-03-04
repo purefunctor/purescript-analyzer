@@ -46,3 +46,36 @@ where
 
     Ok(InspectSignature { binders, arguments, result })
 }
+
+pub fn inspect_signature_bindings<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    signature: (lowering::TypeId, TypeId),
+    bindings: &[TypeVariableBinding],
+) -> QueryResult<InspectSignature>
+where
+    Q: ExternalQueries,
+{
+    let (signature_id, signature_kind) = signature;
+
+    let toolkit::InspectQuantified { binders, quantified } =
+        toolkit::inspect_quantified(state, context, signature_kind)?;
+
+    let toolkit::InspectFunction { arguments, result } =
+        toolkit::inspect_function(state, context, quantified)?;
+
+    if bindings.len() > arguments.len() {
+        state.insert_error(ErrorKind::TypeSignatureVariableMismatch {
+            id: signature_id,
+            expected: arguments.len() as u32,
+            actual: bindings.len() as u32,
+        });
+    }
+
+    let mut remaining = arguments.into_iter();
+
+    let arguments = remaining.by_ref().take(bindings.len()).collect();
+    let result = context.intern_function_chain_iter(remaining, result);
+
+    Ok(InspectSignature { binders, arguments, result })
+}

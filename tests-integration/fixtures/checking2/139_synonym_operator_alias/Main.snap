@@ -15,16 +15,3 @@ Synonyms
 type Apply f = (f :: (k :: Type) -> Type)
 type Test1 = Apply @Type Array Int
 type Test2 = Apply @Type Array Int
-
-Errors
-CheckError {
-    kind: CannotUnify {
-        t1: Id<smol_str::SmolStr>(5),
-        t2: Id<smol_str::SmolStr>(6),
-    },
-    crumbs: [
-        CheckingKind(
-            AstId<syntax::cst::Type>(18),
-        ),
-    ],
-}

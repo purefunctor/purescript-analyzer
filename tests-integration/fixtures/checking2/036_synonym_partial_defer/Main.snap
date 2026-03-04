@@ -17,7 +17,7 @@ Bad :: ?[partial synonym application]
 Synonyms
 type ReaderT r m a = (r :: Type) -> (m :: Type -> Type) (a :: Type)
 type Apply f a = (f :: (k1 :: Type) -> (k2 :: Type)) (a :: (k1 :: Type))
-type Good = Apply (Apply (ReaderT Int) Identity) String
+type Good = Apply @Type @Type (Apply @(Type -> Type) @(Type -> Type) (ReaderT Int) Identity) String
 type Bad = ?[partial synonym application]
 
 Roles

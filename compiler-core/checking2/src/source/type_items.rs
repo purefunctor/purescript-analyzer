@@ -18,7 +18,7 @@ use crate::core::{
     unification, zonk,
 };
 use crate::error::{ErrorCrumb, ErrorKind};
-use crate::source::types;
+use crate::source::{signature, types};
 use crate::state::CheckState;
 
 struct PendingDataType {
@@ -309,7 +309,7 @@ fn check_data_equation_check<Q>(
 where
     Q: ExternalQueries,
 {
-    let signature = super::signature::inspect_signature(state, context, signature, bindings)?;
+    let signature = signature::inspect_signature_bindings(state, context, signature, bindings)?;
     check_type_variable_bindings(state, context, bindings, &signature.arguments)
 }
 
@@ -359,7 +359,7 @@ where
 {
     match (signature, binding.kind) {
         (Some(signature_kind), Some(binding_kind)) => {
-            let (binding_kind, _) = super::types::infer_kind(state, context, binding_kind)?;
+            let (binding_kind, _) = types::infer_kind(state, context, binding_kind)?;
             let valid = unification::subtype(state, context, signature_kind, binding_kind)?;
             if valid { Ok(binding_kind) } else { Ok(context.unknown("invalid variable kind")) }
         }
@@ -369,7 +369,7 @@ where
         }
         (None, Some(binding_kind)) => {
             let (binding_kind, _) =
-                super::types::check_kind(state, context, binding_kind, context.prim.t)?;
+                types::check_kind(state, context, binding_kind, context.prim.t)?;
             Ok(binding_kind)
         }
         (None, None) => {
@@ -422,7 +422,7 @@ where
         for &argument in arguments.iter() {
             state.with_error_crumb(ErrorCrumb::ConstructorArgument(argument), |state| {
                 let (checked_argument, _) =
-                    super::types::check_kind(state, context, argument, context.prim.t)?;
+                    types::check_kind(state, context, argument, context.prim.t)?;
                 checked_arguments.push(checked_argument);
                 Ok(())
             })?;
@@ -581,7 +581,7 @@ where
     };
 
     let synonym = if let Some(synonym) = synonym {
-        let (synonym, _) = super::types::check_kind(state, context, synonym, result)?;
+        let (synonym, _) = types::check_kind(state, context, synonym, result)?;
         synonym
     } else {
         context.unknown("invalid synonym type")
@@ -601,7 +601,7 @@ fn check_synonym_equation_check<Q>(
 where
     Q: ExternalQueries,
 {
-    let signature = super::signature::inspect_signature(
+    let signature = signature::inspect_signature_bindings(
         state,
         context,
         (signature_id, signature_kind),
@@ -674,7 +674,7 @@ where
     let mut superclasses = vec![];
     for &constraint in constraints.iter() {
         let (superclass, _) =
-            super::types::check_kind(state, context, constraint, context.prim.constraint)?;
+            types::check_kind(state, context, constraint, context.prim.constraint)?;
         superclasses.push(superclass);
     }
 
@@ -698,7 +698,7 @@ fn check_class_equation_check<Q>(
 where
     Q: ExternalQueries,
 {
-    let signature = super::signature::inspect_signature(state, context, signature, bindings)?;
+    let signature = signature::inspect_signature_bindings(state, context, signature, bindings)?;
     check_type_variable_bindings(state, context, bindings, &signature.arguments)
 }
 
@@ -743,8 +743,7 @@ where
 
         let Some(signature_id) = signature else { continue };
 
-        let (member_type, _) =
-            super::types::check_kind(state, context, *signature_id, context.prim.t)?;
+        let (member_type, _) = types::check_kind(state, context, *signature_id, context.prim.t)?;
         members.push((member_id, member_type));
     }
 
