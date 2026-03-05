@@ -5,7 +5,7 @@ use crate::context::CheckContext;
 use crate::core::{exhaustive, toolkit};
 use crate::error::ErrorCrumb;
 use crate::source::terms::equations;
-use crate::source::{binder, types};
+use crate::source::{binder, signature, types};
 use crate::state::CheckState;
 
 pub fn check_let_chunks<Q>(
@@ -142,17 +142,8 @@ where
         let required =
             name.equations.iter().map(|equation| equation.binders.len()).max().unwrap_or(0);
 
-        let toolkit::InspectQuantified { quantified, .. } =
-            toolkit::inspect_quantified(state, context, name_type)?;
-
-        let quantified = toolkit::collect_givens(state, context, quantified)?;
-
-        let toolkit::InspectFunction { arguments, result } = toolkit::inspect_function_with(
-            state,
-            context,
-            quantified,
-            toolkit::InspectMode::Some(required),
-        )?;
+        let signature::InspectSignature { arguments, result, .. } =
+            signature::inspect_signature_patterns(state, context, name_type, required)?;
 
         let function = context.intern_function_chain(&arguments, result);
 
