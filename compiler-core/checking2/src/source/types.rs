@@ -87,7 +87,7 @@ where
                 return Ok(unknown("missing application function"));
             };
 
-            if let Some(synonym) = synonym::parse_synonym_application(state, context, *function)? {
+            if let Some(synonym) = synonym::parse_synonym(state, context, *function)? {
                 return synonym::infer_synonym_application(state, context, id, synonym, arguments);
             }
 
@@ -148,10 +148,10 @@ where
                 return Ok(unknown("missing constructor"));
             };
 
-            if let Some(synonym) = toolkit::lookup_file_synonym(state, context, file_id, type_id)? {
-                let synonym = (file_id, type_id, synonym.kind, synonym.parameters.len());
+            if let Some(synonym) = synonym::parse_synonym(state, context, id)? {
                 return synonym::infer_synonym_constructor(state, context, synonym, id);
             }
+
             let t = context.queries.intern_type(Type::Constructor(file_id, type_id));
             let k = toolkit::lookup_file_type(state, context, file_id, type_id)?;
 

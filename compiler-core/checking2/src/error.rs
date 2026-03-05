@@ -105,7 +105,7 @@ pub enum ErrorKind {
     },
     RecursiveSynonymExpansion {
         file_id: files::FileId,
-        item_id: indexing::TypeItemId,
+        type_id: indexing::TypeItemId,
     },
     TooManyBinders {
         signature: Option<lowering::TypeId>,

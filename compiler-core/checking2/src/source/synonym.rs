@@ -15,11 +15,19 @@ use crate::error::ErrorKind;
 use crate::source::types;
 use crate::state::CheckState;
 
-pub fn parse_synonym_application<Q>(
+#[derive(Debug, Clone, Copy)]
+pub struct ParsedSynonym {
+    pub file_id: FileId,
+    pub type_id: TypeItemId,
+    pub kind: TypeId,
+    pub arity: usize,
+}
+
+pub fn parse_synonym<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     function: lowering::TypeId,
-) -> QueryResult<Option<(FileId, TypeItemId, TypeId, usize)>>
+) -> QueryResult<Option<ParsedSynonym>>
 where
     Q: ExternalQueries,
 {
@@ -41,21 +49,23 @@ where
     let kind = checked_synonym.kind;
     let arity = checked_synonym.parameters.len();
 
-    Ok(Some((file_id, type_id, kind, arity)))
+    Ok(Some(ParsedSynonym { file_id, type_id, kind, arity }))
 }
 
 pub fn infer_synonym_constructor<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    (file_id, item_id, kind, arity): (FileId, TypeItemId, TypeId, usize),
+    synonym: ParsedSynonym,
     id: lowering::TypeId,
 ) -> QueryResult<(TypeId, TypeId)>
 where
     Q: ExternalQueries,
 {
+    let ParsedSynonym { file_id, type_id, kind, arity } = synonym;
+
     if arity > 0 {
         if state.defer_expansion {
-            let synonym_type = context.queries.intern_type(Type::Constructor(file_id, item_id));
+            let synonym_type = context.queries.intern_type(Type::Constructor(file_id, type_id));
             return Ok((synonym_type, kind));
         }
 
@@ -64,13 +74,13 @@ where
         return Ok((unknown, unknown));
     }
 
-    if is_recursive_synonym(context, file_id, item_id)? {
-        state.insert_error(ErrorKind::RecursiveSynonymExpansion { file_id, item_id });
+    if is_recursive_synonym(context, file_id, type_id)? {
+        state.insert_error(ErrorKind::RecursiveSynonymExpansion { file_id, type_id });
     }
 
     let synonym = Synonym {
         saturation: Saturation::Full,
-        reference: (file_id, item_id),
+        reference: (file_id, type_id),
         arguments: Arc::default(),
     };
 
@@ -84,14 +94,16 @@ pub fn infer_synonym_application<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     id: lowering::TypeId,
-    (file_id, type_id, function_kind, arity): (FileId, TypeItemId, TypeId, usize),
+    synonym: ParsedSynonym,
     arguments: &[lowering::TypeId],
 ) -> QueryResult<(TypeId, TypeId)>
 where
     Q: ExternalQueries,
 {
+    let ParsedSynonym { file_id, type_id, kind: function_kind, arity } = synonym;
+
     if is_recursive_synonym(context, file_id, type_id)? {
-        state.insert_error(ErrorKind::RecursiveSynonymExpansion { file_id, item_id: type_id });
+        state.insert_error(ErrorKind::RecursiveSynonymExpansion { file_id, type_id });
     }
 
     if arguments.len() < arity {
