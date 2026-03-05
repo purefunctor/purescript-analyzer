@@ -14,11 +14,11 @@ use smol_str::SmolStr;
 use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::{
-    CheckedClass, CheckedSynonym, ForallBinder, Role, Type, TypeId, generalise, toolkit,
+    CheckedClass, CheckedSynonym, ForallBinder, Role, Type, TypeId, generalise, signature, toolkit,
     unification, zonk,
 };
 use crate::error::{ErrorCrumb, ErrorKind};
-use crate::source::{signature, types};
+use crate::source::types;
 use crate::state::CheckState;
 
 struct PendingDataType {
@@ -309,38 +309,8 @@ fn check_data_equation_check<Q>(
 where
     Q: ExternalQueries,
 {
-    let signature = expect_signature_bindings(state, context, signature, bindings)?;
+    let signature = signature::expect_signature_bindings(state, context, signature, bindings)?;
     check_type_variable_bindings(state, context, bindings, &signature.arguments)
-}
-
-fn expect_signature_bindings<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    (signature_id, signature_kind): (lowering::TypeId, TypeId),
-    bindings: &[TypeVariableBinding],
-) -> QueryResult<signature::InspectSignature>
-where
-    Q: ExternalQueries,
-{
-    let signature = signature::inspect_signature_bindings(state, context, signature_kind)?;
-
-    let actual = bindings.len() as u32;
-    let expected = signature.arguments.len() as u32;
-
-    if actual > expected {
-        state.insert_error(ErrorKind::TypeSignatureVariableMismatch {
-            id: signature_id,
-            expected,
-            actual,
-        });
-    }
-
-    let mut remaining = signature.arguments.into_iter();
-
-    let arguments = remaining.by_ref().take(actual as usize).collect();
-    let result = context.intern_function_chain_iter(remaining, signature.result);
-
-    Ok(signature::InspectSignature { binders: signature.binders, arguments, result })
 }
 
 fn check_type_variable_bindings<Q>(
@@ -631,8 +601,12 @@ fn check_synonym_equation_check<Q>(
 where
     Q: ExternalQueries,
 {
-    let signature =
-        expect_signature_bindings(state, context, (signature_id, signature_kind), bindings)?;
+    let signature = signature::expect_signature_bindings(
+        state,
+        context,
+        (signature_id, signature_kind),
+        bindings,
+    )?;
     let parameters = check_type_variable_bindings(state, context, bindings, &signature.arguments)?;
     Ok((parameters, signature_kind, signature.result))
 }
@@ -724,7 +698,7 @@ fn check_class_equation_check<Q>(
 where
     Q: ExternalQueries,
 {
-    let signature = expect_signature_bindings(state, context, signature, bindings)?;
+    let signature = signature::expect_signature_bindings(state, context, signature, bindings)?;
     check_type_variable_bindings(state, context, bindings, &signature.arguments)
 }
 

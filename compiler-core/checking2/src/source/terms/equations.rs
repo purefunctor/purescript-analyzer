@@ -4,10 +4,10 @@ use building_types::QueryResult;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::{TypeId, exhaustive, toolkit, unification};
+use crate::core::{TypeId, exhaustive, signature, toolkit, unification};
 use crate::error::ErrorKind;
 use crate::source::terms::form_let;
-use crate::source::{binder, signature, terms};
+use crate::source::{binder, terms};
 use crate::state::CheckState;
 
 pub enum EquationTypeOrigin {
@@ -27,8 +27,8 @@ where
 {
     let required = equations.iter().map(|equation| equation.binders.len()).max().unwrap_or(0);
 
-    let signature::InspectSignature { arguments, result, .. } =
-        signature::inspect_signature_patterns(state, context, expected_type, required)?;
+    let signature::DecomposedSignature { arguments, result, .. } =
+        signature::expect_signature_patterns(state, context, expected_type, required)?;
 
     let function = context.intern_function_chain(&arguments, result);
     check_equations_core(state, context, origin, &arguments, result, function, equations)?;

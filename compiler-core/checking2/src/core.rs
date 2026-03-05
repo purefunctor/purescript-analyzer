@@ -6,6 +6,7 @@ pub mod fold;
 pub mod generalise;
 pub mod normalise;
 pub mod pretty;
+pub mod signature;
 pub mod substitute;
 pub mod toolkit;
 pub mod unification;

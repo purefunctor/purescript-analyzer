@@ -2,10 +2,10 @@ use building_types::QueryResult;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::{exhaustive, toolkit};
+use crate::core::{exhaustive, signature, toolkit};
 use crate::error::ErrorCrumb;
 use crate::source::terms::equations;
-use crate::source::{binder, signature, types};
+use crate::source::{binder, types};
 use crate::state::CheckState;
 
 pub fn check_let_chunks<Q>(
@@ -142,8 +142,8 @@ where
         let required =
             name.equations.iter().map(|equation| equation.binders.len()).max().unwrap_or(0);
 
-        let signature::InspectSignature { arguments, result, .. } =
-            signature::inspect_signature_patterns(state, context, name_type, required)?;
+        let signature::DecomposedSignature { arguments, result, .. } =
+            signature::expect_signature_patterns(state, context, name_type, required)?;
 
         let function = context.intern_function_chain(&arguments, result);
 

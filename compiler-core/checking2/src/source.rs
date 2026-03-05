@@ -3,7 +3,6 @@
 pub mod binder;
 pub mod operator;
 pub mod roles;
-pub mod signature;
 pub mod synonym;
 pub mod terms;
 pub mod types;
