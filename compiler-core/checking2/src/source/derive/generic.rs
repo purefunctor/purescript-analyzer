@@ -13,7 +13,7 @@ use crate::{ExternalQueries, safe_loop};
 
 use super::{DeriveStrategy, tools};
 
-pub(super) fn check_derive_generic<Q>(
+pub fn check_derive_generic<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     class_file: FileId,

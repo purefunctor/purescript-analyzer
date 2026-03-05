@@ -11,7 +11,7 @@ use crate::state::CheckState;
 use super::DeriveStrategy;
 use super::variance::{Variance, VarianceConfig};
 
-pub(super) fn check_derive_foldable<Q>(
+pub fn check_derive_foldable<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     class_file: FileId,
@@ -50,7 +50,7 @@ where
     }))
 }
 
-pub(super) fn check_derive_bifoldable<Q>(
+pub fn check_derive_bifoldable<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     class_file: FileId,

@@ -10,7 +10,7 @@ use crate::state::CheckState;
 
 use super::tools;
 
-pub(super) fn generate_field_constraints<Q>(
+pub fn generate_field_constraints<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     data_file: FileId,

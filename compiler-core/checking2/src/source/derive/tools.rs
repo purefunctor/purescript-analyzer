@@ -10,7 +10,7 @@ use crate::core::{CheckedClass, Type, TypeId, toolkit};
 use crate::error::ErrorKind;
 use crate::state::CheckState;
 
-pub(super) fn emit_constraint<Q>(
+pub fn emit_constraint<Q>(
     context: &CheckContext<Q>,
     state: &mut CheckState,
     class: (FileId, TypeItemId),
@@ -22,7 +22,7 @@ pub(super) fn emit_constraint<Q>(
     state.push_wanted(context.intern_application(class_t, argument));
 }
 
-pub(super) fn emit_superclass_constraints<Q>(
+pub fn emit_superclass_constraints<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     class_file: FileId,
@@ -56,7 +56,7 @@ where
     Ok(())
 }
 
-pub(super) fn lookup_data_constructors<Q>(
+pub fn lookup_data_constructors<Q>(
     context: &CheckContext<Q>,
     data_file: FileId,
     data_id: TypeItemId,
@@ -72,7 +72,7 @@ where
     }
 }
 
-pub(super) fn solve_and_report_constraints<Q>(
+pub fn solve_and_report_constraints<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
 ) -> QueryResult<()>

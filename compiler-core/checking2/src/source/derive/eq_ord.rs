@@ -10,7 +10,7 @@ use crate::state::CheckState;
 
 use super::DeriveStrategy;
 
-pub(super) fn check_derive_eq<Q>(
+pub fn check_derive_eq<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     class_file: FileId,
@@ -23,7 +23,7 @@ where
     check_derive_field_constraints(state, context, class_file, class_id, arguments)
 }
 
-pub(super) fn check_derive_ord<Q>(
+pub fn check_derive_ord<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     class_file: FileId,

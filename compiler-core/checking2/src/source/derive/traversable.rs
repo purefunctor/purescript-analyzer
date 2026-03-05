@@ -11,7 +11,7 @@ use crate::state::CheckState;
 use super::DeriveStrategy;
 use super::variance::{Variance, VarianceConfig};
 
-pub(super) fn check_derive_traversable<Q>(
+pub fn check_derive_traversable<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     class_file: FileId,
@@ -50,7 +50,7 @@ where
     }))
 }
 
-pub(super) fn check_derive_bitraversable<Q>(
+pub fn check_derive_bitraversable<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     class_file: FileId,

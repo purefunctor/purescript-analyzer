@@ -11,7 +11,7 @@ use crate::state::CheckState;
 use super::DeriveStrategy;
 use super::variance::{Variance, VarianceConfig};
 
-pub(super) fn check_derive_functor<Q>(
+pub fn check_derive_functor<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     class_file: FileId,
@@ -50,7 +50,7 @@ where
     }))
 }
 
-pub(super) fn check_derive_bifunctor<Q>(
+pub fn check_derive_bifunctor<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     class_file: FileId,

@@ -61,7 +61,7 @@ impl DerivedRigids {
     }
 }
 
-pub(super) fn generate_variance_constraints<Q>(
+pub fn generate_variance_constraints<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     data_file: FileId,

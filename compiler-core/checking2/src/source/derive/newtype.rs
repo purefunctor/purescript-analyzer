@@ -10,7 +10,7 @@ use crate::state::CheckState;
 
 use super::DeriveStrategy;
 
-pub(super) fn check_derive_newtype<Q>(
+pub fn check_derive_newtype<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     class_file: FileId,
@@ -56,7 +56,7 @@ where
     Ok(Some(DeriveStrategy::NewtypeDeriveConstraint { delegate_constraint }))
 }
 
-pub(super) fn check_derive_newtype_class<Q>(
+pub fn check_derive_newtype_class<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     _class_file: FileId,
