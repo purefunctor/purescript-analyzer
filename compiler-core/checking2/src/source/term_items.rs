@@ -341,8 +341,13 @@ where
         return Ok(None);
     };
 
-    let toolkit::InspectQuantified { binders, quantified } =
-        toolkit::inspect_quantified(state, context, class_member_type)?;
+    let signature::DecomposedSignature { binders, constraints, arguments, result } =
+        signature::decompose_signature(
+            state,
+            context,
+            class_member_type,
+            signature::DecomposeSignatureMode::Full,
+        )?;
 
     let class_binder_count = class_info.kind_binders.len() + class_info.type_parameters.len();
     if binders.len() < class_binder_count
@@ -363,10 +368,12 @@ where
         bindings.insert(binder.name, argument);
     }
 
-    let mut specialised = SubstituteName::many(state, context, &bindings, quantified)?;
-    specialised = normalise::normalise(state, context, specialised)?;
+    let constraints = substitute_normalise_types(state, context, &bindings, &constraints)?;
+    let arguments = substitute_normalise_types(state, context, &bindings, &arguments)?;
+    let mut constrained = substitute_normalise_type(state, context, &bindings, result)?;
 
-    let Type::Constrained(constraint, mut constrained) = context.lookup_type(specialised) else {
+    let mut constraints = constraints.into_iter();
+    let Some(constraint) = constraints.next() else {
         return Ok(None);
     };
 
@@ -378,12 +385,45 @@ where
         return Ok(None);
     }
 
+    constrained = context.intern_function_chain(&arguments, constrained);
+    for constraint in constraints.rev() {
+        constrained = context.intern_constrained(constraint, constrained);
+    }
+
     for binder in member_binders.iter().rev() {
         let binder_id = context.intern_forall_binder(*binder);
         constrained = context.intern_forall(binder_id, constrained);
     }
 
     Ok(Some(constrained))
+}
+
+fn substitute_normalise_type<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    bindings: &NameToType,
+    type_id: TypeId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let type_id = SubstituteName::many(state, context, bindings, type_id)?;
+    normalise::normalise(state, context, type_id)
+}
+
+fn substitute_normalise_types<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    bindings: &NameToType,
+    types: &[TypeId],
+) -> QueryResult<Vec<TypeId>>
+where
+    Q: ExternalQueries,
+{
+    types
+        .iter()
+        .map(|&type_id| substitute_normalise_type(state, context, bindings, type_id))
+        .collect()
 }
 
 fn prepare_binding_group<Q>(state: &mut CheckState, context: &CheckContext<Q>, items: &[TermItemId])

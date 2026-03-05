@@ -836,10 +836,25 @@ where
         for (member_id, member_type) in members.iter() {
             let member_type = zonk::zonk(state, context, *member_type)?;
 
-            let toolkit::InspectQuantified { binders: member_binders, quantified: member_inner } =
-                toolkit::inspect_quantified(state, context, member_type)?;
+            let signature::DecomposedSignature {
+                binders: member_binders,
+                constraints: member_constraints,
+                arguments: member_arguments,
+                result: member_result,
+            } = signature::decompose_signature(
+                state,
+                context,
+                member_type,
+                signature::DecomposeSignatureMode::Full,
+            )?;
 
-            let mut result = context.intern_constrained(class_head, member_inner);
+            let mut result = context.intern_function_chain(&member_arguments, member_result);
+
+            for constraint in member_constraints.into_iter().rev() {
+                result = context.intern_constrained(constraint, result);
+            }
+
+            result = context.intern_constrained(class_head, result);
 
             for member_binder in member_binders.iter().copied().rev() {
                 let binder_id = context.intern_forall_binder(member_binder);

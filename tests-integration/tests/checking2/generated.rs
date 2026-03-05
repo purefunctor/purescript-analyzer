@@ -323,3 +323,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_146_signature_synonym_type_equation_main() { run_test("146_signature_synonym_type_equation", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_147_synonym_oversaturation_equations_main() { run_test("147_synonym_oversaturation_equations", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_148_class_member_prenex_main() { run_test("148_class_member_prenex", "Main"); }
