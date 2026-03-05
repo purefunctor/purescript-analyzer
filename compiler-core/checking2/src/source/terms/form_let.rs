@@ -139,13 +139,20 @@ where
     };
 
     if let Some(signature_id) = name.signature {
+        let required =
+            name.equations.iter().map(|equation| equation.binders.len()).max().unwrap_or(0);
+
         let toolkit::InspectQuantified { quantified, .. } =
             toolkit::inspect_quantified(state, context, name_type)?;
 
         let quantified = toolkit::collect_givens(state, context, quantified)?;
 
-        let toolkit::InspectFunction { arguments, result } =
-            toolkit::inspect_function(state, context, quantified)?;
+        let toolkit::InspectFunction { arguments, result } = toolkit::inspect_function_with(
+            state,
+            context,
+            quantified,
+            toolkit::InspectMode::Some(required),
+        )?;
 
         let function = context.intern_function_chain(&arguments, result);
 

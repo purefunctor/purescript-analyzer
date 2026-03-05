@@ -315,3 +315,11 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_142_const_forms_synonym_forall_main() { run_test("142_const_forms_synonym_forall", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_143_const_forms_fn_alias_main() { run_test("143_const_forms_fn_alias", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_144_signature_synonym_data_equation_main() { run_test("144_signature_synonym_data_equation", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_145_signature_synonym_class_equation_main() { run_test("145_signature_synonym_class_equation", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_146_signature_synonym_type_equation_main() { run_test("146_signature_synonym_type_equation", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_147_synonym_oversaturation_equations_main() { run_test("147_synonym_oversaturation_equations", "Main"); }

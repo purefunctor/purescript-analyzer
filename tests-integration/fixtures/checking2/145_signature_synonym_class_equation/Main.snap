@@ -1,0 +1,18 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+eqLike :: forall (a :: Type). EqLike (a :: Type) => (a :: Type) -> (a :: Type) -> Boolean
+
+Types
+ClassHead :: Type
+EqLike :: ClassHead
+
+Synonyms
+type ClassHead = Type -> Constraint
+
+Classes
+class forall (a :: Type). EqLike (a :: Type)
+  eqLike :: forall (a :: Type). EqLike (a :: Type) => (a :: Type) -> (a :: Type) -> Boolean

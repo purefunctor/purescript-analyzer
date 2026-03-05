@@ -2,9 +2,11 @@
 
 use building_types::QueryResult;
 use itertools::Itertools;
+use rustc_hash::FxHashMap;
 
 use crate::context::CheckContext;
-use crate::core::{RowType, Type, TypeId};
+use crate::core::substitute::{NameToType, SubstituteName};
+use crate::core::{KindOrType, RowType, Saturation, Type, TypeId, toolkit};
 use crate::state::{CheckState, UnificationState};
 use crate::{ExternalQueries, safe_loop};
 
@@ -114,4 +116,115 @@ where
     }
 
     Ok(id)
+}
+
+/// Expands [`Type::SynonymApplication`] with respect to oversaturation.
+///
+/// In certain cases, type synonyms can be oversaturated or applied with more
+/// arguments than they're declared to accept. In the following example:
+///
+/// ```purescript
+/// type Identity :: forall k. k -> k
+/// type Identity a = a
+///
+/// data Tuple a b = Tuple a b
+///
+/// test1 :: Identity Array Int
+/// test1 = [42]
+///
+/// test2 :: Identity Tuple Int String
+/// test2 = Tuple 42 "hello"
+///
+/// forceSolve = { test1, test2 }
+/// ```
+///
+/// The `Identity Array` and `Identity Tuple` will be expanded to reveal
+/// `Array` and `Tuple` which are applied to their respective arguments.
+fn expand_synonym<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    id: TypeId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let mut current = id;
+    let mut arguments = vec![];
+
+    safe_loop! {
+        current = normalise(state, context, current)?;
+        match context.lookup_type(current) {
+            Type::Application(function, argument) => {
+                arguments.push(KindOrType::Type(argument));
+                current = function;
+            }
+            Type::KindApplication(function, argument) => {
+                arguments.push(KindOrType::Kind(argument));
+                current = function;
+            }
+            _ => break,
+        }
+    }
+
+    current = normalise(state, context, current)?;
+    let Type::SynonymApplication(synonym_id) = context.lookup_type(current) else {
+        return Ok(id);
+    };
+
+    let synonym = context.lookup_synonym(synonym_id);
+    if synonym.saturation != Saturation::Full {
+        return Ok(id);
+    }
+
+    let (file_id, type_id) = synonym.reference;
+    let checked_synonym = toolkit::lookup_file_synonym(state, context, file_id, type_id)?;
+    let Some(checked_synonym) = checked_synonym else {
+        return Ok(id);
+    };
+
+    let mut parameter_arguments = synonym.arguments.iter().filter_map(|argument| match argument {
+        KindOrType::Type(argument) => Some(*argument),
+        KindOrType::Kind(_) => None,
+    });
+
+    let mut bindings: NameToType = FxHashMap::default();
+    for parameter in &checked_synonym.parameters {
+        let Some(argument) = parameter_arguments.next() else {
+            return Ok(id);
+        };
+        bindings.insert(parameter.name, argument);
+    }
+
+    let mut expanded = if bindings.is_empty() {
+        checked_synonym.synonym
+    } else {
+        SubstituteName::many(state, context, &bindings, checked_synonym.synonym)?
+    };
+
+    for argument in arguments.into_iter().rev() {
+        expanded = match argument {
+            KindOrType::Type(argument) => context.intern_application(expanded, argument),
+            KindOrType::Kind(argument) => context.intern_kind_application(expanded, argument),
+        };
+    }
+
+    Ok(expanded)
+}
+
+pub fn normalise_expand<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    mut id: TypeId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    safe_loop! {
+        let expanded = expand_synonym(state, context, id)?;
+        let normalised = normalise(state, context, expanded)?;
+        if normalised == id {
+            return Ok(id);
+        }
+        id = normalised;
+    }
 }

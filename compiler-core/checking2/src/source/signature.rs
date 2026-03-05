@@ -31,7 +31,7 @@ where
         toolkit::inspect_quantified(state, context, signature_kind)?;
 
     let toolkit::InspectFunction { arguments, result } =
-        toolkit::inspect_function(state, context, quantified)?;
+        toolkit::inspect_function_with(state, context, quantified, toolkit::InspectMode::Full)?;
 
     if bindings.len() > arguments.len() {
         state.insert_error(ErrorKind::TypeSignatureVariableMismatch {
@@ -62,7 +62,7 @@ where
         toolkit::inspect_quantified(state, context, signature_kind)?;
 
     let toolkit::InspectFunction { arguments, result } =
-        toolkit::inspect_function(state, context, quantified)?;
+        toolkit::inspect_function_with(state, context, quantified, toolkit::InspectMode::Full)?;
 
     if bindings.len() > arguments.len() {
         state.insert_error(ErrorKind::TypeSignatureVariableMismatch {

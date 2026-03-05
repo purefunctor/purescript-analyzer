@@ -8,69 +8,9 @@ const0 :: forall (a :: Type) (b :: Type). Const (a :: Type) (b :: Type)
 const1 :: forall (a :: Type) (b :: Type). Const (a :: Type) (b :: Type)
 const2 :: forall (a :: Type) (b :: Type). Const (a :: Type) (b :: Type)
 const3 :: forall (a :: Type) (b :: Type). Const (a :: Type) (b :: Type)
-const4 :: forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type) -> (a :: Type)
-const5 :: forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type) -> (a :: Type)
 
 Types
 Const :: Type -> Type -> Type
 
 Synonyms
 type Const a b = (a :: Type) -> (b :: Type) -> (a :: Type)
-
-Errors
-CheckError {
-    kind: TooManyBinders {
-        signature: Some(
-            AstId<syntax::cst::Type>(30),
-        ),
-        expected: 0,
-        actual: 2,
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(1),
-        ),
-    ],
-}
-CheckError {
-    kind: TooManyBinders {
-        signature: Some(
-            AstId<syntax::cst::Type>(45),
-        ),
-        expected: 0,
-        actual: 1,
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(2),
-        ),
-    ],
-}
-CheckError {
-    kind: CannotUnify {
-        t1: Id<smol_str::SmolStr>(8),
-        t2: Id<smol_str::SmolStr>(9),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(4),
-        ),
-        CheckingExpression(
-            AstId<syntax::cst::Expression>(94),
-        ),
-    ],
-}
-CheckError {
-    kind: CannotUnify {
-        t1: Id<smol_str::SmolStr>(8),
-        t2: Id<smol_str::SmolStr>(10),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(5),
-        ),
-        CheckingExpression(
-            AstId<syntax::cst::Expression>(114),
-        ),
-    ],
-}

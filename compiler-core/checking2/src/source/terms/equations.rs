@@ -25,13 +25,19 @@ pub fn check_equations_with<Q>(
 where
     Q: ExternalQueries,
 {
+    let required = equations.iter().map(|equation| equation.binders.len()).max().unwrap_or(0);
+
     let toolkit::InspectQuantified { quantified, .. } =
         toolkit::inspect_quantified(state, context, expected_type)?;
 
     let quantified = toolkit::collect_givens(state, context, quantified)?;
 
-    let toolkit::InspectFunction { arguments, result } =
-        toolkit::inspect_function(state, context, quantified)?;
+    let toolkit::InspectFunction { arguments, result } = toolkit::inspect_function_with(
+        state,
+        context,
+        quantified,
+        toolkit::InspectMode::Some(required),
+    )?;
 
     let function = context.intern_function_chain(&arguments, result);
     check_equations_core(state, context, origin, &arguments, result, function, equations)?;
