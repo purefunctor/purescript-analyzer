@@ -18,7 +18,7 @@ use building_types::QueryResult;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::{TypeId, toolkit};
+use crate::core::{TypeId, signature};
 use crate::state::CheckState;
 
 fn is_binary_operator_type<Q>(
@@ -29,12 +29,12 @@ fn is_binary_operator_type<Q>(
 where
     Q: ExternalQueries,
 {
-    let toolkit::InspectQuantified { quantified, .. } =
-        toolkit::inspect_quantified(state, context, kind)?;
-    let quantified = toolkit::without_constraints(state, context, quantified)?;
-
-    let toolkit::InspectFunction { arguments, .. } =
-        toolkit::inspect_function(state, context, quantified)?;
+    let signature::DecomposedSignature { arguments, .. } = signature::decompose_signature(
+        state,
+        context,
+        kind,
+        signature::DecomposeSignatureMode::Full,
+    )?;
 
     Ok(arguments.len() == 2)
 }

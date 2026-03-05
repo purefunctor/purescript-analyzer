@@ -10,7 +10,8 @@ use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::substitute::{NameToType, SubstituteName};
 use crate::core::{
-    CheckedInstance, Type, TypeId, constraint, generalise, normalise, toolkit, unification, zonk,
+    CheckedInstance, Type, TypeId, constraint, generalise, normalise, signature, toolkit,
+    unification, zonk,
 };
 use crate::error::{ErrorCrumb, ErrorKind};
 use crate::source::terms::equations;
@@ -95,10 +96,12 @@ where
     let class_kind = toolkit::lookup_file_type(state, context, class_file, class_id)?;
 
     let expected_kinds = {
-        let toolkit::InspectQuantified { quantified, .. } =
-            toolkit::inspect_quantified(state, context, class_kind)?;
-        let toolkit::InspectFunction { arguments, .. } =
-            toolkit::inspect_function(state, context, quantified)?;
+        let signature::DecomposedSignature { arguments, .. } = signature::decompose_signature(
+            state,
+            context,
+            class_kind,
+            signature::DecomposeSignatureMode::Full,
+        )?;
         arguments
     };
 

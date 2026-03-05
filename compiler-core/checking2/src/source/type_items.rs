@@ -449,11 +449,16 @@ where
             continue;
         };
 
-        let toolkit::InspectQuantified { binders: kind_binders, quantified } =
-            toolkit::inspect_quantified(state, context, constructor_kind)?;
-
-        let toolkit::InspectFunction { arguments: parameter_kinds, .. } =
-            toolkit::inspect_function(state, context, quantified)?;
+        let signature::DecomposedSignature {
+            binders: kind_binders,
+            arguments: parameter_kinds,
+            ..
+        } = signature::decompose_signature(
+            state,
+            context,
+            constructor_kind,
+            signature::DecomposeSignatureMode::Full,
+        )?;
 
         // parameter_kinds is the post-generalisation kind for each parameter;
         // we want to replace pre-generalisation kinds carried by parameters
@@ -766,11 +771,16 @@ where
             continue;
         };
 
-        let toolkit::InspectQuantified { binders: class_binders, quantified: class_inner } =
-            toolkit::inspect_quantified(state, context, class_kind)?;
-
-        let toolkit::InspectFunction { arguments: class_parameters, .. } =
-            toolkit::inspect_function(state, context, class_inner)?;
+        let signature::DecomposedSignature {
+            binders: class_binders,
+            arguments: class_parameters,
+            ..
+        } = signature::decompose_signature(
+            state,
+            context,
+            class_kind,
+            signature::DecomposeSignatureMode::Full,
+        )?;
 
         let get_parameter_kind = |index: usize| {
             if let Some(kind) = class_parameters.get(index) {

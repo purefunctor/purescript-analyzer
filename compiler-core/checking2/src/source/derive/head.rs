@@ -5,7 +5,9 @@ use lowering::TermItemIr;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::{CheckedInstance, Type, constraint, generalise, toolkit, unification, zonk};
+use crate::core::{
+    CheckedInstance, Type, constraint, generalise, signature, toolkit, unification, zonk,
+};
 use crate::error::{ErrorCrumb, ErrorKind};
 use crate::source::types;
 use crate::state::CheckState;
@@ -126,10 +128,12 @@ where
     let class_kind = toolkit::lookup_file_type(state, context, class_file, class_id)?;
 
     let expected_kinds = {
-        let toolkit::InspectQuantified { quantified, .. } =
-            toolkit::inspect_quantified(state, context, class_kind)?;
-        let toolkit::InspectFunction { arguments, .. } =
-            toolkit::inspect_function(state, context, quantified)?;
+        let signature::DecomposedSignature { arguments, .. } = signature::decompose_signature(
+            state,
+            context,
+            class_kind,
+            signature::DecomposeSignatureMode::Full,
+        )?;
         arguments
     };
 

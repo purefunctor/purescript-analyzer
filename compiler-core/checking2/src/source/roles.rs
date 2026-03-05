@@ -8,7 +8,7 @@ use rustc_hash::FxHashMap;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::{ForallBinder, KindOrType, Name, Role, Type, TypeId, normalise, toolkit};
+use crate::core::{ForallBinder, KindOrType, Name, Role, Type, TypeId, normalise, signature};
 use crate::error::{ErrorCrumb, ErrorKind};
 use crate::state::CheckState;
 
@@ -40,10 +40,12 @@ pub fn count_kind_arguments<Q>(
 where
     Q: ExternalQueries,
 {
-    let toolkit::InspectQuantified { quantified, .. } =
-        toolkit::inspect_quantified(state, context, kind)?;
-    let toolkit::InspectFunction { arguments, .. } =
-        toolkit::inspect_function(state, context, quantified)?;
+    let signature::DecomposedSignature { arguments, .. } = signature::decompose_signature(
+        state,
+        context,
+        kind,
+        signature::DecomposeSignatureMode::Full,
+    )?;
     Ok(arguments.len())
 }
 

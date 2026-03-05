@@ -16,7 +16,7 @@ pub struct DecomposedSignature {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DecomposeSignatureMode {
-    Bindings,
+    Full,
     Patterns { required: usize },
 }
 
@@ -43,12 +43,8 @@ where
             }
 
             Type::Constrained(constraint, constrained) => {
-                if matches!(mode, DecomposeSignatureMode::Patterns { .. }) {
-                    constraints.push(constraint);
-                    current = constrained;
-                } else {
-                    return Ok(DecomposedSignature { binders, constraints, arguments, result: current });
-                }
+                constraints.push(constraint);
+                current = constrained;
             }
 
             Type::Function(argument, result) => {
@@ -101,7 +97,7 @@ where
     Q: ExternalQueries,
 {
     let signature =
-        decompose_signature(state, context, signature_type, DecomposeSignatureMode::Bindings)?;
+        decompose_signature(state, context, signature_type, DecomposeSignatureMode::Full)?;
 
     let actual = bindings.len() as u32;
     let expected = signature.arguments.len() as u32;
