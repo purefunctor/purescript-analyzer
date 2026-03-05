@@ -1,3 +1,5 @@
+use std::iter;
+
 use building_types::QueryResult;
 use itertools::Itertools;
 
@@ -74,7 +76,7 @@ where
         let mut stuck_positions = vec![];
 
         for (index, (&wanted_argument, &given_argument)) in
-            wanted.arguments.iter().zip(given.arguments.iter()).enumerate()
+            iter::zip(wanted.arguments.iter(), given.arguments.iter()).enumerate()
         {
             let match_result = match_given_type(state, context, wanted_argument, given_argument)?;
 
@@ -132,31 +134,33 @@ where
     match (wanted_t, given_t) {
         (Type::Unification(_), _) => Ok(MatchType::Stuck),
 
-        (Type::Rigid(wname, _, wkind), Type::Rigid(gname, _, gkind)) => {
-            if wname == gname {
-                match_given_type(state, context, wkind, gkind)
+        (Type::Rigid(wanted_name, _, wanted_kind), Type::Rigid(given_name, _, given_kind)) => {
+            if wanted_name == given_name {
+                match_given_type(state, context, wanted_kind, given_kind)
             } else {
                 Ok(MatchType::Apart)
             }
         }
 
-        (Type::Application(wf, wa), Type::Application(gf, ga)) => {
-            match_given_type(state, context, wf, gf)?
-                .and_then(|| match_given_type(state, context, wa, ga))
-        }
+        (
+            Type::Application(wanted_function, wanted_argument),
+            Type::Application(given_function, given_argument),
+        ) => match_given_type(state, context, wanted_function, given_function)?
+            .and_then(|| match_given_type(state, context, wanted_argument, given_argument)),
 
-        (Type::Function(wa, wr), Type::Function(ga, gr)) => {
-            match_given_type(state, context, wa, ga)?
-                .and_then(|| match_given_type(state, context, wr, gr))
-        }
+        (
+            Type::Function(wanted_argument, wanted_result),
+            Type::Function(given_argument, given_result),
+        ) => match_given_type(state, context, wanted_argument, given_argument)?
+            .and_then(|| match_given_type(state, context, wanted_result, given_result)),
 
-        (Type::Function(wa, wr), Type::Application(_, _)) => {
-            let wanted = context.intern_function_application(wa, wr);
+        (Type::Function(wanted_argument, wanted_result), Type::Application(_, _)) => {
+            let wanted = context.intern_function_application(wanted_argument, wanted_result);
             match_given_type(state, context, wanted, given)
         }
 
-        (Type::Application(_, _), Type::Function(ga, gr)) => {
-            let given = context.intern_function_application(ga, gr);
+        (Type::Application(_, _), Type::Function(given_argument, given_result)) => {
+            let given = context.intern_function_application(given_argument, given_result);
             match_given_type(state, context, wanted, given)
         }
 
@@ -169,7 +173,8 @@ where
             }
 
             let mut result = MatchType::Match;
-            for (wanted_field, given_field) in wanted_row.fields.iter().zip(given_row.fields.iter())
+            for (wanted_field, given_field) in
+                iter::zip(wanted_row.fields.iter(), given_row.fields.iter())
             {
                 if wanted_field.label != given_field.label {
                     return Ok(MatchType::Apart);
@@ -203,26 +208,29 @@ where
             }
         }
 
-        (Type::KindApplication(wf, wa), Type::KindApplication(gf, ga)) => {
-            match_given_type(state, context, wf, gf)?
-                .and_then(|| match_given_type(state, context, wa, ga))
-        }
+        (
+            Type::KindApplication(wanted_function, wanted_argument),
+            Type::KindApplication(given_function, given_argument),
+        ) => match_given_type(state, context, wanted_function, given_function)?
+            .and_then(|| match_given_type(state, context, wanted_argument, given_argument)),
 
-        (Type::SynonymApplication(wsyn), Type::SynonymApplication(gsyn)) => {
-            let wsyn = context.lookup_synonym(wsyn);
-            let gsyn = context.lookup_synonym(gsyn);
+        (Type::SynonymApplication(wanted_synonym), Type::SynonymApplication(given_synonym)) => {
+            let wanted_synonym = context.lookup_synonym(wanted_synonym);
+            let given_synonym = context.lookup_synonym(given_synonym);
 
-            if wsyn.reference != gsyn.reference || wsyn.arguments.len() != gsyn.arguments.len() {
+            if wanted_synonym.reference != given_synonym.reference
+                || wanted_synonym.arguments.len() != given_synonym.arguments.len()
+            {
                 return Ok(MatchType::Apart);
             }
 
-            wsyn.arguments.iter().zip(gsyn.arguments.iter()).try_fold(
+            iter::zip(wanted_synonym.arguments.iter(), given_synonym.arguments.iter()).try_fold(
                 MatchType::Match,
-                |result, (wa, ga)| {
-                    result.and_then(|| match (wa, ga) {
-                        (KindOrType::Kind(wa), KindOrType::Kind(ga))
-                        | (KindOrType::Type(wa), KindOrType::Type(ga)) => {
-                            match_given_type(state, context, *wa, *ga)
+                |result, (wanted_argument, given_argument)| {
+                    result.and_then(|| match (wanted_argument, given_argument) {
+                        (KindOrType::Kind(wanted_kind), KindOrType::Kind(given_kind))
+                        | (KindOrType::Type(wanted_kind), KindOrType::Type(given_kind)) => {
+                            match_given_type(state, context, *wanted_kind, *given_kind)
                         }
                         _ => Ok(MatchType::Apart),
                     })

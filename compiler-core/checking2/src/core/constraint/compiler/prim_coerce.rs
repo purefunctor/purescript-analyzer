@@ -1,3 +1,4 @@
+use std::iter;
 use std::sync::Arc;
 
 use building_types::QueryResult;
@@ -387,50 +388,64 @@ where
 fn try_refl<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    t1: TypeId,
-    t2: TypeId,
+    t1_type: TypeId,
+    t2_type: TypeId,
 ) -> QueryResult<bool>
 where
     Q: ExternalQueries,
 {
-    let t1 = normalise::normalise(state, context, t1)?;
-    let t2 = normalise::normalise(state, context, t2)?;
+    let t1_type = normalise::normalise(state, context, t1_type)?;
+    let t2_type = normalise::normalise(state, context, t2_type)?;
 
-    if t1 == t2 {
+    if t1_type == t2_type {
         return Ok(true);
     }
 
-    match (context.lookup_type(t1), context.lookup_type(t2)) {
-        (Type::Application(f1, a1), Type::Application(f2, a2))
-        | (Type::Constrained(f1, a1), Type::Constrained(f2, a2))
-        | (Type::KindApplication(f1, a1), Type::KindApplication(f2, a2))
-        | (Type::Kinded(f1, a1), Type::Kinded(f2, a2)) => {
-            Ok(try_refl(state, context, f1, f2)? && try_refl(state, context, a1, a2)?)
+    match (context.lookup_type(t1_type), context.lookup_type(t2_type)) {
+        (
+            Type::Application(t1_function, t1_argument),
+            Type::Application(t2_function, t2_argument),
+        )
+        | (
+            Type::Constrained(t1_function, t1_argument),
+            Type::Constrained(t2_function, t2_argument),
+        )
+        | (
+            Type::KindApplication(t1_function, t1_argument),
+            Type::KindApplication(t2_function, t2_argument),
+        )
+        | (Type::Kinded(t1_function, t1_argument), Type::Kinded(t2_function, t2_argument)) => {
+            Ok(try_refl(state, context, t1_function, t2_function)?
+                && try_refl(state, context, t1_argument, t2_argument)?)
         }
 
-        (Type::Function(a1, r1), Type::Function(a2, r2)) => {
-            Ok(try_refl(state, context, a1, a2)? && try_refl(state, context, r1, r2)?)
+        (Type::Function(t1_argument, t1_result), Type::Function(t2_argument, t2_result)) => {
+            Ok(try_refl(state, context, t1_argument, t2_argument)?
+                && try_refl(state, context, t1_result, t2_result)?)
         }
 
-        (Type::Forall(b1, i1), Type::Forall(b2, i2)) => {
-            let b1 = context.lookup_forall_binder(b1);
-            let b2 = context.lookup_forall_binder(b2);
-            Ok(try_refl(state, context, b1.kind, b2.kind)? && try_refl(state, context, i1, i2)?)
+        (Type::Forall(t1_binder_id, t1_inner), Type::Forall(t2_binder_id, t2_inner)) => {
+            let t1_binder = context.lookup_forall_binder(t1_binder_id);
+            let t2_binder = context.lookup_forall_binder(t2_binder_id);
+            Ok(try_refl(state, context, t1_binder.kind, t2_binder.kind)?
+                && try_refl(state, context, t1_inner, t2_inner)?)
         }
 
-        (Type::SynonymApplication(s1), Type::SynonymApplication(s2)) => {
-            let s1 = context.lookup_synonym(s1);
-            let s2 = context.lookup_synonym(s2);
-            if s1.reference != s2.reference || s1.arguments.len() != s2.arguments.len() {
+        (Type::SynonymApplication(t1_synonym_id), Type::SynonymApplication(t2_synonym_id)) => {
+            let t1_synonym = context.lookup_synonym(t1_synonym_id);
+            let t2_synonym = context.lookup_synonym(t2_synonym_id);
+            if t1_synonym.reference != t2_synonym.reference
+                || t1_synonym.arguments.len() != t2_synonym.arguments.len()
+            {
                 return Ok(false);
             }
-            let s1_args = Arc::clone(&s1.arguments);
-            let s2_args = Arc::clone(&s2.arguments);
-            for (a1, a2) in s1_args.iter().zip(s2_args.iter()) {
-                let equivalent = match (a1, a2) {
-                    (KindOrType::Kind(a1), KindOrType::Kind(a2))
-                    | (KindOrType::Type(a1), KindOrType::Type(a2)) => {
-                        try_refl(state, context, *a1, *a2)?
+            let t1_arguments = Arc::clone(&t1_synonym.arguments);
+            let t2_arguments = Arc::clone(&t2_synonym.arguments);
+            for (t1_argument, t2_argument) in iter::zip(t1_arguments.iter(), t2_arguments.iter()) {
+                let equivalent = match (t1_argument, t2_argument) {
+                    (KindOrType::Kind(t1_kind), KindOrType::Kind(t2_kind))
+                    | (KindOrType::Type(t1_kind), KindOrType::Type(t2_kind)) => {
+                        try_refl(state, context, *t1_kind, *t2_kind)?
                     }
                     _ => false,
                 };
@@ -441,26 +456,28 @@ where
             Ok(true)
         }
 
-        (Type::Row(r1), Type::Row(r2)) => {
-            let r1 = context.lookup_row_type(r1);
-            let r2 = context.lookup_row_type(r2);
-            if r1.fields.len() != r2.fields.len() {
+        (Type::Row(t1_row_id), Type::Row(t2_row_id)) => {
+            let t1_row = context.lookup_row_type(t1_row_id);
+            let t2_row = context.lookup_row_type(t2_row_id);
+            if t1_row.fields.len() != t2_row.fields.len() {
                 return Ok(false);
             }
-            for (f1, f2) in r1.fields.iter().zip(r2.fields.iter()) {
-                if f1.label != f2.label || !try_refl(state, context, f1.id, f2.id)? {
+            for (t1_field, t2_field) in iter::zip(t1_row.fields.iter(), t2_row.fields.iter()) {
+                if t1_field.label != t2_field.label
+                    || !try_refl(state, context, t1_field.id, t2_field.id)?
+                {
                     return Ok(false);
                 }
             }
-            match (r1.tail, r2.tail) {
-                (Some(t1), Some(t2)) => try_refl(state, context, t1, t2),
+            match (t1_row.tail, t2_row.tail) {
+                (Some(t1_tail), Some(t2_tail)) => try_refl(state, context, t1_tail, t2_tail),
                 (None, None) => Ok(true),
                 _ => Ok(false),
             }
         }
 
-        (Type::Rigid(n1, _, k1), Type::Rigid(n2, _, k2)) => {
-            Ok(n1 == n2 && try_refl(state, context, k1, k2)?)
+        (Type::Rigid(t1_name, _, t1_kind), Type::Rigid(t2_name, _, t2_kind)) => {
+            Ok(t1_name == t2_name && try_refl(state, context, t1_kind, t2_kind)?)
         }
 
         _ => Ok(false),
