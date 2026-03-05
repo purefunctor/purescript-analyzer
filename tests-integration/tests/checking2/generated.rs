@@ -307,3 +307,11 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_138_synonym_kind_application_main() { run_test("138_synonym_kind_application", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_139_synonym_operator_alias_main() { run_test("139_synonym_operator_alias", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_140_const_equation_forms_main() { run_test("140_const_equation_forms", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_141_const_forms_synonym_arrow_main() { run_test("141_const_forms_synonym_arrow", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_142_const_forms_synonym_forall_main() { run_test("142_const_forms_synonym_forall", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_143_const_forms_fn_alias_main() { run_test("143_const_forms_fn_alias", "Main"); }

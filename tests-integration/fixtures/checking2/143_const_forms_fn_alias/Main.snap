@@ -1,0 +1,95 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+fn0 :: forall (a :: Type) (b :: Type). ConstFn (a :: Type) (b :: Type)
+fn1 :: forall (a :: Type) (b :: Type). ConstFn (a :: Type) (b :: Type)
+fn2 :: forall (a :: Type) (b :: Type). ConstFn (a :: Type) (b :: Type)
+fn3 :: forall (a :: Type) (b :: Type). ConstFn (a :: Type) (b :: Type)
+fn4 :: forall (b :: Type) (a :: Type). (a :: Type) -> Fn (b :: Type) (a :: Type)
+fn5 :: forall (b :: Type) (a :: Type). (a :: Type) -> Fn (b :: Type) (a :: Type)
+
+Types
+Fn :: Type -> Type -> Type
+ConstFn :: Type -> Type -> Type
+
+Synonyms
+type Fn b a = (b :: Type) -> (a :: Type)
+type ConstFn a b = (a :: Type) -> Fn (b :: Type) (a :: Type)
+
+Errors
+CheckError {
+    kind: TooManyBinders {
+        signature: Some(
+            AstId<syntax::cst::Type>(37),
+        ),
+        expected: 0,
+        actual: 2,
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(1),
+        ),
+    ],
+}
+CheckError {
+    kind: TooManyBinders {
+        signature: Some(
+            AstId<syntax::cst::Type>(52),
+        ),
+        expected: 0,
+        actual: 1,
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(2),
+        ),
+    ],
+}
+CheckError {
+    kind: TooManyBinders {
+        signature: Some(
+            AstId<syntax::cst::Type>(87),
+        ),
+        expected: 1,
+        actual: 2,
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(4),
+        ),
+    ],
+}
+CheckError {
+    kind: CannotUnify {
+        t1: Id<smol_str::SmolStr>(7),
+        t2: Id<smol_str::SmolStr>(8),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(4),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(103),
+        ),
+    ],
+}
+CheckError {
+    kind: CannotUnify {
+        t1: Id<smol_str::SmolStr>(7),
+        t2: Id<smol_str::SmolStr>(8),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(5),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(120),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(123),
+        ),
+    ],
+}

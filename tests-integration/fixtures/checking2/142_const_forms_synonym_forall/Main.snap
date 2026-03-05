@@ -1,0 +1,76 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+poly0 :: ConstPoly
+poly1 :: ConstPoly
+poly2 :: ConstPoly
+poly3 :: ConstPoly
+poly4 :: forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type) -> (a :: Type)
+poly5 :: forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type) -> (a :: Type)
+
+Types
+ConstPoly :: Type
+
+Synonyms
+type ConstPoly = forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type) -> (a :: Type)
+
+Errors
+CheckError {
+    kind: TooManyBinders {
+        signature: Some(
+            AstId<syntax::cst::Type>(25),
+        ),
+        expected: 0,
+        actual: 2,
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(1),
+        ),
+    ],
+}
+CheckError {
+    kind: TooManyBinders {
+        signature: Some(
+            AstId<syntax::cst::Type>(34),
+        ),
+        expected: 0,
+        actual: 1,
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(2),
+        ),
+    ],
+}
+CheckError {
+    kind: CannotUnify {
+        t1: Id<smol_str::SmolStr>(8),
+        t2: Id<smol_str::SmolStr>(9),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(4),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(71),
+        ),
+    ],
+}
+CheckError {
+    kind: CannotUnify {
+        t1: Id<smol_str::SmolStr>(8),
+        t2: Id<smol_str::SmolStr>(10),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(5),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(91),
+        ),
+    ],
+}
