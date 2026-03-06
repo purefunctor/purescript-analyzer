@@ -453,3 +453,13 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_212_coercible_newtype_qualified_main() { run_test("212_coercible_newtype_qualified", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_213_coercible_newtype_open_hidden_main() { run_test("213_coercible_newtype_open_hidden", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_214_coercible_nested_records_main() { run_test("214_coercible_nested_records", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_215_coercible_higher_kinded_error_main() { run_test("215_coercible_higher_kinded_error", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_216_coercible_higher_kinded_multi_main() { run_test("216_coercible_higher_kinded_multi", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_217_coercible_higher_kinded_polykinded_main() { run_test("217_coercible_higher_kinded_polykinded", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_218_coercible_function_decomposition_main() { run_test("218_coercible_function_decomposition", "Main"); }
