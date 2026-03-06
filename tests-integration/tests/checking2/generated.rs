@@ -365,3 +365,19 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_168_do_final_let_main() { run_test("168_do_final_let", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_169_exhaustive_multiple_main() { run_test("169_exhaustive_multiple", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_170_exhaustive_tuple_main() { run_test("170_exhaustive_tuple", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_171_exhaustive_equation_redundant_main() { run_test("171_exhaustive_equation_redundant", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_172_exhaustive_equation_guarded_main() { run_test("172_exhaustive_equation_guarded", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_173_exhaustive_let_equation_main() { run_test("173_exhaustive_let_equation", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_174_exhaustive_instance_equation_main() { run_test("174_exhaustive_instance_equation", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_175_record_constructor_exhaustive_main() { run_test("175_record_constructor_exhaustive", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_176_array_exhaustive_main() { run_test("176_array_exhaustive", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_177_exhaustive_guards_otherwise_true_main() { run_test("177_exhaustive_guards_otherwise_true", "Main"); }
