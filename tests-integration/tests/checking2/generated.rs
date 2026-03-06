@@ -325,3 +325,9 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_148_class_member_prenex_main() { run_test("148_class_member_prenex", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_149_synonym_oversaturation_kind_main() { run_test("149_synonym_oversaturation_kind", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_150_derive_generic_insufficient_params_main() { run_test("150_derive_generic_insufficient_params", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_151_derive_generic_not_constructor_main() { run_test("151_derive_generic_not_constructor", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_152_derive_generic_missing_rep_main() { run_test("152_derive_generic_missing_rep", "Main"); }
