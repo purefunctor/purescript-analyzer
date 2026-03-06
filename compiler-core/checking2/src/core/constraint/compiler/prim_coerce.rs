@@ -34,8 +34,8 @@ where
         return Ok(None);
     };
 
-    let left = normalise::normalise(state, context, left)?;
-    let right = normalise::normalise(state, context, right)?;
+    let left = normalise::normalise_expand(state, context, left)?;
+    let right = normalise::normalise_expand(state, context, right)?;
 
     if left == right {
         return Ok(Some(MatchInstance::Match { constraints: vec![], equalities: vec![] }));
@@ -394,8 +394,8 @@ fn try_refl<Q>(
 where
     Q: ExternalQueries,
 {
-    let t1_type = normalise::normalise(state, context, t1_type)?;
-    let t2_type = normalise::normalise(state, context, t2_type)?;
+    let t1_type = normalise::normalise_expand(state, context, t1_type)?;
+    let t2_type = normalise::normalise_expand(state, context, t2_type)?;
 
     if t1_type == t2_type {
         return Ok(true);
