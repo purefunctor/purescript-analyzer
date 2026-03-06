@@ -1,0 +1,34 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+apply ::
+  forall (f :: Type -> Type) (g :: Type -> Type).
+    NatTrans @Type (f :: Type -> Type) (g :: Type -> Type) ->
+    (f :: Type -> Type) Int ->
+    (g :: Type -> Type) Int
+
+Types
+NatTrans :: forall (t3 :: Type). ((t3 :: Type) -> Type) -> ((t3 :: Type) -> Type) -> Type
+
+Synonyms
+type NatTrans f g = forall (a :: (t3 :: Type)).
+  (f :: (t3 :: Type) -> Type) (a :: (t3 :: Type)) -> (g :: (t3 :: Type) -> Type) (a :: (t3 :: Type))
+
+Errors
+CheckError {
+    kind: CannotUnify {
+        t1: Id<smol_str::SmolStr>(9),
+        t2: Id<smol_str::SmolStr>(10),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(0),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(39),
+        ),
+    ],
+}

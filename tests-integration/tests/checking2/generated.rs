@@ -427,3 +427,9 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_199_instance_kind_application_matching_main() { run_test("199_instance_kind_application_matching", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_200_instance_bound_variable_unification_main() { run_test("200_instance_bound_variable_unification", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_201_synonym_function_result_kind_main() { run_test("201_synonym_function_result_kind", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_202_synonym_forall_expansion_main() { run_test("202_synonym_forall_expansion", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_203_binder_instantiation_main() { run_test("203_binder_instantiation", "Main"); }
