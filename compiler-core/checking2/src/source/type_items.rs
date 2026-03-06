@@ -28,7 +28,6 @@ struct PendingDataType {
 }
 
 struct PendingSynonymType {
-    kind: TypeId,
     parameters: Vec<ForallBinder>,
     synonym: TypeId,
 }
@@ -577,7 +576,7 @@ fn check_synonym_equation<Q>(
 where
     Q: ExternalQueries,
 {
-    let (parameters, kind, result) = if let Some(signature_id) = signature
+    let (parameters, result) = if let Some(signature_id) = signature
         && let Some(signature_kind) = state.checked.lookup_type(item_id)
     {
         check_synonym_equation_check(state, context, bindings, (signature_id, signature_kind))?
@@ -592,7 +591,7 @@ where
         context.unknown("invalid synonym type")
     };
 
-    scc.synonym.push((item_id, PendingSynonymType { kind, parameters, synonym }));
+    scc.synonym.push((item_id, PendingSynonymType { parameters, synonym }));
 
     Ok(())
 }
@@ -602,7 +601,7 @@ fn check_synonym_equation_check<Q>(
     context: &CheckContext<Q>,
     bindings: &[TypeVariableBinding],
     (signature_id, signature_kind): (lowering::TypeId, TypeId),
-) -> QueryResult<(Vec<ForallBinder>, TypeId, TypeId)>
+) -> QueryResult<(Vec<ForallBinder>, TypeId)>
 where
     Q: ExternalQueries,
 {
@@ -613,7 +612,7 @@ where
         bindings,
     )?;
     let parameters = check_type_variable_bindings(state, context, bindings, &signature.arguments)?;
-    Ok((parameters, signature_kind, signature.result))
+    Ok((parameters, signature.result))
 }
 
 fn check_synonym_equation_infer<Q>(
@@ -621,7 +620,7 @@ fn check_synonym_equation_infer<Q>(
     context: &CheckContext<Q>,
     item_id: TypeItemId,
     bindings: &[TypeVariableBinding],
-) -> QueryResult<(Vec<ForallBinder>, TypeId, TypeId)>
+) -> QueryResult<(Vec<ForallBinder>, TypeId)>
 where
     Q: ExternalQueries,
 {
@@ -636,7 +635,7 @@ where
         state.checked.types.insert(item_id, inferred);
     }
 
-    Ok((bindings, inferred, result))
+    Ok((bindings, result))
 }
 
 fn finalise_synonym_replacements<Q>(
@@ -647,7 +646,10 @@ fn finalise_synonym_replacements<Q>(
 where
     Q: ExternalQueries,
 {
-    for (item_id, PendingSynonymType { kind, parameters, synonym }) in mem::take(&mut scc.synonym) {
+    for (item_id, PendingSynonymType { parameters, synonym }) in mem::take(&mut scc.synonym) {
+        let Some(kind) = state.checked.lookup_type(item_id) else {
+            continue;
+        };
         let synonym = zonk::zonk(state, context, synonym)?;
         let synonym = CheckedSynonym { kind, parameters, synonym };
         state.checked.synonyms.insert(item_id, synonym);

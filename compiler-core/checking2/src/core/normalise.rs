@@ -1,8 +1,9 @@
 //! Implements normalisation algorithms for the core representation.
 
+use std::iter;
+
 use building_types::QueryResult;
 use itertools::Itertools;
-use rustc_hash::FxHashMap;
 
 use crate::context::CheckContext;
 use crate::core::substitute::{NameToType, SubstituteName};
@@ -149,17 +150,19 @@ where
     Q: ExternalQueries,
 {
     let mut current = id;
-    let mut arguments = vec![];
+    let mut applied_arguments = vec![];
 
+    // Collect oversaturated arguments, in our example above, this
+    // would collect `[Int]` and `[Int, String]` into `arguments`.
     safe_loop! {
         current = normalise(state, context, current)?;
         match context.lookup_type(current) {
             Type::Application(function, argument) => {
-                arguments.push(KindOrType::Type(argument));
+                applied_arguments.push(KindOrType::Type(argument));
                 current = function;
             }
             Type::KindApplication(function, argument) => {
-                arguments.push(KindOrType::Kind(argument));
+                applied_arguments.push(KindOrType::Kind(argument));
                 current = function;
             }
             _ => break,
@@ -171,44 +174,82 @@ where
         return Ok(id);
     };
 
-    let synonym = context.lookup_synonym(synonym_id);
-    if synonym.saturation != Saturation::Full {
+    let synonym_application = context.lookup_synonym(synonym_id);
+    if synonym_application.saturation != Saturation::Full {
         return Ok(id);
     }
 
-    let (file_id, type_id) = synonym.reference;
+    let (file_id, type_id) = synonym_application.reference;
     let checked_synonym = toolkit::lookup_file_synonym(state, context, file_id, type_id)?;
     let Some(checked_synonym) = checked_synonym else {
         return Ok(id);
     };
 
-    let mut parameter_arguments = synonym.arguments.iter().filter_map(|argument| match argument {
-        KindOrType::Type(argument) => Some(*argument),
-        KindOrType::Kind(_) => None,
-    });
+    let mut bindings = NameToType::default();
+    let mut kind = checked_synonym.kind;
+    let mut arguments = {
+        let synonym_arguments = synonym_application.arguments.iter().copied();
+        let applied_arguments = applied_arguments.iter().copied().rev();
+        iter::chain(synonym_arguments, applied_arguments)
+    };
 
-    let mut bindings: NameToType = FxHashMap::default();
+    // Create substitutions for kind arguments. For example,
+    //
+    //   type T :: forall k. k -> Type
+    //   type T (a :: k) = Proxy (a :: k)
+    //
+    // given an application such as,
+    //
+    //   T @Type Int
+    //
+    // this loop produces the replacement,
+    //
+    //   k := Type
+    //
+    // which is later substituted into the synonym body. Without this step,
+    // expansion would leave `k` rigid inside the synonym body causing
+    // unification errors downstream.
+    safe_loop! {
+        kind = normalise(state, context, kind)?;
+
+        let Type::Forall(binder_id, inner) = context.lookup_type(kind) else {
+            break;
+        };
+
+        let Some(KindOrType::Kind(argument)) = arguments.next() else {
+            return Ok(id);
+        };
+
+        let binder = context.lookup_forall_binder(binder_id);
+        bindings.insert(binder.name, argument);
+
+        kind = inner;
+    }
+
+    // Create substitutions for type arguments.
     for parameter in &checked_synonym.parameters {
-        let Some(argument) = parameter_arguments.next() else {
+        let Some(KindOrType::Type(argument)) = arguments.next() else {
             return Ok(id);
         };
         bindings.insert(parameter.name, argument);
     }
 
-    let mut expanded = if bindings.is_empty() {
+    // Apply the substitutions if there are any.
+    let mut substituted = if bindings.is_empty() {
         checked_synonym.synonym
     } else {
         SubstituteName::many(state, context, &bindings, checked_synonym.synonym)?
     };
 
-    for argument in arguments.into_iter().rev() {
-        expanded = match argument {
-            KindOrType::Type(argument) => context.intern_application(expanded, argument),
-            KindOrType::Kind(argument) => context.intern_kind_application(expanded, argument),
+    // Reconstruct applications from remaining oversaturated arguments.
+    for argument in arguments {
+        substituted = match argument {
+            KindOrType::Type(argument) => context.intern_application(substituted, argument),
+            KindOrType::Kind(argument) => context.intern_kind_application(substituted, argument),
         };
     }
 
-    Ok(expanded)
+    Ok(substituted)
 }
 
 pub fn normalise_expand<Q>(
