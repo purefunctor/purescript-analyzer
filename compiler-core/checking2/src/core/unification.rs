@@ -111,8 +111,8 @@ where
     P: SubtypePolicy<Q>,
     Q: ExternalQueries,
 {
-    let t1 = normalise::normalise(state, context, t1)?;
-    let t2 = normalise::normalise(state, context, t2)?;
+    let t1 = normalise::normalise_expand(state, context, t1)?;
+    let t2 = normalise::normalise_expand(state, context, t2)?;
 
     if t1 == t2 {
         return Ok(true);
@@ -235,8 +235,8 @@ pub fn unify<Q>(
 where
     Q: ExternalQueries,
 {
-    let t1 = normalise::normalise(state, context, t1)?;
-    let t2 = normalise::normalise(state, context, t2)?;
+    let t1 = normalise::normalise_expand(state, context, t1)?;
+    let t2 = normalise::normalise_expand(state, context, t2)?;
 
     if t1 == t2 {
         return Ok(true);
@@ -386,8 +386,8 @@ pub fn can_unify<Q>(
 where
     Q: ExternalQueries,
 {
-    let t1 = normalise::normalise(state, context, t1)?;
-    let t2 = normalise::normalise(state, context, t2)?;
+    let t1 = normalise::normalise_expand(state, context, t1)?;
+    let t2 = normalise::normalise_expand(state, context, t2)?;
 
     if t1 == t2 {
         return Ok(CanUnify::Equal);
