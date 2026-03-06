@@ -1,0 +1,26 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+clone :: forall (a :: Type) (b :: Type). Clone (a :: Type) (b :: Type) => (a :: Type) -> (b :: Type)
+testClonePerson :: { age :: Int, name :: String } -> { age :: Int, name :: String }
+testCloneEmpty :: {} -> {}
+testCloneSingle :: { x :: Int } -> { x :: Int }
+nest :: forall (a :: Type) (b :: Type). Nest (a :: Type) (b :: Type) => (a :: Type) -> (b :: Type)
+testNest :: { a :: String } -> { inner :: { a :: String }, outer :: Int }
+
+Types
+Clone :: Type -> Type -> Constraint
+Nest :: Type -> Type -> Constraint
+
+Classes
+class forall (a :: Type) (b :: Type). Clone (a :: Type) (b :: Type)
+  clone :: forall (a :: Type) (b :: Type). Clone (a :: Type) (b :: Type) => (a :: Type) -> (b :: Type)
+class forall (a :: Type) (b :: Type). Nest (a :: Type) (b :: Type)
+  nest :: forall (a :: Type) (b :: Type). Nest (a :: Type) (b :: Type) => (a :: Type) -> (b :: Type)
+
+Instances
+instance forall (t4 :: Row Type). Clone {| (t4 :: Row Type) } {| (t4 :: Row Type) }
+instance forall (t5 :: Row Type). Nest {| (t5 :: Row Type) } { inner :: {| (t5 :: Row Type) }, outer :: Int }

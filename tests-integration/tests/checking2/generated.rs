@@ -411,3 +411,19 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_191_record_binder_additional_property_main() { run_test("191_record_binder_additional_property", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_192_record_binder_additional_property_nested_main() { run_test("192_record_binder_additional_property_nested", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_193_givens_matching_main() { run_test("193_givens_matching", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_194_givens_functional_dependency_main() { run_test("194_givens_functional_dependency", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_195_givens_superclass_where_binding_main() { run_test("195_givens_superclass_where_binding", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_196_instance_record_matching_main() { run_test("196_instance_record_matching", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_197_instance_record_open_row_main() { run_test("197_instance_record_open_row", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_198_instance_head_invalid_row_main() { run_test("198_instance_head_invalid_row", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_199_instance_kind_application_matching_main() { run_test("199_instance_kind_application_matching", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_200_instance_bound_variable_unification_main() { run_test("200_instance_bound_variable_unification", "Main"); }

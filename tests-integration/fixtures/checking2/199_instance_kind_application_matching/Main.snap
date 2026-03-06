@@ -1,0 +1,23 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Endo ::
+  forall (k :: Type) (c :: (k :: Type) -> (k :: Type) -> Type) (a :: (k :: Type)).
+    (c :: (k :: Type) -> (k :: Type) -> Type) (a :: (k :: Type)) (a :: (k :: Type)) ->
+    Endo @(k :: Type) (c :: (k :: Type) -> (k :: Type) -> Type) (a :: (k :: Type))
+test :: forall (b :: Type). Endo @Type Function (b :: Type) -> (b :: Type) -> (b :: Type)
+
+Types
+Endo :: forall (k :: Type). ((k :: Type) -> (k :: Type) -> Type) -> (k :: Type) -> Type
+
+Instances
+instance forall (t5 :: Type) (t3 :: (t5 :: Type) -> (t5 :: Type) -> Type) (t4 :: (t5 :: Type)).
+  Newtype @Type
+    (Endo @(t5 :: Type) (t3 :: (t5 :: Type) -> (t5 :: Type) -> Type) (t4 :: (t5 :: Type)))
+    ((t3 :: (t5 :: Type) -> (t5 :: Type) -> Type) (t4 :: (t5 :: Type)) (t4 :: (t5 :: Type)))
+
+Roles
+Endo = [Representational, Nominal]
