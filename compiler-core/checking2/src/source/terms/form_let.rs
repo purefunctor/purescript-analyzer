@@ -156,6 +156,10 @@ where
             function,
             &name.equations,
         )?;
+
+        let exhaustiveness =
+            exhaustive::check_equation_patterns(state, context, &arguments, &name.equations)?;
+        state.report_exhaustiveness(context, exhaustiveness);
     } else {
         // Keep simple let bindings e.g. `bind = ibind` polymorphic.
         if let [equation] = name.equations.as_ref()

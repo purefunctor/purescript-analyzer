@@ -14,3 +14,41 @@ Maybe :: Type -> Type
 
 Roles
 Maybe = [Representational]
+
+Errors
+CheckError {
+    kind: MissingPatterns {
+        patterns: [
+            Id<smol_str::SmolStr>(7),
+        ],
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(2),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(15),
+        ),
+        CheckingLetName(
+            Idx::<LetBindingNameGroup>(0),
+        ),
+    ],
+}
+CheckError {
+    kind: MissingPatterns {
+        patterns: [
+            Id<smol_str::SmolStr>(8),
+        ],
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(3),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(40),
+        ),
+        CheckingLetName(
+            Idx::<LetBindingNameGroup>(1),
+        ),
+    ],
+}
