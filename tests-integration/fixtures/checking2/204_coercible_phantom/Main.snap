@@ -1,0 +1,17 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Proxy :: forall (t1 :: Type) (a :: (t1 :: Type)). Proxy @(t1 :: Type) (a :: (t1 :: Type))
+coerceProxy ::
+  forall (t5 :: Type) (t4 :: Type) (a :: (t5 :: Type)) (b :: (t4 :: Type)).
+    Proxy @(t5 :: Type) (a :: (t5 :: Type)) -> Proxy @(t4 :: Type) (b :: (t4 :: Type))
+coerceProxyIntString :: Proxy @Type Int -> Proxy @Type String
+
+Types
+Proxy :: forall (t1 :: Type). (t1 :: Type) -> Type
+
+Roles
+Proxy = [Phantom]

@@ -433,3 +433,13 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_202_synonym_forall_expansion_main() { run_test("202_synonym_forall_expansion", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_203_binder_instantiation_main() { run_test("203_binder_instantiation", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_204_coercible_phantom_main() { run_test("204_coercible_phantom", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_205_coercible_representational_main() { run_test("205_coercible_representational", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_206_coercible_array_main() { run_test("206_coercible_array", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_207_coercible_record_main() { run_test("207_coercible_record", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_208_coercible_transitivity_main() { run_test("208_coercible_transitivity", "Main"); }

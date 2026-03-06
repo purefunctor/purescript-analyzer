@@ -1,0 +1,15 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Age :: Int -> Age
+coerceArray :: Array Age -> Array Int
+coerceArrayReverse :: Array Int -> Array Age
+
+Types
+Age :: Type
+
+Roles
+Age = []
