@@ -2,7 +2,7 @@ use building_types::QueryResult;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::{exhaustive, signature, toolkit};
+use crate::core::{exhaustive, toolkit};
 use crate::error::ErrorCrumb;
 use crate::source::terms::equations;
 use crate::source::{binder, types};
@@ -139,26 +139,22 @@ where
     };
 
     if let Some(signature_id) = name.signature {
-        let required =
-            name.equations.iter().map(|equation| equation.binders.len()).max().unwrap_or(0);
-
-        let signature::DecomposedSignature { arguments, result, .. } =
-            signature::expect_signature_patterns(state, context, name_type, required)?;
-
-        let function = context.intern_function_chain(&arguments, result);
-
-        equations::check_equations_core(
+        let equation_set = equations::analyse_equation_set(
             state,
             context,
-            equations::EquationTypeOrigin::Explicit(signature_id),
-            &arguments,
-            result,
-            function,
+            equations::EquationMode::Check {
+                origin: equations::EquationTypeOrigin::Explicit(signature_id),
+                expected_type: name_type,
+            },
             &name.equations,
         )?;
 
-        let exhaustiveness =
-            exhaustive::check_equation_patterns(state, context, &arguments, &name.equations)?;
+        let exhaustiveness = equations::compute_equation_exhaustiveness(
+            state,
+            context,
+            &equation_set,
+            &name.equations,
+        )?;
         state.report_exhaustiveness(context, exhaustiveness);
     } else {
         // Keep simple let bindings e.g. `bind = ibind` polymorphic.
@@ -169,7 +165,19 @@ where
             let inferred_type = equations::infer_guarded_expression(state, context, guarded)?;
             state.checked.nodes.lets.insert(id, inferred_type);
         } else {
-            equations::infer_equations_core(state, context, name_type, &name.equations)?;
+            let equation_set = equations::analyse_equation_set(
+                state,
+                context,
+                equations::EquationMode::Infer { group_type: name_type },
+                &name.equations,
+            )?;
+            let exhaustiveness = equations::compute_equation_exhaustiveness(
+                state,
+                context,
+                &equation_set,
+                &name.equations,
+            )?;
+            state.report_exhaustiveness(context, exhaustiveness);
         }
     }
 

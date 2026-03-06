@@ -300,21 +300,41 @@ where
             }
         }
 
-        equations::check_equations_with(
+        let equation_set = equations::analyse_equation_set(
             state,
             context,
-            equations::EquationTypeOrigin::Explicit(signature_id),
-            signature_member_type,
+            equations::EquationMode::Check {
+                origin: equations::EquationTypeOrigin::Explicit(signature_id),
+                expected_type: signature_member_type,
+            },
             &member.equations,
-        )?
+        )?;
+        let exhaustiveness = equations::compute_equation_exhaustiveness(
+            state,
+            context,
+            &equation_set,
+            &member.equations,
+        )?;
+        state.report_exhaustiveness(context, exhaustiveness);
+        state.solve_constraints(context)?
     } else if let Some(specialised_type) = class_member_type {
-        equations::check_equations_with(
+        let equation_set = equations::analyse_equation_set(
             state,
             context,
-            equations::EquationTypeOrigin::Implicit,
-            specialised_type,
+            equations::EquationMode::Check {
+                origin: equations::EquationTypeOrigin::Implicit,
+                expected_type: specialised_type,
+            },
             &member.equations,
-        )?
+        )?;
+        let exhaustiveness = equations::compute_equation_exhaustiveness(
+            state,
+            context,
+            &equation_set,
+            &member.equations,
+        )?;
+        state.report_exhaustiveness(context, exhaustiveness);
+        state.solve_constraints(context)?
     } else {
         vec![]
     };
@@ -558,13 +578,19 @@ fn check_value_group_core_check<Q>(
 where
     Q: ExternalQueries,
 {
-    equations::check_equations_with(
+    let equation_set = equations::analyse_equation_set(
         state,
         context,
-        equations::EquationTypeOrigin::Explicit(signature_id),
-        signature_type,
+        equations::EquationMode::Check {
+            origin: equations::EquationTypeOrigin::Explicit(signature_id),
+            expected_type: signature_type,
+        },
         equations,
-    )
+    )?;
+    let exhaustiveness =
+        equations::compute_equation_exhaustiveness(state, context, &equation_set, equations)?;
+    state.report_exhaustiveness(context, exhaustiveness);
+    state.solve_constraints(context)
 }
 
 fn check_value_group_core_infer<Q>(
@@ -578,7 +604,15 @@ where
 {
     let group_type = state.fresh_unification(context.queries, context.prim.t);
     state.checked.terms.insert(item_id, group_type);
-    equations::infer_equations_core(state, context, group_type, equations)?;
+    let equation_set = equations::analyse_equation_set(
+        state,
+        context,
+        equations::EquationMode::Infer { group_type },
+        equations,
+    )?;
+    let exhaustiveness =
+        equations::compute_equation_exhaustiveness(state, context, &equation_set, equations)?;
+    state.report_exhaustiveness(context, exhaustiveness);
 
     state.solve_constraints(context)
 }

@@ -15,29 +15,53 @@ pub enum EquationTypeOrigin {
     Implicit,
 }
 
-pub fn check_equations_with<Q>(
+pub enum EquationMode {
+    Check { origin: EquationTypeOrigin, expected_type: TypeId },
+    Infer { group_type: TypeId },
+}
+
+pub struct EquationSet {
+    pub arguments: Vec<TypeId>,
+}
+
+pub fn analyse_equation_set<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    origin: EquationTypeOrigin,
-    expected_type: TypeId,
+    mode: EquationMode,
     equations: &[lowering::Equation],
-) -> QueryResult<Vec<TypeId>>
+) -> QueryResult<EquationSet>
 where
     Q: ExternalQueries,
 {
-    let required = equations.iter().map(|equation| equation.binders.len()).max().unwrap_or(0);
+    match mode {
+        EquationMode::Check { origin, expected_type } => {
+            let required =
+                equations.iter().map(|equation| equation.binders.len()).max().unwrap_or(0);
 
-    let signature::DecomposedSignature { arguments, result, .. } =
-        signature::expect_signature_patterns(state, context, expected_type, required)?;
+            let signature::DecomposedSignature { arguments, result, .. } =
+                signature::expect_signature_patterns(state, context, expected_type, required)?;
 
-    let function = context.intern_function_chain(&arguments, result);
-    check_equations_core(state, context, origin, &arguments, result, function, equations)?;
+            let function = context.intern_function_chain(&arguments, result);
+            check_equations_core(state, context, origin, &arguments, result, function, equations)?;
 
-    let exhaustiveness =
-        exhaustive::check_equation_patterns(state, context, &arguments, equations)?;
-    state.report_exhaustiveness(context, exhaustiveness);
+            Ok(EquationSet { arguments })
+        }
+        EquationMode::Infer { group_type } => {
+            infer_equation_set(state, context, group_type, equations)
+        }
+    }
+}
 
-    state.solve_constraints(context)
+pub fn compute_equation_exhaustiveness<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    set: &EquationSet,
+    equations: &[lowering::Equation],
+) -> QueryResult<exhaustive::ExhaustivenessReport>
+where
+    Q: ExternalQueries,
+{
+    exhaustive::check_equation_patterns(state, context, &set.arguments, equations)
 }
 
 /// Infers the type of value group equations.
@@ -45,12 +69,12 @@ where
 /// For each equation: infer binders, create a result unification variable,
 /// build the function type, and subtype against `group_type`. Then infer
 /// the guarded expression and subtype against the result type.
-pub fn infer_equations_core<Q>(
+fn infer_equation_set<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     group_type: TypeId,
     equations: &[lowering::Equation],
-) -> QueryResult<()>
+) -> QueryResult<EquationSet>
 where
     Q: ExternalQueries,
 {
@@ -79,11 +103,7 @@ where
     let toolkit::InspectFunction { arguments, .. } =
         toolkit::inspect_function(state, context, group_type)?;
 
-    let exhaustiveness =
-        exhaustive::check_equation_patterns(state, context, &arguments, equations)?;
-    state.report_exhaustiveness(context, exhaustiveness);
-
-    Ok(())
+    Ok(EquationSet { arguments })
 }
 
 /// Checks value group equations against a signature.
