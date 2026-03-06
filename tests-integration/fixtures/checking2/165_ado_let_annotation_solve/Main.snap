@@ -1,0 +1,49 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+unit :: Unit
+pure :: forall (a :: Type). (a :: Type) -> Effect (a :: Type)
+map ::
+  forall (a :: Type) (b :: Type).
+    ((a :: Type) -> (b :: Type)) -> Effect (a :: Type) -> Effect (b :: Type)
+apply ::
+  forall (a :: Type) (b :: Type).
+    Effect ((a :: Type) -> (b :: Type)) -> Effect (a :: Type) -> Effect (b :: Type)
+thing1 :: Effect String
+test :: Effect Unit
+
+Types
+Effect :: Type -> Type
+Unit :: Type
+
+Roles
+Effect = [Nominal]
+Unit = []
+
+Errors
+CheckError {
+    kind: CannotUnify {
+        t1: Id<smol_str::SmolStr>(8),
+        t2: Id<smol_str::SmolStr>(9),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(5),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(73),
+        ),
+        CheckingAdoLet(
+            AstId<syntax::cst::DoStatement>(78),
+        ),
+        CheckingLetName(
+            Idx::<LetBindingNameGroup>(0),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(85),
+        ),
+    ],
+}

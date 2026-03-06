@@ -331,3 +331,37 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_151_derive_generic_not_constructor_main() { run_test("151_derive_generic_not_constructor", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_152_derive_generic_missing_rep_main() { run_test("152_derive_generic_missing_rep", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_153_do_discard_main() { run_test("153_do_discard", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_154_do_bind_main() { run_test("154_do_bind", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_155_ado_discard_main() { run_test("155_ado_discard", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_156_ado_bind_main() { run_test("156_ado_bind", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_157_do_polymorphic_main() { run_test("157_do_polymorphic", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_158_ado_polymorphic_main() { run_test("158_ado_polymorphic", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_159_do_empty_block_main() { run_test("159_do_empty_block", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_160_ado_empty_block_main() { run_test("160_ado_empty_block", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_161_do_ado_constrained_main() { run_test("161_do_ado_constrained", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_162_do_let_premature_solve_main() { run_test("162_do_let_premature_solve", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_163_do_let_annotation_solve_main() { run_test("163_do_let_annotation_solve", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_164_ado_let_premature_solve_main() { run_test("164_ado_let_premature_solve", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_165_ado_let_annotation_solve_main() { run_test("165_ado_let_annotation_solve", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_166_do_bind_only_main() { run_test("166_do_bind_only", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_167_do_final_bind_main() { run_test("167_do_final_bind", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_168_do_final_let_main() { run_test("168_do_final_let", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_169_exhaustive_multiple_main() { run_test("169_exhaustive_multiple", "Main"); }

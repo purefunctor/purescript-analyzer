@@ -1,0 +1,26 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Tuple :: forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type) -> Tuple (a :: Type) (b :: Type)
+map ::
+  forall (f :: Type -> Type) (a :: Type) (b :: Type).
+    ((a :: Type) -> (b :: Type)) ->
+    (f :: Type -> Type) (a :: Type) ->
+    (f :: Type -> Type) (b :: Type)
+apply ::
+  forall (f :: Type -> Type) (a :: Type) (b :: Type).
+    (f :: Type -> Type) ((a :: Type) -> (b :: Type)) ->
+    (f :: Type -> Type) (a :: Type) ->
+    (f :: Type -> Type) (b :: Type)
+pure :: forall (f :: Type -> Type) (a :: Type). (a :: Type) -> (f :: Type -> Type) (a :: Type)
+test :: forall (f :: Type -> Type). (f :: Type -> Type) (Tuple Int String)
+test' :: forall (t11 :: Type -> Type). (t11 :: Type -> Type) (Tuple Int String)
+
+Types
+Tuple :: Type -> Type -> Type
+
+Roles
+Tuple = [Representational, Representational]

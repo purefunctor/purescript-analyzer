@@ -1,0 +1,103 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Tuple :: forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type) -> Tuple (a :: Type) (b :: Type)
+map ::
+  forall (f :: Type -> Type) (a :: Type) (b :: Type).
+    Functor (f :: Type -> Type) =>
+    ((a :: Type) -> (b :: Type)) ->
+    (f :: Type -> Type) (a :: Type) ->
+    (f :: Type -> Type) (b :: Type)
+apply ::
+  forall (f :: Type -> Type) (a :: Type) (b :: Type).
+    Apply (f :: Type -> Type) =>
+    (f :: Type -> Type) ((a :: Type) -> (b :: Type)) ->
+    (f :: Type -> Type) (a :: Type) ->
+    (f :: Type -> Type) (b :: Type)
+pure ::
+  forall (f :: Type -> Type) (a :: Type).
+    Applicative (f :: Type -> Type) => (a :: Type) -> (f :: Type -> Type) (a :: Type)
+discard ::
+  forall (m :: Type -> Type) (a :: Type) (b :: Type).
+    Discard (m :: Type -> Type) =>
+    (m :: Type -> Type) (a :: Type) ->
+    ((a :: Type) -> (m :: Type -> Type) (b :: Type)) ->
+    (m :: Type -> Type) (b :: Type)
+bind ::
+  forall (m :: Type -> Type) (a :: Type) (b :: Type).
+    Bind (m :: Type -> Type) =>
+    (m :: Type -> Type) (a :: Type) ->
+    ((a :: Type) -> (m :: Type -> Type) (b :: Type)) ->
+    (m :: Type -> Type) (b :: Type)
+testDo ::
+  forall (m :: Type -> Type). Monad (m :: Type -> Type) => (m :: Type -> Type) (Tuple Int String)
+testDo' ::
+  forall (t18 :: Type -> Type).
+    Bind (t18 :: Type -> Type) => (t18 :: Type -> Type) (Tuple Int String)
+testAdo ::
+  forall (f :: Type -> Type).
+    Applicative (f :: Type -> Type) => (f :: Type -> Type) (Tuple Int String)
+testAdo' ::
+  forall (t20 :: Type -> Type).
+    Applicative (t20 :: Type -> Type) => (t20 :: Type -> Type) (Tuple Int String)
+testDoDiscard :: forall (m :: Type -> Type). Monad (m :: Type -> Type) => (m :: Type -> Type) Int
+testDoDiscard' ::
+  forall (t22 :: Type -> Type). Discard (t22 :: Type -> Type) => (t22 :: Type -> Type) Int
+
+Types
+Tuple :: Type -> Type -> Type
+Functor :: (Type -> Type) -> Constraint
+Apply :: (Type -> Type) -> Constraint
+Applicative :: (Type -> Type) -> Constraint
+Discard :: (Type -> Type) -> Constraint
+Bind :: (Type -> Type) -> Constraint
+Monad :: (Type -> Type) -> Constraint
+
+Classes
+class forall (f :: Type -> Type). Functor (f :: Type -> Type)
+  map ::
+  forall (f :: Type -> Type) (a :: Type) (b :: Type).
+    Functor (f :: Type -> Type) =>
+    ((a :: Type) -> (b :: Type)) ->
+    (f :: Type -> Type) (a :: Type) ->
+    (f :: Type -> Type) (b :: Type)
+class forall (f :: Type -> Type). Functor (f :: Type -> Type) <= Apply (f :: Type -> Type)
+  apply ::
+  forall (f :: Type -> Type) (a :: Type) (b :: Type).
+    Apply (f :: Type -> Type) =>
+    (f :: Type -> Type) ((a :: Type) -> (b :: Type)) ->
+    (f :: Type -> Type) (a :: Type) ->
+    (f :: Type -> Type) (b :: Type)
+class forall (f :: Type -> Type). Apply (f :: Type -> Type) <= Applicative (f :: Type -> Type)
+  pure ::
+  forall (f :: Type -> Type) (a :: Type).
+    Applicative (f :: Type -> Type) => (a :: Type) -> (f :: Type -> Type) (a :: Type)
+class forall (m :: Type -> Type). Applicative (m :: Type -> Type) <= Discard (m :: Type -> Type)
+  discard ::
+  forall (m :: Type -> Type) (a :: Type) (b :: Type).
+    Discard (m :: Type -> Type) =>
+    (m :: Type -> Type) (a :: Type) ->
+    ((a :: Type) -> (m :: Type -> Type) (b :: Type)) ->
+    (m :: Type -> Type) (b :: Type)
+class forall (m :: Type -> Type). Applicative (m :: Type -> Type) <= Bind (m :: Type -> Type)
+  bind ::
+  forall (m :: Type -> Type) (a :: Type) (b :: Type).
+    Bind (m :: Type -> Type) =>
+    (m :: Type -> Type) (a :: Type) ->
+    ((a :: Type) -> (m :: Type -> Type) (b :: Type)) ->
+    (m :: Type -> Type) (b :: Type)
+class forall (m :: Type -> Type). Bind (m :: Type -> Type) <= Monad (m :: Type -> Type)
+
+Roles
+Tuple = [Representational, Representational]
+
+Errors
+CheckError {
+    kind: NoInstanceFound {
+        constraint: Id<smol_str::SmolStr>(11),
+    },
+    crumbs: [],
+}
