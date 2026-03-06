@@ -391,3 +391,23 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_181_type_application_invalid_basic_main() { run_test("181_type_application_invalid_basic", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_182_type_application_invalid_too_many_main() { run_test("182_type_application_invalid_too_many", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_183_record_expression_exact_main() { run_test("183_record_expression_exact", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_184_record_expression_missing_field_main() { run_test("184_record_expression_missing_field", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_185_record_expression_additional_field_main() { run_test("185_record_expression_additional_field", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_186_record_expression_missing_and_additional_main() { run_test("186_record_expression_missing_and_additional", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_187_record_expression_nested_additional_main() { run_test("187_record_expression_nested_additional", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_188_record_access_sections_main() { run_test("188_record_access_sections", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_189_record_update_sections_main() { run_test("189_record_update_sections", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_190_record_binder_shrinking_main() { run_test("190_record_binder_shrinking", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_191_record_binder_additional_property_main() { run_test("191_record_binder_additional_property", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_192_record_binder_additional_property_nested_main() { run_test("192_record_binder_additional_property_nested", "Main"); }

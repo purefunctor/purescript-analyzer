@@ -1,0 +1,41 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+test :: { a :: Int, b :: Int }
+
+Types
+
+Errors
+CheckError {
+    kind: PropertyIsMissing {
+        labels: [
+            "b",
+        ],
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(0),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(14),
+        ),
+    ],
+}
+CheckError {
+    kind: AdditionalProperty {
+        labels: [
+            "c",
+        ],
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(0),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(14),
+        ),
+    ],
+}
