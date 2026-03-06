@@ -443,3 +443,13 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_207_coercible_record_main() { run_test("207_coercible_record", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_208_coercible_transitivity_main() { run_test("208_coercible_transitivity", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_209_coercible_different_heads_error_main() { run_test("209_coercible_different_heads_error", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_210_coercible_nominal_main() { run_test("210_coercible_nominal", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_211_coercible_newtype_hidden_main() { run_test("211_coercible_newtype_hidden", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_212_coercible_newtype_qualified_main() { run_test("212_coercible_newtype_qualified", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_213_coercible_newtype_open_hidden_main() { run_test("213_coercible_newtype_open_hidden", "Main"); }
