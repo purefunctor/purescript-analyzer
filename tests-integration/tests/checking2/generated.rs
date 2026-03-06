@@ -381,3 +381,13 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_176_array_exhaustive_main() { run_test("176_array_exhaustive", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_177_exhaustive_guards_otherwise_true_main() { run_test("177_exhaustive_guards_otherwise_true", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_178_application_infix_chain_main() { run_test("178_application_infix_chain", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_179_application_function_subtype_main() { run_test("179_application_function_subtype", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_180_application_function_decomposition_main() { run_test("180_application_function_decomposition", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_181_type_application_invalid_basic_main() { run_test("181_type_application_invalid_basic", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_182_type_application_invalid_too_many_main() { run_test("182_type_application_invalid_too_many", "Main"); }

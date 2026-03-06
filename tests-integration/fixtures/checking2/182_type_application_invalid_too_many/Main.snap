@@ -1,0 +1,40 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+
+Types
+Bad :: ?[cannot apply function type]
+
+Synonyms
+type Bad = Array Int String
+
+Errors
+CheckError {
+    kind: InvalidTypeApplication {
+        function_type: Id<smol_str::SmolStr>(3),
+        function_kind: Id<smol_str::SmolStr>(4),
+        argument_type: Id<smol_str::SmolStr>(5),
+    },
+    crumbs: [
+        CheckingKind(
+            AstId<syntax::cst::Type>(6),
+        ),
+        InferringKind(
+            AstId<syntax::cst::Type>(6),
+        ),
+    ],
+}
+CheckError {
+    kind: CannotUnify {
+        t1: Id<smol_str::SmolStr>(4),
+        t2: Id<smol_str::SmolStr>(7),
+    },
+    crumbs: [
+        CheckingKind(
+            AstId<syntax::cst::Type>(6),
+        ),
+    ],
+}
