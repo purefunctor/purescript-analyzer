@@ -28,8 +28,6 @@ fn run_test(folder: &str, file: &str) {
     settings.bind(|| insta::assert_snapshot!(file, report));
 }
 
-#[rustfmt::skip] #[test] fn test_gitkeep_main() { run_test("gitkeep", "Main"); }
-
 #[rustfmt::skip] #[test] fn test_001_foreign_check_main() { run_test("001_foreign_check", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_002_foreign_recursive_main() { run_test("002_foreign_recursive", "Main"); }
