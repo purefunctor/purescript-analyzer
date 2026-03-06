@@ -13,15 +13,3 @@ Pair :: forall (t2 :: Type). Type -> (t2 :: Type) -> Type
 
 Roles
 Pair = [Representational, Phantom]
-
-Errors
-CheckError {
-    kind: NoInstanceFound {
-        constraint: Id<smol_str::SmolStr>(8),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(1),
-        ),
-    ],
-}

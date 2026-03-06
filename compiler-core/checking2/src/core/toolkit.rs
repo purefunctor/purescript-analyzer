@@ -10,8 +10,8 @@ use lowering::TypeItemIr;
 use crate::context::CheckContext;
 use crate::core::substitute::SubstituteName;
 use crate::core::{
-    CheckedClass, CheckedInstance, CheckedSynonym, ForallBinder, Role, Type, TypeId, constraint,
-    normalise, unification,
+    CheckedClass, CheckedInstance, CheckedSynonym, ForallBinder, KindOrType, Role, Type, TypeId,
+    constraint, normalise, unification,
 };
 use crate::state::CheckState;
 use crate::{ExternalQueries, safe_loop};
@@ -56,6 +56,35 @@ where
                 id = function;
             }
             Type::KindApplication(function, _) => {
+                id = function;
+            }
+            _ => break,
+        }
+    }
+
+    arguments.reverse();
+    Ok((id, arguments))
+}
+
+pub fn extract_all_applications<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    mut id: TypeId,
+) -> QueryResult<(TypeId, Vec<KindOrType>)>
+where
+    Q: ExternalQueries,
+{
+    let mut arguments = vec![];
+
+    safe_loop! {
+        id = normalise::normalise(state, context, id)?;
+        match context.lookup_type(id) {
+            Type::Application(function, argument) => {
+                arguments.push(crate::core::KindOrType::Type(argument));
+                id = function;
+            }
+            Type::KindApplication(function, argument) => {
+                arguments.push(crate::core::KindOrType::Kind(argument));
                 id = function;
             }
             _ => break,
@@ -634,7 +663,7 @@ where
 
     let constructor_type = lookup_file_term(state, context, newtype_file, constructor_term_id)?;
 
-    let (_, arguments) = extract_type_application(state, context, newtype_type)?;
+    let (_, arguments) = extract_all_applications(state, context, newtype_type)?;
 
     let mut current = constructor_type;
     let mut arguments = arguments.iter().copied();
@@ -646,9 +675,13 @@ where
         };
 
         let binder = context.lookup_forall_binder(binder_id);
-        let replacement = arguments.next().unwrap_or_else(|| {
-            state.fresh_rigid(context.queries, binder.kind)
-        });
+        let replacement = arguments
+            .next()
+            .map(|argument| match argument {
+                crate::core::KindOrType::Kind(argument)
+                | crate::core::KindOrType::Type(argument) => argument,
+            })
+            .unwrap_or_else(|| state.fresh_rigid(context.queries, binder.kind));
 
         current = SubstituteName::one(state, context, binder.name, replacement, inner)?;
     }

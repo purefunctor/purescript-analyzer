@@ -26,17 +26,3 @@ Roles
 Maybe = [Phantom, Representational]
 MaybeAlias = [Representational, Representational]
 Container = [Representational]
-
-Errors
-CheckError {
-    kind: NoInstanceFound {
-        constraint: Id<smol_str::SmolStr>(8),
-    },
-    crumbs: [],
-}
-CheckError {
-    kind: NoInstanceFound {
-        constraint: Id<smol_str::SmolStr>(9),
-    },
-    crumbs: [],
-}
