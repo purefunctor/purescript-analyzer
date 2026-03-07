@@ -24,10 +24,6 @@ where
         return Ok(None);
     };
 
-    let left = normalise::normalise(state, context, left)?;
-    let right = normalise::normalise(state, context, right)?;
-    let sum = normalise::normalise(state, context, sum)?;
-
     let left_int = extract_integer(state, context, left)?;
     let right_int = extract_integer(state, context, right)?;
     let sum_int = extract_integer(state, context, sum)?;
@@ -63,10 +59,6 @@ where
         return Ok(None);
     };
 
-    let left = normalise::normalise(state, context, left)?;
-    let right = normalise::normalise(state, context, right)?;
-    let product = normalise::normalise(state, context, product)?;
-
     let Some(left_int) = extract_integer(state, context, left)? else {
         return Ok(Some(MatchInstance::Stuck));
     };
@@ -91,9 +83,9 @@ where
         return Ok(None);
     };
 
-    let left = normalise::normalise(state, context, left)?;
-    let right = normalise::normalise(state, context, right)?;
-    let ordering = normalise::normalise(state, context, ordering)?;
+    let left = normalise::normalise_expand(state, context, left)?;
+    let right = normalise::normalise_expand(state, context, right)?;
+    let ordering = normalise::normalise_expand(state, context, ordering)?;
 
     let left_int = extract_integer(state, context, left)?;
     let right_int = extract_integer(state, context, right)?;
@@ -136,9 +128,9 @@ where
             continue;
         };
 
-        let a = normalise::normalise(state, context, a)?;
-        let b = normalise::normalise(state, context, b)?;
-        let relation = normalise::normalise(state, context, relation)?;
+        let a = normalise::normalise_expand(state, context, a)?;
+        let b = normalise::normalise_expand(state, context, b)?;
+        let relation = normalise::normalise_expand(state, context, relation)?;
 
         if relation == context.prim_ordering.lt {
             graph.add_edge(a, b, ());
@@ -174,9 +166,6 @@ where
     let &[int, symbol] = arguments else {
         return Ok(None);
     };
-
-    let int = normalise::normalise(state, context, int)?;
-    let symbol = normalise::normalise(state, context, symbol)?;
 
     let Some(value) = extract_integer(state, context, int)? else {
         return Ok(Some(MatchInstance::Stuck));

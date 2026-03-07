@@ -86,7 +86,7 @@ where
     Q: ExternalQueries,
 {
     safe_loop! {
-        id = normalise::normalise(state, context, id)?;
+        id = normalise::normalise_expand(state, context, id)?;
         match context.lookup_type(id) {
             Type::Unification(_) => return Ok(true),
             Type::Application(function, _) | Type::KindApplication(function, _) => {
@@ -106,7 +106,7 @@ where
     Q: ExternalQueries,
 {
     let kind = types::elaborate_kind(state, context, id)?;
-    let kind = normalise::normalise(state, context, kind)?;
+    let kind = normalise::normalise_expand(state, context, kind)?;
     Ok(kind == context.prim.t)
 }
 
@@ -262,13 +262,13 @@ fn decompose_function_simple<Q>(
 where
     Q: ExternalQueries,
 {
-    let id = normalise::normalise(state, context, id)?;
+    let id = normalise::normalise_expand(state, context, id)?;
     match context.lookup_type(id) {
         Type::Function(argument, result) => Ok(Some((argument, result))),
         Type::Application(partial, result) => {
-            let partial = normalise::normalise(state, context, partial)?;
+            let partial = normalise::normalise_expand(state, context, partial)?;
             if let Type::Application(constructor, argument) = context.lookup_type(partial) {
-                let constructor = normalise::normalise(state, context, constructor)?;
+                let constructor = normalise::normalise_expand(state, context, constructor)?;
                 if constructor == context.prim.function {
                     return Ok(Some((argument, result)));
                 }
@@ -288,8 +288,8 @@ fn try_row_coercion<Q>(
 where
     Q: ExternalQueries,
 {
-    let left = normalise::normalise(state, context, left)?;
-    let right = normalise::normalise(state, context, right)?;
+    let left = normalise::normalise_expand(state, context, left)?;
+    let right = normalise::normalise_expand(state, context, right)?;
 
     let Type::Row(left_row_id) = context.lookup_type(left) else { return Ok(None) };
     let Type::Row(right_row_id) = context.lookup_type(right) else { return Ok(None) };
@@ -371,7 +371,7 @@ where
     Q: ExternalQueries,
 {
     safe_loop! {
-        kind_id = normalise::normalise(state, context, kind_id)?;
+        kind_id = normalise::normalise_expand(state, context, kind_id)?;
         match context.lookup_type(kind_id) {
             Type::Forall(binder_id, inner_kind) => {
                 let binder = context.lookup_forall_binder(binder_id);

@@ -25,7 +25,7 @@ pub fn extract_integer<Q>(
 where
     Q: ExternalQueries,
 {
-    let id = normalise::normalise(state, context, id)?;
+    let id = normalise::normalise_expand(state, context, id)?;
     match context.lookup_type(id) {
         Type::Integer(value) => Ok(Some(value)),
         _ => Ok(None),
@@ -40,7 +40,7 @@ pub fn extract_symbol<Q>(
 where
     Q: ExternalQueries,
 {
-    let id = normalise::normalise(state, context, id)?;
+    let id = normalise::normalise_expand(state, context, id)?;
     if let Type::String(_, id) = context.lookup_type(id) {
         Ok(Some(context.queries.lookup_smol_str(id)))
     } else {
@@ -56,7 +56,7 @@ pub fn extract_row<Q>(
 where
     Q: ExternalQueries,
 {
-    let id = normalise::normalise(state, context, id)?;
+    let id = normalise::normalise_expand(state, context, id)?;
     if let Type::Row(id) = context.lookup_type(id) {
         Ok(Some(context.lookup_row_type(id)))
     } else {

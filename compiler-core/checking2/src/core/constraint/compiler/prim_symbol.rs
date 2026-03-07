@@ -22,10 +22,6 @@ where
         return Ok(None);
     };
 
-    let left = normalise::normalise(state, context, left)?;
-    let right = normalise::normalise(state, context, right)?;
-    let appended = normalise::normalise(state, context, appended)?;
-
     let left_symbol = extract_symbol(state, context, left)?;
     let right_symbol = extract_symbol(state, context, right)?;
     let appended_symbol = extract_symbol(state, context, appended)?;
@@ -69,10 +65,6 @@ where
         return Ok(None);
     };
 
-    let left = normalise::normalise(state, context, left)?;
-    let right = normalise::normalise(state, context, right)?;
-    let ordering = normalise::normalise(state, context, ordering)?;
-
     let Some(left_symbol) = extract_symbol(state, context, left)? else {
         return Ok(Some(MatchInstance::Stuck));
     };
@@ -100,10 +92,6 @@ where
     let &[head, tail, symbol] = arguments else {
         return Ok(None);
     };
-
-    let head = normalise::normalise(state, context, head)?;
-    let tail = normalise::normalise(state, context, tail)?;
-    let symbol = normalise::normalise(state, context, symbol)?;
 
     let head_symbol = extract_symbol(state, context, head)?;
     let tail_symbol = extract_symbol(state, context, tail)?;
@@ -157,7 +145,7 @@ where
         return Ok(None);
     };
 
-    let symbol = normalise::normalise(state, context, symbol)?;
+    let symbol = normalise::normalise_expand(state, context, symbol)?;
 
     let matched = if extract_symbol(state, context, symbol)?.is_some() {
         MatchInstance::Match { constraints: vec![], equalities: vec![] }

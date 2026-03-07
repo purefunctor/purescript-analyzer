@@ -8,7 +8,7 @@ use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::constraint::MatchInstance;
 use crate::core::unification::{CanUnify, can_unify};
-use crate::core::{RowField, RowType, Type, TypeId, normalise};
+use crate::core::{RowField, RowType, Type, TypeId};
 use crate::state::CheckState;
 
 use super::{extract_row, extract_symbol, match_equality};
@@ -91,10 +91,6 @@ where
     let &[left, right, union] = arguments else {
         return Ok(None);
     };
-
-    let left = normalise::normalise(state, context, left)?;
-    let right = normalise::normalise(state, context, right)?;
-    let union = normalise::normalise(state, context, union)?;
 
     let left_row = extract_row(state, context, left)?;
     let right_row = extract_row(state, context, right)?;
@@ -183,11 +179,6 @@ where
         return Ok(None);
     };
 
-    let label = normalise::normalise(state, context, label)?;
-    let a = normalise::normalise(state, context, a)?;
-    let tail = normalise::normalise(state, context, tail)?;
-    let row = normalise::normalise(state, context, row)?;
-
     let label_symbol = extract_symbol(state, context, label)?;
     let tail_row = extract_row(state, context, tail)?;
     let row_row = extract_row(state, context, row)?;
@@ -239,9 +230,6 @@ where
         return Ok(None);
     };
 
-    let label = normalise::normalise(state, context, label)?;
-    let row = normalise::normalise(state, context, row)?;
-
     let Some(label_value) = extract_symbol(state, context, label)? else {
         return Ok(Some(MatchInstance::Stuck));
     };
@@ -282,9 +270,6 @@ where
     let &[original, nubbed] = arguments else {
         return Ok(None);
     };
-
-    let original = normalise::normalise(state, context, original)?;
-    let nubbed = normalise::normalise(state, context, nubbed)?;
 
     let Some(original_row) = extract_closed_row(state, context, original)? else {
         return Ok(Some(MatchInstance::Stuck));
