@@ -650,6 +650,10 @@ pub fn get_newtype_inner<Q>(
 where
     Q: ExternalQueries,
 {
+    if !is_newtype(context, newtype_file, newtype_id)? {
+        return Ok(None);
+    }
+
     let constructor_term_id = if newtype_file == context.id {
         context.indexed.pairs.data_constructors(newtype_id).next()
     } else {

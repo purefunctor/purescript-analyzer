@@ -32,9 +32,9 @@ where
         return Ok(None);
     };
 
-    if newtype_file != context.id || !toolkit::is_newtype(context, newtype_file, newtype_id)? {
+    if newtype_file != context.id {
         let type_message = state.pretty_id(context, *newtype_type)?;
-        state.insert_error(ErrorKind::ExpectedNewtype { type_message });
+        state.insert_error(ErrorKind::NonLocalNewtype { type_message });
         return Ok(None);
     }
 
@@ -78,9 +78,9 @@ where
         return Ok(None);
     };
 
-    if newtype_file != context.id || !toolkit::is_newtype(context, newtype_file, newtype_id)? {
+    if newtype_file != context.id {
         let type_message = state.pretty_id(context, *newtype_type)?;
-        state.insert_error(ErrorKind::ExpectedNewtype { type_message });
+        state.insert_error(ErrorKind::NonLocalNewtype { type_message });
         return Ok(None);
     }
 

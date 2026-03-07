@@ -463,3 +463,15 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_217_coercible_higher_kinded_polykinded_main() { run_test("217_coercible_higher_kinded_polykinded", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_218_coercible_function_decomposition_main() { run_test("218_coercible_function_decomposition", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_219_derive_newtype_not_constructor_main() { run_test("219_derive_newtype_not_constructor", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_220_derive_newtype_class_not_constructor_main() { run_test("220_derive_newtype_class_not_constructor", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_222_derive_newtype_not_local_main() { run_test("222_derive_newtype_not_local", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_223_derive_newtype_class_not_local_main() { run_test("223_derive_newtype_class_not_local", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_224_derive_newtype_insufficient_params_main() { run_test("224_derive_newtype_insufficient_params", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_225_derive_newtype_class_insufficient_params_main() { run_test("225_derive_newtype_class_insufficient_params", "Main"); }

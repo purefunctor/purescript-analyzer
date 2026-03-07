@@ -97,6 +97,9 @@ pub enum ErrorKind {
         type_message: SmolStrId,
     },
     InvalidNewtypeDeriveSkolemArguments,
+    NonLocalNewtype {
+        type_message: SmolStrId,
+    },
     NoInstanceFound {
         constraint: SmolStrId,
     },

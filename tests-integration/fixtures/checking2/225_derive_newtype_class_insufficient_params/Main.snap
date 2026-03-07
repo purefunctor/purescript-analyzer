@@ -1,0 +1,39 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Wrapper :: Int -> Wrapper
+
+Types
+Wrapper :: Type
+
+Roles
+Wrapper = []
+
+Errors
+CheckError {
+    kind: DeriveInvalidArity {
+        class_file: Idx::<File>(24),
+        class_id: Idx::<TypeItem>(0),
+        expected: 2,
+        actual: 1,
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(1),
+        ),
+    ],
+}
+CheckError {
+    kind: CannotUnify {
+        t1: Id<smol_str::SmolStr>(8),
+        t2: Id<smol_str::SmolStr>(9),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(1),
+        ),
+    ],
+}

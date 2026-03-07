@@ -1,0 +1,20 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+
+Types
+
+Errors
+CheckError {
+    kind: CannotDeriveForType {
+        type_message: Id<smol_str::SmolStr>(7),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(0),
+        ),
+    ],
+}
