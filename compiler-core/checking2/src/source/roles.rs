@@ -178,8 +178,7 @@ where
         }
 
         Type::Application(function, argument) => {
-            let function_id =
-                normalise::expand(inference.state, inference.context, function)?;
+            let function_id = normalise::expand(inference.state, inference.context, function)?;
 
             let is_type_variable =
                 matches!(inference.context.lookup_type(function_id), Type::Rigid(_, _, _));

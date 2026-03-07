@@ -216,27 +216,21 @@ where
 {
     let expression_type = super::infer_expression(state, context, expression)?;
 
-    let map_applied = application::check_function_application_core(
-        state,
-        context,
-        map_type,
-        lambda_type,
-        |state, context, lambda_type, expected_type| {
-            unification::subtype(state, context, lambda_type, expected_type)?;
-            Ok(lambda_type)
-        },
-    )?;
+    let Some(application::GenericApplication { argument, result }) =
+        application::check_generic_application(state, context, map_type)?
+    else {
+        return Ok(context.unknown("invalid function application"));
+    };
+    unification::subtype(state, context, lambda_type, argument)?;
 
-    application::check_function_application_core(
-        state,
-        context,
-        map_applied,
-        expression_type,
-        |state, context, expression_type, expected_type| {
-            unification::subtype(state, context, expression_type, expected_type)?;
-            Ok(expression_type)
-        },
-    )
+    let Some(application::GenericApplication { argument, result }) =
+        application::check_generic_application(state, context, result)?
+    else {
+        return Ok(context.unknown("invalid function application"));
+    };
+    unification::subtype(state, context, expression_type, argument)?;
+
+    Ok(result)
 }
 
 pub fn infer_ado_apply_core<Q>(
@@ -251,25 +245,19 @@ where
 {
     let expression_type = super::infer_expression(state, context, expression)?;
 
-    let apply_applied = application::check_function_application_core(
-        state,
-        context,
-        apply_type,
-        continuation_type,
-        |state, context, continuation_type, expected_type| {
-            unification::subtype(state, context, continuation_type, expected_type)?;
-            Ok(continuation_type)
-        },
-    )?;
+    let Some(application::GenericApplication { argument, result }) =
+        application::check_generic_application(state, context, apply_type)?
+    else {
+        return Ok(context.unknown("invalid function application"));
+    };
+    unification::subtype(state, context, continuation_type, argument)?;
 
-    application::check_function_application_core(
-        state,
-        context,
-        apply_applied,
-        expression_type,
-        |state, context, expression_type, expected_type| {
-            unification::subtype(state, context, expression_type, expected_type)?;
-            Ok(expression_type)
-        },
-    )
+    let Some(application::GenericApplication { argument, result }) =
+        application::check_generic_application(state, context, result)?
+    else {
+        return Ok(context.unknown("invalid function application"));
+    };
+    unification::subtype(state, context, expression_type, argument)?;
+
+    Ok(result)
 }
