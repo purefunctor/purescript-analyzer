@@ -29,7 +29,7 @@ where
     }
 
     fn reduce_once(&mut self, id: TypeId) -> Option<TypeId> {
-        let t = self.context.queries.lookup_type(id);
+        let t = self.context.lookup_type(id);
 
         if let Some(next) = self.rule_prune_unifications(&t) {
             return Some(next);
@@ -61,14 +61,14 @@ where
             return None;
         };
 
-        let row = self.context.queries.lookup_row_type(row_id);
+        let row = self.context.lookup_row_type(row_id);
 
         if row.fields.is_empty() {
             return row.tail;
         }
 
         let tail_id = row.tail?;
-        let tail_t = self.context.queries.lookup_type(tail_id);
+        let tail_t = self.context.lookup_type(tail_id);
 
         let Type::Row(inner_row_id) = tail_t else {
             return None;
@@ -78,7 +78,7 @@ where
             return None;
         }
 
-        let inner = self.context.queries.lookup_row_type(inner_row_id);
+        let inner = self.context.lookup_row_type(inner_row_id);
 
         let merged_fields = {
             let left = row.fields.iter().cloned();

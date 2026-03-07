@@ -118,8 +118,8 @@ where
         return Ok(true);
     }
 
-    let t1_core = context.queries.lookup_type(t1);
-    let t2_core = context.queries.lookup_type(t2);
+    let t1_core = context.lookup_type(t1);
+    let t2_core = context.lookup_type(t2);
 
     match (t1_core, t2_core) {
         // Function subtyping is contravariant on the argument type and
@@ -210,8 +210,8 @@ where
             let t1_argument = normalise::expand(state, context, t1_argument)?;
             let t2_argument = normalise::expand(state, context, t2_argument)?;
 
-            let t1_argument_core = context.queries.lookup_type(t1_argument);
-            let t2_argument_core = context.queries.lookup_type(t2_argument);
+            let t1_argument_core = context.lookup_type(t1_argument);
+            let t2_argument_core = context.lookup_type(t2_argument);
 
             if let (Type::Row(t1_row_id), Type::Row(t2_row_id)) =
                 (t1_argument_core, t2_argument_core)
@@ -242,8 +242,8 @@ where
         return Ok(true);
     }
 
-    let t1_core = context.queries.lookup_type(t1);
-    let t2_core = context.queries.lookup_type(t2);
+    let t1_core = context.lookup_type(t1);
+    let t2_core = context.lookup_type(t2);
 
     let unifies = match (t1_core, t2_core) {
         // PureScript has an impredicative type system i.e. unification
@@ -568,7 +568,7 @@ where
         Q: ExternalQueries,
     {
         let id = normalise::normalise(state, context, id)?;
-        let t = context.queries.lookup_type(id);
+        let t = context.lookup_type(id);
 
         match t {
             Type::Application(function, argument) | Type::KindApplication(function, argument) => {

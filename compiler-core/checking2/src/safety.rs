@@ -14,7 +14,7 @@ pub const FUEL: u32 = 1_000_000;
 /// let mut current_id = type_id;
 /// safe_loop! {
 ///     current_id = normalise(current_id);
-///     if let Type::Application(function, _) = context.queries.lookup_type(current_id) {
+///     if let Type::Application(function, _) = context.lookup_type(current_id) {
 ///         current_id = function;
 ///     } else {
 ///         break;

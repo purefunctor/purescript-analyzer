@@ -36,7 +36,7 @@ where
     W: TypeWalker,
 {
     let id = normalise(state, context, id)?;
-    let t = context.queries.lookup_type(id);
+    let t = context.lookup_type(id);
 
     if let WalkAction::Stop = walker.visit(state, context, id, &t)? {
         return Ok(());
@@ -48,7 +48,7 @@ where
             walk_type(state, context, argument, walker)?;
         }
         Type::SynonymApplication(synonym_id) => {
-            let synonym = context.queries.lookup_synonym(synonym_id);
+            let synonym = context.lookup_synonym(synonym_id);
             for application in synonym.arguments.iter() {
                 let argument = match application {
                     KindOrType::Kind(argument) | KindOrType::Type(argument) => *argument,
@@ -57,7 +57,7 @@ where
             }
         }
         Type::Forall(binder_id, inner) => {
-            let binder = context.queries.lookup_forall_binder(binder_id);
+            let binder = context.lookup_forall_binder(binder_id);
             walker.visit_binder(&binder);
             walk_type(state, context, binder.kind, walker)?;
             walk_type(state, context, inner, walker)?;
@@ -77,7 +77,7 @@ where
         Type::Constructor(_, _) => {}
         Type::Integer(_) | Type::String(_, _) => {}
         Type::Row(row_id) => {
-            let row = context.queries.lookup_row_type(row_id);
+            let row = context.lookup_row_type(row_id);
             for field in row.fields.iter() {
                 walk_type(state, context, field.id, walker)?;
             }
