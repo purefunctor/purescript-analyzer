@@ -236,7 +236,7 @@ fn contains_rigid_name<Q>(
 where
     Q: ExternalQueries,
 {
-    let type_id = normalise::normalise(state, context, type_id)?;
+    let type_id = normalise::expand(state, context, type_id)?;
     Ok(match context.lookup_type(type_id) {
         Type::Application(function, argument) | Type::KindApplication(function, argument) => {
             contains_rigid_name(state, context, function, name)?

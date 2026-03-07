@@ -73,7 +73,7 @@ where
 
         Type::Forall(binder_id, inner) => {
             let binder = context.lookup_forall_binder(binder_id);
-            let binder_kind = normalise::normalise(state, context, binder.kind)?;
+            let binder_kind = normalise::expand(state, context, binder.kind)?;
 
             let replacement = state.fresh_unification(context.queries, binder_kind);
             let function_t = SubstituteName::one(state, context, binder.name, replacement, inner)?;
@@ -177,7 +177,7 @@ where
     match context.lookup_type(function_t) {
         Type::Forall(binder_id, inner) => {
             let binder = context.lookup_forall_binder(binder_id);
-            let binder_kind = normalise::normalise(state, context, binder.kind)?;
+            let binder_kind = normalise::expand(state, context, binder.kind)?;
 
             let (argument_type, _) = types::check_kind(state, context, argument, binder_kind)?;
             SubstituteName::one(state, context, binder.name, argument_type, inner)

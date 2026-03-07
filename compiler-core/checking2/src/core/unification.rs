@@ -488,7 +488,7 @@ pub fn solve<Q>(
 where
     Q: ExternalQueries,
 {
-    let solution = normalise::normalise(state, context, solution)?;
+    let solution = normalise::expand(state, context, solution)?;
 
     match promote_type(state, context, id, solution)? {
         PromoteResult::Ok => {}
@@ -567,7 +567,7 @@ where
     where
         Q: ExternalQueries,
     {
-        let id = normalise::normalise(state, context, id)?;
+        let id = normalise::expand(state, context, id)?;
         let t = context.lookup_type(id);
 
         match t {
