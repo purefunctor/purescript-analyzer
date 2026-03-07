@@ -121,8 +121,8 @@ fn match_given_type<Q>(
 where
     Q: ExternalQueries,
 {
-    let wanted = normalise::normalise(state, context, wanted)?;
-    let given = normalise::normalise(state, context, given)?;
+    let wanted = normalise::normalise_expand(state, context, wanted)?;
+    let given = normalise::normalise_expand(state, context, given)?;
 
     if wanted == given {
         return Ok(MatchType::Match);
@@ -189,7 +189,7 @@ where
                     result.and_then(|| match_given_type(state, context, wanted_tail, given_tail))
                 }
                 (Some(wanted_tail), None) => {
-                    let wanted_tail = normalise::normalise(state, context, wanted_tail)?;
+                    let wanted_tail = normalise::normalise_expand(state, context, wanted_tail)?;
                     if matches!(context.lookup_type(wanted_tail), Type::Unification(_)) {
                         Ok(MatchType::Stuck)
                     } else {
@@ -197,7 +197,7 @@ where
                     }
                 }
                 (None, Some(given_tail)) => {
-                    let given_tail = normalise::normalise(state, context, given_tail)?;
+                    let given_tail = normalise::normalise_expand(state, context, given_tail)?;
                     if matches!(context.lookup_type(given_tail), Type::Unification(_)) {
                         Ok(MatchType::Stuck)
                     } else {

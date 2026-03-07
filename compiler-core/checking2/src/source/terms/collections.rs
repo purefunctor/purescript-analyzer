@@ -35,9 +35,9 @@ pub fn check_array<Q>(
 where
     Q: ExternalQueries,
 {
-    let normalised = normalise::normalise(state, context, expected)?;
+    let normalised = normalise::normalise_expand(state, context, expected)?;
     if let Type::Application(constructor, element_type) = context.lookup_type(normalised) {
-        let constructor = normalise::normalise(state, context, constructor)?;
+        let constructor = normalise::normalise_expand(state, context, constructor)?;
         if constructor == context.prim.array {
             for expression in array.iter() {
                 super::check_expression(state, context, *expression, element_type)?;
@@ -105,11 +105,11 @@ pub fn check_record<Q>(
 where
     Q: ExternalQueries,
 {
-    let normalised = normalise::normalise(state, context, expected)?;
+    let normalised = normalise::normalise_expand(state, context, expected)?;
     if let Type::Application(constructor, row_type) = context.lookup_type(normalised) {
-        let constructor = normalise::normalise(state, context, constructor)?;
+        let constructor = normalise::normalise_expand(state, context, constructor)?;
         if constructor == context.prim.record {
-            let row_type = normalise::normalise(state, context, row_type)?;
+            let row_type = normalise::normalise_expand(state, context, row_type)?;
             if let Type::Row(row_id) = context.lookup_type(row_type) {
                 let expected_fields = context.lookup_row_type(row_id);
 

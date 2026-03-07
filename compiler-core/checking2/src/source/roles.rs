@@ -161,7 +161,7 @@ fn infer_roles<'a, 'q, Q>(
 where
     Q: ExternalQueries,
 {
-    let type_id = normalise::normalise(inference.state, inference.context, type_id)?;
+    let type_id = normalise::normalise_expand(inference.state, inference.context, type_id)?;
 
     match inference.context.lookup_type(type_id) {
         Type::Rigid(name, _, kind) => {
@@ -178,7 +178,8 @@ where
         }
 
         Type::Application(function, argument) => {
-            let function_id = normalise::normalise(inference.state, inference.context, function)?;
+            let function_id =
+                normalise::normalise_expand(inference.state, inference.context, function)?;
 
             let is_type_variable =
                 matches!(inference.context.lookup_type(function_id), Type::Rigid(_, _, _));

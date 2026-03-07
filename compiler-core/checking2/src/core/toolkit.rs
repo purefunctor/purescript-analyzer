@@ -49,7 +49,7 @@ where
     let mut arguments = vec![];
 
     safe_loop! {
-        id = normalise::normalise(state, context, id)?;
+        id = normalise::normalise_expand(state, context, id)?;
         match context.lookup_type(id) {
             Type::Application(function, argument) => {
                 arguments.push(argument);
@@ -77,7 +77,7 @@ where
     let mut arguments = vec![];
 
     safe_loop! {
-        id = normalise::normalise(state, context, id)?;
+        id = normalise::normalise_expand(state, context, id)?;
         match context.lookup_type(id) {
             Type::Application(function, argument) => {
                 arguments.push(crate::core::KindOrType::Type(argument));
@@ -607,7 +607,7 @@ where
     Q: ExternalQueries,
 {
     safe_loop! {
-        id = normalise::normalise(state, context, id)?;
+        id = normalise::normalise_expand(state, context, id)?;
         match context.lookup_type(id) {
             Type::Constructor(file_id, item_id) => return Ok(Some((file_id, item_id))),
             Type::Application(function, _) | Type::KindApplication(function, _) => {
@@ -673,7 +673,7 @@ where
     let mut arguments = arguments.iter().copied();
 
     safe_loop! {
-        current = normalise::normalise(state, context, current)?;
+        current = normalise::normalise_expand(state, context, current)?;
         let Type::Forall(binder_id, inner) = context.lookup_type(current) else {
             break;
         };

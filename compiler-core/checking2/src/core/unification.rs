@@ -207,8 +207,8 @@ where
             Type::Application(t1_function, t1_argument),
             Type::Application(t2_function, t2_argument),
         ) if t1_function == context.prim.record && t2_function == context.prim.record => {
-            let t1_argument = normalise::normalise(state, context, t1_argument)?;
-            let t2_argument = normalise::normalise(state, context, t2_argument)?;
+            let t1_argument = normalise::normalise_expand(state, context, t1_argument)?;
+            let t2_argument = normalise::normalise_expand(state, context, t2_argument)?;
 
             let t1_argument_core = context.queries.lookup_type(t1_argument);
             let t2_argument_core = context.queries.lookup_type(t2_argument);

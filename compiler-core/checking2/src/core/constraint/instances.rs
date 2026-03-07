@@ -281,8 +281,8 @@ fn match_type<Q>(
 where
     Q: ExternalQueries,
 {
-    let wanted = normalise::normalise(state, context, wanted)?;
-    let given = normalise::normalise(state, context, given)?;
+    let wanted = normalise::normalise_expand(state, context, wanted)?;
+    let given = normalise::normalise_expand(state, context, given)?;
 
     if wanted == given {
         return Ok(MatchType::Match);
