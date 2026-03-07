@@ -4,8 +4,7 @@ use building_types::QueryResult;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::normalise::normalise;
-use crate::core::{ForallBinder, KindOrType, Type, TypeId};
+use crate::core::{ForallBinder, KindOrType, Type, TypeId, normalise};
 use crate::state::CheckState;
 
 pub enum WalkAction {
@@ -35,7 +34,7 @@ where
     Q: ExternalQueries,
     W: TypeWalker,
 {
-    let id = normalise(state, context, id)?;
+    let id = normalise::normalise(state, context, id)?;
     let t = context.lookup_type(id);
 
     if let WalkAction::Stop = walker.visit(state, context, id, &t)? {

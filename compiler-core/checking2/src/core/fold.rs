@@ -5,8 +5,7 @@ use std::sync::Arc;
 use building_types::QueryResult;
 
 use crate::context::CheckContext;
-use crate::core::normalise::normalise;
-use crate::core::{ForallBinder, KindOrType, Type, TypeId};
+use crate::core::{ForallBinder, KindOrType, Type, TypeId, normalise};
 use crate::state::CheckState;
 use crate::{ExternalQueries, safe_loop};
 
@@ -38,14 +37,14 @@ where
     Q: ExternalQueries,
     F: TypeFold,
 {
-    let mut id = normalise(state, context, id)?;
+    let mut id = normalise::normalise(state, context, id)?;
 
     safe_loop! {
         let t = context.lookup_type(id);
         match folder.transform(state, context, id, &t)? {
             FoldAction::Replace(id) => return Ok(id),
             FoldAction::ReplaceThen(then_id) => {
-                let then_id = normalise(state, context, then_id)?;
+                let then_id = normalise::normalise(state, context, then_id)?;
                 if then_id == id {
                     break;
                 }

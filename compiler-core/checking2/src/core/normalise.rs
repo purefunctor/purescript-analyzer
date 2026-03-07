@@ -94,6 +94,16 @@ where
     }
 }
 
+/// Normalises a [`Type`] head.
+///
+/// Notably, this function applies the following rules:
+/// 1. Replaces solved unfiication variables, compressing them
+///    if they solve to other solved unification variables.
+/// 2. Simplifies row types, such as merging concrete row tails,
+///    or extracting an empty row's tail as a standalone type.
+///
+/// This function should be used in checking rules where
+/// synonyms must remain opaque such as in kind checking.
 pub fn normalise<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -119,6 +129,11 @@ where
     Ok(id)
 }
 
+/// Expands [`Type::SynonymApplication`] heads.
+///
+/// This function also applies normalisation using [`normalise`],
+/// and should be used in checking rules where synonyms must be
+/// transparent and inspected.
 pub fn expand<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
