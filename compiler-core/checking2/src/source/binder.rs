@@ -314,7 +314,7 @@ where
     Q: ExternalQueries,
 {
     loop {
-        id = normalise::normalise_expand(state, context, id)?;
+        id = normalise::expand(state, context, id)?;
         match context.lookup_type(id) {
             Type::Constrained(constraint, constrained) => {
                 state.push_wanted(constraint);
@@ -337,7 +337,7 @@ where
     Q: ExternalQueries,
     F: FnOnce(&mut CheckState, &CheckContext<Q>, A, TypeId) -> QueryResult<TypeId>,
 {
-    let function_t = normalise::normalise_expand(state, context, function_t)?;
+    let function_t = normalise::expand(state, context, function_t)?;
 
     match context.lookup_type(function_t) {
         Type::Function(argument_type, result_type) => {
@@ -377,10 +377,10 @@ where
         }
 
         Type::Application(partial, result_type) => {
-            let partial = normalise::normalise_expand(state, context, partial)?;
+            let partial = normalise::expand(state, context, partial)?;
             match context.lookup_type(partial) {
                 Type::Application(constructor, argument_type) => {
-                    let constructor = normalise::normalise_expand(state, context, constructor)?;
+                    let constructor = normalise::expand(state, context, constructor)?;
                     if constructor == context.prim.function {
                         check_argument(state, context, argument_id, argument_type)?;
                         return Ok(result_type);
@@ -520,15 +520,15 @@ fn extract_expected_row<Q>(
 where
     Q: ExternalQueries,
 {
-    let expected_type = normalise::normalise_expand(state, context, expected_type)?;
+    let expected_type = normalise::expand(state, context, expected_type)?;
     let Type::Application(function, argument) = context.lookup_type(expected_type) else {
         return Ok(None);
     };
-    let function = normalise::normalise_expand(state, context, function)?;
+    let function = normalise::expand(state, context, function)?;
     if function != context.prim.record {
         return Ok(None);
     }
-    let row = normalise::normalise_expand(state, context, argument)?;
+    let row = normalise::expand(state, context, argument)?;
     let Type::Row(row_id) = context.lookup_type(row) else {
         return Ok(None);
     };
@@ -548,10 +548,10 @@ where
 {
     let pattern_items = collect_pattern_items(record);
 
-    let expected_type = normalise::normalise_expand(state, context, expected_type)?;
+    let expected_type = normalise::expand(state, context, expected_type)?;
 
     let expected_row = if let Type::Application(function, _) = context.lookup_type(expected_type) {
-        let function = normalise::normalise_expand(state, context, function)?;
+        let function = normalise::expand(state, context, function)?;
         if function == context.prim.record {
             extract_expected_row(state, context, expected_type)?
         } else {

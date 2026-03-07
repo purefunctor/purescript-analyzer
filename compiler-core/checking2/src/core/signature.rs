@@ -34,7 +34,7 @@ where
     let mut arguments = vec![];
 
     safe_loop! {
-        current = normalise::normalise_expand(state, context, current)?;
+        current = normalise::expand(state, context, current)?;
 
         match context.lookup_type(current) {
             Type::Forall(binder_id, inner) => {
@@ -66,14 +66,14 @@ where
                 }
 
                 let function_argument =
-                    normalise::normalise_expand(state, context, function_argument)?;
+                    normalise::expand(state, context, function_argument)?;
 
                 let Type::Application(function, argument) = context.lookup_type(function_argument)
                 else {
                     return Ok(DecomposedSignature { binders, constraints, arguments, result: current });
                 };
 
-                let function = normalise::normalise_expand(state, context, function)?;
+                let function = normalise::expand(state, context, function)?;
                 if function == context.prim.function {
                     arguments.push(argument);
                     current = result;

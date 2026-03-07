@@ -56,7 +56,7 @@ where
     let mut arguments = arguments.iter().copied();
 
     loop {
-        current = normalise::normalise_expand(state, context, current)?;
+        current = normalise::expand(state, context, current)?;
         let Type::Forall(binder_id, inner) = context.lookup_type(current) else {
             break;
         };
@@ -82,11 +82,11 @@ fn generate_constraint<Q>(
 where
     Q: ExternalQueries,
 {
-    let type_id = normalise::normalise_expand(state, context, type_id)?;
+    let type_id = normalise::expand(state, context, type_id)?;
 
     match context.lookup_type(type_id) {
         Type::Application(function, argument) => {
-            let function = normalise::normalise_expand(state, context, function)?;
+            let function = normalise::expand(state, context, function)?;
             if function == context.prim.record {
                 generate_constraint(state, context, argument, class, class1)?;
             } else if is_type_to_type_variable(state, context, function)? {
@@ -121,7 +121,7 @@ fn is_type_to_type_variable<Q>(
 where
     Q: ExternalQueries,
 {
-    let type_id = normalise::normalise_expand(state, context, type_id)?;
+    let type_id = normalise::expand(state, context, type_id)?;
     let kind = match context.lookup_type(type_id) {
         Type::Rigid(_, _, kind) => kind,
         Type::Unification(unification_id) => state.unifications.get(unification_id).kind,

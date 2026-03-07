@@ -111,8 +111,8 @@ where
     P: SubtypePolicy<Q>,
     Q: ExternalQueries,
 {
-    let t1 = normalise::normalise_expand(state, context, t1)?;
-    let t2 = normalise::normalise_expand(state, context, t2)?;
+    let t1 = normalise::expand(state, context, t1)?;
+    let t2 = normalise::expand(state, context, t2)?;
 
     if t1 == t2 {
         return Ok(true);
@@ -207,8 +207,8 @@ where
             Type::Application(t1_function, t1_argument),
             Type::Application(t2_function, t2_argument),
         ) if t1_function == context.prim.record && t2_function == context.prim.record => {
-            let t1_argument = normalise::normalise_expand(state, context, t1_argument)?;
-            let t2_argument = normalise::normalise_expand(state, context, t2_argument)?;
+            let t1_argument = normalise::expand(state, context, t1_argument)?;
+            let t2_argument = normalise::expand(state, context, t2_argument)?;
 
             let t1_argument_core = context.queries.lookup_type(t1_argument);
             let t2_argument_core = context.queries.lookup_type(t2_argument);
@@ -235,8 +235,8 @@ pub fn unify<Q>(
 where
     Q: ExternalQueries,
 {
-    let t1 = normalise::normalise_expand(state, context, t1)?;
-    let t2 = normalise::normalise_expand(state, context, t2)?;
+    let t1 = normalise::expand(state, context, t1)?;
+    let t2 = normalise::expand(state, context, t2)?;
 
     if t1 == t2 {
         return Ok(true);
@@ -386,8 +386,8 @@ pub fn can_unify<Q>(
 where
     Q: ExternalQueries,
 {
-    let t1 = normalise::normalise_expand(state, context, t1)?;
-    let t2 = normalise::normalise_expand(state, context, t2)?;
+    let t1 = normalise::expand(state, context, t1)?;
+    let t2 = normalise::expand(state, context, t2)?;
 
     if t1 == t2 {
         return Ok(CanUnify::Equal);

@@ -145,7 +145,7 @@ where
         return Ok(None);
     };
 
-    let symbol = normalise::normalise_expand(state, context, symbol)?;
+    let symbol = normalise::expand(state, context, symbol)?;
 
     let matched = if extract_symbol(state, context, symbol)?.is_some() {
         MatchInstance::Match { constraints: vec![], equalities: vec![] }

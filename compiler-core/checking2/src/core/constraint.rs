@@ -190,7 +190,7 @@ where
     Q: ExternalQueries,
 {
     let (constructor, arguments) = toolkit::extract_type_application(state, context, id)?;
-    let constructor = normalise::normalise_expand(state, context, constructor)?;
+    let constructor = normalise::expand(state, context, constructor)?;
     Ok(match context.lookup_type(constructor) {
         Type::Constructor(file_id, item_id) => {
             Some(ConstraintApplication { file_id, item_id, arguments })

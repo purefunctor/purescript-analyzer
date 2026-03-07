@@ -19,7 +19,7 @@ where
 {
     let &[v, t] = arguments else { return Ok(None) };
 
-    let v = normalise::normalise_expand(state, context, v)?;
+    let v = normalise::expand(state, context, v)?;
 
     if extract_symbol(state, context, v)?.is_some() {
         return Ok(Some(match_expected(state, context, t, context.prim.string)?));

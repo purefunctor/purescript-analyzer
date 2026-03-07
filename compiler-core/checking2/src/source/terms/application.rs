@@ -52,7 +52,7 @@ where
     Q: ExternalQueries,
     F: FnOnce(&mut CheckState, &CheckContext<Q>, A, TypeId) -> QueryResult<TypeId>,
 {
-    let function_t = normalise::normalise_expand(state, context, function_t)?;
+    let function_t = normalise::expand(state, context, function_t)?;
 
     match context.lookup_type(function_t) {
         Type::Function(argument_type, result_type) => {
@@ -92,10 +92,10 @@ where
         }
 
         Type::Application(partial, result_type) => {
-            let partial = normalise::normalise_expand(state, context, partial)?;
+            let partial = normalise::expand(state, context, partial)?;
             match context.lookup_type(partial) {
                 Type::Application(constructor, argument_type) => {
-                    let constructor = normalise::normalise_expand(state, context, constructor)?;
+                    let constructor = normalise::expand(state, context, constructor)?;
                     if constructor == context.prim.function {
                         check_argument(state, context, argument_id, argument_type)?;
                         return Ok(result_type);
@@ -173,7 +173,7 @@ pub fn check_function_type_application<Q>(
 where
     Q: ExternalQueries,
 {
-    let function_t = normalise::normalise_expand(state, context, function_t)?;
+    let function_t = normalise::expand(state, context, function_t)?;
     match context.lookup_type(function_t) {
         Type::Forall(binder_id, inner) => {
             let binder = context.lookup_forall_binder(binder_id);

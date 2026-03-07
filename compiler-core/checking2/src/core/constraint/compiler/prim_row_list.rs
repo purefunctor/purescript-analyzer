@@ -63,7 +63,7 @@ where
     let singleton_row_type = context.intern_row(singleton_row_id);
     let row_kind = types::elaborate_kind(state, context, singleton_row_type)?;
 
-    let row_kind = normalise::normalise_expand(state, context, row_kind)?;
+    let row_kind = normalise::expand(state, context, row_kind)?;
     let Type::Application(_, element_kind) = context.lookup_type(row_kind) else {
         return Ok(state.fresh_unification(context.queries, context.prim.t));
     };

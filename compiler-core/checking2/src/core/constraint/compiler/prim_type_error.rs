@@ -14,7 +14,7 @@ fn is_stuck<Q>(state: &mut CheckState, context: &CheckContext<Q>, id: TypeId) ->
 where
     Q: ExternalQueries,
 {
-    let id = normalise::normalise_expand(state, context, id)?;
+    let id = normalise::expand(state, context, id)?;
     Ok(matches!(context.lookup_type(id), Type::Unification(_)))
 }
 
@@ -26,7 +26,7 @@ fn extract_symbol_text<Q>(
 where
     Q: ExternalQueries,
 {
-    let id = normalise::normalise_expand(state, context, id)?;
+    let id = normalise::expand(state, context, id)?;
     if let Type::String(_, smol_str_id) = context.lookup_type(id) {
         Ok(Some(context.queries.lookup_smol_str(smol_str_id)))
     } else {
@@ -42,7 +42,7 @@ fn extract_symbol_with_kind<Q>(
 where
     Q: ExternalQueries,
 {
-    let id = normalise::normalise_expand(state, context, id)?;
+    let id = normalise::expand(state, context, id)?;
     if let Type::String(kind, smol_id) = context.lookup_type(id) {
         Ok(Some((kind, context.queries.lookup_smol_str(smol_id))))
     } else {
@@ -82,7 +82,7 @@ fn render_doc<Q>(
 where
     Q: ExternalQueries,
 {
-    let doc = normalise::normalise_expand(state, context, doc)?;
+    let doc = normalise::expand(state, context, doc)?;
 
     if matches!(context.lookup_type(doc), Type::Unification(_)) {
         return Ok(None);

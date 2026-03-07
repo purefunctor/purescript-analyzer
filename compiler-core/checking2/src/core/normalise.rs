@@ -119,6 +119,24 @@ where
     Ok(id)
 }
 
+pub fn expand<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    mut id: TypeId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    safe_loop! {
+        let expanded = expand_synonym(state, context, id)?;
+        let normalised = normalise(state, context, expanded)?;
+        if normalised == id {
+            return Ok(id);
+        }
+        id = normalised;
+    }
+}
+
 /// Expands [`Type::SynonymApplication`] with respect to oversaturation.
 ///
 /// In certain cases, type synonyms can be oversaturated or applied with more
@@ -250,22 +268,4 @@ where
     }
 
     Ok(substituted)
-}
-
-pub fn normalise_expand<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    mut id: TypeId,
-) -> QueryResult<TypeId>
-where
-    Q: ExternalQueries,
-{
-    safe_loop! {
-        let expanded = expand_synonym(state, context, id)?;
-        let normalised = normalise(state, context, expanded)?;
-        if normalised == id {
-            return Ok(id);
-        }
-        id = normalised;
-    }
 }

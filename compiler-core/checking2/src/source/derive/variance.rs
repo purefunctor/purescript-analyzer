@@ -101,7 +101,7 @@ where
     let mut names = vec![];
 
     loop {
-        current = normalise::normalise_expand(state, context, current)?;
+        current = normalise::expand(state, context, current)?;
         let Type::Forall(binder_id, inner) = context.lookup_type(current) else {
             break;
         };
@@ -153,7 +153,7 @@ fn check_variance_field<Q>(
 where
     Q: ExternalQueries,
 {
-    let type_id = normalise::normalise_expand(state, context, type_id)?;
+    let type_id = normalise::expand(state, context, type_id)?;
 
     match context.lookup_type(type_id) {
         Type::Rigid(name, _, _) => {
@@ -166,7 +166,7 @@ where
             check_variance_field(state, context, result, variance, rigids)?;
         }
         Type::Application(function, argument) => {
-            let function = normalise::normalise_expand(state, context, function)?;
+            let function = normalise::expand(state, context, function)?;
             if function == context.prim.record {
                 check_variance_field(state, context, argument, variance, rigids)?;
             } else {

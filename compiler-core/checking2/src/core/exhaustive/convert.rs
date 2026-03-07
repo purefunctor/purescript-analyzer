@@ -152,7 +152,7 @@ where
         return Ok(None);
     };
 
-    let row_type_id = normalise::normalise_expand(state, context, *row_type_id)?;
+    let row_type_id = normalise::expand(state, context, *row_type_id)?;
 
     let row_fields = if let Type::Row(row_type_id) = context.lookup_type(row_type_id) {
         context.lookup_row_type(row_type_id).fields
@@ -353,7 +353,7 @@ where
     let mut arguments = vec![];
 
     safe_loop! {
-        type_id = normalise::normalise_expand(state, context, type_id)?;
+        type_id = normalise::expand(state, context, type_id)?;
         match context.lookup_type(type_id) {
             Type::Application(function, argument) => {
                 arguments.push(argument);
@@ -378,5 +378,5 @@ fn normalise_expand_type<Q>(
 where
     Q: ExternalQueries,
 {
-    normalise::normalise_expand(state, context, type_id)
+    normalise::expand(state, context, type_id)
 }

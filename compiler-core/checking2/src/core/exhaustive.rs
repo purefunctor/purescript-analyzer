@@ -999,7 +999,7 @@ where
     let mut current_id = applied_type;
 
     safe_loop! {
-        current_id = normalise::normalise_expand(state, context, current_id)?;
+        current_id = normalise::expand(state, context, current_id)?;
         match context.lookup_type(current_id) {
             Type::Application(function, argument) => {
                 arguments.push(argument);
@@ -1033,7 +1033,7 @@ where
     let mut arguments_iter = arguments.as_ref().iter().copied();
 
     safe_loop! {
-        type_id = normalise::normalise_expand(state, context, type_id)?;
+        type_id = normalise::expand(state, context, type_id)?;
         match context.lookup_type(type_id) {
             Type::Forall(binder_id, inner) => {
                 let binder = context.lookup_forall_binder(binder_id);

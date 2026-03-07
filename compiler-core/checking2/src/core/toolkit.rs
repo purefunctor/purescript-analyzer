@@ -49,7 +49,7 @@ where
     let mut arguments = vec![];
 
     safe_loop! {
-        id = normalise::normalise_expand(state, context, id)?;
+        id = normalise::expand(state, context, id)?;
         match context.lookup_type(id) {
             Type::Application(function, argument) => {
                 arguments.push(argument);
@@ -77,7 +77,7 @@ where
     let mut arguments = vec![];
 
     safe_loop! {
-        id = normalise::normalise_expand(state, context, id)?;
+        id = normalise::expand(state, context, id)?;
         match context.lookup_type(id) {
             Type::Application(function, argument) => {
                 arguments.push(crate::core::KindOrType::Type(argument));
@@ -278,7 +278,7 @@ where
     let mut current = id;
 
     safe_loop! {
-        current = normalise::normalise_expand(state, context, current)?;
+        current = normalise::expand(state, context, current)?;
 
         let Type::Forall(binder_id, inner) = context.lookup_type(current) else {
             break;
@@ -315,7 +315,7 @@ where
     let mut current = id;
 
     safe_loop! {
-        current = normalise::normalise_expand(state, context, current)?;
+        current = normalise::expand(state, context, current)?;
 
         if let InspectMode::Some(required) = mode
             && arguments.len() >= required
@@ -329,14 +329,14 @@ where
                 current = result;
             }
             Type::Application(function_argument, result) => {
-                let function_argument = normalise::normalise_expand(state, context, function_argument)?;
+                let function_argument = normalise::expand(state, context, function_argument)?;
 
                 let Type::Application(function, argument) = context.lookup_type(function_argument)
                 else {
                     return Ok(InspectFunction { arguments, result: current });
                 };
 
-                let function = normalise::normalise_expand(state, context, function)?;
+                let function = normalise::expand(state, context, function)?;
                 if function == context.prim.function {
                     arguments.push(argument);
                     current = result;
@@ -364,7 +364,7 @@ where
     let mut constraints = vec![];
 
     safe_loop! {
-        current = normalise::normalise_expand(state, context, current)?;
+        current = normalise::expand(state, context, current)?;
         match context.lookup_type(current) {
             Type::Constrained(constraint, constrained) => {
                 constraints.push(constraint);
@@ -396,7 +396,7 @@ where
     Q: ExternalQueries,
 {
     safe_loop! {
-        id = normalise::normalise_expand(state, context, id)?;
+        id = normalise::expand(state, context, id)?;
 
         let Type::Forall(binder_id, inner) = context.lookup_type(id) else {
             break;
@@ -422,7 +422,7 @@ where
     Q: ExternalQueries,
 {
     safe_loop! {
-        id = normalise::normalise_expand(state, context, id)?;
+        id = normalise::expand(state, context, id)?;
 
         let Type::Forall(binder_id, inner) = context.lookup_type(id) else {
             break;
@@ -448,7 +448,7 @@ where
     Q: ExternalQueries,
 {
     safe_loop! {
-        id = normalise::normalise_expand(state, context, id)?;
+        id = normalise::expand(state, context, id)?;
         match context.lookup_type(id) {
             Type::Constrained(constraint, constrained) => {
                 state.push_wanted(constraint);
@@ -469,7 +469,7 @@ where
     Q: ExternalQueries,
 {
     safe_loop! {
-        id = normalise::normalise_expand(state, context, id)?;
+        id = normalise::expand(state, context, id)?;
         match context.lookup_type(id) {
             Type::Constrained(constraint, constrained) => {
                 state.push_given(constraint);
@@ -490,7 +490,7 @@ where
     Q: ExternalQueries,
 {
     safe_loop! {
-        id = normalise::normalise_expand(state, context, id)?;
+        id = normalise::expand(state, context, id)?;
         match context.lookup_type(id) {
             Type::Constrained(_, constrained) => {
                 id = constrained;
@@ -521,7 +521,7 @@ pub fn decompose_function<Q>(
 where
     Q: ExternalQueries,
 {
-    let t = normalise::normalise_expand(state, context, t)?;
+    let t = normalise::expand(state, context, t)?;
 
     match context.lookup_type(t) {
         Type::Function(argument, result) => Ok(Some((argument, result))),
@@ -537,9 +537,9 @@ where
         }
 
         Type::Application(partial, result) => {
-            let partial = normalise::normalise_expand(state, context, partial)?;
+            let partial = normalise::expand(state, context, partial)?;
             if let Type::Application(constructor, argument) = context.lookup_type(partial) {
-                let constructor = normalise::normalise_expand(state, context, constructor)?;
+                let constructor = normalise::expand(state, context, constructor)?;
                 if constructor == context.prim.function {
                     return Ok(Some((argument, result)));
                 }
@@ -607,7 +607,7 @@ where
     Q: ExternalQueries,
 {
     safe_loop! {
-        id = normalise::normalise_expand(state, context, id)?;
+        id = normalise::expand(state, context, id)?;
         match context.lookup_type(id) {
             Type::Constructor(file_id, item_id) => return Ok(Some((file_id, item_id))),
             Type::Application(function, _) | Type::KindApplication(function, _) => {
@@ -673,7 +673,7 @@ where
     let mut arguments = arguments.iter().copied();
 
     safe_loop! {
-        current = normalise::normalise_expand(state, context, current)?;
+        current = normalise::expand(state, context, current)?;
         let Type::Forall(binder_id, inner) = context.lookup_type(current) else {
             break;
         };

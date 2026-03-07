@@ -150,7 +150,7 @@ where
 {
     let mut arguments = vec![];
     safe_loop! {
-        applied_type = normalise::normalise_expand(state, context, applied_type)?;
+        applied_type = normalise::expand(state, context, applied_type)?;
         match context.lookup_type(applied_type) {
             Type::Application(function, argument) | Type::KindApplication(function, argument) => {
                 arguments.push(argument);
@@ -176,7 +176,7 @@ where
     let mut arguments = arguments.iter().copied();
 
     safe_loop! {
-        current = normalise::normalise_expand(state, context, current)?;
+        current = normalise::expand(state, context, current)?;
         let Type::Forall(binder_id, inner) = context.lookup_type(current) else {
             break;
         };

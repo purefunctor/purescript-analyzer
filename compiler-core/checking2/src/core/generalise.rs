@@ -220,7 +220,7 @@ where
                 (name, kind)
             }
             UnificationState::Solved(solution) => {
-                let solution = normalise::normalise_expand(state, context, solution)?;
+                let solution = normalise::expand(state, context, solution)?;
                 let Type::Rigid(name, _, kind) = context.lookup_type(solution) else {
                     continue;
                 };

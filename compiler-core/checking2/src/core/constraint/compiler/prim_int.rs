@@ -83,9 +83,9 @@ where
         return Ok(None);
     };
 
-    let left = normalise::normalise_expand(state, context, left)?;
-    let right = normalise::normalise_expand(state, context, right)?;
-    let ordering = normalise::normalise_expand(state, context, ordering)?;
+    let left = normalise::expand(state, context, left)?;
+    let right = normalise::expand(state, context, right)?;
+    let ordering = normalise::expand(state, context, ordering)?;
 
     let left_int = extract_integer(state, context, left)?;
     let right_int = extract_integer(state, context, right)?;
@@ -128,9 +128,9 @@ where
             continue;
         };
 
-        let a = normalise::normalise_expand(state, context, a)?;
-        let b = normalise::normalise_expand(state, context, b)?;
-        let relation = normalise::normalise_expand(state, context, relation)?;
+        let a = normalise::expand(state, context, a)?;
+        let b = normalise::expand(state, context, b)?;
+        let relation = normalise::expand(state, context, relation)?;
 
         if relation == context.prim_ordering.lt {
             graph.add_edge(a, b, ());
