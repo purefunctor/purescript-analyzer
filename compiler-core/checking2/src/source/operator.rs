@@ -11,7 +11,7 @@ use crate::context::CheckContext;
 use crate::core::substitute::SubstituteName;
 use crate::core::{Type, TypeId, normalise, toolkit, unification};
 use crate::error::ErrorKind;
-use crate::source::{binder, terms, types};
+use crate::source::{binder, synonym, terms, types};
 use crate::state::CheckState;
 use crate::{ExternalQueries, OperatorBranchTypes};
 
@@ -356,6 +356,20 @@ impl<Q: ExternalQueries> IsOperator<Q> for lowering::TypeId {
         };
 
         let operator_kind = toolkit::lookup_file_type(state, context, file_id, item_id)?;
+
+        if let Some((elaborated_type, result_kind)) =
+            synonym::try_check_resolved_synonym_application(
+                state,
+                context,
+                (target_file_id, target_item_id),
+                operator_kind,
+                &[(left, left_kind), (right, right_kind)],
+            )?
+        {
+            let result_kind = normalise::normalise(state, context, result_kind)?;
+            return Ok((elaborated_type, result_kind));
+        }
+
         let function_type =
             context.queries.intern_type(Type::Constructor(target_file_id, target_item_id));
         let (function_type, function_kind) =

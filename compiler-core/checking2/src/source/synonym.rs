@@ -1,19 +1,23 @@
 //! Implements syntax-driven checking rules for synonym detection.
 
 use std::mem;
+use std::ops::ControlFlow;
 use std::sync::Arc;
 
 use building_types::QueryResult;
 use files::FileId;
 use indexing::TypeItemId;
+use itertools::Itertools;
 
-use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::substitute::SubstituteName;
-use crate::core::{KindOrType, Saturation, Synonym, Type, TypeId, normalise, toolkit, unification};
+use crate::core::{
+    CheckedSynonym, KindOrType, Saturation, Synonym, Type, TypeId, normalise, toolkit, unification,
+};
 use crate::error::ErrorKind;
 use crate::source::types;
 use crate::state::CheckState;
+use crate::{ExternalQueries, safe_loop};
 
 #[derive(Debug, Clone, Copy)]
 pub struct ParsedSynonym {
@@ -21,6 +25,12 @@ pub struct ParsedSynonym {
     pub type_id: TypeItemId,
     pub kind: TypeId,
     pub arity: usize,
+}
+
+#[derive(Debug, Clone, Copy)]
+enum Argument {
+    Syntax(lowering::TypeId),
+    Core(TypeId, TypeId),
 }
 
 pub fn parse_synonym<Q>(
@@ -41,14 +51,13 @@ where
         return Ok(None);
     };
 
-    let Some(checked_synonym) = toolkit::lookup_file_synonym(state, context, file_id, type_id)?
+    let Some(CheckedSynonym { kind, parameters, .. }) =
+        toolkit::lookup_file_synonym(state, context, file_id, type_id)?
     else {
         return Ok(None);
     };
 
-    let kind = checked_synonym.kind;
-    let arity = checked_synonym.parameters.len();
-
+    let arity = parameters.len();
     Ok(Some(ParsedSynonym { file_id, type_id, kind, arity }))
 }
 
@@ -100,11 +109,7 @@ pub fn infer_synonym_application<Q>(
 where
     Q: ExternalQueries,
 {
-    let ParsedSynonym { file_id, type_id, kind: function_kind, arity } = synonym;
-
-    if is_recursive_synonym(context, file_id, type_id)? {
-        state.insert_error(ErrorKind::RecursiveSynonymExpansion { file_id, type_id });
-    }
+    let ParsedSynonym { file_id, type_id, kind, arity } = synonym;
 
     if arguments.len() < arity {
         if state.defer_expansion {
@@ -112,7 +117,7 @@ where
                 state,
                 context,
                 (file_id, type_id),
-                function_kind,
+                kind,
                 arguments,
             );
         }
@@ -122,19 +127,75 @@ where
         return Ok((unknown, unknown));
     }
 
-    let (synonym_arguments, excess_arguments) = arguments.split_at(arity);
-    let function_type = context.queries.intern_type(Type::Constructor(file_id, type_id));
+    let arguments = arguments.iter().copied().map(Argument::Syntax).collect_vec();
 
     let defer_expansion = mem::replace(&mut state.defer_expansion, true);
-    let chain_result = infer_synonym_application_chain(
-        state,
-        context,
-        (function_type, function_kind),
-        synonym_arguments,
-    );
+    let checked = check_synonym_application_arguments(state, context, synonym, &arguments);
     state.defer_expansion = defer_expansion;
 
-    let (applications, (_, synonym_kind)) = chain_result?;
+    checked
+}
+
+pub fn check_synonym_application<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    synonym: ParsedSynonym,
+    arguments: &[(TypeId, TypeId)],
+) -> QueryResult<(TypeId, TypeId)>
+where
+    Q: ExternalQueries,
+{
+    let arguments = arguments
+        .iter()
+        .copied()
+        .map(|(type_id, kind_id)| Argument::Core(type_id, kind_id))
+        .collect_vec();
+
+    check_synonym_application_arguments(state, context, synonym, &arguments)
+}
+
+pub fn try_check_resolved_synonym_application<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    (file_id, type_id): (FileId, TypeItemId),
+    kind: TypeId,
+    arguments: &[(TypeId, TypeId)],
+) -> QueryResult<Option<(TypeId, TypeId)>>
+where
+    Q: ExternalQueries,
+{
+    let Some(CheckedSynonym { parameters, .. }) =
+        toolkit::lookup_file_synonym(state, context, file_id, type_id)?
+    else {
+        return Ok(None);
+    };
+
+    let synonym = ParsedSynonym { file_id, type_id, kind, arity: parameters.len() };
+    let checked = check_synonym_application(state, context, synonym, arguments)?;
+    Ok(Some(checked))
+}
+
+fn check_synonym_application_arguments<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    synonym: ParsedSynonym,
+    arguments: &[Argument],
+) -> QueryResult<(TypeId, TypeId)>
+where
+    Q: ExternalQueries,
+{
+    let ParsedSynonym { file_id, type_id, kind, arity } = synonym;
+    debug_assert!(arguments.len() >= arity);
+
+    if is_recursive_synonym(context, file_id, type_id)? {
+        state.insert_error(ErrorKind::RecursiveSynonymExpansion { file_id, type_id });
+    }
+
+    let function_type = context.queries.intern_type(Type::Constructor(file_id, type_id));
+    let (synonym_arguments, excess_arguments) = arguments.split_at(arity);
+
+    let (applications, (_, synonym_kind)) =
+        collect_synonym_applications(state, context, (function_type, kind), synonym_arguments)?;
 
     let synonym = Synonym {
         saturation: Saturation::Full,
@@ -147,8 +208,14 @@ where
     let mut synonym_kind = synonym_kind;
 
     for &argument in excess_arguments {
-        (synonym_type, synonym_kind) =
-            types::infer_application_kind(state, context, (synonym_type, synonym_kind), argument)?;
+        let mut applications = vec![];
+        (synonym_type, synonym_kind) = apply_synonym_argument(
+            state,
+            context,
+            &mut applications,
+            (synonym_type, synonym_kind),
+            argument,
+        )?;
     }
 
     Ok((synonym_type, synonym_kind))
@@ -158,15 +225,17 @@ fn infer_partial_synonym_application<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     (file_id, type_id): (FileId, TypeItemId),
-    function_kind: TypeId,
+    kind: TypeId,
     arguments: &[lowering::TypeId],
 ) -> QueryResult<(TypeId, TypeId)>
 where
     Q: ExternalQueries,
 {
     let function_type = context.queries.intern_type(Type::Constructor(file_id, type_id));
+    let arguments = arguments.iter().copied().map(Argument::Syntax).collect_vec();
+
     let (applications, (_, synonym_kind)) =
-        infer_synonym_application_chain(state, context, (function_type, function_kind), arguments)?;
+        collect_synonym_applications(state, context, (function_type, kind), &arguments)?;
 
     let synonym = Synonym {
         saturation: Saturation::Partial,
@@ -180,65 +249,78 @@ where
     Ok((synonym_type, synonym_kind))
 }
 
-fn infer_synonym_application_chain<Q>(
+fn collect_synonym_applications<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    function: (TypeId, TypeId),
-    arguments: &[lowering::TypeId],
+    mut function: (TypeId, TypeId),
+    arguments: &[Argument],
 ) -> QueryResult<(Vec<KindOrType>, (TypeId, TypeId))>
 where
     Q: ExternalQueries,
 {
     let mut applications = vec![];
-    let mut current_function = function;
 
-    for &argument_id in arguments {
-        current_function = infer_synonym_application_kind(
-            state,
-            context,
-            &mut applications,
-            current_function,
-            argument_id,
-        )?;
+    for &argument in arguments {
+        function = apply_synonym_argument(state, context, &mut applications, function, argument)?;
     }
 
-    Ok((applications, current_function))
+    Ok((applications, function))
 }
 
-fn infer_synonym_application_kind<Q>(
+fn apply_synonym_argument_step<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     applications: &mut Vec<KindOrType>,
     (function_type, function_kind): (TypeId, TypeId),
-    argument: lowering::TypeId,
-) -> QueryResult<(TypeId, TypeId)>
+    argument: Argument,
+) -> QueryResult<ControlFlow<(TypeId, TypeId), (TypeId, TypeId)>>
 where
     Q: ExternalQueries,
 {
-    let function_kind = normalise::normalise(state, context, function_kind)?;
-
     match context.lookup_type(function_kind) {
-        Type::Function(argument_kind, result_kind) => {
-            let (argument_type, _) = types::check_kind(state, context, argument, argument_kind)?;
-            let result_kind = normalise::normalise(state, context, result_kind)?;
+        Type::Function(function_argument, function_result) => {
+            let argument_type = match argument {
+                Argument::Syntax(argument_id) => {
+                    let (argument_type, _) =
+                        types::check_kind(state, context, argument_id, function_argument)?;
+                    argument_type
+                }
+                Argument::Core(argument_type, argument_kind) => {
+                    unification::subtype(state, context, argument_kind, function_argument)?;
+                    argument_type
+                }
+            };
+
             let result_type = context.intern_application(function_type, argument_type);
+            let result_kind = normalise::normalise(state, context, function_result)?;
+
             applications.push(KindOrType::Type(argument_type));
-            Ok((result_type, result_kind))
+            Ok(ControlFlow::Break((result_type, result_kind)))
         }
 
         Type::Unification(unification_id) => {
-            let argument_u = state.fresh_unification(context.queries, context.prim.t);
-            let result_u = state.fresh_unification(context.queries, context.prim.t);
+            let function_argument = state.fresh_unification(context.queries, context.prim.t);
+            let function_result = state.fresh_unification(context.queries, context.prim.t);
+            let function = context.intern_function(function_argument, function_result);
+            unification::solve(state, context, function_kind, unification_id, function)?;
 
-            let function_u = context.intern_function(argument_u, result_u);
-            unification::solve(state, context, function_kind, unification_id, function_u)?;
+            let argument_type = match argument {
+                Argument::Syntax(argument_id) => {
+                    let (argument_type, _) =
+                        types::check_kind(state, context, argument_id, function_argument)?;
+                    argument_type
+                }
+                Argument::Core(argument_type, checked_kind) => {
+                    unification::subtype(state, context, checked_kind, function_argument)?;
+                    argument_type
+                }
+            };
 
-            let (argument_type, _) = types::check_kind(state, context, argument, argument_u)?;
-            let result_kind = normalise::normalise(state, context, result_u)?;
             let result_type = context.intern_application(function_type, argument_type);
+            let result_kind = normalise::normalise(state, context, function_result)?;
 
             applications.push(KindOrType::Type(argument_type));
-            Ok((result_type, result_kind))
+            Ok(ControlFlow::Break((result_type, result_kind)))
         }
 
         Type::Forall(binder_id, inner_kind) => {
@@ -246,25 +328,26 @@ where
             let binder_kind = normalise::normalise(state, context, binder.kind)?;
 
             let kind_argument = state.fresh_unification(context.queries, binder_kind);
+
             let function_type = context.intern_kind_application(function_type, kind_argument);
             let function_kind =
                 SubstituteName::one(state, context, binder.name, kind_argument, inner_kind)?;
 
             applications.push(KindOrType::Kind(kind_argument));
-            infer_synonym_application_kind(
-                state,
-                context,
-                applications,
-                (function_type, function_kind),
-                argument,
-            )
+            Ok(ControlFlow::Continue((function_type, function_kind)))
         }
 
         _ => {
-            let (argument_type, _) = types::infer_kind(state, context, argument)?;
+            let argument_type = match argument {
+                Argument::Syntax(argument_id) => {
+                    let (argument_type, _) = types::infer_kind(state, context, argument_id)?;
+                    argument_type
+                }
+                Argument::Core(argument_type, _) => argument_type,
+            };
 
-            let t = context.intern_application(function_type, argument_type);
-            let k = context.unknown("cannot apply synonym type");
+            let invalid_type = context.intern_application(function_type, argument_type);
+            let unknown_kind = context.unknown("cannot apply synonym type");
 
             {
                 let function_type = state.pretty_id(context, function_type)?;
@@ -279,8 +362,36 @@ where
             }
 
             applications.push(KindOrType::Type(argument_type));
-            Ok((t, k))
+            Ok(ControlFlow::Break((invalid_type, unknown_kind)))
         }
+    }
+}
+
+fn apply_synonym_argument<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    applications: &mut Vec<KindOrType>,
+    (mut function_type, mut function_kind): (TypeId, TypeId),
+    argument: Argument,
+) -> QueryResult<(TypeId, TypeId)>
+where
+    Q: ExternalQueries,
+{
+    safe_loop! {
+        function_kind = normalise::normalise(state, context, function_kind)?;
+        match apply_synonym_argument_step(
+            state,
+            context,
+            applications,
+            (function_type, function_kind),
+            argument,
+        )? {
+            ControlFlow::Break(result) => break Ok(result),
+            ControlFlow::Continue((next_type, next_kind)) => {
+                function_type = next_type;
+                function_kind = next_kind;
+            }
+        };
     }
 }
 

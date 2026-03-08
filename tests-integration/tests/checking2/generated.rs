@@ -475,3 +475,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_224_derive_newtype_insufficient_params_main() { run_test("224_derive_newtype_insufficient_params", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_225_derive_newtype_class_insufficient_params_main() { run_test("225_derive_newtype_class_insufficient_params", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_226_equation_synonym_expansion_main() { run_test("226_equation_synonym_expansion", "Main"); }
