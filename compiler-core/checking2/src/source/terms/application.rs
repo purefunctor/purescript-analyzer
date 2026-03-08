@@ -143,7 +143,7 @@ where
 pub fn check_function_application<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    function_t: TypeId,
+    function_type: TypeId,
     argument: &lowering::ExpressionArgument,
 ) -> QueryResult<TypeId>
 where
@@ -154,13 +154,13 @@ where
             let Some(type_argument) = type_argument else {
                 return Ok(context.unknown("missing type argument"));
             };
-            check_function_type_application(state, context, function_t, *type_argument)
+            check_function_type_application(state, context, function_type, *type_argument)
         }
         lowering::ExpressionArgument::Term(term_argument) => {
             let Some(term_argument) = term_argument else {
                 return Ok(context.unknown("missing term argument"));
             };
-            check_function_term_application(state, context, function_t, *term_argument)
+            check_function_term_application(state, context, function_type, *term_argument)
         }
     }
 }

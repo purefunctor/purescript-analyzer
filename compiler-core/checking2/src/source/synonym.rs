@@ -278,46 +278,47 @@ where
     Q: ExternalQueries,
 {
     match context.lookup_type(function_kind) {
-        Type::Function(function_argument, function_result) => {
+        Type::Function(expected_kind, result_kind) => {
             let argument_type = match argument {
                 Argument::Syntax(argument_id) => {
                     let (argument_type, _) =
-                        types::check_kind(state, context, argument_id, function_argument)?;
+                        types::check_kind(state, context, argument_id, expected_kind)?;
                     argument_type
                 }
                 Argument::Core(argument_type, argument_kind) => {
-                    unification::subtype(state, context, argument_kind, function_argument)?;
+                    unification::subtype(state, context, argument_kind, expected_kind)?;
                     argument_type
                 }
             };
 
             let result_type = context.intern_application(function_type, argument_type);
-            let result_kind = normalise::normalise(state, context, function_result)?;
+            let result_kind = normalise::normalise(state, context, result_kind)?;
 
             applications.push(KindOrType::Type(argument_type));
             Ok(ControlFlow::Break((result_type, result_kind)))
         }
 
         Type::Unification(unification_id) => {
-            let function_argument = state.fresh_unification(context.queries, context.prim.t);
-            let function_result = state.fresh_unification(context.queries, context.prim.t);
-            let function = context.intern_function(function_argument, function_result);
+            let argument_kind = state.fresh_unification(context.queries, context.prim.t);
+            let result_kind = state.fresh_unification(context.queries, context.prim.t);
+
+            let function = context.intern_function(argument_kind, result_kind);
             unification::solve(state, context, function_kind, unification_id, function)?;
 
             let argument_type = match argument {
                 Argument::Syntax(argument_id) => {
                     let (argument_type, _) =
-                        types::check_kind(state, context, argument_id, function_argument)?;
+                        types::check_kind(state, context, argument_id, argument_kind)?;
                     argument_type
                 }
                 Argument::Core(argument_type, checked_kind) => {
-                    unification::subtype(state, context, checked_kind, function_argument)?;
+                    unification::subtype(state, context, checked_kind, argument_kind)?;
                     argument_type
                 }
             };
 
             let result_type = context.intern_application(function_type, argument_type);
-            let result_kind = normalise::normalise(state, context, function_result)?;
+            let result_kind = normalise::normalise(state, context, result_kind)?;
 
             applications.push(KindOrType::Type(argument_type));
             Ok(ControlFlow::Break((result_type, result_kind)))
@@ -349,17 +350,13 @@ where
             let invalid_type = context.intern_application(function_type, argument_type);
             let unknown_kind = context.unknown("cannot apply synonym type");
 
-            {
-                let function_type = state.pretty_id(context, function_type)?;
-                let function_kind = state.pretty_id(context, function_kind)?;
-                let argument_type = state.pretty_id(context, argument_type)?;
-
-                state.insert_error(ErrorKind::InvalidTypeApplication {
-                    function_type,
-                    function_kind,
-                    argument_type,
-                });
-            }
+            toolkit::report_invalid_type_application(
+                state,
+                context,
+                function_type,
+                function_kind,
+                argument_type,
+            )?;
 
             applications.push(KindOrType::Type(argument_type));
             Ok(ControlFlow::Break((invalid_type, unknown_kind)))

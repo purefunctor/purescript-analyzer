@@ -10,7 +10,7 @@ use crate::core::substitute::SubstituteName;
 use crate::core::{
     ForallBinder, KindOrType, RowField, RowType, Type, TypeId, normalise, toolkit, unification,
 };
-use crate::error::{ErrorCrumb, ErrorKind};
+use crate::error::ErrorCrumb;
 use crate::source::{operator, synonym};
 use crate::state::CheckState;
 use crate::{ExternalQueries, safe_loop};
@@ -394,25 +394,25 @@ where
         Type::Function(argument_kind, result_kind) => {
             let (argument_type, _) = check_kind(state, context, argument, argument_kind)?;
 
-            let t = context.intern_application(function_type, argument_type);
-            let k = normalise::normalise(state, context, result_kind)?;
+            let result_type = context.intern_application(function_type, argument_type);
+            let result_kind = normalise::normalise(state, context, result_kind)?;
 
-            Ok((t, k))
+            Ok((result_type, result_kind))
         }
 
         Type::Unification(unification_id) => {
-            let argument_u = state.fresh_unification(context.queries, context.prim.t);
-            let result_u = state.fresh_unification(context.queries, context.prim.t);
+            let argument_kind = state.fresh_unification(context.queries, context.prim.t);
+            let result_kind = state.fresh_unification(context.queries, context.prim.t);
 
-            let function_u = context.intern_function(argument_u, result_u);
-            unification::solve(state, context, function_kind, unification_id, function_u)?;
+            let function = context.intern_function(argument_kind, result_kind);
+            unification::solve(state, context, function_kind, unification_id, function)?;
 
-            let (argument_type, _) = check_kind(state, context, argument, argument_u)?;
+            let (argument_type, _) = check_kind(state, context, argument, argument_kind)?;
 
-            let t = context.intern_application(function_type, argument_type);
-            let k = normalise::normalise(state, context, result_u)?;
+            let result_type = context.intern_application(function_type, argument_type);
+            let result_kind = normalise::normalise(state, context, result_kind)?;
 
-            Ok((t, k))
+            Ok((result_type, result_kind))
         }
 
         Type::Forall(binder_id, inner_kind) => {
@@ -433,20 +433,18 @@ where
             // this ensures that implicit variables are bound.
             let (argument_type, _) = infer_kind(state, context, argument)?;
 
-            let t = context.intern_application(function_type, argument_type);
-            let k = context.unknown("cannot apply function type");
+            let result_type = context.intern_application(function_type, argument_type);
+            let result_kind = context.unknown("cannot apply function type");
 
-            let function_type = state.pretty_id(context, function_type)?;
-            let function_kind = state.pretty_id(context, function_kind)?;
-            let argument_type = state.pretty_id(context, argument_type)?;
-
-            state.insert_error(ErrorKind::InvalidTypeApplication {
+            toolkit::report_invalid_type_application(
+                state,
+                context,
                 function_type,
                 function_kind,
                 argument_type,
-            });
+            )?;
 
-            Ok((t, k))
+            Ok((result_type, result_kind))
         }
     }
 }

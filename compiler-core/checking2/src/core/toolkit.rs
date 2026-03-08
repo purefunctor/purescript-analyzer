@@ -13,6 +13,7 @@ use crate::core::{
     CheckedClass, CheckedInstance, CheckedSynonym, ForallBinder, KindOrType, Role, Type, TypeId,
     constraint, normalise, unification,
 };
+use crate::error::ErrorKind;
 use crate::state::CheckState;
 use crate::{ExternalQueries, safe_loop};
 
@@ -36,6 +37,29 @@ pub struct DecomposedInstance {
     pub binders: Vec<ForallBinder>,
     pub constraints: Vec<TypeId>,
     pub arguments: Vec<TypeId>,
+}
+
+pub fn report_invalid_type_application<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    function_type: TypeId,
+    function_kind: TypeId,
+    argument_type: TypeId,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    let function_type = state.pretty_id(context, function_type)?;
+    let function_kind = state.pretty_id(context, function_kind)?;
+    let argument_type = state.pretty_id(context, argument_type)?;
+
+    state.insert_error(ErrorKind::InvalidTypeApplication {
+        function_type,
+        function_kind,
+        argument_type,
+    });
+
+    Ok(())
 }
 
 pub fn extract_type_application<Q>(

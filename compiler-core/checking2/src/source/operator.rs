@@ -10,10 +10,9 @@ use sugar::bracketing::BracketingResult;
 use crate::context::CheckContext;
 use crate::core::substitute::SubstituteName;
 use crate::core::{Type, TypeId, normalise, toolkit, unification};
-use crate::error::ErrorKind;
 use crate::source::{binder, synonym, terms, types};
 use crate::state::CheckState;
-use crate::{ExternalQueries, OperatorBranchTypes};
+use crate::{ExternalQueries, OperatorBranchTypes, safe_loop};
 
 #[derive(Copy, Clone, Debug)]
 enum OperatorKindMode {
@@ -479,9 +478,8 @@ fn apply_type_argument<Q>(
 where
     Q: ExternalQueries,
 {
-    loop {
+    safe_loop! {
         function_kind = normalise::normalise(state, context, function_kind)?;
-
         match context.lookup_type(function_kind) {
             Type::Function(expected_kind, result_kind) => {
                 unification::subtype(state, context, argument_kind, expected_kind)?;
@@ -491,10 +489,10 @@ where
             }
 
             Type::Unification(unification_id) => {
-                let result_u = state.fresh_unification(context.queries, context.prim.t);
-                let function_u = context.intern_function(argument_kind, result_u);
-                unification::solve(state, context, function_kind, unification_id, function_u)?;
-                function_kind = result_u;
+                let result_kind = state.fresh_unification(context.queries, context.prim.t);
+                let function_type = context.intern_function(argument_kind, result_kind);
+                unification::solve(state, context, function_kind, unification_id, function_type)?;
+                function_kind = result_kind;
             }
 
             Type::Forall(binder_id, inner_kind) => {
@@ -507,17 +505,16 @@ where
             }
 
             _ => {
-                let invalid = context.intern_application(function_type, argument_type);
-                let function_type_message = state.pretty_id(context, function_type)?;
-                let function_kind_message = state.pretty_id(context, function_kind)?;
-                let argument_type_message = state.pretty_id(context, argument_type)?;
-                state.insert_error(ErrorKind::InvalidTypeApplication {
-                    function_type: function_type_message,
-                    function_kind: function_kind_message,
-                    argument_type: argument_type_message,
-                });
-                let unknown = context.unknown("cannot apply operator type");
-                return Ok((invalid, unknown));
+                let invalid_type = context.intern_application(function_type, argument_type);
+                toolkit::report_invalid_type_application(
+                    state,
+                    context,
+                    function_type,
+                    function_kind,
+                    argument_type,
+                )?;
+                let unknown_kind = context.unknown("cannot apply operator type");
+                return Ok((invalid_type, unknown_kind));
             }
         }
     }
