@@ -378,6 +378,28 @@ where
     }
 }
 
+pub fn is_binary_operator_type<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    mut id: TypeId,
+) -> QueryResult<bool>
+where
+    Q: ExternalQueries,
+{
+    safe_loop! {
+        id = normalise::expand(state, context, id)?;
+        match context.lookup_type(id) {
+            Type::Forall(_, inner) | Type::Constrained(_, inner) => {
+                id = inner;
+            }
+            _ => break,
+        }
+    }
+
+    let inspected = inspect_function_with(state, context, id, InspectMode::Some(2))?;
+    Ok(inspected.arguments.len() >= 2)
+}
+
 pub fn decompose_instance<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,

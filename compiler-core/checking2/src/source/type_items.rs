@@ -929,7 +929,7 @@ where
             continue;
         };
 
-        if !super::is_binary_operator_type(state, context, kind)? {
+        if !toolkit::is_binary_operator_type(state, context, kind)? {
             let kind_message = state.pretty_id(context, kind)?;
             state.insert_error(ErrorKind::InvalidTypeOperator { kind_message });
         }

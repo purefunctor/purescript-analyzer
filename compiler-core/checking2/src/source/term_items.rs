@@ -717,7 +717,7 @@ where
             continue;
         };
 
-        if !super::is_binary_operator_type(state, context, t)? {
+        if !toolkit::is_binary_operator_type(state, context, t)? {
             let kind_message = state.pretty_id(context, t)?;
             state.insert_error(ErrorKind::InvalidTypeOperator { kind_message });
         }
