@@ -11,6 +11,7 @@ use crate::context::CheckContext;
 use crate::core::exhaustive::{
     ExhaustivenessReport, Pattern, PatternConstructor, PatternId, PatternInterner, PatternKind,
 };
+use crate::core::substitute::{NameToType, SubstituteName};
 use crate::core::{Depth, Name, SmolStrId, Type, TypeId, constraint, pretty, zonk};
 use crate::error::{CheckError, ErrorCrumb, ErrorKind};
 use crate::implication::Implications;
@@ -84,18 +85,25 @@ impl Unifications {
 /// Tracks type variable bindings during kind inference.
 #[derive(Default)]
 pub struct Bindings {
-    forall_bindings: FxHashMap<lowering::TypeVariableBindingId, (Name, TypeId)>,
-    implicit_bindings:
-        FxHashMap<(lowering::GraphNodeId, lowering::ImplicitBindingId), (Name, TypeId)>,
+    forall: FxHashMap<lowering::TypeVariableBindingId, (Name, TypeId)>,
+    implicit: Vec<ImplicitBinding>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct ImplicitBinding {
+    node: lowering::GraphNodeId,
+    id: lowering::ImplicitBindingId,
+    name: Name,
+    kind: TypeId,
 }
 
 impl Bindings {
     pub fn bind_forall(&mut self, id: lowering::TypeVariableBindingId, name: Name, kind: TypeId) {
-        self.forall_bindings.insert(id, (name, kind));
+        self.forall.insert(id, (name, kind));
     }
 
     pub fn lookup_forall(&self, id: lowering::TypeVariableBindingId) -> Option<(Name, TypeId)> {
-        self.forall_bindings.get(&id).copied()
+        self.forall.get(&id).copied()
     }
 
     pub fn bind_implicit(
@@ -105,7 +113,32 @@ impl Bindings {
         name: Name,
         kind: TypeId,
     ) {
-        self.implicit_bindings.insert((node, id), (name, kind));
+        self.implicit.push(ImplicitBinding { node, id, name, kind });
+    }
+
+    fn bind_implicit_substitution<Q>(
+        state: &mut CheckState,
+        context: &CheckContext<Q>,
+        substitution: &NameToType,
+    ) -> QueryResult<()>
+    where
+        Q: ExternalQueries,
+    {
+        let scope = state.bindings.implicit.len();
+
+        for binding in 0..scope {
+            let ImplicitBinding { node, id, name, kind } = state.bindings.implicit[binding];
+            let Some(&replacement) = substitution.get(&name) else { continue };
+
+            let Type::Rigid(name, _, _) = context.lookup_type(replacement) else {
+                unreachable!("invariant violated: expected a rigid variable");
+            };
+
+            let kind = SubstituteName::many(state, context, substitution, kind)?;
+            state.bindings.implicit.push(ImplicitBinding { node, id, name, kind });
+        }
+
+        Ok(())
     }
 
     pub fn lookup_implicit(
@@ -113,7 +146,11 @@ impl Bindings {
         node: lowering::GraphNodeId,
         id: lowering::ImplicitBindingId,
     ) -> Option<(Name, TypeId)> {
-        self.implicit_bindings.get(&(node, id)).copied()
+        self.implicit
+            .iter()
+            .rev()
+            .find(|binding| binding.node == node && binding.id == id)
+            .map(|binding| (binding.name, binding.kind))
     }
 }
 
@@ -196,6 +233,23 @@ impl CheckState {
         let id = self.implications.push();
         let result = f(self);
         self.implications.pop(id);
+        result
+    }
+
+    pub fn with_implicit<Q, T>(
+        &mut self,
+        context: &CheckContext<Q>,
+        substitution: &NameToType,
+        f: impl FnOnce(&mut CheckState) -> QueryResult<T>,
+    ) -> QueryResult<T>
+    where
+        Q: ExternalQueries,
+    {
+        let scope = self.bindings.implicit.len();
+        Bindings::bind_implicit_substitution(self, context, substitution)?;
+        let result = f(self);
+        self.bindings.implicit.truncate(scope);
+
         result
     }
 
