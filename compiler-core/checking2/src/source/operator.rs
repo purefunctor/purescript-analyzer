@@ -357,7 +357,7 @@ impl<Q: ExternalQueries> IsOperator<Q> for lowering::TypeId {
         let operator_kind = toolkit::lookup_file_type(state, context, file_id, item_id)?;
 
         if let Some((elaborated_type, result_kind)) =
-            synonym::try_check_resolved_synonym_application(
+            synonym::try_check_synonym_application(
                 state,
                 context,
                 (target_file_id, target_item_id),

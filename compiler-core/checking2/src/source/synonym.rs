@@ -151,10 +151,14 @@ where
         .map(|(type_id, kind_id)| Argument::Core(type_id, kind_id))
         .collect_vec();
 
-    check_synonym_application_arguments(state, context, synonym, &arguments)
+    let defer_expansion = mem::replace(&mut state.defer_expansion, true);
+    let checked = check_synonym_application_arguments(state, context, synonym, &arguments);
+    state.defer_expansion = defer_expansion;
+
+    checked
 }
 
-pub fn try_check_resolved_synonym_application<Q>(
+pub fn try_check_synonym_application<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     (file_id, type_id): (FileId, TypeItemId),
