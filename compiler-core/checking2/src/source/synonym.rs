@@ -1,6 +1,4 @@
 //! Implements syntax-driven checking rules for synonym detection.
-
-use std::mem;
 use std::ops::ControlFlow;
 use std::sync::Arc;
 
@@ -129,11 +127,9 @@ where
 
     let arguments = arguments.iter().copied().map(Argument::Syntax).collect_vec();
 
-    let defer_expansion = mem::replace(&mut state.defer_expansion, true);
-    let checked = check_synonym_application_arguments(state, context, synonym, &arguments);
-    state.defer_expansion = defer_expansion;
-
-    checked
+    state.with_defer_expansion(|state| {
+        check_synonym_application_arguments(state, context, synonym, &arguments)
+    })
 }
 
 pub fn check_synonym_application<Q>(
@@ -151,11 +147,9 @@ where
         .map(|(type_id, kind_id)| Argument::Core(type_id, kind_id))
         .collect_vec();
 
-    let defer_expansion = mem::replace(&mut state.defer_expansion, true);
-    let checked = check_synonym_application_arguments(state, context, synonym, &arguments);
-    state.defer_expansion = defer_expansion;
-
-    checked
+    state.with_defer_expansion(|state| {
+        check_synonym_application_arguments(state, context, synonym, &arguments)
+    })
 }
 
 pub fn try_check_synonym_application<Q>(

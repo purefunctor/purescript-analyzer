@@ -196,6 +196,13 @@ impl CheckState {
         result
     }
 
+    pub fn with_defer_expansion<T>(&mut self, f: impl FnOnce(&mut CheckState) -> T) -> T {
+        let previous = mem::replace(&mut self.defer_expansion, true);
+        let result = f(self);
+        self.defer_expansion = previous;
+        result
+    }
+
     pub fn with_error_crumb<F, T>(&mut self, crumb: ErrorCrumb, f: F) -> T
     where
         F: FnOnce(&mut CheckState) -> T,

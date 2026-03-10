@@ -144,21 +144,31 @@ where
         let _ = unification::subtype(state, context, result_type, expected_type)?;
     }
 
-    let [left_tree, right_tree] = children;
+    let check_left_right = |state: &mut CheckState| {
+        let [left_tree, right_tree] = children;
 
-    let (left, _) = traverse_operator_tree(
-        state,
-        context,
-        left_tree,
-        OperatorKindMode::Check { expected_type: left_type },
-    )?;
+        let (left, _) = traverse_operator_tree(
+            state,
+            context,
+            left_tree,
+            OperatorKindMode::Check { expected_type: left_type },
+        )?;
 
-    let (right, _) = traverse_operator_tree(
-        state,
-        context,
-        right_tree,
-        OperatorKindMode::Check { expected_type: right_type },
-    )?;
+        let (right, _) = traverse_operator_tree(
+            state,
+            context,
+            right_tree,
+            OperatorKindMode::Check { expected_type: right_type },
+        )?;
+
+        Ok((left, right))
+    };
+
+    let (left, right) = if E::should_defer_expansion(state, context, operator)? {
+        state.with_defer_expansion(check_left_right)?
+    } else {
+        check_left_right(state)?
+    };
 
     E::build(state, context, operator, (left, right), (left_type, right_type), result_type)
 }
@@ -198,6 +208,14 @@ pub trait IsOperator<Q: ExternalQueries>: IsElement {
         id: Self,
         expected: TypeId,
     ) -> QueryResult<(Self::Elaborated, TypeId)>;
+
+    fn should_defer_expansion(
+        _state: &CheckState,
+        _context: &CheckContext<Q>,
+        _operator: (FileId, Self::ItemId),
+    ) -> QueryResult<bool> {
+        Ok(false)
+    }
 
     fn build(
         state: &mut CheckState,
@@ -339,6 +357,19 @@ impl<Q: ExternalQueries> IsOperator<Q> for lowering::TypeId {
         types::check_kind(state, context, id, expected)
     }
 
+    fn should_defer_expansion(
+        state: &CheckState,
+        context: &CheckContext<Q>,
+        (file_id, item_id): (FileId, Self::ItemId),
+    ) -> QueryResult<bool> {
+        let Some((target_file_id, target_item_id)) =
+            toolkit::resolve_type_operator_target(context, file_id, item_id)?
+        else {
+            return Ok(false);
+        };
+        Ok(toolkit::lookup_file_synonym(state, context, target_file_id, target_item_id)?.is_some())
+    }
+
     fn build(
         state: &mut CheckState,
         context: &CheckContext<Q>,
@@ -356,15 +387,13 @@ impl<Q: ExternalQueries> IsOperator<Q> for lowering::TypeId {
 
         let operator_kind = toolkit::lookup_file_type(state, context, file_id, item_id)?;
 
-        if let Some((elaborated_type, result_kind)) =
-            synonym::try_check_synonym_application(
-                state,
-                context,
-                (target_file_id, target_item_id),
-                operator_kind,
-                &[(left, left_kind), (right, right_kind)],
-            )?
-        {
+        if let Some((elaborated_type, result_kind)) = synonym::try_check_synonym_application(
+            state,
+            context,
+            (target_file_id, target_item_id),
+            operator_kind,
+            &[(left, left_kind), (right, right_kind)],
+        )? {
             let result_kind = normalise::normalise(state, context, result_kind)?;
             return Ok((elaborated_type, result_kind));
         }
