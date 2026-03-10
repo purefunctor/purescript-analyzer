@@ -1,0 +1,120 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Proxy :: forall (k :: Type) (a :: (k :: Type)). Proxy @(k :: Type) (a :: (k :: Type))
+top :: forall (a :: Type). Top (a :: Type) => (a :: Type)
+
+Types
+Proxy :: forall (k :: Type). (k :: Type) -> Type
+Top :: Type -> Constraint
+
+Classes
+class forall (a :: Type). Top (a :: Type)
+  top :: forall (a :: Type). Top (a :: Type) => (a :: Type)
+
+Instances
+instance forall (t4 :: Type) (t3 :: (t4 :: Type)). Top (Proxy @(t4 :: Type) (t3 :: (t4 :: Type)))
+
+Roles
+Proxy = [Phantom]
+
+Errors
+CheckError {
+    kind: CannotUnify {
+        t1: Id<smol_str::SmolStr>(6),
+        t2: Id<smol_str::SmolStr>(7),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(2),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(32),
+        ),
+        InferringKind(
+            AstId<syntax::cst::Type>(34),
+        ),
+        CheckingKind(
+            AstId<syntax::cst::Type>(36),
+        ),
+    ],
+}
+CheckError {
+    kind: CannotUnify {
+        t1: Id<smol_str::SmolStr>(8),
+        t2: Id<smol_str::SmolStr>(9),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(2),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(32),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(33),
+        ),
+    ],
+}
+CheckError {
+    kind: CannotUnify {
+        t1: Id<smol_str::SmolStr>(10),
+        t2: Id<smol_str::SmolStr>(11),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(2),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(32),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(33),
+        ),
+    ],
+}
+CheckError {
+    kind: CannotUnify {
+        t1: Id<smol_str::SmolStr>(6),
+        t2: Id<smol_str::SmolStr>(7),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(2),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(32),
+        ),
+    ],
+}
+CheckError {
+    kind: CannotUnify {
+        t1: Id<smol_str::SmolStr>(12),
+        t2: Id<smol_str::SmolStr>(13),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(2),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(32),
+        ),
+    ],
+}
+CheckError {
+    kind: CannotUnify {
+        t1: Id<smol_str::SmolStr>(11),
+        t2: Id<smol_str::SmolStr>(14),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(2),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(32),
+        ),
+    ],
+}

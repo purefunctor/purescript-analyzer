@@ -479,3 +479,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_226_equation_synonym_expansion_main() { run_test("226_equation_synonym_expansion", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_227_derive_newtype_invalid_skolem_layout_main() { run_test("227_derive_newtype_invalid_skolem_layout", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_228_instance_implicit_variable_freshening_main() { run_test("228_instance_implicit_variable_freshening", "Main"); }
