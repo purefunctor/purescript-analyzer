@@ -4,7 +4,7 @@ use indexing::TypeItemId;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::{Type, TypeId, toolkit, unification};
+use crate::core::{Type, TypeId, normalise, toolkit, unification};
 use crate::error::ErrorKind;
 use crate::state::CheckState;
 
@@ -38,7 +38,7 @@ where
         return Ok(None);
     }
 
-    let Some(inner_type) =
+    let Some(toolkit::NewtypeInner { inner, rigids }) =
         toolkit::get_newtype_inner(state, context, newtype_file, newtype_id, *newtype_type)?
     else {
         let type_message = state.pretty_id(context, *newtype_type)?;
@@ -46,13 +46,22 @@ where
         return Ok(None);
     };
 
-    let class_type = context.queries.intern_type(Type::Constructor(class_file, class_id));
+    let inner = if let Some(inner) = try_peel_trailing_rigids(state, context, inner, &rigids)? {
+        inner
+    } else {
+        state.insert_error(ErrorKind::InvalidNewtypeDeriveSkolemArguments);
+        return Ok(None);
+    };
+
+    let inner = normalise::normalise(state, context, inner)?;
+    let class = context.queries.intern_type(Type::Constructor(class_file, class_id));
+
     let mut delegate_constraint = preceding_arguments
         .iter()
         .copied()
-        .fold(class_type, |function, argument| context.intern_application(function, argument));
-    delegate_constraint = context.intern_application(delegate_constraint, inner_type);
+        .fold(class, |function, argument| context.intern_application(function, argument));
 
+    delegate_constraint = context.intern_application(delegate_constraint, inner);
     Ok(Some(DeriveStrategy::NewtypeDeriveConstraint { delegate_constraint }))
 }
 
@@ -84,7 +93,7 @@ where
         return Ok(None);
     }
 
-    let Some(extracted_inner) =
+    let Some(newtype_inner) =
         toolkit::get_newtype_inner(state, context, newtype_file, newtype_id, *newtype_type)?
     else {
         let type_message = state.pretty_id(context, *newtype_type)?;
@@ -92,7 +101,47 @@ where
         return Ok(None);
     };
 
-    unification::unify(state, context, *inner_type, extracted_inner)?;
+    unification::unify(state, context, *inner_type, newtype_inner.inner)?;
 
     Ok(Some(DeriveStrategy::HeadOnly))
+}
+
+fn try_peel_trailing_rigids<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    mut type_id: TypeId,
+    rigids: &[TypeId],
+) -> QueryResult<Option<TypeId>>
+where
+    Q: ExternalQueries,
+{
+    if rigids.is_empty() {
+        return Ok(Some(type_id));
+    }
+
+    for &rigid in rigids.iter().rev() {
+        type_id = normalise::expand(state, context, type_id)?;
+
+        match context.lookup_type(type_id) {
+            Type::Application(function, argument) | Type::KindApplication(function, argument) => {
+                let argument = normalise::expand(state, context, argument)?;
+                if argument != rigid {
+                    return Ok(None);
+                }
+                type_id = function;
+            }
+
+            Type::Function(argument, result) => {
+                let result = normalise::expand(state, context, result)?;
+                if result != rigid {
+                    return Ok(None);
+                }
+                type_id = context.intern_application(context.prim.function, argument);
+            }
+
+            _ => return Ok(None),
+        }
+    }
+
+    Ok(Some(type_id))
 }

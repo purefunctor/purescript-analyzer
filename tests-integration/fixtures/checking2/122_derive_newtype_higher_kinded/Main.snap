@@ -20,15 +20,3 @@ instance Empty Array
 
 Roles
 Wrapper = [Representational]
-
-Errors
-CheckError {
-    kind: NoInstanceFound {
-        constraint: Id<smol_str::SmolStr>(6),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(3),
-        ),
-    ],
-}

@@ -126,7 +126,8 @@ where
         && toolkit::is_newtype(context, file_id, item_id)?
     {
         if toolkit::is_constructor_in_scope(context, file_id, item_id)? {
-            if let Some(inner) = toolkit::get_newtype_inner(state, context, file_id, item_id, left)?
+            if let Some(toolkit::NewtypeInner { inner, .. }) =
+                toolkit::get_newtype_inner(state, context, file_id, item_id, left)?
             {
                 let constraint = make_coercible_constraint(context, inner, right);
                 return Ok(NewtypeCoercionResult::Success(MatchInstance::Match {
@@ -144,7 +145,7 @@ where
         && toolkit::is_newtype(context, file_id, item_id)?
     {
         if toolkit::is_constructor_in_scope(context, file_id, item_id)? {
-            if let Some(inner) =
+            if let Some(toolkit::NewtypeInner { inner, .. }) =
                 toolkit::get_newtype_inner(state, context, file_id, item_id, right)?
             {
                 let constraint = make_coercible_constraint(context, left, inner);

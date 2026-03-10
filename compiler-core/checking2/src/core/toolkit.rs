@@ -39,6 +39,11 @@ pub struct DecomposedInstance {
     pub arguments: Vec<TypeId>,
 }
 
+pub struct NewtypeInner {
+    pub inner: TypeId,
+    pub rigids: Vec<TypeId>,
+}
+
 pub fn report_invalid_type_application<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -670,7 +675,7 @@ pub fn get_newtype_inner<Q>(
     newtype_file: FileId,
     newtype_id: TypeItemId,
     newtype_type: TypeId,
-) -> QueryResult<Option<TypeId>>
+) -> QueryResult<Option<NewtypeInner>>
 where
     Q: ExternalQueries,
 {
@@ -695,6 +700,7 @@ where
 
     let mut current = constructor_type;
     let mut arguments = arguments.iter().copied();
+    let mut rigids = vec![];
 
     safe_loop! {
         current = normalise::expand(state, context, current)?;
@@ -706,10 +712,13 @@ where
         let replacement = arguments
             .next()
             .map(|argument| match argument {
-                crate::core::KindOrType::Kind(argument)
-                | crate::core::KindOrType::Type(argument) => argument,
+                KindOrType::Kind(argument) | KindOrType::Type(argument) => argument,
             })
-            .unwrap_or_else(|| state.fresh_rigid(context.queries, binder.kind));
+            .unwrap_or_else(|| {
+                let rigid = state.fresh_rigid(context.queries, binder.kind);
+                rigids.push(rigid);
+                rigid
+            });
 
         current = SubstituteName::one(state, context, binder.name, replacement, inner)?;
     }
@@ -717,7 +726,7 @@ where
     current = normalise::normalise(state, context, current)?;
 
     let InspectFunction { arguments, .. } = inspect_function(state, context, current)?;
-    let [argument] = arguments[..] else { return Ok(None) };
+    let [inner] = arguments[..] else { return Ok(None) };
 
-    Ok(Some(argument))
+    Ok(Some(NewtypeInner { inner, rigids }))
 }
