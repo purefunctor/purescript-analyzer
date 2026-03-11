@@ -1,0 +1,58 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+
+Types
+RowApply ::
+  forall (k :: Type). (Row (k :: Type) -> Row (k :: Type)) -> Row (k :: Type) -> Row (k :: Type)
++ :: forall (k :: Type). (Row (k :: Type) -> Row (k :: Type)) -> Row (k :: Type) -> Row (k :: Type)
+AddField :: Type -> Row Type -> Row Type
+Bad :: Type -> Row Type
+Good :: Type -> Row Type
+
+Synonyms
+type RowApply f a = (f :: Row (k :: Type) -> Row (k :: Type)) (a :: Row (k :: Type))
+type AddField a r = ( field :: (a :: Type) | (r :: Row Type) )
+type Bad a = RowApply @Type ?[partial synonym application] ()
+type Good a = RowApply @Type (AddField (a :: Type)) ()
+
+Errors
+CheckError {
+    kind: PartialSynonymApplication {
+        id: AstId<syntax::cst::Type>(58),
+    },
+    crumbs: [
+        CheckingKind(
+            AstId<syntax::cst::Type>(57),
+        ),
+        InferringKind(
+            AstId<syntax::cst::Type>(57),
+        ),
+        CheckingKind(
+            AstId<syntax::cst::Type>(58),
+        ),
+        InferringKind(
+            AstId<syntax::cst::Type>(58),
+        ),
+    ],
+}
+CheckError {
+    kind: CannotUnify {
+        t1: Id<smol_str::SmolStr>(10),
+        t2: Id<smol_str::SmolStr>(11),
+    },
+    crumbs: [
+        CheckingKind(
+            AstId<syntax::cst::Type>(57),
+        ),
+        InferringKind(
+            AstId<syntax::cst::Type>(57),
+        ),
+        CheckingKind(
+            AstId<syntax::cst::Type>(58),
+        ),
+    ],
+}

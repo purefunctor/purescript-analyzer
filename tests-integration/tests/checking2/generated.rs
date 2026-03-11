@@ -481,3 +481,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_227_derive_newtype_invalid_skolem_layout_main() { run_test("227_derive_newtype_invalid_skolem_layout", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_228_instance_implicit_variable_freshening_main() { run_test("228_instance_implicit_variable_freshening", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_229_type_operator_synonym_partial_arguments_main() { run_test("229_type_operator_synonym_partial_arguments", "Main"); }
