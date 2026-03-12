@@ -483,3 +483,7 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_228_instance_implicit_variable_freshening_main() { run_test("228_instance_implicit_variable_freshening", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_229_type_operator_synonym_partial_arguments_main() { run_test("229_type_operator_synonym_partial_arguments", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_230_type_synonym_higher_order_main() { run_test("230_type_synonym_higher_order", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_231_type_synonym_higher_order_operator_main() { run_test("231_type_synonym_higher_order_operator", "Main"); }

@@ -1,0 +1,51 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+test :: {| Test }
+
+Types
+RowApply ::
+  forall (k :: Type). (Row (k :: Type) -> Row (k :: Type)) -> Row (k :: Type) -> Row (k :: Type)
++ :: forall (k :: Type). (Row (k :: Type) -> Row (k :: Type)) -> Row (k :: Type) -> Row (k :: Type)
+AddInt :: Row Type -> Row Type
+AddString :: Row Type -> Row Type
+Test :: Row Type
+
+Synonyms
+type RowApply f a = (f :: Row (k :: Type) -> Row (k :: Type)) (a :: Row (k :: Type))
+type AddInt r = ( int :: Int | (r :: Row Type) )
+type AddString r = ( string :: String | (r :: Row Type) )
+type Test = RowApply @Type AddInt (RowApply @Type AddString ())
+
+Errors
+CheckError {
+    kind: CannotUnify {
+        t1: Id<smol_str::SmolStr>(10),
+        t2: Id<smol_str::SmolStr>(11),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(0),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(81),
+        ),
+    ],
+}
+CheckError {
+    kind: CannotUnify {
+        t1: Id<smol_str::SmolStr>(12),
+        t2: Id<smol_str::SmolStr>(13),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(0),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(81),
+        ),
+    ],
+}
