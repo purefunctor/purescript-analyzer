@@ -18,33 +18,3 @@ type RowApply f a = (f :: Row (k :: Type) -> Row (k :: Type)) (a :: Row (k :: Ty
 type AddInt r = ( int :: Int | (r :: Row Type) )
 type AddString r = ( string :: String | (r :: Row Type) )
 type Test = RowApply @Type AddInt (RowApply @Type AddString ())
-
-Errors
-CheckError {
-    kind: CannotUnify {
-        t1: Id<smol_str::SmolStr>(8),
-        t2: Id<smol_str::SmolStr>(9),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(0),
-        ),
-        CheckingExpression(
-            AstId<syntax::cst::Expression>(80),
-        ),
-    ],
-}
-CheckError {
-    kind: CannotUnify {
-        t1: Id<smol_str::SmolStr>(10),
-        t2: Id<smol_str::SmolStr>(11),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(0),
-        ),
-        CheckingExpression(
-            AstId<syntax::cst::Expression>(80),
-        ),
-    ],
-}

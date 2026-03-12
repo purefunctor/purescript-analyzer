@@ -1,13 +1,14 @@
 //! Implements normalisation algorithms for the core representation.
 
 use std::iter;
+use std::sync::Arc;
 
 use building_types::QueryResult;
 use itertools::Itertools;
 
 use crate::context::CheckContext;
 use crate::core::substitute::{NameToType, SubstituteName};
-use crate::core::{KindOrType, RowType, Saturation, Type, TypeId, toolkit};
+use crate::core::{KindOrType, RowType, Saturation, Synonym, Type, TypeId, toolkit};
 use crate::state::{CheckState, UnificationState};
 use crate::{ExternalQueries, safe_loop};
 
@@ -187,6 +188,10 @@ where
 
     // Collect oversaturated arguments, in our example above, this
     // would collect `[Int]` and `[Int, String]` into `arguments`.
+    // Additionally, these are used for Constructor-based synonyms,
+    // which occur since we don't normalise applications back into
+    // the SynonymApplication form. This will be rendered obsolete
+    // once these variants are unified.
     safe_loop! {
         current = normalise(state, context, current)?;
         match context.lookup_type(current) {
@@ -203,16 +208,24 @@ where
     }
 
     current = normalise(state, context, current)?;
-    let Type::SynonymApplication(synonym_id) = context.lookup_type(current) else {
-        return Ok(id);
+    let ((file_id, type_id), synonym_arguments) = match context.lookup_type(current) {
+        Type::Constructor(file_id, type_id) => {
+            let reference = (file_id, type_id);
+            let arguments = [].into();
+            (reference, arguments)
+        }
+        Type::SynonymApplication(synonym_id) => {
+            let Synonym { saturation, reference, arguments } = context.lookup_synonym(synonym_id);
+
+            if saturation != Saturation::Full {
+                return Ok(id);
+            }
+
+            (reference, Arc::clone(&arguments))
+        }
+        _ => return Ok(id),
     };
 
-    let synonym_application = context.lookup_synonym(synonym_id);
-    if synonym_application.saturation != Saturation::Full {
-        return Ok(id);
-    }
-
-    let (file_id, type_id) = synonym_application.reference;
     let checked_synonym = toolkit::lookup_file_synonym(state, context, file_id, type_id)?;
     let Some(checked_synonym) = checked_synonym else {
         return Ok(id);
@@ -221,7 +234,7 @@ where
     let mut bindings = NameToType::default();
     let mut kind = checked_synonym.kind;
     let mut arguments = {
-        let synonym_arguments = synonym_application.arguments.iter().copied();
+        let synonym_arguments = synonym_arguments.iter().copied();
         let applied_arguments = applied_arguments.iter().copied().rev();
         iter::chain(synonym_arguments, applied_arguments)
     };
