@@ -1,0 +1,22 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+empty :: forall (f :: Type -> Type). Empty (f :: Type -> Type) => (f :: Type -> Type) Int
+Wrapper :: forall (a :: Type). Array (a :: Type) -> Wrapper (a :: Type)
+
+Types
+Empty :: (Type -> Type) -> Constraint
+Wrapper :: Type -> Type
+
+Classes
+class forall (f :: Type -> Type). Empty (f :: Type -> Type)
+  empty :: forall (f :: Type -> Type). Empty (f :: Type -> Type) => (f :: Type -> Type) Int
+
+Instances
+instance Empty Array
+
+Roles
+Wrapper = [Representational]

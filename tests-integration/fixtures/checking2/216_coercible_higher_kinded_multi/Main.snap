@@ -1,0 +1,23 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Left :: forall (a :: Type) (b :: Type). (a :: Type) -> Either (a :: Type) (b :: Type)
+Right :: forall (a :: Type) (b :: Type). (b :: Type) -> Either (a :: Type) (b :: Type)
+EitherAlias ::
+  forall (a :: Type) (b :: Type).
+    Either (a :: Type) (b :: Type) -> EitherAlias (a :: Type) (b :: Type)
+coerceContainer ::
+  Container @(Type -> Type -> Type) Either -> Container @(Type -> Type -> Type) EitherAlias
+
+Types
+Either :: Type -> Type -> Type
+EitherAlias :: Type -> Type -> Type
+Container :: forall (k :: Type). (k :: Type) -> Type
+
+Roles
+Either = [Representational, Representational]
+EitherAlias = [Representational, Representational]
+Container = [Representational]

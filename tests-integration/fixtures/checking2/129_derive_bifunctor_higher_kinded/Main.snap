@@ -1,0 +1,80 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+WrapBoth ::
+  forall (t5 :: Type) (t4 :: Type) (f :: (t5 :: Type) -> Type) (g :: (t4 :: Type) -> Type)
+    (a :: (t5 :: Type)) (b :: (t4 :: Type)).
+    (f :: (t5 :: Type) -> Type) (a :: (t5 :: Type)) ->
+    (g :: (t4 :: Type) -> Type) (b :: (t4 :: Type)) ->
+    WrapBoth @(t5 :: Type) @(t4 :: Type)
+      (f :: (t5 :: Type) -> Type)
+      (g :: (t4 :: Type) -> Type)
+      (a :: (t5 :: Type))
+      (b :: (t4 :: Type))
+WrapBothNoConstraint ::
+  forall (t11 :: Type) (t10 :: Type) (f :: (t11 :: Type) -> Type) (g :: (t10 :: Type) -> Type)
+    (a :: (t11 :: Type)) (b :: (t10 :: Type)).
+    (f :: (t11 :: Type) -> Type) (a :: (t11 :: Type)) ->
+    (g :: (t10 :: Type) -> Type) (b :: (t10 :: Type)) ->
+    WrapBothNoConstraint @(t11 :: Type) @(t10 :: Type)
+      (f :: (t11 :: Type) -> Type)
+      (g :: (t10 :: Type) -> Type)
+      (a :: (t11 :: Type))
+      (b :: (t10 :: Type))
+
+Types
+WrapBoth ::
+  forall (t5 :: Type) (t4 :: Type).
+    ((t5 :: Type) -> Type) -> ((t4 :: Type) -> Type) -> (t5 :: Type) -> (t4 :: Type) -> Type
+WrapBothNoConstraint ::
+  forall (t11 :: Type) (t10 :: Type).
+    ((t11 :: Type) -> Type) -> ((t10 :: Type) -> Type) -> (t11 :: Type) -> (t10 :: Type) -> Type
+
+Roles
+WrapBoth = [Representational, Representational, Nominal, Nominal]
+WrapBothNoConstraint = [Representational, Representational, Nominal, Nominal]
+
+Errors
+CheckError {
+    kind: NoInstanceFound {
+        constraint: Id<smol_str::SmolStr>(9),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(1),
+        ),
+    ],
+}
+CheckError {
+    kind: NoInstanceFound {
+        constraint: Id<smol_str::SmolStr>(10),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(1),
+        ),
+    ],
+}
+CheckError {
+    kind: NoInstanceFound {
+        constraint: Id<smol_str::SmolStr>(11),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(3),
+        ),
+    ],
+}
+CheckError {
+    kind: NoInstanceFound {
+        constraint: Id<smol_str::SmolStr>(12),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(3),
+        ),
+    ],
+}

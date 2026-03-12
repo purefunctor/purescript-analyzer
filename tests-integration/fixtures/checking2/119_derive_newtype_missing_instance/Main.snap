@@ -1,0 +1,25 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Identity :: forall (a :: Type). (a :: Type) -> Identity (a :: Type)
+
+Types
+Identity :: Type -> Type
+
+Roles
+Identity = [Representational]
+
+Errors
+CheckError {
+    kind: NoInstanceFound {
+        constraint: Id<smol_str::SmolStr>(7),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(1),
+        ),
+    ],
+}

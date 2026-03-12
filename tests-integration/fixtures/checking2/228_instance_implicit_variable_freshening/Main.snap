@@ -1,0 +1,22 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Proxy :: forall (k :: Type) (a :: (k :: Type)). Proxy @(k :: Type) (a :: (k :: Type))
+top :: forall (a :: Type). Top (a :: Type) => (a :: Type)
+
+Types
+Proxy :: forall (k :: Type). (k :: Type) -> Type
+Top :: Type -> Constraint
+
+Classes
+class forall (a :: Type). Top (a :: Type)
+  top :: forall (a :: Type). Top (a :: Type) => (a :: Type)
+
+Instances
+instance forall (t4 :: Type) (t3 :: (t4 :: Type)). Top (Proxy @(t4 :: Type) (t3 :: (t4 :: Type)))
+
+Roles
+Proxy = [Phantom]

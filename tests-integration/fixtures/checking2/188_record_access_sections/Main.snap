@@ -1,0 +1,61 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+map ::
+  forall (a :: Type) (b :: Type).
+    ((a :: Type) -> (b :: Type)) -> Array (a :: Type) -> Array (b :: Type)
+apply :: forall (a :: Type) (b :: Type). ((a :: Type) -> (b :: Type)) -> (a :: Type) -> (b :: Type)
+f :: ({ foo :: Int } -> Int) -> Int
+test1 ::
+  forall (t5 :: Type) (t4 :: Row Type). { prop :: (t5 :: Type) | (t4 :: Row Type) } -> (t5 :: Type)
+test2 ::
+  forall (t9 :: Type) (t8 :: Row Type) (t7 :: Row Type) (t6 :: Row Type).
+    { a :: { b :: { c :: (t9 :: Type) | (t8 :: Row Type) } | (t7 :: Row Type) }
+    | (t6 :: Row Type)
+    } ->
+    (t9 :: Type)
+test3 ::
+  forall (t11 :: Type) (t10 :: Row Type).
+    { poly :: (t11 :: Type) | (t10 :: Row Type) } -> (t11 :: Type)
+test4 ::
+  forall (t13 :: Type) (t12 :: Row Type).
+    Array { prop :: (t13 :: Type) | (t12 :: Row Type) } -> Array (t13 :: Type)
+test5 :: Int
+test6 ::
+  forall (t17 :: Type) (t16 :: Type) (t15 :: Row Type) (t14 :: Type).
+    (t17 :: Type) ->
+    (({ bar :: (t16 :: Type) | (t15 :: Row Type) } -> (t16 :: Type)) -> (t14 :: Type)) ->
+    (t14 :: Type)
+test7 ::
+  forall (t19 :: Type) (t18 :: Row Type).
+    { nonexistent :: (t19 :: Type) | (t18 :: Row Type) } -> (t19 :: Type)
+test8 ::
+  forall (t22 :: Type) (t21 :: Row Type) (t20 :: Type).
+    (({ foo :: (t22 :: Type) | (t21 :: Row Type) } -> (t22 :: Type)) -> (t20 :: Type)) ->
+    (t20 :: Type)
+test9 ::
+  forall (t25 :: Type) (t24 :: Row Type) (t23 :: Type).
+    Array (({ prop :: (t25 :: Type) | (t24 :: Row Type) } -> (t25 :: Type)) -> (t23 :: Type)) ->
+    Array (t23 :: Type)
+test10 ::
+  forall (t28 :: Type) (t27 :: Row Type) (t26 :: Row Type).
+    { a :: { b :: (t28 :: Type) | (t27 :: Row Type) } | (t26 :: Row Type) } -> (t28 :: Type)
+test11 ::
+  forall (t31 :: Type) (t30 :: Type) (t29 :: Row Type).
+    (t31 :: Type) ->
+    { a :: (t31 :: Type), b :: { foo :: (t30 :: Type) | (t29 :: Row Type) } -> (t30 :: Type) }
+test12 ::
+  forall (t33 :: Type) (t32 :: Row Type).
+    ({ bar :: (t33 :: Type) | (t32 :: Row Type) } -> (t33 :: Type)) ->
+    Array ({ bar :: (t33 :: Type) | (t32 :: Row Type) } -> (t33 :: Type))
+test13 ::
+  forall (t36 :: Type) (t35 :: Type) (t34 :: Row Type).
+    (t36 :: Type) -> { prop :: (t35 :: Type) | (t34 :: Row Type) } -> (t35 :: Type)
+test14 ::
+  forall (t38 :: Type) (t37 :: Row Type).
+    Boolean -> { a :: (t38 :: Type), b :: (t38 :: Type) | (t37 :: Row Type) } -> (t38 :: Type)
+
+Types

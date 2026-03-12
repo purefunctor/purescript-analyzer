@@ -1,0 +1,29 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+test :: { outer :: { x :: Int } } -> Int
+
+Types
+
+Errors
+CheckError {
+    kind: AdditionalProperty {
+        labels: [
+            "y",
+        ],
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(0),
+        ),
+        CheckingBinder(
+            AstId<syntax::cst::Binder>(15),
+        ),
+        CheckingBinder(
+            AstId<syntax::cst::Binder>(17),
+        ),
+    ],
+}

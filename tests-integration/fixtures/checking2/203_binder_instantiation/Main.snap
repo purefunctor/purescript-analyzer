@@ -1,0 +1,100 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Just :: forall (a :: Type). (a :: Type) -> Maybe (a :: Type)
+Nothing :: forall (a :: Type). Maybe (a :: Type)
+MkId :: (forall (a :: Type). (a :: Type) -> (a :: Type)) -> Id
+identity :: forall (a :: Type). Maybe ((a :: Type) -> (a :: Type))
+test :: Partial => Int
+test2 :: Id -> Boolean
+test3 :: Partial => Int
+test4 :: Id -> Boolean
+
+Types
+Maybe :: Type -> Type
+Id :: Type
+
+Roles
+Maybe = [Representational]
+Id = []
+
+Errors
+CheckError {
+    kind: CannotUnify {
+        t1: Id<smol_str::SmolStr>(7),
+        t2: Id<smol_str::SmolStr>(8),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(4),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(38),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(48),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(57),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(60),
+        ),
+    ],
+}
+CheckError {
+    kind: MissingPatterns {
+        patterns: [
+            Id<smol_str::SmolStr>(9),
+        ],
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(4),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(38),
+        ),
+    ],
+}
+CheckError {
+    kind: MissingPatterns {
+        patterns: [
+            Id<smol_str::SmolStr>(9),
+        ],
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(6),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(100),
+        ),
+    ],
+}
+CheckError {
+    kind: CannotUnify {
+        t1: Id<smol_str::SmolStr>(7),
+        t2: Id<smol_str::SmolStr>(8),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(6),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(100),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(108),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(117),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(120),
+        ),
+    ],
+}

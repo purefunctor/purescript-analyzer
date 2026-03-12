@@ -1,0 +1,26 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Box :: Int -> Box
+
+Types
+Box :: Type
+
+Roles
+Box = []
+
+Errors
+CheckError {
+    kind: CannotDeriveClass {
+        class_file: Idx::<File>(39),
+        class_id: Idx::<TypeItem>(0),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(1),
+        ),
+    ],
+}

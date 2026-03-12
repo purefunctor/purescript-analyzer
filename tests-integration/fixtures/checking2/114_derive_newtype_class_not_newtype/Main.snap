@@ -1,0 +1,25 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+NotANewtype :: Int -> NotANewtype
+
+Types
+NotANewtype :: Type
+
+Roles
+NotANewtype = []
+
+Errors
+CheckError {
+    kind: ExpectedNewtype {
+        type_message: Id<smol_str::SmolStr>(8),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(1),
+        ),
+    ],
+}

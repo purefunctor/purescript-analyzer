@@ -1,0 +1,69 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+unit :: Unit
+pure :: forall (a :: Type). (a :: Type) -> Effect (a :: Type)
+map ::
+  forall (a :: Type) (b :: Type).
+    ((a :: Type) -> (b :: Type)) -> Effect (a :: Type) -> Effect (b :: Type)
+apply ::
+  forall (a :: Type) (b :: Type).
+    Effect ((a :: Type) -> (b :: Type)) -> Effect (a :: Type) -> Effect (b :: Type)
+add :: forall (a :: Type). Semiring (a :: Type) => (a :: Type) -> (a :: Type) -> (a :: Type)
+addImpl :: Int -> Int -> Int
++ :: forall (a :: Type). Semiring (a :: Type) => (a :: Type) -> (a :: Type) -> (a :: Type)
+thing1 :: Effect String
+test :: Effect Unit
+
+Types
+Effect :: Type -> Type
+Unit :: Type
+Semiring :: Type -> Constraint
+
+Classes
+class forall (a :: Type). Semiring (a :: Type)
+  add :: forall (a :: Type). Semiring (a :: Type) => (a :: Type) -> (a :: Type) -> (a :: Type)
+
+Instances
+instance Semiring Int
+
+Roles
+Effect = [Nominal]
+Unit = []
+
+Errors
+CheckError {
+    kind: CannotUnify {
+        t1: Id<smol_str::SmolStr>(10),
+        t2: Id<smol_str::SmolStr>(11),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(9),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(99),
+        ),
+        CheckingAdoLet(
+            AstId<syntax::cst::DoStatement>(104),
+        ),
+        CheckingLetName(
+            Idx::<LetBindingNameGroup>(0),
+        ),
+        InferringExpression(
+            AstId<syntax::cst::Expression>(109),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(113),
+        ),
+    ],
+}
+CheckError {
+    kind: NoInstanceFound {
+        constraint: Id<smol_str::SmolStr>(12),
+    },
+    crumbs: [],
+}

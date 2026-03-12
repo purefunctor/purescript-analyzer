@@ -1,0 +1,37 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+testNonExhaustive :: Array Int -> Int
+testRedundant :: Array Int -> Int
+testExhaustive :: Array Int -> Int
+
+Types
+
+Errors
+CheckError {
+    kind: MissingPatterns {
+        patterns: [
+            Id<smol_str::SmolStr>(5),
+        ],
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(0),
+        ),
+    ],
+}
+CheckError {
+    kind: RedundantPatterns {
+        patterns: [
+            "[_]",
+        ],
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(1),
+        ),
+    ],
+}

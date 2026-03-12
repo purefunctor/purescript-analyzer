@@ -1,0 +1,16 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+const0 :: forall (a :: Type) (b :: Type). Const (a :: Type) (b :: Type)
+const1 :: forall (a :: Type) (b :: Type). Const (a :: Type) (b :: Type)
+const2 :: forall (a :: Type) (b :: Type). Const (a :: Type) (b :: Type)
+const3 :: forall (a :: Type) (b :: Type). Const (a :: Type) (b :: Type)
+
+Types
+Const :: Type -> Type -> Type
+
+Synonyms
+type Const a b = (a :: Type) -> (b :: Type) -> (a :: Type)

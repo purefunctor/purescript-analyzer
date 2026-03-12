@@ -1,0 +1,17 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+
+Types
+Add :: forall (k :: Type). (k :: Type) -> (k :: Type) -> (k :: Type)
++ :: forall (k :: Type). (k :: Type) -> (k :: Type) -> (k :: Type)
+Chain :: forall (k :: Type). (k :: Type) -> (k :: Type) -> (k :: Type) -> (k :: Type)
+ChainParen :: forall (k :: Type). (k :: Type) -> (k :: Type) -> (k :: Type) -> (k :: Type)
+
+Synonyms
+type Add a b = (a :: (k :: Type))
+type Chain a b c = Add @(k :: Type) (Add @(k :: Type) (a :: (k :: Type)) (b :: (k :: Type))) (c :: (k :: Type))
+type ChainParen a b c = Add @(k :: Type) (Add @(k :: Type) (a :: (k :: Type)) (b :: (k :: Type))) (c :: (k :: Type))

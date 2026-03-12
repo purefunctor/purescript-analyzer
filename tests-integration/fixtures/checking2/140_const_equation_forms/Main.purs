@@ -1,0 +1,10 @@
+module Main where
+
+const :: forall a b. a -> b -> a
+const a b = a
+
+const2 :: forall a b. a -> b -> a
+const2 a = \b -> a
+
+const3 :: forall a b. a -> b -> a
+const3 = \a b -> a

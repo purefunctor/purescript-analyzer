@@ -24,7 +24,7 @@ coverage-html:
 @integration *args="":
   cargo nextest run -p tests-integration "$@" --status-level=fail --final-status-level=fail --failure-output=final
 
-[doc("Run integration tests with snapshot diffing: checking|lowering|resolving|lsp")]
+[doc("Run integration tests with snapshot diffing: checking|checking2|lowering|resolving|lsp")]
 @t *args="":
   cargo run -q -p compiler-scripts --release -- "$@"
 
@@ -41,5 +41,5 @@ licenses:
   cargo bundle-licenses --prefer MIT -o ../THIRDPARTY.toml
 
 [doc("Format imports with module granularity")]
-format-imports:
-  cargo +nightly fmt -- --config imports_granularity=Module
+@format-imports *args="":
+  cargo +nightly fmt {{args}} -- --config imports_granularity=Module

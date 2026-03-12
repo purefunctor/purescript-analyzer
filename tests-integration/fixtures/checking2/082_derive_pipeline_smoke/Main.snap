@@ -1,0 +1,14 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Box :: Box
+test :: Boolean
+
+Types
+Box :: Type
+
+Roles
+Box = []

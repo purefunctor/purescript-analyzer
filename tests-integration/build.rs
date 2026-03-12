@@ -18,10 +18,12 @@ fn main() {
     println!("cargo::rerun-if-env-changed=LOWERING_FIXTURES_HASH");
     println!("cargo::rerun-if-env-changed=RESOLVING_FIXTURES_HASH");
     println!("cargo::rerun-if-env-changed=CHECKING_FIXTURES_HASH");
+    println!("cargo::rerun-if-env-changed=CHECKING2_FIXTURES_HASH");
     generate_lsp();
     generate_lowering();
     generate_resolving();
     generate_checking();
+    generate_checking2();
 }
 
 fn generate_lsp() {
@@ -158,6 +160,53 @@ fn run_test(folder: &str, file: &str) {{
         let Some(stem) = folder.file_stem() else { continue };
         let folder_name = stem.to_os_string().into_string().unwrap().to_snake_case();
         // Skip the prelude folder - it's shared setup, not a test
+        if folder_name == "prelude" {
+            continue;
+        }
+        writeln!(
+            buffer,
+            r#"
+#[rustfmt::skip] #[test] fn test_{folder_name}_main() {{ run_test("{folder_name}", "Main"); }}"#
+        )
+        .unwrap();
+    }
+}
+
+fn generate_checking2() {
+    let mut buffer = fs::File::create("./tests/checking2/generated.rs").unwrap();
+    writeln!(buffer, r#"// Do not edit! See build.rs
+
+#[rustfmt::skip]
+fn run_test(folder: &str, file: &str) {{
+    let path = std::path::Path::new("fixtures/checking2").join(folder);
+    let (engine, _) = tests_integration::load_compiler(&path);
+    let Some(id) = engine.module_file(file) else {{ return }};
+
+    let level = match std::env::var("TRACE_LEVEL").as_deref() {{
+        Ok("debug") => tracing::Level::DEBUG,
+        _ => tracing::Level::WARN,
+    }};
+
+    let target_dir = env!("CARGO_TARGET_TMPDIR");
+    let test_name = format!("{{}}_{{}}",  folder, file);
+    let (report, trace_path) = tests_integration::trace::with_file_trace(
+        level,
+        target_dir,
+        &test_name,
+        || tests_integration::generated::basic::report_checked2(&engine, id)
+    );
+
+    println!("trace: {{}}", trace_path.display());
+
+    let mut settings = insta::Settings::clone_current();
+    settings.set_snapshot_path(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("fixtures/checking2").join(folder));
+    settings.set_prepend_module_to_snapshot(false);
+    settings.bind(|| insta::assert_snapshot!(file, report));
+}}"#).unwrap();
+
+    for folder in read_dir(Path::new("./fixtures/checking2")) {
+        let Some(stem) = folder.file_stem() else { continue };
+        let folder_name = stem.to_os_string().into_string().unwrap().to_snake_case();
         if folder_name == "prelude" {
             continue;
         }

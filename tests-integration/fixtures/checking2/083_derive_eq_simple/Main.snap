@@ -1,0 +1,31 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Proxy :: forall (t1 :: Type) (a :: (t1 :: Type)). Proxy @(t1 :: Type) (a :: (t1 :: Type))
+MkNoEq :: NoEq
+MkContainsNoEq :: NoEq -> ContainsNoEq
+
+Types
+Proxy :: forall (t1 :: Type). (t1 :: Type) -> Type
+NoEq :: Type
+ContainsNoEq :: Type
+
+Roles
+Proxy = [Phantom]
+NoEq = []
+ContainsNoEq = []
+
+Errors
+CheckError {
+    kind: NoInstanceFound {
+        constraint: Id<smol_str::SmolStr>(8),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(4),
+        ),
+    ],
+}

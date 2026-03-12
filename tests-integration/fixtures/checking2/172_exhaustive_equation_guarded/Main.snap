@@ -1,0 +1,24 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+testGuarded :: Boolean -> Int
+testGuardedBoth :: Boolean -> Int
+
+Types
+
+Errors
+CheckError {
+    kind: MissingPatterns {
+        patterns: [
+            Id<smol_str::SmolStr>(4),
+        ],
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(0),
+        ),
+    ],
+}

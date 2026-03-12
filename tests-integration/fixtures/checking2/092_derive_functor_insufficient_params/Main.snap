@@ -1,0 +1,66 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Pair :: forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type) -> Pair (a :: Type) (b :: Type)
+Unit :: Unit
+
+Types
+Pair :: Type -> Type -> Type
+Unit :: Type
+
+Roles
+Pair = [Representational, Representational]
+Unit = []
+
+Errors
+CheckError {
+    kind: CannotUnify {
+        t1: Id<smol_str::SmolStr>(6),
+        t2: Id<smol_str::SmolStr>(7),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(1),
+        ),
+        CheckingKind(
+            AstId<syntax::cst::Type>(19),
+        ),
+    ],
+}
+CheckError {
+    kind: CannotUnify {
+        t1: Id<smol_str::SmolStr>(6),
+        t2: Id<smol_str::SmolStr>(7),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(3),
+        ),
+        CheckingKind(
+            AstId<syntax::cst::Type>(28),
+        ),
+    ],
+}
+CheckError {
+    kind: CannotDeriveForType {
+        type_message: Id<smol_str::SmolStr>(8),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(1),
+        ),
+    ],
+}
+CheckError {
+    kind: CannotDeriveForType {
+        type_message: Id<smol_str::SmolStr>(9),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(3),
+        ),
+    ],
+}

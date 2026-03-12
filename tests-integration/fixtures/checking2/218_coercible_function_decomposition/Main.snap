@@ -1,0 +1,37 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Age :: Int -> Age
+coerceFn :: (Age -> Int) -> Int -> Age
+over ::
+  forall (t :: Type) (a :: Type) (s :: Type) (b :: Type).
+    Newtype @Type (t :: Type) (a :: Type) =>
+    Newtype @Type (s :: Type) (b :: Type) =>
+    ((a :: Type) -> (t :: Type)) -> ((a :: Type) -> (b :: Type)) -> (t :: Type) -> (s :: Type)
+under ::
+  forall (t :: Type) (a :: Type) (s :: Type) (b :: Type).
+    Newtype @Type (t :: Type) (a :: Type) =>
+    Newtype @Type (s :: Type) (b :: Type) =>
+    ((a :: Type) -> (t :: Type)) -> ((t :: Type) -> (s :: Type)) -> (a :: Type) -> (b :: Type)
+alaF ::
+  forall (t14 :: Type) (f :: Type -> Type) (g :: (t14 :: Type) -> Type) (t :: Type) (a :: Type)
+    (s :: (t14 :: Type)) (b :: (t14 :: Type)).
+    Coercible @Type ((f :: Type -> Type) (t :: Type)) ((f :: Type -> Type) (a :: Type)) =>
+    Coercible @Type
+      ((g :: (t14 :: Type) -> Type) (s :: (t14 :: Type)))
+      ((g :: (t14 :: Type) -> Type) (b :: (t14 :: Type))) =>
+    Newtype @Type (t :: Type) (a :: Type) =>
+    Newtype @(t14 :: Type) (s :: (t14 :: Type)) (b :: (t14 :: Type)) =>
+    ((a :: Type) -> (t :: Type)) ->
+    ((f :: Type -> Type) (t :: Type) -> (g :: (t14 :: Type) -> Type) (s :: (t14 :: Type))) ->
+    (f :: Type -> Type) (a :: Type) ->
+    (g :: (t14 :: Type) -> Type) (b :: (t14 :: Type))
+
+Types
+Age :: Type
+
+Roles
+Age = []

@@ -1,0 +1,20 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Age :: Int -> Age
+wrapAge :: Int -> Age
+unwrapAge :: Age -> Int
+Wrapper :: forall (a :: Type). (a :: Type) -> Wrapper (a :: Type)
+wrapValue :: forall (a :: Type). (a :: Type) -> Wrapper (a :: Type)
+unwrapValue :: forall (a :: Type). Wrapper (a :: Type) -> (a :: Type)
+
+Types
+Age :: Type
+Wrapper :: Type -> Type
+
+Roles
+Age = []
+Wrapper = [Representational]

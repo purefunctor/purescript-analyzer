@@ -1,0 +1,34 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+MkBox :: Int -> Box
+MkPair :: Int -> Boolean -> Pair
+MkNoOrd :: NoOrd
+MkContainsNoOrd :: NoOrd -> ContainsNoOrd
+
+Types
+Box :: Type
+Pair :: Type
+NoOrd :: Type
+ContainsNoOrd :: Type
+
+Roles
+Box = []
+Pair = []
+NoOrd = []
+ContainsNoOrd = []
+
+Errors
+CheckError {
+    kind: NoInstanceFound {
+        constraint: Id<smol_str::SmolStr>(8),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(10),
+        ),
+    ],
+}

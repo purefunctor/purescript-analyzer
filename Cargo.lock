@@ -225,6 +225,7 @@ version = "0.1.0"
 dependencies = [
  "building-types",
  "checking",
+ "checking2",
  "files",
  "indexing",
  "interner",
@@ -237,6 +238,7 @@ dependencies = [
  "prim-constants",
  "resolving",
  "rustc-hash 2.1.1",
+ "smol_str",
  "stabilizing",
  "sugar",
  "tempfile",
@@ -323,6 +325,26 @@ dependencies = [
  "sugar",
  "syntax",
  "tracing",
+]
+
+[[package]]
+name = "checking2"
+version = "0.1.0"
+dependencies = [
+ "building-types",
+ "files",
+ "indexing",
+ "interner",
+ "itertools 0.14.0",
+ "lowering",
+ "parsing",
+ "petgraph",
+ "pretty",
+ "resolving",
+ "rustc-hash 2.1.1",
+ "smol_str",
+ "stabilizing",
+ "sugar",
 ]
 
 [[package]]
@@ -2616,6 +2638,7 @@ dependencies = [
  "analyzer",
  "async-lsp",
  "checking",
+ "checking2",
  "diagnostics",
  "files",
  "glob",

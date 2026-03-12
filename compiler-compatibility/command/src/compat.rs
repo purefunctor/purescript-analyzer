@@ -11,9 +11,8 @@ use petgraph::graphmap::DiGraphMap;
 use rayon::prelude::*;
 use url::Url;
 
-use crate::loader;
-use crate::resolver;
 use crate::types::ResolvedSet;
+use crate::{loader, resolver};
 
 /// Result of checking a single file.
 pub struct FileResult {
@@ -415,10 +414,11 @@ fn find_package_dir(packages_dir: &Path, package_name: &str) -> Option<std::path
     for entry in entries.filter_map(Result::ok) {
         let name = entry.file_name();
         let name_str = name.to_string_lossy();
-        if let Some(suffix) = name_str.strip_prefix(&prefix) {
-            if suffix.parse::<semver::Version>().is_ok() && entry.file_type().ok()?.is_dir() {
-                return entry.path().canonicalize().ok();
-            }
+        if let Some(suffix) = name_str.strip_prefix(&prefix)
+            && suffix.parse::<semver::Version>().is_ok()
+            && entry.file_type().ok()?.is_dir()
+        {
+            return entry.path().canonicalize().ok();
         }
     }
     None

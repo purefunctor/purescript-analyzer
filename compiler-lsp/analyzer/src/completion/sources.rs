@@ -732,12 +732,8 @@ fn suggestions_candidates_qualified<T: SuggestionsHelper>(
     filter: impl Filter,
     items: &mut Vec<CompletionItem>,
 ) -> Result<(), AnalyzerError> {
-    let has_prim = context
-        .resolved
-        .qualified
-        .values()
-        .flatten()
-        .any(|import| import.file == context.prim_id);
+    let has_prim =
+        context.resolved.qualified.values().flatten().any(|import| import.file == context.prim_id);
 
     let file_ids = context.files.iter_id().filter(move |&id| {
         let not_self = id != context.current_file;

@@ -245,8 +245,12 @@ fn render_pending(
 
 fn format_accept_reject_cmd(category_name: &str, filters_str: &str, action: &str) -> String {
     if filters_str.is_empty() {
-        format!("just t {} {} --all", category_name, action)
+        if action == "accept" {
+            format!("just t {} --accept --confirm", category_name)
+        } else {
+            format!("just t {} --reject", category_name)
+        }
     } else {
-        format!("just t {} {}{}", category_name, action, filters_str)
+        format!("just t {}{} --{}", category_name, filters_str, action)
     }
 }

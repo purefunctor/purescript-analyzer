@@ -1,0 +1,22 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Identity :: forall (a :: Type). (a :: Type) -> Identity (a :: Type)
+Const ::
+  forall (t3 :: Type) (e :: Type) (a :: (t3 :: Type)).
+    (e :: Type) -> Const @(t3 :: Type) (e :: Type) (a :: (t3 :: Type))
+Nothing :: forall (a :: Type). Maybe (a :: Type)
+Just :: forall (a :: Type). (a :: Type) -> Maybe (a :: Type)
+
+Types
+Identity :: Type -> Type
+Const :: forall (t3 :: Type). Type -> (t3 :: Type) -> Type
+Maybe :: Type -> Type
+
+Roles
+Identity = [Representational]
+Const = [Representational, Phantom]
+Maybe = [Representational]

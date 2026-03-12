@@ -1,0 +1,28 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+MkNoEq :: NoEq
+MkBox :: NoEq -> Box
+
+Types
+NoEq :: Type
+Box :: Type
+
+Roles
+NoEq = []
+Box = []
+
+Errors
+CheckError {
+    kind: NoInstanceFound {
+        constraint: Id<smol_str::SmolStr>(8),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(2),
+        ),
+    ],
+}

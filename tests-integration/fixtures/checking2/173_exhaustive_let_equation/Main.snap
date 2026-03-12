@@ -1,0 +1,54 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Just :: forall (a :: Type). (a :: Type) -> Maybe (a :: Type)
+Nothing :: forall (a :: Type). Maybe (a :: Type)
+test :: Int
+test2 :: Int
+
+Types
+Maybe :: Type -> Type
+
+Roles
+Maybe = [Representational]
+
+Errors
+CheckError {
+    kind: MissingPatterns {
+        patterns: [
+            Id<smol_str::SmolStr>(7),
+        ],
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(2),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(15),
+        ),
+        CheckingLetName(
+            Idx::<LetBindingNameGroup>(0),
+        ),
+    ],
+}
+CheckError {
+    kind: MissingPatterns {
+        patterns: [
+            Id<smol_str::SmolStr>(8),
+        ],
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(3),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(40),
+        ),
+        CheckingLetName(
+            Idx::<LetBindingNameGroup>(1),
+        ),
+    ],
+}

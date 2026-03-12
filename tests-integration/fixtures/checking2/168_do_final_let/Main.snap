@@ -1,0 +1,65 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+test :: Effect Int
+test' :: ?[invalid final let]
+
+Types
+
+Errors
+CheckError {
+    kind: InvalidFinalLet,
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(0),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(17),
+        ),
+        CheckingDoLet(
+            AstId<syntax::cst::DoStatement>(19),
+        ),
+    ],
+}
+CheckError {
+    kind: CannotUnify {
+        t1: Id<smol_str::SmolStr>(11),
+        t2: Id<smol_str::SmolStr>(12),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(0),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(17),
+        ),
+    ],
+}
+CheckError {
+    kind: InvalidFinalLet,
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(1),
+        ),
+        InferringExpression(
+            AstId<syntax::cst::Expression>(28),
+        ),
+        CheckingDoLet(
+            AstId<syntax::cst::DoStatement>(30),
+        ),
+    ],
+}
+CheckError {
+    kind: CannotUnify {
+        t1: Id<smol_str::SmolStr>(13),
+        t2: Id<smol_str::SmolStr>(14),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(1),
+        ),
+    ],
+}

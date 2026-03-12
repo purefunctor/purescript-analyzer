@@ -1,0 +1,44 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+MkWrap ::
+  forall (t2 :: Type) (f :: (t2 :: Type) -> Type) (a :: (t2 :: Type)).
+    (f :: (t2 :: Type) -> Type) (a :: (t2 :: Type)) ->
+    Wrap @(t2 :: Type) (f :: (t2 :: Type) -> Type) (a :: (t2 :: Type))
+MkWrapNoEq1 ::
+  forall (t5 :: Type) (f :: (t5 :: Type) -> Type) (a :: (t5 :: Type)).
+    (f :: (t5 :: Type) -> Type) (a :: (t5 :: Type)) ->
+    WrapNoEq1 @(t5 :: Type) (f :: (t5 :: Type) -> Type) (a :: (t5 :: Type))
+
+Types
+Wrap :: forall (t2 :: Type). ((t2 :: Type) -> Type) -> (t2 :: Type) -> Type
+WrapNoEq1 :: forall (t5 :: Type). ((t5 :: Type) -> Type) -> (t5 :: Type) -> Type
+
+Roles
+Wrap = [Representational, Nominal]
+WrapNoEq1 = [Representational, Nominal]
+
+Errors
+CheckError {
+    kind: NoInstanceFound {
+        constraint: Id<smol_str::SmolStr>(8),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(1),
+        ),
+    ],
+}
+CheckError {
+    kind: NoInstanceFound {
+        constraint: Id<smol_str::SmolStr>(9),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(3),
+        ),
+    ],
+}

@@ -1,0 +1,92 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Tuple :: forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type) -> Tuple (a :: Type) (b :: Type)
+Just :: forall (a :: Type). (a :: Type) -> Maybe (a :: Type)
+Nothing :: forall (a :: Type). Maybe (a :: Type)
+complete :: forall (t4 :: Type) (t3 :: Type). Tuple (Maybe (t4 :: Type)) (Maybe (t3 :: Type)) -> Int
+incomplete1 ::
+  forall (t6 :: Type) (t5 :: Type).
+    Partial => Tuple (Maybe (t6 :: Type)) (Maybe (t5 :: Type)) -> Int
+incomplete2 ::
+  forall (t8 :: Type) (t7 :: Type).
+    Partial => Tuple (Maybe (t8 :: Type)) (Maybe (t7 :: Type)) -> Int
+incomplete3 ::
+  forall (t10 :: Type) (t9 :: Type).
+    Partial => Tuple (Maybe (t10 :: Type)) (Maybe (t9 :: Type)) -> Int
+incomplete4 ::
+  forall (t12 :: Type) (t11 :: Type).
+    Partial => Tuple (Maybe (t12 :: Type)) (Maybe (t11 :: Type)) -> Int
+
+Types
+Tuple :: Type -> Type -> Type
+Maybe :: Type -> Type
+
+Roles
+Tuple = [Representational, Representational]
+Maybe = [Representational]
+
+Errors
+CheckError {
+    kind: MissingPatterns {
+        patterns: [
+            Id<smol_str::SmolStr>(8),
+        ],
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(4),
+        ),
+        InferringExpression(
+            AstId<syntax::cst::Expression>(66),
+        ),
+    ],
+}
+CheckError {
+    kind: MissingPatterns {
+        patterns: [
+            Id<smol_str::SmolStr>(9),
+        ],
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(5),
+        ),
+        InferringExpression(
+            AstId<syntax::cst::Expression>(101),
+        ),
+    ],
+}
+CheckError {
+    kind: MissingPatterns {
+        patterns: [
+            Id<smol_str::SmolStr>(10),
+        ],
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(6),
+        ),
+        InferringExpression(
+            AstId<syntax::cst::Expression>(138),
+        ),
+    ],
+}
+CheckError {
+    kind: MissingPatterns {
+        patterns: [
+            Id<smol_str::SmolStr>(11),
+        ],
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(7),
+        ),
+        InferringExpression(
+            AstId<syntax::cst::Expression>(175),
+        ),
+    ],
+}

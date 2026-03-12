@@ -1,0 +1,44 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Proxy :: forall (k :: Type) (a :: (k :: Type)). Proxy @(k :: Type) (a :: (k :: Type))
+failBasic ::
+  forall (a :: Type). Fail (Text "This operation is not allowed") => (a :: Type) -> (a :: Type)
+useFailBasic :: Int
+failComplex ::
+  forall (t4 :: Type) (a :: (t4 :: Type)).
+    Fail
+      (Above (Text "Error:") (Beside (Text "Type ") (Quote @(t4 :: Type) (a :: (t4 :: Type))))) =>
+    Proxy @(t4 :: Type) (a :: (t4 :: Type)) -> Proxy @(t4 :: Type) (a :: (t4 :: Type))
+useFailComplex :: Proxy @Type String
+
+Types
+Proxy :: forall (k :: Type). (k :: Type) -> Type
+
+Roles
+Proxy = [Phantom]
+
+Errors
+CheckError {
+    kind: CustomFailure {
+        message_id: Id<smol_str::SmolStr>(12),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(2),
+        ),
+    ],
+}
+CheckError {
+    kind: CustomFailure {
+        message_id: Id<smol_str::SmolStr>(17),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(4),
+        ),
+    ],
+}

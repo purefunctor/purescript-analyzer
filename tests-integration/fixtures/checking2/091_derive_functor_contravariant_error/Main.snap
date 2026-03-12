@@ -1,0 +1,34 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Predicate :: forall (a :: Type). ((a :: Type) -> Boolean) -> Predicate (a :: Type)
+Reader ::
+  forall (r :: Type) (a :: Type). ((r :: Type) -> (a :: Type)) -> Reader (r :: Type) (a :: Type)
+Cont ::
+  forall (r :: Type) (a :: Type).
+    (((a :: Type) -> (r :: Type)) -> (r :: Type)) -> Cont (r :: Type) (a :: Type)
+
+Types
+Predicate :: Type -> Type
+Reader :: Type -> Type -> Type
+Cont :: Type -> Type -> Type
+
+Roles
+Predicate = [Representational]
+Reader = [Representational, Representational]
+Cont = [Representational, Representational]
+
+Errors
+CheckError {
+    kind: ContravariantOccurrence {
+        type_message: Id<smol_str::SmolStr>(7),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(1),
+        ),
+    ],
+}

@@ -1,0 +1,38 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Identity :: forall (a :: Type). (a :: Type) -> Identity (a :: Type)
+Producer :: forall (a :: Type). (Int -> (a :: Type)) -> Producer (a :: Type)
+
+Types
+Identity :: Type -> Type
+Producer :: Type -> Type
+
+Roles
+Identity = [Representational]
+Producer = [Representational]
+
+Errors
+CheckError {
+    kind: CovariantOccurrence {
+        type_message: Id<smol_str::SmolStr>(6),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(1),
+        ),
+    ],
+}
+CheckError {
+    kind: CovariantOccurrence {
+        type_message: Id<smol_str::SmolStr>(7),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(3),
+        ),
+    ],
+}

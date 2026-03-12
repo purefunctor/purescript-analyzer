@@ -1,0 +1,64 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Compose ::
+  forall (t4 :: Type) (t3 :: Type) (f :: (t4 :: Type) -> Type) (g :: (t3 :: Type) -> (t4 :: Type))
+    (a :: (t3 :: Type)).
+    (f :: (t4 :: Type) -> Type) ((g :: (t3 :: Type) -> (t4 :: Type)) (a :: (t3 :: Type))) ->
+    Compose @(t4 :: Type) @(t3 :: Type)
+      (f :: (t4 :: Type) -> Type)
+      (g :: (t3 :: Type) -> (t4 :: Type))
+      (a :: (t3 :: Type))
+
+Types
+Compose ::
+  forall (t4 :: Type) (t3 :: Type).
+    ((t4 :: Type) -> Type) -> ((t3 :: Type) -> (t4 :: Type)) -> (t3 :: Type) -> Type
+
+Roles
+Compose = [Representational, Representational, Nominal]
+
+Errors
+CheckError {
+    kind: NoInstanceFound {
+        constraint: Id<smol_str::SmolStr>(9),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(1),
+        ),
+    ],
+}
+CheckError {
+    kind: NoInstanceFound {
+        constraint: Id<smol_str::SmolStr>(10),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(1),
+        ),
+    ],
+}
+CheckError {
+    kind: NoInstanceFound {
+        constraint: Id<smol_str::SmolStr>(11),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(1),
+        ),
+    ],
+}
+CheckError {
+    kind: NoInstanceFound {
+        constraint: Id<smol_str::SmolStr>(12),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(1),
+        ),
+    ],
+}

@@ -4,12 +4,11 @@ use std::iter;
 use building_types::QueryResult;
 use rustc_hash::FxHashSet;
 
-use crate::ExternalQueries;
 use crate::algorithm::constraint::{self, MatchInstance};
 use crate::algorithm::state::{CheckContext, CheckState};
 use crate::algorithm::toolkit;
 use crate::core::{RowField, RowType};
-use crate::{Type, TypeId};
+use crate::{ExternalQueries, Type, TypeId};
 
 use super::extract_symbol;
 
@@ -127,7 +126,10 @@ where
                 .storage
                 .intern(Type::Row(RowType::from_unsorted(union_fields, right_row.tail)));
 
-            Ok(Some(MatchInstance::Match { constraints: vec![], equalities: vec![(union, result)] }))
+            Ok(Some(MatchInstance::Match {
+                constraints: vec![],
+                equalities: vec![(union, result)],
+            }))
         }
         (_, Some(right_row), Some(union_row)) => {
             if right_row.tail.is_some() {

@@ -1,0 +1,28 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Just ::
+  forall (k :: Type) (n :: (k :: Type)) (a :: Type).
+    (a :: Type) -> Maybe @(k :: Type) (n :: (k :: Type)) (a :: Type)
+Nothing ::
+  forall (k :: Type) (n :: (k :: Type)) (a :: Type).
+    Maybe @(k :: Type) (n :: (k :: Type)) (a :: Type)
+MaybeAlias ::
+  forall (k :: Type) (n :: (k :: Type)) (a :: Type).
+    Maybe @(k :: Type) (n :: (k :: Type)) (a :: Type) ->
+    MaybeAlias @(k :: Type) (n :: (k :: Type)) (a :: Type)
+coerceContainer :: Container (Maybe @Type) -> Container (MaybeAlias @Type)
+coerceContainerReverse :: Container (MaybeAlias @Type) -> Container (Maybe @Type)
+
+Types
+Maybe :: forall (k :: Type). (k :: Type) -> Type -> Type
+MaybeAlias :: forall (k :: Type). (k :: Type) -> Type -> Type
+Container :: (Type -> Type -> Type) -> Type
+
+Roles
+Maybe = [Phantom, Representational]
+MaybeAlias = [Representational, Representational]
+Container = [Representational]

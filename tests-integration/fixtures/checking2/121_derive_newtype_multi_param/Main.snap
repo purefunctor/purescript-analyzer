@@ -1,0 +1,15 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Pair ::
+  forall (t2 :: Type) (a :: Type) (b :: (t2 :: Type)).
+    (a :: Type) -> Pair @(t2 :: Type) (a :: Type) (b :: (t2 :: Type))
+
+Types
+Pair :: forall (t2 :: Type). Type -> (t2 :: Type) -> Type
+
+Roles
+Pair = [Representational, Phantom]
