@@ -1,14 +1,11 @@
 //! Implements normalisation algorithms for the core representation.
 
-use std::iter;
-use std::sync::Arc;
-
 use building_types::QueryResult;
 use itertools::Itertools;
 
 use crate::context::CheckContext;
 use crate::core::substitute::{NameToType, SubstituteName};
-use crate::core::{KindOrType, RowType, Saturation, Synonym, Type, TypeId, toolkit};
+use crate::core::{KindOrType, RowType, Type, TypeId, toolkit};
 use crate::state::{CheckState, UnificationState};
 use crate::{ExternalQueries, safe_loop};
 
@@ -130,7 +127,7 @@ where
     Ok(id)
 }
 
-/// Expands [`Type::SynonymApplication`] heads.
+/// Expands synonym constructor applications.
 ///
 /// This function also applies normalisation using [`normalise`],
 /// and should be used in checking rules where synonyms must be
@@ -153,7 +150,7 @@ where
     }
 }
 
-/// Expands [`Type::SynonymApplication`] with respect to oversaturation.
+/// Expands synonym constructor applications with respect to oversaturation.
 ///
 /// In certain cases, type synonyms can be oversaturated or applied with more
 /// arguments than they're declared to accept. In the following example:
@@ -184,23 +181,19 @@ where
     Q: ExternalQueries,
 {
     let mut current = id;
-    let mut applied_arguments = vec![];
+    let mut arguments = vec![];
 
-    // Collect oversaturated arguments, in our example above, this
-    // would collect `[Int]` and `[Int, String]` into `arguments`.
-    // Additionally, these are used for Constructor-based synonyms,
-    // which occur since we don't normalise applications back into
-    // the SynonymApplication form. This will be rendered obsolete
-    // once these variants are unified.
+    // Collect application spine arguments. In the example above, this
+    // collects `[Array, Int]` and `[Tuple, Int, String]` respectively.
     safe_loop! {
         current = normalise(state, context, current)?;
         match context.lookup_type(current) {
             Type::Application(function, argument) => {
-                applied_arguments.push(KindOrType::Type(argument));
+                arguments.push(KindOrType::Type(argument));
                 current = function;
             }
             Type::KindApplication(function, argument) => {
-                applied_arguments.push(KindOrType::Kind(argument));
+                arguments.push(KindOrType::Kind(argument));
                 current = function;
             }
             _ => break,
@@ -208,21 +201,8 @@ where
     }
 
     current = normalise(state, context, current)?;
-    let ((file_id, type_id), synonym_arguments) = match context.lookup_type(current) {
-        Type::Constructor(file_id, type_id) => {
-            let reference = (file_id, type_id);
-            let arguments = [].into();
-            (reference, arguments)
-        }
-        Type::SynonymApplication(synonym_id) => {
-            let Synonym { saturation, reference, arguments } = context.lookup_synonym(synonym_id);
-
-            if saturation != Saturation::Full {
-                return Ok(id);
-            }
-
-            (reference, Arc::clone(&arguments))
-        }
+    let (file_id, type_id) = match context.lookup_type(current) {
+        Type::Constructor(file_id, type_id) => (file_id, type_id),
         _ => return Ok(id),
     };
 
@@ -233,11 +213,8 @@ where
 
     let mut bindings = NameToType::default();
     let mut kind = checked_synonym.kind;
-    let mut arguments = {
-        let synonym_arguments = synonym_arguments.iter().copied();
-        let applied_arguments = applied_arguments.iter().copied().rev();
-        iter::chain(synonym_arguments, applied_arguments)
-    };
+    arguments.reverse();
+    let mut arguments = arguments.into_iter();
 
     // Create substitutions for kind arguments. For example,
     //

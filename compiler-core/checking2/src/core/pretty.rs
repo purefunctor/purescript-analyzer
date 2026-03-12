@@ -7,8 +7,7 @@ use rustc_hash::FxHashMap;
 use smol_str::{SmolStr, SmolStrBuilder};
 
 use crate::core::{
-    ForallBinder, ForallBinderId, KindOrType, Name, RowField, RowType, RowTypeId, SmolStrId,
-    Synonym, SynonymId, Type, TypeId,
+    ForallBinder, ForallBinderId, Name, RowField, RowType, RowTypeId, SmolStrId, Type, TypeId,
 };
 use crate::{CheckedModule, ExternalQueries};
 
@@ -96,10 +95,6 @@ where
         self.queries.lookup_row_type(id)
     }
 
-    fn lookup_synonym(&self, id: SynonymId) -> Synonym {
-        self.queries.lookup_synonym(id)
-    }
-
     fn lookup_smol_str(&self, id: SmolStrId) -> smol_str::SmolStr {
         self.queries.lookup_smol_str(id)
     }
@@ -141,39 +136,6 @@ where
 
             Type::KindApplication(function, argument) => {
                 self.traverse_kind_application(precedence, function, argument)
-            }
-
-            Type::SynonymApplication(synonym_id) => {
-                let synonym = self.lookup_synonym(synonym_id);
-                let (file_id, type_id) = synonym.reference;
-                let function = self
-                    .lookup_type_name(file_id, type_id)
-                    .unwrap_or_else(|| "<InvalidName>".to_string());
-
-                if synonym.arguments.is_empty() {
-                    return self.arena.text(function);
-                }
-
-                let function = self.arena.text(function);
-
-                let arguments = synonym
-                    .arguments
-                    .iter()
-                    .map(|application| match application {
-                        KindOrType::Kind(argument) => {
-                            self.arena.text("@").append(self.traverse(Precedence::Atom, *argument))
-                        }
-                        KindOrType::Type(argument) => self.traverse(Precedence::Atom, *argument),
-                    })
-                    .collect_vec();
-
-                let arguments =
-                    arguments.into_iter().fold(self.arena.nil(), |builder, argument| {
-                        builder.append(self.arena.line()).append(argument)
-                    });
-
-                let synonym = function.append(arguments.nest(2)).group();
-                self.parens_if(precedence > Precedence::Application, synonym)
             }
 
             Type::Forall(binder_id, inner) => self.traverse_forall(precedence, binder_id, inner),

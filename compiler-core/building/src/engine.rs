@@ -898,16 +898,6 @@ impl checking2::ExternalQueries for QueryEngine {
         storage.interned.checking2.lookup_row_type(id)
     }
 
-    fn intern_synonym(&self, synonym: checking2::core::Synonym) -> checking2::core::SynonymId {
-        let mut storage = self.storage.write();
-        storage.interned.checking2.intern_synonym(synonym)
-    }
-
-    fn lookup_synonym(&self, id: checking2::core::SynonymId) -> checking2::core::Synonym {
-        let storage = self.storage.read();
-        storage.interned.checking2.lookup_synonym(id)
-    }
-
     fn intern_smol_str(&self, s: smol_str::SmolStr) -> checking2::core::SmolStrId {
         let mut storage = self.storage.write();
         storage.interned.checking2.intern_smol_str(s)

@@ -1,5 +1,4 @@
 use std::iter;
-use std::sync::Arc;
 
 use building_types::QueryResult;
 use files::FileId;
@@ -10,7 +9,7 @@ use crate::context::CheckContext;
 use crate::core::constraint::MatchInstance;
 use crate::core::substitute::SubstituteName;
 use crate::core::unification::{CanUnify, can_unify};
-use crate::core::{KindOrType, Role, Type, TypeId, normalise, toolkit};
+use crate::core::{Role, Type, TypeId, normalise, toolkit};
 use crate::error::ErrorKind;
 use crate::source::types;
 use crate::state::CheckState;
@@ -430,31 +429,6 @@ where
             let t2_binder = context.lookup_forall_binder(t2_binder_id);
             Ok(try_refl(state, context, t1_binder.kind, t2_binder.kind)?
                 && try_refl(state, context, t1_inner, t2_inner)?)
-        }
-
-        (Type::SynonymApplication(t1_synonym_id), Type::SynonymApplication(t2_synonym_id)) => {
-            let t1_synonym = context.lookup_synonym(t1_synonym_id);
-            let t2_synonym = context.lookup_synonym(t2_synonym_id);
-            if t1_synonym.reference != t2_synonym.reference
-                || t1_synonym.arguments.len() != t2_synonym.arguments.len()
-            {
-                return Ok(false);
-            }
-            let t1_arguments = Arc::clone(&t1_synonym.arguments);
-            let t2_arguments = Arc::clone(&t2_synonym.arguments);
-            for (t1_argument, t2_argument) in iter::zip(t1_arguments.iter(), t2_arguments.iter()) {
-                let equivalent = match (t1_argument, t2_argument) {
-                    (KindOrType::Kind(t1_kind), KindOrType::Kind(t2_kind))
-                    | (KindOrType::Type(t1_kind), KindOrType::Type(t2_kind)) => {
-                        try_refl(state, context, *t1_kind, *t2_kind)?
-                    }
-                    _ => false,
-                };
-                if !equivalent {
-                    return Ok(false);
-                }
-            }
-            Ok(true)
         }
 
         (Type::Row(t1_row_id), Type::Row(t2_row_id)) => {

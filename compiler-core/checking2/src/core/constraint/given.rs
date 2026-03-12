@@ -5,7 +5,7 @@ use itertools::Itertools;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::{KindOrType, Type, TypeId, normalise};
+use crate::core::{Type, TypeId, normalise};
 use crate::state::CheckState;
 
 use super::{
@@ -213,30 +213,6 @@ where
             Type::KindApplication(given_function, given_argument),
         ) => match_given_type(state, context, wanted_function, given_function)?
             .and_then(|| match_given_type(state, context, wanted_argument, given_argument)),
-
-        (Type::SynonymApplication(wanted_synonym), Type::SynonymApplication(given_synonym)) => {
-            let wanted_synonym = context.lookup_synonym(wanted_synonym);
-            let given_synonym = context.lookup_synonym(given_synonym);
-
-            if wanted_synonym.reference != given_synonym.reference
-                || wanted_synonym.arguments.len() != given_synonym.arguments.len()
-            {
-                return Ok(MatchType::Apart);
-            }
-
-            iter::zip(wanted_synonym.arguments.iter(), given_synonym.arguments.iter()).try_fold(
-                MatchType::Match,
-                |result, (wanted_argument, given_argument)| {
-                    result.and_then(|| match (wanted_argument, given_argument) {
-                        (KindOrType::Kind(wanted_kind), KindOrType::Kind(given_kind))
-                        | (KindOrType::Type(wanted_kind), KindOrType::Type(given_kind)) => {
-                            match_given_type(state, context, *wanted_kind, *given_kind)
-                        }
-                        _ => Ok(MatchType::Apart),
-                    })
-                },
-            )
-        }
 
         _ => Ok(MatchType::Apart),
     }

@@ -1,6 +1,5 @@
 //! Implements the subtyping and unification algorithms.
 
-use std::iter;
 use std::sync::Arc;
 
 use building_types::QueryResult;
@@ -10,7 +9,7 @@ use smol_str::SmolStr;
 use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::substitute::SubstituteName;
-use crate::core::{Depth, KindOrType, Name, RowField, RowType, RowTypeId, Type, TypeId, normalise};
+use crate::core::{Depth, Name, RowField, RowType, RowTypeId, Type, TypeId, normalise};
 use crate::error::ErrorKind;
 use crate::source::types;
 use crate::state::{CheckState, UnificationEntry};
@@ -449,30 +448,6 @@ where
                 .and_then(|| can_unify(state, context, t1_inner, t2_inner))
         }
 
-        (Type::SynonymApplication(t1_synonym), Type::SynonymApplication(t2_synonym)) => {
-            let t1_synonym = context.lookup_synonym(t1_synonym);
-            let t2_synonym = context.lookup_synonym(t2_synonym);
-
-            if t1_synonym.reference != t2_synonym.reference
-                || t1_synonym.arguments.len() != t2_synonym.arguments.len()
-            {
-                return Ok(CanUnify::Apart);
-            }
-
-            iter::zip(&*t1_synonym.arguments, &*t2_synonym.arguments).try_fold(
-                CanUnify::Equal,
-                |result, (a1, a2)| {
-                    result.and_then(|| match (a1, a2) {
-                        (KindOrType::Kind(a1), KindOrType::Kind(a2))
-                        | (KindOrType::Type(a1), KindOrType::Type(a2)) => {
-                            can_unify(state, context, *a1, *a2)
-                        }
-                        _ => Ok(CanUnify::Apart),
-                    })
-                },
-            )
-        }
-
         _ => Ok(CanUnify::Apart),
     }
 }
@@ -574,20 +549,6 @@ where
             Type::Application(function, argument) | Type::KindApplication(function, argument) => {
                 check(promote, state, context, function)?
                     .and_then(|| check(promote, state, context, argument))
-            }
-
-            Type::SynonymApplication(synonym_id) => {
-                let synonym = context.lookup_synonym(synonym_id);
-                for application in synonym.arguments.iter() {
-                    let argument = match application {
-                        KindOrType::Kind(argument) | KindOrType::Type(argument) => *argument,
-                    };
-                    let result = check(promote, state, context, argument)?;
-                    if !matches!(result, PromoteResult::Ok) {
-                        return Ok(result);
-                    }
-                }
-                Ok(PromoteResult::Ok)
             }
 
             Type::Forall(binder_id, inner) => {

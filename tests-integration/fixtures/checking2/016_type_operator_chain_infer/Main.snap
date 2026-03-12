@@ -17,13 +17,9 @@ ChainParen ::
 
 Synonyms
 type Add a b = (a :: (t3 :: Type))
-type Chain a b c = Add
-  @(t9 :: Type)
-  @(t7 :: Type)
+type Chain a b c = Add @(t9 :: Type) @(t7 :: Type)
   (Add @(t9 :: Type) @(t8 :: Type) (a :: (t9 :: Type)) (b :: (t8 :: Type)))
   (c :: (t7 :: Type))
-type ChainParen a b c = Add
-  @(t15 :: Type)
-  @(t13 :: Type)
+type ChainParen a b c = Add @(t15 :: Type) @(t13 :: Type)
   (Add @(t15 :: Type) @(t14 :: Type) (a :: (t15 :: Type)) (b :: (t14 :: Type)))
   (c :: (t13 :: Type))

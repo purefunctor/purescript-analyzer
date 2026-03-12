@@ -2,16 +2,13 @@ use std::ops;
 
 use smol_str::SmolStr;
 
-use crate::core::{
-    ForallBinder, ForallBinderId, RowType, RowTypeId, Synonym, SynonymId, Type, TypeId,
-};
+use crate::core::{ForallBinder, ForallBinderId, RowType, RowTypeId, Type, TypeId};
 
 #[derive(Default)]
 pub struct CoreInterners {
     types: interner::Interner<Type>,
     forall_binders: interner::Interner<ForallBinder>,
     row_types: interner::Interner<RowType>,
-    synonyms: interner::Interner<Synonym>,
     smol_strs: interner::Interner<SmolStr>,
 }
 
@@ -38,14 +35,6 @@ impl CoreInterners {
 
     pub fn lookup_row_type(&self, id: RowTypeId) -> RowType {
         self.row_types[id].clone()
-    }
-
-    pub fn intern_synonym(&mut self, s: Synonym) -> SynonymId {
-        self.synonyms.intern(s)
-    }
-
-    pub fn lookup_synonym(&self, id: SynonymId) -> Synonym {
-        self.synonyms[id].clone()
     }
 
     pub fn intern_smol_str(&mut self, s: SmolStr) -> crate::core::SmolStrId {
@@ -78,13 +67,5 @@ impl ops::Index<RowTypeId> for CoreInterners {
 
     fn index(&self, id: RowTypeId) -> &RowType {
         &self.row_types[id]
-    }
-}
-
-impl ops::Index<SynonymId> for CoreInterners {
-    type Output = Synonym;
-
-    fn index(&self, id: SynonymId) -> &Synonym {
-        &self.synonyms[id]
     }
 }

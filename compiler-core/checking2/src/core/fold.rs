@@ -5,7 +5,7 @@ use std::sync::Arc;
 use building_types::QueryResult;
 
 use crate::context::CheckContext;
-use crate::core::{ForallBinder, KindOrType, Type, TypeId, normalise};
+use crate::core::{ForallBinder, Type, TypeId, normalise};
 use crate::state::CheckState;
 use crate::{ExternalQueries, safe_loop};
 
@@ -68,23 +68,6 @@ where
             let function = fold_type(state, context, function, folder)?;
             let argument = fold_type(state, context, argument, folder)?;
             context.intern_kind_application(function, argument)
-        }
-        Type::SynonymApplication(synonym_id) => {
-            let mut synonym = context.lookup_synonym(synonym_id);
-            synonym.arguments = synonym
-                .arguments
-                .iter()
-                .map(|application| match application {
-                    KindOrType::Kind(argument) => {
-                        fold_type(state, context, *argument, folder).map(KindOrType::Kind)
-                    }
-                    KindOrType::Type(argument) => {
-                        fold_type(state, context, *argument, folder).map(KindOrType::Type)
-                    }
-                })
-                .collect::<QueryResult<_>>()?;
-            let synonym_id = context.intern_synonym(synonym);
-            context.intern_synonym_application(synonym_id)
         }
         Type::Forall(binder_id, inner) => {
             let mut binder = context.lookup_forall_binder(binder_id);

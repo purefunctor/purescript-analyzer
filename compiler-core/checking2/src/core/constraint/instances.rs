@@ -12,7 +12,7 @@ use crate::core::substitute::SubstituteName;
 use crate::core::unification::{CanUnify, can_unify};
 use crate::core::walk::{TypeWalker, WalkAction, walk_type};
 use crate::core::{
-    CheckedInstance, KindOrType, Name, RowField, RowType, Type, TypeId, normalise, toolkit,
+    CheckedInstance, Name, RowField, RowType, Type, TypeId, normalise, toolkit,
 };
 use crate::error::ErrorKind;
 use crate::state::CheckState;
@@ -353,37 +353,6 @@ where
         (Type::Kinded(wanted_inner, wanted_kind), Type::Kinded(given_inner, given_kind)) => {
             match_type(state, context, bindings, equalities, wanted_inner, given_inner)?.and_then(
                 || match_type(state, context, bindings, equalities, wanted_kind, given_kind),
-            )
-        }
-
-        (Type::SynonymApplication(wanted_synonym), Type::SynonymApplication(given_synonym)) => {
-            let wanted_synonym = context.lookup_synonym(wanted_synonym);
-            let given_synonym = context.lookup_synonym(given_synonym);
-
-            if wanted_synonym.reference != given_synonym.reference
-                || wanted_synonym.arguments.len() != given_synonym.arguments.len()
-            {
-                return Ok(MatchType::Apart);
-            }
-
-            iter::zip(wanted_synonym.arguments.iter(), given_synonym.arguments.iter()).try_fold(
-                MatchType::Match,
-                |result, (wanted_argument, given_argument)| {
-                    result.and_then(|| match (wanted_argument, given_argument) {
-                        (KindOrType::Kind(wanted_kind), KindOrType::Kind(given_kind))
-                        | (KindOrType::Type(wanted_kind), KindOrType::Type(given_kind)) => {
-                            match_type(
-                                state,
-                                context,
-                                bindings,
-                                equalities,
-                                *wanted_kind,
-                                *given_kind,
-                            )
-                        }
-                        _ => Ok(MatchType::Apart),
-                    })
-                },
             )
         }
 

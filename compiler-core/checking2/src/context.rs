@@ -15,7 +15,7 @@ use sugar::{Bracketed, Sectioned};
 
 use crate::ExternalQueries;
 use crate::core::{
-    Depth, ForallBinder, ForallBinderId, Name, RowType, RowTypeId, Synonym, SynonymId, Type, TypeId,
+    Depth, ForallBinder, ForallBinderId, Name, RowType, RowTypeId, Type, TypeId,
 };
 
 /// The read-only environment threaded through the type checking algorithm.
@@ -136,11 +136,6 @@ where
         self.queries.intern_type(Type::KindApplication(function, argument))
     }
 
-    /// Interns a [`Type::SynonymApplication`] node.
-    pub fn intern_synonym_application(&self, synonym_id: SynonymId) -> TypeId {
-        self.queries.intern_type(Type::SynonymApplication(synonym_id))
-    }
-
     /// Interns a [`Type::Forall`] node.
     pub fn intern_forall(&self, binder_id: ForallBinderId, inner: TypeId) -> TypeId {
         self.queries.intern_type(Type::Forall(binder_id, inner))
@@ -219,11 +214,6 @@ where
         self.queries.lookup_row_type(id)
     }
 
-    /// Looks up the [`Synonym`] for the given [`SynonymId`].
-    pub fn lookup_synonym(&self, id: SynonymId) -> Synonym {
-        self.queries.lookup_synonym(id)
-    }
-
     /// Interns a [`ForallBinder`], returning its [`ForallBinderId`].
     pub fn intern_forall_binder(&self, binder: ForallBinder) -> ForallBinderId {
         self.queries.intern_forall_binder(binder)
@@ -234,10 +224,6 @@ where
         self.queries.intern_row_type(row)
     }
 
-    /// Interns a [`Synonym`], returning its [`SynonymId`].
-    pub fn intern_synonym(&self, synonym: Synonym) -> SynonymId {
-        self.queries.intern_synonym(synonym)
-    }
 }
 
 struct PrimLookup<'r, 'q, Q>

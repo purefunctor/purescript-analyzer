@@ -10,7 +10,7 @@ use itertools::Itertools;
 use crate::context::CheckContext;
 use crate::core::substitute::SubstituteName;
 use crate::core::{
-    CheckedSynonym, KindOrType, Saturation, Synonym, Type, TypeId, normalise, toolkit, unification,
+    CheckedSynonym, KindOrType, Type, TypeId, normalise, toolkit, unification,
 };
 use crate::error::ErrorKind;
 use crate::source::types;
@@ -85,14 +85,7 @@ where
         state.insert_error(ErrorKind::RecursiveSynonymExpansion { file_id, type_id });
     }
 
-    let synonym = Synonym {
-        saturation: Saturation::Full,
-        reference: (file_id, type_id),
-        arguments: Arc::default(),
-    };
-
-    let synonym_id = context.intern_synonym(synonym);
-    let synonym_type = context.intern_synonym_application(synonym_id);
+    let synonym_type = context.queries.intern_type(Type::Constructor(file_id, type_id));
 
     Ok((synonym_type, kind))
 }
@@ -192,18 +185,8 @@ where
     let function_type = context.queries.intern_type(Type::Constructor(file_id, type_id));
     let (synonym_arguments, excess_arguments) = arguments.split_at(arity);
 
-    let (applications, (_, synonym_kind)) =
+    let (_, (mut synonym_type, mut synonym_kind)) =
         collect_synonym_applications(state, context, (function_type, kind), synonym_arguments)?;
-
-    let synonym = Synonym {
-        saturation: Saturation::Full,
-        reference: (file_id, type_id),
-        arguments: Arc::from(applications),
-    };
-
-    let synonym_id = context.intern_synonym(synonym);
-    let mut synonym_type = context.intern_synonym_application(synonym_id);
-    let mut synonym_kind = synonym_kind;
 
     for &argument in excess_arguments {
         let mut applications = vec![];
@@ -232,17 +215,8 @@ where
     let function_type = context.queries.intern_type(Type::Constructor(file_id, type_id));
     let arguments = arguments.iter().copied().map(Argument::Syntax).collect_vec();
 
-    let (applications, (_, synonym_kind)) =
+    let (_, (synonym_type, synonym_kind)) =
         collect_synonym_applications(state, context, (function_type, kind), &arguments)?;
-
-    let synonym = Synonym {
-        saturation: Saturation::Partial,
-        reference: (file_id, type_id),
-        arguments: Arc::from(applications),
-    };
-
-    let synonym_id = context.intern_synonym(synonym);
-    let synonym_type = context.intern_synonym_application(synonym_id);
 
     Ok((synonym_type, synonym_kind))
 }

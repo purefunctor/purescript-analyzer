@@ -84,30 +84,10 @@ pub struct RowField {
     pub id: TypeId,
 }
 
-/// The saturation of a synonym application.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum Saturation {
-    /// Fully applied synonym.
-    Full,
-    /// Partially applied synonym.
-    Partial,
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum KindOrType {
     Kind(TypeId),
     Type(TypeId),
-}
-
-/// Represents a type synonym.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Synonym {
-    /// Whether fully or partially applied.
-    pub saturation: Saturation,
-    /// The reference to the synonym type.
-    pub reference: (FileId, TypeItemId),
-    /// Kind and type arguments to the synonym constructor.
-    pub arguments: Arc<[KindOrType]>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -159,8 +139,6 @@ pub enum Type {
     Application(TypeId, TypeId),
     /// Kind application, `Proxy @Int`.
     KindApplication(TypeId, TypeId),
-    /// Type synonym application, see [`Synonym`].
-    SynonymApplication(SynonymId),
 
     /// A universally quantified type, `forall a. a -> a`.
     Forall(ForallBinderId, TypeId),
@@ -202,6 +180,5 @@ pub enum Role {
 
 pub type ForallBinderId = interner::Id<ForallBinder>;
 pub type RowTypeId = interner::Id<RowType>;
-pub type SynonymId = interner::Id<Synonym>;
 pub type SmolStrId = interner::Id<SmolStr>;
 pub type TypeId = interner::Id<Type>;

@@ -8,7 +8,7 @@ use smol_str::SmolStr;
 use crate::context::CheckContext;
 use crate::core::substitute::SubstituteName;
 use crate::core::{
-    ForallBinder, KindOrType, RowField, RowType, Type, TypeId, normalise, toolkit, unification,
+    ForallBinder, RowField, RowType, Type, TypeId, normalise, toolkit, unification,
 };
 use crate::error::ErrorCrumb;
 use crate::source::{operator, synonym};
@@ -573,36 +573,6 @@ where
             }
 
             context.intern_application(context.prim.row, field_kind)
-        }
-
-        Type::SynonymApplication(synonym_id) => {
-            let synonym = context.lookup_synonym(synonym_id);
-            let (file_id, type_id) = synonym.reference;
-            let arguments = Arc::clone(&synonym.arguments);
-
-            let mut synonym_kind = toolkit::lookup_file_type(state, context, file_id, type_id)?;
-
-            for application in arguments.iter() {
-                synonym_kind = normalise::normalise(state, context, synonym_kind)?;
-                match (application, context.lookup_type(synonym_kind)) {
-                    (KindOrType::Kind(argument), Type::Forall(binder_id, inner_kind)) => {
-                        let binder = context.lookup_forall_binder(binder_id);
-                        synonym_kind = SubstituteName::one(
-                            state,
-                            context,
-                            binder.name,
-                            *argument,
-                            inner_kind,
-                        )?;
-                    }
-                    (KindOrType::Type(_), Type::Function(_, result_kind)) => {
-                        synonym_kind = result_kind;
-                    }
-                    _ => return Ok(unknown),
-                }
-            }
-
-            synonym_kind
         }
 
         Type::Unification(unification_id) => state.unifications.get(unification_id).kind,

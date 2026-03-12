@@ -20,7 +20,7 @@ use smol_str::SmolStr;
 
 use crate::core::{
     CheckedClass, CheckedInstance, CheckedSynonym, ForallBinder, ForallBinderId, Name, Role,
-    RowType, RowTypeId, SmolStrId, Synonym, SynonymId, Type, TypeId,
+    RowType, RowTypeId, SmolStrId, Type, TypeId,
 };
 use crate::error::CheckError;
 
@@ -46,9 +46,6 @@ pub trait ExternalQueries:
 
     fn intern_row_type(&self, r: RowType) -> RowTypeId;
     fn lookup_row_type(&self, id: RowTypeId) -> RowType;
-
-    fn intern_synonym(&self, s: Synonym) -> SynonymId;
-    fn lookup_synonym(&self, id: SynonymId) -> Synonym;
 
     fn intern_smol_str(&self, s: SmolStr) -> core::SmolStrId;
     fn lookup_smol_str(&self, id: core::SmolStrId) -> SmolStr;
