@@ -11,9 +11,7 @@ use crate::context::CheckContext;
 use crate::core::substitute::SubstituteName;
 use crate::core::unification::{CanUnify, can_unify};
 use crate::core::walk::{TypeWalker, WalkAction, walk_type};
-use crate::core::{
-    CheckedInstance, Name, RowField, RowType, Type, TypeId, normalise, toolkit,
-};
+use crate::core::{CheckedInstance, Name, RowField, RowType, Type, TypeId, normalise, toolkit};
 use crate::error::ErrorKind;
 use crate::state::CheckState;
 use crate::{CheckedModule, ExternalQueries};

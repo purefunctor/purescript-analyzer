@@ -1,5 +1,7 @@
 //! Implements syntax-driven checking rules for types.
 
+pub mod application;
+
 use std::sync::Arc;
 
 use building_types::QueryResult;
@@ -7,9 +9,7 @@ use smol_str::SmolStr;
 
 use crate::context::CheckContext;
 use crate::core::substitute::SubstituteName;
-use crate::core::{
-    ForallBinder, RowField, RowType, Type, TypeId, normalise, toolkit, unification,
-};
+use crate::core::{ForallBinder, RowField, RowType, Type, TypeId, normalise, toolkit, unification};
 use crate::error::ErrorCrumb;
 use crate::source::{operator, synonym};
 use crate::state::CheckState;
@@ -388,65 +388,16 @@ pub fn infer_application_kind<Q>(
 where
     Q: ExternalQueries,
 {
-    let function_kind = normalise::normalise(state, context, function_kind)?;
+    let ((result_type, result_kind), _) = application::infer_application_kind(
+        state,
+        context,
+        (function_type, function_kind),
+        application::Argument::Syntax(argument),
+        application::Options::TYPES,
+        application::Records::Ignore,
+    )?;
 
-    match context.lookup_type(function_kind) {
-        Type::Function(argument_kind, result_kind) => {
-            let (argument_type, _) = check_kind(state, context, argument, argument_kind)?;
-
-            let result_type = context.intern_application(function_type, argument_type);
-            let result_kind = normalise::normalise(state, context, result_kind)?;
-
-            Ok((result_type, result_kind))
-        }
-
-        Type::Unification(unification_id) => {
-            let argument_kind = state.fresh_unification(context.queries, context.prim.t);
-            let result_kind = state.fresh_unification(context.queries, context.prim.t);
-
-            let function = context.intern_function(argument_kind, result_kind);
-            unification::solve(state, context, function_kind, unification_id, function)?;
-
-            let (argument_type, _) = check_kind(state, context, argument, argument_kind)?;
-
-            let result_type = context.intern_application(function_type, argument_type);
-            let result_kind = normalise::normalise(state, context, result_kind)?;
-
-            Ok((result_type, result_kind))
-        }
-
-        Type::Forall(binder_id, inner_kind) => {
-            let binder = context.lookup_forall_binder(binder_id);
-            let binder_kind = normalise::normalise(state, context, binder.kind)?;
-
-            let kind_argument = state.fresh_unification(context.queries, binder_kind);
-            let function_type = context.intern_kind_application(function_type, kind_argument);
-            let function_kind =
-                SubstituteName::one(state, context, binder.name, kind_argument, inner_kind)?;
-
-            infer_application_kind(state, context, (function_type, function_kind), argument)
-        }
-
-        _ => {
-            // Even if the function type cannot be applied, the argument must
-            // still be inferred. For invalid applications on instance heads,
-            // this ensures that implicit variables are bound.
-            let (argument_type, _) = infer_kind(state, context, argument)?;
-
-            let result_type = context.intern_application(function_type, argument_type);
-            let result_kind = context.unknown("cannot apply function type");
-
-            toolkit::report_invalid_type_application(
-                state,
-                context,
-                function_type,
-                function_kind,
-                argument_type,
-            )?;
-
-            Ok((result_type, result_kind))
-        }
-    }
+    Ok((result_type, result_kind))
 }
 
 fn infer_row_kind<Q>(

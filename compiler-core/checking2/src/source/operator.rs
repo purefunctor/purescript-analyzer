@@ -8,11 +8,11 @@ use sugar::OperatorTree;
 use sugar::bracketing::BracketingResult;
 
 use crate::context::CheckContext;
-use crate::core::substitute::SubstituteName;
 use crate::core::{Type, TypeId, normalise, toolkit, unification};
+use crate::source::types::application;
 use crate::source::{binder, synonym, terms, types};
 use crate::state::CheckState;
-use crate::{ExternalQueries, OperatorBranchTypes, safe_loop};
+use crate::{ExternalQueries, OperatorBranchTypes};
 
 #[derive(Copy, Clone, Debug)]
 enum OperatorKindMode {
@@ -398,12 +398,24 @@ impl<Q: ExternalQueries> IsOperator<Q> for lowering::TypeId {
             return Ok((elaborated_type, result_kind));
         }
 
-        let function_type =
-            context.queries.intern_type(Type::Constructor(target_file_id, target_item_id));
-        let (function_type, function_kind) =
-            apply_type_argument(state, context, (function_type, operator_kind), left, left_kind)?;
-        let (elaborated_type, _) =
-            apply_type_argument(state, context, (function_type, function_kind), right, right_kind)?;
+        let function_type = Type::Constructor(target_file_id, target_item_id);
+        let function_type = context.queries.intern_type(function_type);
+
+        let function: application::FnTypeKind = (function_type, operator_kind);
+        let arguments = [
+            application::Argument::Core(left, left_kind),
+            application::Argument::Core(right, right_kind),
+        ];
+
+        let ((elaborated_type, _), _) = application::infer_application_arguments(
+            state,
+            context,
+            function,
+            &arguments,
+            application::Options::OPERATOR,
+            application::Records::Ignore,
+        )?;
+
         let result_kind = normalise::normalise(state, context, result_kind)?;
         Ok((elaborated_type, result_kind))
     }
@@ -494,57 +506,5 @@ impl<Q: ExternalQueries> IsOperator<Q> for lowering::BinderId {
             .nodes
             .term_operator
             .insert(operator_id, OperatorBranchTypes { left, right, result });
-    }
-}
-
-fn apply_type_argument<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    (mut function_type, mut function_kind): (TypeId, TypeId),
-    argument_type: TypeId,
-    argument_kind: TypeId,
-) -> QueryResult<(TypeId, TypeId)>
-where
-    Q: ExternalQueries,
-{
-    safe_loop! {
-        function_kind = normalise::normalise(state, context, function_kind)?;
-        match context.lookup_type(function_kind) {
-            Type::Function(expected_kind, result_kind) => {
-                unification::subtype(state, context, argument_kind, expected_kind)?;
-                let result_type = context.intern_application(function_type, argument_type);
-                let result_kind = normalise::normalise(state, context, result_kind)?;
-                return Ok((result_type, result_kind));
-            }
-
-            Type::Unification(unification_id) => {
-                let result_kind = state.fresh_unification(context.queries, context.prim.t);
-                let function_type = context.intern_function(argument_kind, result_kind);
-                unification::solve(state, context, function_kind, unification_id, function_type)?;
-                function_kind = result_kind;
-            }
-
-            Type::Forall(binder_id, inner_kind) => {
-                let binder = context.lookup_forall_binder(binder_id);
-                let binder_kind = normalise::normalise(state, context, binder.kind)?;
-                let kind_argument = state.fresh_unification(context.queries, binder_kind);
-                function_type = context.intern_kind_application(function_type, kind_argument);
-                function_kind =
-                    SubstituteName::one(state, context, binder.name, kind_argument, inner_kind)?;
-            }
-
-            _ => {
-                let invalid_type = context.intern_application(function_type, argument_type);
-                toolkit::report_invalid_type_application(
-                    state,
-                    context,
-                    function_type,
-                    function_kind,
-                    argument_type,
-                )?;
-                let unknown_kind = context.unknown("cannot apply operator type");
-                return Ok((invalid_type, unknown_kind));
-            }
-        }
     }
 }

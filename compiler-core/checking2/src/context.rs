@@ -14,9 +14,7 @@ use stabilizing::StabilizedModule;
 use sugar::{Bracketed, Sectioned};
 
 use crate::ExternalQueries;
-use crate::core::{
-    Depth, ForallBinder, ForallBinderId, Name, RowType, RowTypeId, Type, TypeId,
-};
+use crate::core::{Depth, ForallBinder, ForallBinderId, Name, RowType, RowTypeId, Type, TypeId};
 
 /// The read-only environment threaded through the type checking algorithm.
 ///
@@ -223,7 +221,6 @@ where
     pub fn intern_row_type(&self, row: RowType) -> RowTypeId {
         self.queries.intern_row_type(row)
     }
-
 }
 
 struct PrimLookup<'r, 'q, Q>
