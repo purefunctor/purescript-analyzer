@@ -5,7 +5,7 @@ use indexing::TypeItemId;
 use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::substitute::SubstituteName;
-use crate::core::{Name, Type, TypeId, normalise, toolkit};
+use crate::core::{KindOrType, Name, Type, TypeId, normalise, toolkit};
 use crate::error::ErrorKind;
 use crate::state::CheckState;
 
@@ -95,7 +95,7 @@ fn extract_fields_with_rigids<Q>(
 where
     Q: ExternalQueries,
 {
-    let (_, arguments) = toolkit::extract_type_application(state, context, derived_type)?;
+    let (_, arguments) = toolkit::extract_all_applications(state, context, derived_type)?;
     let mut arguments = arguments.iter().copied();
     let mut current = constructor_t;
     let mut names = vec![];
@@ -107,14 +107,19 @@ where
         };
 
         let binder = context.lookup_forall_binder(binder_id);
-        let replacement = arguments.next().unwrap_or_else(|| {
-            let rigid = state.fresh_rigid(context.queries, binder.kind);
-            let Type::Rigid(name, _, _) = context.lookup_type(rigid) else {
-                unreachable!("fresh_rigid must create Type::Rigid")
-            };
-            names.push(name);
-            rigid
-        });
+        let replacement = arguments
+            .next()
+            .map(|argument| match argument {
+                KindOrType::Kind(argument) | KindOrType::Type(argument) => argument,
+            })
+            .unwrap_or_else(|| {
+                let rigid = state.fresh_rigid(context.queries, binder.kind);
+                let Type::Rigid(name, _, _) = context.lookup_type(rigid) else {
+                    unreachable!("fresh_rigid must create Type::Rigid")
+                };
+                names.push(name);
+                rigid
+            });
 
         current = SubstituteName::one(state, context, binder.name, replacement, inner)?;
     }

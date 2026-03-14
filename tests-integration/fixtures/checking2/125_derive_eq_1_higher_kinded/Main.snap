@@ -28,16 +28,6 @@ CheckError {
     },
     crumbs: [
         TermDeclaration(
-            Idx::<TermItem>(1),
-        ),
-    ],
-}
-CheckError {
-    kind: NoInstanceFound {
-        constraint: Id<smol_str::SmolStr>(9),
-    },
-    crumbs: [
-        TermDeclaration(
             Idx::<TermItem>(3),
         ),
     ],

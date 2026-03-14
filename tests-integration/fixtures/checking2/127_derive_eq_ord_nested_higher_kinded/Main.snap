@@ -45,7 +45,7 @@ CheckError {
     },
     crumbs: [
         TermDeclaration(
-            Idx::<TermItem>(1),
+            Idx::<TermItem>(2),
         ),
     ],
 }
@@ -55,33 +55,13 @@ CheckError {
     },
     crumbs: [
         TermDeclaration(
-            Idx::<TermItem>(2),
-        ),
-    ],
-}
-CheckError {
-    kind: NoInstanceFound {
-        constraint: Id<smol_str::SmolStr>(12),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(2),
-        ),
-    ],
-}
-CheckError {
-    kind: NoInstanceFound {
-        constraint: Id<smol_str::SmolStr>(13),
-    },
-    crumbs: [
-        TermDeclaration(
             Idx::<TermItem>(11),
         ),
     ],
 }
 CheckError {
     kind: NoInstanceFound {
-        constraint: Id<smol_str::SmolStr>(14),
+        constraint: Id<smol_str::SmolStr>(12),
     },
     crumbs: [
         TermDeclaration(

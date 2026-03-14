@@ -5,7 +5,7 @@ use indexing::TypeItemId;
 use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::substitute::SubstituteName;
-use crate::core::{Type, TypeId, normalise, toolkit};
+use crate::core::{KindOrType, Type, TypeId, normalise, toolkit};
 use crate::state::CheckState;
 
 use super::tools;
@@ -29,7 +29,7 @@ where
         None
     };
 
-    let (_, arguments) = toolkit::extract_type_application(state, context, derived_type)?;
+    let (_, arguments) = toolkit::extract_all_applications(state, context, derived_type)?;
 
     for constructor_id in tools::lookup_data_constructors(context, data_file, data_id)? {
         let constructor_t = toolkit::lookup_file_term(state, context, data_file, constructor_id)?;
@@ -47,7 +47,7 @@ fn instantiate_constructor_fields<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     constructor_t: TypeId,
-    arguments: &[TypeId],
+    arguments: &[KindOrType],
 ) -> QueryResult<Vec<TypeId>>
 where
     Q: ExternalQueries,
@@ -62,8 +62,12 @@ where
         };
 
         let binder = context.lookup_forall_binder(binder_id);
-        let replacement =
-            arguments.next().unwrap_or_else(|| state.fresh_rigid(context.queries, binder.kind));
+        let replacement = arguments
+            .next()
+            .map(|argument| match argument {
+                KindOrType::Kind(argument) | KindOrType::Type(argument) => argument,
+            })
+            .unwrap_or_else(|| state.fresh_rigid(context.queries, binder.kind));
         current = SubstituteName::one(state, context, binder.name, replacement, inner)?;
     }
 
