@@ -1,0 +1,38 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+App ::
+  forall (k :: Type) (f :: (k :: Type) -> Type) (a :: (k :: Type)).
+    (f :: (k :: Type) -> Type) (a :: (k :: Type)) ->
+    App @(k :: Type) (f :: (k :: Type) -> Type) (a :: (k :: Type))
+
+Types
+App :: forall (k :: Type). ((k :: Type) -> Type) -> (k :: Type) -> Type
+
+Roles
+App = [Representational, Nominal]
+
+Errors
+CheckError {
+    kind: NoInstanceFound {
+        constraint: Id<smol_str::SmolStr>(11),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(2),
+        ),
+    ],
+}
+CheckError {
+    kind: NoInstanceFound {
+        constraint: Id<smol_str::SmolStr>(12),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(4),
+        ),
+    ],
+}

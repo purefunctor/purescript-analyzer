@@ -493,3 +493,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_233_operator_alias_kind_application_main() { run_test("233_operator_alias_kind_application", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_234_instance_function_unification_main() { run_test("234_instance_function_unification", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_235_derive_eq_ord_1_kind_arguments_main() { run_test("235_derive_eq_ord_1_kind_arguments", "Main"); }
