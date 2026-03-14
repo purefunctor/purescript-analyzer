@@ -325,6 +325,15 @@ where
                 && unify(state, context, t1_inner, t2_inner)?
         }
 
+        (Type::Application(_, _), Type::Function(t2_argument, t2_result)) => {
+            let t2 = context.intern_function_application(t2_argument, t2_result);
+            unify(state, context, t1, t2)?
+        }
+        (Type::Function(t1_argument, t1_result), Type::Application(_, _)) => {
+            let t1 = context.intern_function_application(t1_argument, t1_result);
+            unify(state, context, t1, t2)?
+        }
+
         (Type::Function(t1_argument, t1_result), Type::Function(t2_argument, t2_result)) => {
             unify(state, context, t1_argument, t2_argument)?
                 && unify(state, context, t1_result, t2_result)?
