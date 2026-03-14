@@ -149,10 +149,29 @@ where
         self.queries.intern_type(Type::Function(argument, result))
     }
 
-    /// Interns a right-associated function chain from arguments to result.
+    /// Interns a [`Type::Function`] given a list of arguments.
     pub fn intern_function_chain(&self, arguments: &[TypeId], result: TypeId) -> TypeId {
         let arguments = arguments.iter().copied();
         self.intern_function_chain_iter(arguments, result)
+    }
+
+    /// Interns a list of [`Type::Constrained`] over a type.
+    pub fn intern_constrained_list(&self, constraints: &[TypeId], constrained: TypeId) -> TypeId {
+        constraints.iter().rev().fold(constrained, |constrained, &constraint| {
+            self.intern_constrained(constraint, constrained)
+        })
+    }
+
+    /// Interns a list of [`Type::Forall`] over a type.
+    pub fn intern_forall_iter<I>(&self, binders: I, inner: TypeId) -> TypeId
+    where
+        I: IntoIterator<Item = ForallBinder>,
+        I::IntoIter: DoubleEndedIterator,
+    {
+        binders.into_iter().rev().fold(inner, |inner, binder| {
+            let binder_id = self.intern_forall_binder(binder);
+            self.intern_forall(binder_id, inner)
+        })
     }
 
     /// Interns a right-associated function chain from iterator arguments to result.

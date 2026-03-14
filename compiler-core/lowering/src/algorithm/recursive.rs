@@ -931,10 +931,10 @@ fn lower_type_kind(
         // Rank-N Types must be scoped. See `lower_forall`.
         cst::Type::TypeForall(cst) => state.with_scope(|s| {
             s.push_forall_scope();
-            let bindings =
-                cst.children()
-                    .map(|cst| lower_type_variable_binding(s, context, &cst, false))
-                    .collect();
+            let bindings = cst
+                .children()
+                .map(|cst| lower_type_variable_binding(s, context, &cst, false))
+                .collect();
             let inner = cst.type_().map(|cst| lower_type(s, context, &cst));
             TypeKind::Forall { bindings, inner }
         }),
@@ -1079,10 +1079,10 @@ pub(crate) fn lower_forall(state: &mut State, context: &Context, cst: &cst::Type
     if let cst::Type::TypeForall(f) = cst {
         let id = context.stabilized.lookup_cst(cst).expect_id();
         state.push_forall_scope();
-        let bindings =
-            f.children()
-                .map(|cst| lower_type_variable_binding(state, context, &cst, false))
-                .collect();
+        let bindings = f
+            .children()
+            .map(|cst| lower_type_variable_binding(state, context, &cst, false))
+            .collect();
         let inner = f.type_().map(|cst| lower_forall(state, context, &cst));
         let kind = TypeKind::Forall { bindings, inner };
         state.associate_type_info(id, kind);

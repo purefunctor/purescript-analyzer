@@ -4,8 +4,7 @@ use std::collections::VecDeque;
 use std::ops::{Index, IndexMut};
 use std::sync::Arc;
 
-use crate::core::SmolStrId;
-use crate::core::TypeId;
+use crate::core::{SmolStrId, TypeId};
 use crate::error::ErrorCrumb;
 
 #[derive(Debug, Clone, PartialEq, Eq)]

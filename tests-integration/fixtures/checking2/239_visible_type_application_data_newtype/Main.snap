@@ -6,8 +6,8 @@ expression: report
 Terms
 Proxy :: forall (k :: Type) (@a :: (k :: Type)). Proxy @(k :: Type) (a :: (k :: Type))
 Identity :: forall (@a :: Type). (a :: Type) -> Identity (a :: Type)
-testProxy :: forall (t3 :: 42). Proxy @42 (t3 :: 42)
-testIdentity :: forall (t4 :: Int). Proxy @Int (t4 :: Int)
+testProxy :: Proxy @Int 42
+testIdentity :: Proxy @Type Int
 
 Types
 Proxy :: forall (k :: Type). (k :: Type) -> Type
@@ -16,22 +16,3 @@ Identity :: Type -> Type
 Roles
 Proxy = [Phantom]
 Identity = [Representational]
-
-Errors
-CheckError {
-    kind: CannotUnify {
-        t1: Id<smol_str::SmolStr>(6),
-        t2: Id<smol_str::SmolStr>(7),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(2),
-        ),
-        InferringExpression(
-            AstId<syntax::cst::Expression>(25),
-        ),
-        CheckingKind(
-            AstId<syntax::cst::Type>(28),
-        ),
-    ],
-}

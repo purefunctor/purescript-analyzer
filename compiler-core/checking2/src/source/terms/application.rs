@@ -4,8 +4,9 @@ use std::ops::ControlFlow;
 use building_types::QueryResult;
 
 use crate::context::CheckContext;
-use crate::core::substitute::SubstituteName;
-use crate::core::{Type, TypeId, normalise, unification};
+use crate::core::substitute::{NameToType, SubstituteName};
+use crate::core::{ForallBinder, Type, TypeId, normalise, signature, unification};
+use crate::error::ErrorKind;
 use crate::source::types;
 use crate::state::CheckState;
 use crate::{ExternalQueries, safe_loop};
@@ -192,17 +193,44 @@ pub fn check_function_type_application<Q>(
 where
     Q: ExternalQueries,
 {
-    let function = normalise::expand(state, context, function)?;
-    match context.lookup_type(function) {
-        Type::Forall(binder_id, inner) => {
-            let binder = context.lookup_forall_binder(binder_id);
-            let binder_kind = normalise::expand(state, context, binder.kind)?;
+    let signature::DecomposedSignature { binders, constraints, arguments, result } =
+        signature::decompose_signature(
+            state,
+            context,
+            function,
+            signature::DecomposeSignatureMode::Full,
+        )?;
 
-            let (argument, _) = types::check_kind(state, context, argument, binder_kind)?;
-            SubstituteName::one(state, context, binder.name, argument, inner)
-        }
-        _ => Ok(context.unknown("invalid type application")),
+    let Some(index) = binders.iter().position(|binder| binder.visible) else {
+        let function_type = state.pretty_id(context, function)?;
+        state.insert_error(ErrorKind::NoVisibleTypeVariable { function_type });
+        return Ok(context.unknown("invalid visible type application"));
+    };
+
+    let mut substitution = NameToType::default();
+
+    for binder in binders.iter().take(index) {
+        let binder_kind = SubstituteName::many(state, context, &substitution, binder.kind)?;
+        let binder_kind = normalise::expand(state, context, binder_kind)?;
+        let replacement = state.fresh_unification(context.queries, binder_kind);
+        substitution.insert(binder.name, replacement);
     }
+
+    let ForallBinder { name: visible_name, kind: visible_kind, .. } = binders[index];
+
+    let visible_kind = SubstituteName::many(state, context, &substitution, visible_kind)?;
+    let visible_kind = normalise::expand(state, context, visible_kind)?;
+
+    let (argument_type, _) = types::check_kind(state, context, argument, visible_kind)?;
+    substitution.insert(visible_name, argument_type);
+
+    let binders = binders.iter().skip(index + 1).copied();
+
+    let function = context.intern_function_chain(&arguments, result);
+    let constrained = context.intern_constrained_list(&constraints, function);
+    let quantified = context.intern_forall_iter(binders, constrained);
+
+    SubstituteName::many(state, context, &substitution, quantified)
 }
 
 pub fn infer_infix_chain<Q>(

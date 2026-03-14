@@ -98,6 +98,9 @@ pub enum ErrorKind {
     NoInstanceFound {
         constraint: TypeErrorMessageId,
     },
+    NoVisibleTypeVariable {
+        function_type: TypeErrorMessageId,
+    },
     PartialSynonymApplication {
         id: lowering::TypeId,
     },

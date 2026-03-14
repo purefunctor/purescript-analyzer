@@ -100,6 +100,9 @@ pub enum ErrorKind {
     NoInstanceFound {
         constraint: SmolStrId,
     },
+    NoVisibleTypeVariable {
+        function_type: SmolStrId,
+    },
     PartialSynonymApplication {
         id: lowering::TypeId,
     },

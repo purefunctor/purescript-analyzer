@@ -279,6 +279,14 @@ impl ToDiagnostics for CheckError {
                 let msg = lookup_message(*constraint);
                 (Severity::Error, "NoInstanceFound", format!("No instance found for: {msg}"))
             }
+            ErrorKind::NoVisibleTypeVariable { function_type } => {
+                let msg = lookup_message(*function_type);
+                (
+                    Severity::Error,
+                    "NoVisibleTypeVariable",
+                    format!("No visible type variable for type application in: {msg}"),
+                )
+            }
             ErrorKind::PartialSynonymApplication { .. } => (
                 Severity::Error,
                 "PartialSynonymApplication",
