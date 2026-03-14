@@ -9,6 +9,9 @@ Foo :: Int -> Foo
 Types
 Foo :: Type
 
+Derived
+derive Show Foo
+
 Roles
 Foo = []
 

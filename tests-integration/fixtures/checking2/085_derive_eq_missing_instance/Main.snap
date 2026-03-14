@@ -11,6 +11,9 @@ Types
 NoEq :: Type
 Box :: Type
 
+Derived
+derive Eq Box
+
 Roles
 NoEq = []
 Box = []

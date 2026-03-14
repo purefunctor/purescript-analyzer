@@ -11,6 +11,9 @@ Triple ::
 Types
 Triple :: Type -> Type -> Type -> Type
 
+Derived
+derive Bifunctor (Triple Int String)
+
 Roles
 Triple = [Representational, Representational, Representational]
 

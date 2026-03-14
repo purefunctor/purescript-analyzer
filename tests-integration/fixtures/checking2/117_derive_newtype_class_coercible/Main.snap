@@ -15,6 +15,10 @@ Types
 UserId :: Type
 Wrapper :: Type -> Type
 
+Derived
+derive Newtype @Type UserId Int
+derive forall (t1 :: Type). Newtype @Type (Wrapper (t1 :: Type)) (t1 :: Type)
+
 Roles
 UserId = []
 Wrapper = [Representational]

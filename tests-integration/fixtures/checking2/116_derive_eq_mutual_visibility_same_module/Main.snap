@@ -13,6 +13,10 @@ Types
 DurationComponent :: Type
 Duration :: Type
 
+Derived
+derive Eq Duration
+derive Eq DurationComponent
+
 Roles
 DurationComponent = []
 Duration = []

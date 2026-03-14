@@ -18,5 +18,8 @@ class forall (f :: Type -> Type). Empty (f :: Type -> Type)
 Instances
 instance Empty Array
 
+Derived
+derive Empty Wrapper
+
 Roles
 Wrapper = [Representational]

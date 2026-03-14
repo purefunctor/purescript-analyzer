@@ -13,6 +13,9 @@ Test :: Type
 Instances
 instance Eq State
 
+Derived
+derive Eq Test
+
 Roles
 State = []
 Test = []

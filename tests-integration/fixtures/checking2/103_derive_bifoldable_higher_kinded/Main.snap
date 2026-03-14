@@ -33,6 +33,14 @@ WrapBothNoConstraint ::
   forall (t11 :: Type) (t10 :: Type).
     ((t11 :: Type) -> Type) -> ((t10 :: Type) -> Type) -> (t11 :: Type) -> (t10 :: Type) -> Type
 
+Derived
+derive forall (t12 :: Type -> Type) (t13 :: Type -> Type).
+  Foldable (t12 :: Type -> Type) =>
+  Foldable (t13 :: Type -> Type) =>
+  Bifoldable (WrapBoth @Type @Type (t12 :: Type -> Type) (t13 :: Type -> Type))
+derive forall (t14 :: Type -> Type) (t15 :: Type -> Type).
+  Bifoldable (WrapBothNoConstraint @Type @Type (t14 :: Type -> Type) (t15 :: Type -> Type))
+
 Roles
 WrapBoth = [Representational, Representational, Nominal, Nominal]
 WrapBothNoConstraint = [Representational, Representational, Nominal, Nominal]

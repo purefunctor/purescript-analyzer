@@ -12,6 +12,14 @@ Types
 Either :: Type -> Type -> Type
 Pair :: Type -> Type -> Type
 
+Derived
+derive Bifunctor Either
+derive Bifoldable Either
+derive Bitraversable Either
+derive Bifunctor Pair
+derive Bifoldable Pair
+derive Bitraversable Pair
+
 Roles
 Either = [Representational, Representational]
 Pair = [Representational, Representational]

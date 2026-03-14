@@ -10,5 +10,9 @@ Builder ::
 Types
 Builder :: Type -> Type -> Type
 
+Derived
+derive Semigroupoid @Type Builder
+derive Category @Type Builder
+
 Roles
 Builder = [Representational, Representational]

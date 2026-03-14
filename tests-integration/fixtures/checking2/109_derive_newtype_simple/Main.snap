@@ -9,5 +9,8 @@ Wrapper :: Int -> Wrapper
 Types
 Wrapper :: Type
 
+Derived
+derive Show Wrapper
+
 Roles
 Wrapper = []

@@ -36,6 +36,34 @@ Compose ::
 Either' :: Type -> Type
 NoEq :: Type -> Type
 
+Derived
+derive forall (t14 :: Type). Eq (t14 :: Type) => Eq (Id (t14 :: Type))
+derive Eq1 Id
+derive forall (t15 :: Type). Eq (t15 :: Type) => Eq (Pair (t15 :: Type))
+derive Eq1 Pair
+derive forall (t16 :: Type). Eq (t16 :: Type) => Eq (Mixed (t16 :: Type))
+derive Eq1 Mixed
+derive forall (t17 :: Type). Eq (t17 :: Type) => Eq (Rec (t17 :: Type))
+derive Eq1 Rec
+derive forall (t18 :: Type -> Type) (t19 :: Type).
+  Eq1 (t18 :: Type -> Type) =>
+  Eq (t19 :: Type) =>
+  Eq (Wrap @Type (t18 :: Type -> Type) (t19 :: Type))
+derive forall (t20 :: Type -> Type). Eq1 (t20 :: Type -> Type) => Eq1 (Wrap @Type (t20 :: Type -> Type))
+derive forall (t21 :: Type -> Type) (t24 :: Type) (t22 :: (t24 :: Type) -> Type) (t23 :: (t24 :: Type)).
+  Eq1 (t21 :: Type -> Type) =>
+  Eq ((t22 :: (t24 :: Type) -> Type) (t23 :: (t24 :: Type))) =>
+  Eq
+    (Compose @Type @(t24 :: Type)
+      (t21 :: Type -> Type)
+      (t22 :: (t24 :: Type) -> Type)
+      (t23 :: (t24 :: Type)))
+derive forall (t25 :: Type -> Type) (t26 :: Type -> Type).
+  Eq1 (t25 :: Type -> Type) => Eq1 (Compose @Type @Type (t25 :: Type -> Type) (t26 :: Type -> Type))
+derive forall (t27 :: Type). Eq (t27 :: Type) => Eq (Either' (t27 :: Type))
+derive Eq1 Either'
+derive Eq1 NoEq
+
 Roles
 Id = [Representational]
 Pair = [Representational]

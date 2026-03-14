@@ -24,6 +24,10 @@ class forall (f :: Type -> Type). Empty (f :: Type -> Type)
 Instances
 instance Empty Array
 
+Derived
+derive forall (t9 :: Type) (t7 :: (t9 :: Type)). Empty (Vector @(t9 :: Type) (t7 :: (t9 :: Type)))
+derive Empty (InvalidVector @Type Int)
+
 Roles
 Vector = [Phantom, Representational]
 InvalidVector = [Representational, Phantom]

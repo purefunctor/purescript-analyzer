@@ -33,6 +33,14 @@ WrapBothNoConstraint ::
   forall (t11 :: Type) (t10 :: Type).
     ((t11 :: Type) -> Type) -> ((t10 :: Type) -> Type) -> (t11 :: Type) -> (t10 :: Type) -> Type
 
+Derived
+derive forall (t12 :: Type -> Type) (t13 :: Type -> Type).
+  Functor (t12 :: Type -> Type) =>
+  Functor (t13 :: Type -> Type) =>
+  Bifunctor (WrapBoth @Type @Type (t12 :: Type -> Type) (t13 :: Type -> Type))
+derive forall (t14 :: Type -> Type) (t15 :: Type -> Type).
+  Bifunctor (WrapBothNoConstraint @Type @Type (t14 :: Type -> Type) (t15 :: Type -> Type))
+
 Roles
 WrapBoth = [Representational, Representational, Nominal, Nominal]
 WrapBothNoConstraint = [Representational, Representational, Nominal, Nominal]

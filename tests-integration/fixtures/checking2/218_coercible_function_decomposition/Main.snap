@@ -33,5 +33,8 @@ alaF ::
 Types
 Age :: Type
 
+Derived
+derive Newtype @Type Age Int
+
 Roles
 Age = []

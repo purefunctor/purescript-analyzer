@@ -27,6 +27,46 @@ Compose ::
     ((t8 :: Type) -> Type) -> ((t7 :: Type) -> (t8 :: Type)) -> (t7 :: Type) -> Type
 NoOrd :: Type -> Type
 
+Derived
+derive forall (t10 :: Type). Eq (t10 :: Type) => Eq (Id (t10 :: Type))
+derive Eq1 Id
+derive forall (t11 :: Type). Ord (t11 :: Type) => Ord (Id (t11 :: Type))
+derive Ord1 Id
+derive forall (t12 :: Type -> Type) (t13 :: Type).
+  Eq1 (t12 :: Type -> Type) =>
+  Eq (t13 :: Type) =>
+  Eq (Wrap @Type (t12 :: Type -> Type) (t13 :: Type))
+derive forall (t14 :: Type -> Type). Eq1 (t14 :: Type -> Type) => Eq1 (Wrap @Type (t14 :: Type -> Type))
+derive forall (t15 :: Type -> Type) (t16 :: Type).
+  Ord1 (t15 :: Type -> Type) =>
+  Ord (t16 :: Type) =>
+  Ord (Wrap @Type (t15 :: Type -> Type) (t16 :: Type))
+derive forall (t17 :: Type -> Type). Ord1 (t17 :: Type -> Type) => Ord1 (Wrap @Type (t17 :: Type -> Type))
+derive forall (t18 :: Type -> Type) (t21 :: Type) (t19 :: (t21 :: Type) -> Type) (t20 :: (t21 :: Type)).
+  Eq1 (t18 :: Type -> Type) =>
+  Eq ((t19 :: (t21 :: Type) -> Type) (t20 :: (t21 :: Type))) =>
+  Eq
+    (Compose @Type @(t21 :: Type)
+      (t18 :: Type -> Type)
+      (t19 :: (t21 :: Type) -> Type)
+      (t20 :: (t21 :: Type)))
+derive forall (t22 :: Type -> Type) (t25 :: Type) (t23 :: (t25 :: Type) -> Type) (t24 :: (t25 :: Type)).
+  Ord1 (t22 :: Type -> Type) =>
+  Ord ((t23 :: (t25 :: Type) -> Type) (t24 :: (t25 :: Type))) =>
+  Ord
+    (Compose @Type @(t25 :: Type)
+      (t22 :: Type -> Type)
+      (t23 :: (t25 :: Type) -> Type)
+      (t24 :: (t25 :: Type)))
+derive forall (t26 :: Type -> Type) (t27 :: Type -> Type).
+  Eq1 (t26 :: Type -> Type) => Eq1 (Compose @Type @Type (t26 :: Type -> Type) (t27 :: Type -> Type))
+derive forall (t28 :: Type -> Type) (t29 :: Type -> Type).
+  Ord1 (t28 :: Type -> Type) =>
+  Ord1 (Compose @Type @Type (t28 :: Type -> Type) (t29 :: Type -> Type))
+derive forall (t30 :: Type). Eq (t30 :: Type) => Eq (NoOrd (t30 :: Type))
+derive Eq1 NoOrd
+derive Ord1 NoOrd
+
 Roles
 Id = [Representational]
 Wrap = [Representational, Nominal]

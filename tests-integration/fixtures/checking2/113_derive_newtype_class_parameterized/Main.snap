@@ -9,5 +9,8 @@ Wrapper :: forall (a :: Type). (a :: Type) -> Wrapper (a :: Type)
 Types
 Wrapper :: Type -> Type
 
+Derived
+derive forall (t1 :: Type). Newtype @Type (Wrapper (t1 :: Type)) (t1 :: Type)
+
 Roles
 Wrapper = [Representational]

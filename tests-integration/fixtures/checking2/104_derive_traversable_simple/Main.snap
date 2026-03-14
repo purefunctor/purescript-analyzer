@@ -16,6 +16,17 @@ Identity :: Type -> Type
 Maybe :: Type -> Type
 Const :: forall (t4 :: Type). Type -> (t4 :: Type) -> Type
 
+Derived
+derive Functor Identity
+derive Foldable Identity
+derive Traversable Identity
+derive Functor Maybe
+derive Foldable Maybe
+derive Traversable Maybe
+derive forall (t5 :: Type). Functor (Const @Type (t5 :: Type))
+derive forall (t6 :: Type). Foldable (Const @Type (t6 :: Type))
+derive forall (t7 :: Type). Traversable (Const @Type (t7 :: Type))
+
 Roles
 Identity = [Representational]
 Maybe = [Representational]

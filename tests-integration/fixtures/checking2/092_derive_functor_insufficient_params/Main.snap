@@ -11,6 +11,10 @@ Types
 Pair :: Type -> Type -> Type
 Unit :: Type
 
+Derived
+derive Functor (Pair Int String)
+derive Functor Unit
+
 Roles
 Pair = [Representational, Representational]
 Unit = []

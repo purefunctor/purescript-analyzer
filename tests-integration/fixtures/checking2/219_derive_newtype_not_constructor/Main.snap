@@ -7,6 +7,9 @@ Terms
 
 Types
 
+Derived
+derive Show (Int -> Int)
+
 Errors
 CheckError {
     kind: CannotDeriveForType {

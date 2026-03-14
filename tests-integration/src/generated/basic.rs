@@ -319,6 +319,16 @@ pub fn report_checked2(engine: &QueryEngine, id: FileId) -> String {
         writeln!(out, "instance {canonical}").unwrap();
     }
 
+    if !checked.derived.is_empty() {
+        writeln!(out, "\nDerived").unwrap();
+    }
+    let mut derived_entries: Vec<_> = checked.derived.iter().collect();
+    derived_entries.sort_by_key(|(id, _)| *id);
+    for (_derive_id, instance) in derived_entries {
+        let canonical = pretty(instance.canonical);
+        writeln!(out, "derive {canonical}").unwrap();
+    }
+
     if !checked.roles.is_empty() {
         writeln!(out, "\nRoles").unwrap();
     }

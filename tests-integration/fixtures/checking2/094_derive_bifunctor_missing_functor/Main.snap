@@ -20,6 +20,10 @@ WrapBoth ::
   forall (t5 :: Type) (t4 :: Type).
     ((t5 :: Type) -> Type) -> ((t4 :: Type) -> Type) -> (t5 :: Type) -> (t4 :: Type) -> Type
 
+Derived
+derive forall (t6 :: Type -> Type) (t7 :: Type -> Type).
+  Bifunctor (WrapBoth @Type @Type (t6 :: Type -> Type) (t7 :: Type -> Type))
+
 Roles
 WrapBoth = [Representational, Representational, Nominal, Nominal]
 

@@ -7,6 +7,9 @@ Terms
 
 Types
 
+Derived
+derive Show
+
 Errors
 CheckError {
     kind: DeriveInvalidArity {

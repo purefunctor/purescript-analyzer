@@ -17,6 +17,11 @@ Types
 Wrap :: forall (t2 :: Type). ((t2 :: Type) -> Type) -> (t2 :: Type) -> Type
 WrapNoFunctor :: forall (t5 :: Type). ((t5 :: Type) -> Type) -> (t5 :: Type) -> Type
 
+Derived
+derive forall (t6 :: Type -> Type).
+  Functor (t6 :: Type -> Type) => Functor (Wrap @Type (t6 :: Type -> Type))
+derive forall (t7 :: Type -> Type). Functor (WrapNoFunctor @Type (t7 :: Type -> Type))
+
 Roles
 Wrap = [Representational, Nominal]
 WrapNoFunctor = [Representational, Nominal]

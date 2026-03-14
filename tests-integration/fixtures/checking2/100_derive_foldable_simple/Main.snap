@@ -16,6 +16,11 @@ Identity :: Type -> Type
 Maybe :: Type -> Type
 Const :: forall (t4 :: Type). Type -> (t4 :: Type) -> Type
 
+Derived
+derive Foldable Identity
+derive Foldable Maybe
+derive forall (t5 :: Type). Foldable (Const @Type (t5 :: Type))
+
 Roles
 Identity = [Representational]
 Maybe = [Representational]

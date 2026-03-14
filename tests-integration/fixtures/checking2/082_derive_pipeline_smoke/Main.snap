@@ -10,5 +10,8 @@ test :: Boolean
 Types
 Box :: Type
 
+Derived
+derive Eq Box
+
 Roles
 Box = []

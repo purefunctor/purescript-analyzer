@@ -7,6 +7,9 @@ Terms
 
 Types
 
+Derived
+derive forall (t0 :: Type). Generic (Int -> Int) (t0 :: Type)
+
 Errors
 CheckError {
     kind: CannotDeriveForType {

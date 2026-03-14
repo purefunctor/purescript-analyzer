@@ -9,5 +9,8 @@ Identity :: forall (a :: Type). (a :: Type) -> Identity (a :: Type)
 Types
 Identity :: Type -> Type
 
+Derived
+derive forall (t1 :: Type). Show (t1 :: Type) => Show (Identity (t1 :: Type))
+
 Roles
 Identity = [Representational]

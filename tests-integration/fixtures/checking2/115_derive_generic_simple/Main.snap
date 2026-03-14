@@ -50,6 +50,24 @@ Tuple :: Type -> Type -> Type
 Wrapper :: Type -> Type
 Proxy :: forall (t7 :: Type). (t7 :: Type) -> Type
 
+Derived
+derive Generic Void NoConstructors
+derive Generic MyUnit (Constructor "MyUnit" NoArguments)
+derive forall (t8 :: Type).
+  Generic (Identity (t8 :: Type)) (Constructor "Identity" (Argument (t8 :: Type)))
+derive forall (t9 :: Type) (t10 :: Type).
+  Generic
+    (Either (t9 :: Type) (t10 :: Type))
+    (Sum
+      (Constructor "Left" (Argument (t9 :: Type)))
+      (Constructor "Right" (Argument (t10 :: Type))))
+derive forall (t11 :: Type) (t12 :: Type).
+  Generic
+    (Tuple (t11 :: Type) (t12 :: Type))
+    (Constructor "Tuple" (Product (Argument (t11 :: Type)) (Argument (t12 :: Type))))
+derive forall (t13 :: Type).
+  Generic (Wrapper (t13 :: Type)) (Constructor "Wrapper" (Argument (t13 :: Type)))
+
 Roles
 Void = []
 MyUnit = []

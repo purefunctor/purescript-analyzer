@@ -16,6 +16,11 @@ Predicate :: Type -> Type
 Reader :: Type -> Type -> Type
 Cont :: Type -> Type -> Type
 
+Derived
+derive Functor Predicate
+derive forall (t5 :: Type). Functor (Reader (t5 :: Type))
+derive forall (t6 :: Type). Functor (Cont (t6 :: Type))
+
 Roles
 Predicate = [Representational]
 Reader = [Representational, Representational]

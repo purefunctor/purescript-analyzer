@@ -10,6 +10,10 @@ Right :: forall (a :: Type) (b :: Type). (b :: Type) -> Either (a :: Type) (b ::
 Types
 Either :: Type -> Type -> Type
 
+Derived
+derive forall (t2 :: Type). Eq (t2 :: Type) => Eq (Either Int (t2 :: Type))
+derive forall (t3 :: Type). Eq (Either Int (t3 :: Type))
+
 Roles
 Either = [Representational, Representational]
 

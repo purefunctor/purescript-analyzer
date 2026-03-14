@@ -9,6 +9,9 @@ NotANewtype :: Int -> NotANewtype
 Types
 NotANewtype :: Type
 
+Derived
+derive forall (t0 :: Type). Newtype @Type NotANewtype (t0 :: Type)
+
 Roles
 NotANewtype = []
 

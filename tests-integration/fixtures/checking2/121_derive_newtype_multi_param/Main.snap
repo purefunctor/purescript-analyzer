@@ -11,5 +11,8 @@ Pair ::
 Types
 Pair :: forall (t2 :: Type). Type -> (t2 :: Type) -> Type
 
+Derived
+derive Show (Pair @Type Int String)
+
 Roles
 Pair = [Representational, Phantom]

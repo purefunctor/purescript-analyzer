@@ -17,6 +17,12 @@ Types
 Wrap :: forall (t2 :: Type). ((t2 :: Type) -> Type) -> (t2 :: Type) -> Type
 WrapNoEq1 :: forall (t5 :: Type). ((t5 :: Type) -> Type) -> (t5 :: Type) -> Type
 
+Derived
+derive forall (t6 :: Type -> Type) (t7 :: Type).
+  Eq1 (t6 :: Type -> Type) => Eq (t7 :: Type) => Eq (Wrap @Type (t6 :: Type -> Type) (t7 :: Type))
+derive forall (t9 :: Type) (t8 :: Type -> Type).
+  Eq (t9 :: Type) => Eq (WrapNoEq1 @Type (t8 :: Type -> Type) (t9 :: Type))
+
 Roles
 Wrap = [Representational, Nominal]
 WrapNoEq1 = [Representational, Nominal]

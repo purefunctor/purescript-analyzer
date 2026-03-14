@@ -9,5 +9,8 @@ UserId :: Int -> UserId
 Types
 UserId :: Type
 
+Derived
+derive Newtype @Type UserId Int
+
 Roles
 UserId = []

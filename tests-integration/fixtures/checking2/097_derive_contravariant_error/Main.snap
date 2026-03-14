@@ -11,6 +11,10 @@ Types
 Identity :: Type -> Type
 Producer :: Type -> Type
 
+Derived
+derive Contravariant Identity
+derive Contravariant Producer
+
 Roles
 Identity = [Representational]
 Producer = [Representational]

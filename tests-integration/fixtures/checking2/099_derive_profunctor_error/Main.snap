@@ -14,6 +14,10 @@ Types
 WrongFirst :: Type -> Type -> Type
 WrongSecond :: Type -> Type -> Type
 
+Derived
+derive Profunctor WrongFirst
+derive Profunctor WrongSecond
+
 Roles
 WrongFirst = [Representational, Representational]
 WrongSecond = [Representational, Representational]

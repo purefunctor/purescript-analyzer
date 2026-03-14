@@ -9,6 +9,9 @@ Box :: Int -> Box
 Types
 Box :: Type
 
+Derived
+derive forall (t0 :: Type). Generic Box (t0 :: Type)
+
 Roles
 Box = []
 

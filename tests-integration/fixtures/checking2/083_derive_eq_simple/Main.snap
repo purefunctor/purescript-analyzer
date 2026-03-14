@@ -13,6 +13,10 @@ Proxy :: forall (t1 :: Type). (t1 :: Type) -> Type
 NoEq :: Type
 ContainsNoEq :: Type
 
+Derived
+derive forall (t3 :: Type) (t2 :: (t3 :: Type)). Eq (Proxy @(t3 :: Type) (t2 :: (t3 :: Type)))
+derive Eq ContainsNoEq
+
 Roles
 Proxy = [Phantom]
 NoEq = []
