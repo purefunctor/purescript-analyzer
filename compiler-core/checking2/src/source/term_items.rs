@@ -1,4 +1,3 @@
-
 use building_types::QueryResult;
 use files::FileId;
 use indexing::{TermItemId, TermItemKind, TypeItemId};
@@ -9,8 +8,8 @@ use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::substitute::{NameToType, SubstituteName};
 use crate::core::{
-    CheckedInstance, Type, TypeId, constraint, generalise, normalise, signature, toolkit,
-    unification, zonk,
+    CheckedInstance, ForallBinder, Type, TypeId, constraint, generalise, normalise, signature,
+    toolkit, unification, zonk,
 };
 use crate::error::{ErrorCrumb, ErrorKind};
 use crate::source::terms::equations;
@@ -449,7 +448,9 @@ where
     }
 
     for binder in member_binders.iter().rev() {
-        let binder_id = context.intern_forall_binder(*binder);
+        // member_binders refers to type variables from class_binders
+        let kind = substitute_normalise_type(state, context, &bindings, binder.kind)?;
+        let binder_id = context.intern_forall_binder(ForallBinder { kind, ..*binder });
         constrained = context.intern_forall(binder_id, constrained);
     }
 

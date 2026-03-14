@@ -24,16 +24,3 @@ class forall (t3 :: Type) (t2 :: Type) (f :: (t3 :: Type) -> (t3 :: Type) -> (t2
 
 Instances
 instance Category @Type @Type Function
-
-Errors
-CheckError {
-    kind: CannotUnify {
-        t1: Id<smol_str::SmolStr>(5),
-        t2: Id<smol_str::SmolStr>(6),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(1),
-        ),
-    ],
-}
