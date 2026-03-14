@@ -8,7 +8,7 @@ use itertools::izip;
 use crate::context::CheckContext;
 use crate::core::constraint::MatchInstance;
 use crate::core::substitute::SubstituteName;
-use crate::core::unification::{CanUnify, can_unify};
+use crate::core::unification::{CanUnify, can_unify, unify};
 use crate::core::{Role, Type, TypeId, normalise, toolkit};
 use crate::error::ErrorKind;
 use crate::source::types;
@@ -128,7 +128,7 @@ where
             if let Some(toolkit::NewtypeInner { inner, .. }) =
                 toolkit::get_newtype_inner(state, context, file_id, item_id, left)?
             {
-                let constraint = make_coercible_constraint(context, inner, right);
+                let constraint = make_coercible_constraint(state, context, inner, right)?;
                 return Ok(NewtypeCoercionResult::Success(MatchInstance::Match {
                     constraints: vec![constraint],
                     equalities: vec![],
@@ -147,7 +147,7 @@ where
             if let Some(toolkit::NewtypeInner { inner, .. }) =
                 toolkit::get_newtype_inner(state, context, file_id, item_id, right)?
             {
-                let constraint = make_coercible_constraint(context, left, inner);
+                let constraint = make_coercible_constraint(state, context, left, inner)?;
                 return Ok(NewtypeCoercionResult::Success(MatchInstance::Match {
                     constraints: vec![constraint],
                     equalities: vec![],
@@ -209,7 +209,8 @@ where
         match role {
             Role::Phantom => (),
             Role::Representational => {
-                let constraint = make_coercible_constraint(context, left_argument, right_argument);
+                let constraint =
+                    make_coercible_constraint(state, context, left_argument, right_argument)?;
                 constraints.push(constraint);
             }
             Role::Nominal => {
@@ -245,8 +246,8 @@ where
         return Ok(None);
     };
 
-    let left_constraint = make_coercible_constraint(context, left_argument, right_argument);
-    let right_constraint = make_coercible_constraint(context, left_result, right_result);
+    let left_constraint = make_coercible_constraint(state, context, left_argument, right_argument)?;
+    let right_constraint = make_coercible_constraint(state, context, left_result, right_result)?;
 
     Ok(Some(MatchInstance::Match {
         constraints: vec![left_constraint, right_constraint],
@@ -307,14 +308,14 @@ where
         if left_field.label != right_field.label {
             return Ok(Some(MatchInstance::Apart));
         }
-        let constraint = make_coercible_constraint(context, left_field.id, right_field.id);
+        let constraint = make_coercible_constraint(state, context, left_field.id, right_field.id)?;
         constraints.push(constraint);
     }
 
     match (left_row.tail, right_row.tail) {
         (None, None) => (),
         (Some(left_tail), Some(right_tail)) => {
-            let constraint = make_coercible_constraint(context, left_tail, right_tail);
+            let constraint = make_coercible_constraint(state, context, left_tail, right_tail)?;
             constraints.push(constraint);
         }
         (None, Some(_)) | (Some(_), None) => {
@@ -356,7 +357,7 @@ where
     let argument = state.fresh_rigid(context.queries, left_domain);
     let left_saturated = context.intern_application(left_applied, argument);
     let right_saturated = context.intern_application(right_applied, argument);
-    let constraint = make_coercible_constraint(context, left_saturated, right_saturated);
+    let constraint = make_coercible_constraint(state, context, left_saturated, right_saturated)?;
 
     Ok(Some(MatchInstance::Match { constraints: vec![constraint], equalities: vec![] }))
 }
@@ -459,13 +460,30 @@ where
     }
 }
 
-fn make_coercible_constraint<Q>(context: &CheckContext<Q>, left: TypeId, right: TypeId) -> TypeId
+fn make_coercible_constraint<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    left: TypeId,
+    right: TypeId,
+) -> QueryResult<TypeId>
 where
     Q: ExternalQueries,
 {
+    let kind = state.fresh_unification(context.queries, context.prim.t);
+
+    let left_kind = types::elaborate_kind(state, context, left)?;
+    let right_kind = types::elaborate_kind(state, context, right)?;
+
+    unify(state, context, kind, left_kind)?;
+    unify(state, context, kind, right_kind)?;
+
     let prim_coerce = &context.prim_coerce;
+
     let coercible = Type::Constructor(prim_coerce.file_id, prim_coerce.coercible);
     let coercible = context.queries.intern_type(coercible);
+
+    let coercible = context.intern_kind_application(coercible, kind);
     let coercible = context.intern_application(coercible, left);
-    context.intern_application(coercible, right)
+
+    Ok(context.intern_application(coercible, right))
 }

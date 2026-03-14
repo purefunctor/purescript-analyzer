@@ -14,7 +14,7 @@ use itertools::Itertools;
 use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::substitute::{NameToType, SubstituteName};
-use crate::core::{Type, TypeId, normalise, toolkit, unification};
+use crate::core::{KindOrType, Type, TypeId, normalise, toolkit, unification};
 use crate::implication::ImplicationId;
 use crate::state::CheckState;
 
@@ -26,7 +26,19 @@ use instances::{collect_instance_chains, match_instance};
 pub struct ConstraintApplication {
     pub file_id: FileId,
     pub item_id: TypeItemId,
-    pub arguments: Vec<TypeId>,
+    pub arguments: Vec<KindOrType>,
+}
+
+impl ConstraintApplication {
+    pub fn expect_type_arguments<const N: usize>(&self) -> Option<[TypeId; N]> {
+        self.arguments
+            .iter()
+            .filter_map(|argument| match argument {
+                KindOrType::Type(argument) => Some(*argument),
+                KindOrType::Kind(_) => None,
+            })
+            .collect_array()
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -189,7 +201,7 @@ pub fn constraint_application<Q>(
 where
     Q: ExternalQueries,
 {
-    let (constructor, arguments) = toolkit::extract_type_application(state, context, id)?;
+    let (constructor, arguments) = toolkit::extract_all_applications(state, context, id)?;
     let constructor = normalise::expand(state, context, constructor)?;
     Ok(match context.lookup_type(constructor) {
         Type::Constructor(file_id, item_id) => {
@@ -238,10 +250,38 @@ where
         }
 
         let mut bindings = NameToType::default();
-        for (binder_id, &argument) in
-            class_info.type_parameters.iter().zip(application.arguments.iter())
-        {
-            let binder = context.lookup_forall_binder(*binder_id);
+        let kind_arguments = application
+            .arguments
+            .iter()
+            .filter_map(|argument| match argument {
+                KindOrType::Kind(argument) => Some(*argument),
+                KindOrType::Type(_) => None,
+            })
+            .collect_vec();
+        let type_arguments = application
+            .arguments
+            .iter()
+            .filter_map(|argument| match argument {
+                KindOrType::Type(argument) => Some(*argument),
+                KindOrType::Kind(_) => None,
+            })
+            .collect_vec();
+
+        if type_arguments.len() != class_info.type_parameters.len() {
+            return Ok(());
+        }
+
+        for (index, &binder_id) in class_info.kind_binders.iter().enumerate() {
+            let binder = context.lookup_forall_binder(binder_id);
+            let argument = kind_arguments
+                .get(index)
+                .copied()
+                .unwrap_or_else(|| state.fresh_unification(context.queries, binder.kind));
+            bindings.insert(binder.name, argument);
+        }
+
+        for (&binder_id, argument) in class_info.type_parameters.iter().zip(type_arguments) {
+            let binder = context.lookup_forall_binder(binder_id);
             bindings.insert(binder.name, argument);
         }
 

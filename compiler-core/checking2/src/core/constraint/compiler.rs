@@ -105,66 +105,117 @@ pub fn match_compiler_instances<Q>(
 where
     Q: ExternalQueries,
 {
-    let ConstraintApplication { file_id, item_id, arguments } = wanted;
+    let ConstraintApplication { file_id, item_id, .. } = wanted;
 
     let match_instance = if *file_id == context.prim_int.file_id {
         if *item_id == context.prim_int.add {
-            prim_int::match_add(state, context, arguments)?
+            let Some(arguments) = wanted.expect_type_arguments::<3>() else {
+                return Ok(None);
+            };
+            prim_int::match_add(state, context, &arguments)?
         } else if *item_id == context.prim_int.mul {
-            prim_int::match_mul(state, context, arguments)?
+            let Some(arguments) = wanted.expect_type_arguments::<3>() else {
+                return Ok(None);
+            };
+            prim_int::match_mul(state, context, &arguments)?
         } else if *item_id == context.prim_int.compare {
-            prim_int::match_compare(state, context, arguments, given)?
+            let Some(arguments) = wanted.expect_type_arguments::<3>() else {
+                return Ok(None);
+            };
+            prim_int::match_compare(state, context, &arguments, given)?
         } else if *item_id == context.prim_int.to_string {
-            prim_int::match_to_string(state, context, arguments)?
+            let Some(arguments) = wanted.expect_type_arguments::<2>() else {
+                return Ok(None);
+            };
+            prim_int::match_to_string(state, context, &arguments)?
         } else {
             None
         }
     } else if *file_id == context.prim_symbol.file_id {
         if *item_id == context.prim_symbol.append {
-            prim_symbol::match_append(state, context, arguments)?
+            let Some(arguments) = wanted.expect_type_arguments::<3>() else {
+                return Ok(None);
+            };
+            prim_symbol::match_append(state, context, &arguments)?
         } else if *item_id == context.prim_symbol.compare {
-            prim_symbol::match_compare(state, context, arguments)?
+            let Some(arguments) = wanted.expect_type_arguments::<3>() else {
+                return Ok(None);
+            };
+            prim_symbol::match_compare(state, context, &arguments)?
         } else if *item_id == context.prim_symbol.cons {
-            prim_symbol::match_cons(state, context, arguments)?
+            let Some(arguments) = wanted.expect_type_arguments::<3>() else {
+                return Ok(None);
+            };
+            prim_symbol::match_cons(state, context, &arguments)?
         } else {
             None
         }
     } else if *file_id == context.prim_row.file_id {
         if *item_id == context.prim_row.union {
-            prim_row::match_union(state, context, arguments)?
+            let Some(arguments) = wanted.expect_type_arguments::<3>() else {
+                return Ok(None);
+            };
+            prim_row::match_union(state, context, &arguments)?
         } else if *item_id == context.prim_row.cons {
-            prim_row::match_cons(state, context, arguments)?
+            let Some(arguments) = wanted.expect_type_arguments::<4>() else {
+                return Ok(None);
+            };
+            prim_row::match_cons(state, context, &arguments)?
         } else if *item_id == context.prim_row.lacks {
-            prim_row::match_lacks(state, context, arguments)?
+            let Some(arguments) = wanted.expect_type_arguments::<2>() else {
+                return Ok(None);
+            };
+            prim_row::match_lacks(state, context, &arguments)?
         } else if *item_id == context.prim_row.nub {
-            prim_row::match_nub(state, context, arguments)?
+            let Some(arguments) = wanted.expect_type_arguments::<2>() else {
+                return Ok(None);
+            };
+            prim_row::match_nub(state, context, &arguments)?
         } else {
             None
         }
     } else if *file_id == context.prim_row_list.file_id {
         if *item_id == context.prim_row_list.row_to_list {
-            prim_row_list::match_row_to_list(state, context, arguments)?
+            let Some(arguments) = wanted.expect_type_arguments::<2>() else {
+                return Ok(None);
+            };
+            prim_row_list::match_row_to_list(state, context, &arguments)?
         } else {
             None
         }
     } else if *file_id == context.prim_coerce.file_id {
         if *item_id == context.prim_coerce.coercible {
-            prim_coerce::match_coercible(state, context, arguments)?
+            let Some(arguments) = wanted.expect_type_arguments::<2>() else {
+                return Ok(None);
+            };
+            prim_coerce::match_coercible(state, context, &arguments)?
         } else {
             None
         }
     } else if *file_id == context.prim_type_error.file_id {
         if *item_id == context.prim_type_error.warn {
-            prim_type_error::match_warn(state, context, arguments)?
+            let Some(arguments) = wanted.expect_type_arguments::<1>() else {
+                return Ok(None);
+            };
+            prim_type_error::match_warn(state, context, &arguments)?
         } else if *item_id == context.prim_type_error.fail {
-            prim_type_error::match_fail(state, context, arguments)?
+            let Some(arguments) = wanted.expect_type_arguments::<1>() else {
+                return Ok(None);
+            };
+            prim_type_error::match_fail(state, context, &arguments)?
         } else {
             None
         }
     } else if context.known_reflectable.is_symbol == Some((*file_id, *item_id)) {
-        prim_symbol::match_is_symbol(state, context, arguments)?
+        let Some(arguments) = wanted.expect_type_arguments::<1>() else {
+            return Ok(None);
+        };
+        prim_symbol::match_is_symbol(state, context, &arguments)?
     } else if context.known_reflectable.reflectable == Some((*file_id, *item_id)) {
-        prim_reflectable::match_reflectable(state, context, arguments)?
+        let Some(arguments) = wanted.expect_type_arguments::<2>() else {
+            return Ok(None);
+        };
+        prim_reflectable::match_reflectable(state, context, &arguments)?
     } else {
         None
     };

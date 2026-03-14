@@ -8,8 +8,8 @@ use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::substitute::{NameToType, SubstituteName};
 use crate::core::{
-    CheckedInstance, ForallBinder, Type, TypeId, constraint, generalise, normalise, signature,
-    toolkit, unification, zonk,
+    CheckedInstance, ForallBinder, KindOrType, Type, TypeId, constraint, generalise, normalise,
+    signature, toolkit, unification, zonk,
 };
 use crate::error::{ErrorCrumb, ErrorKind};
 use crate::source::terms::equations;
@@ -274,7 +274,7 @@ where
         };
 
         let class_member_type = if let Some(class_member_type) = class_member_type {
-            specialise_class_member_type(
+            instantiate_class_member_type(
                 state,
                 context,
                 class_member_type,
@@ -316,13 +316,13 @@ where
             )?;
             state.report_exhaustiveness(context, exhaustiveness);
             state.solve_constraints(context)?
-        } else if let Some(specialised_type) = class_member_type {
+        } else if let Some(expected_type) = class_member_type {
             let equation_set = equations::analyse_equation_set(
                 state,
                 context,
                 equations::EquationMode::Check {
                     origin: equations::EquationTypeOrigin::Implicit,
-                    expected_type: specialised_type,
+                    expected_type,
                 },
                 &member.equations,
             )?;
@@ -349,7 +349,7 @@ where
 
 struct FreshenedInstanceRigids {
     constraints: Vec<TypeId>,
-    arguments: Vec<TypeId>,
+    arguments: Vec<KindOrType>,
     substitution: NameToType,
 }
 
@@ -378,18 +378,18 @@ where
     let arguments = instance
         .arguments
         .iter()
-        .map(|&argument| SubstituteName::many(state, context, &substitution, argument))
+        .map(|&argument| substitute_kind_or_type(state, context, &substitution, argument))
         .collect::<QueryResult<Vec<_>>>()?;
 
     Ok(FreshenedInstanceRigids { constraints, arguments, substitution })
 }
 
-fn specialise_class_member_type<Q>(
+fn instantiate_class_member_type<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     class_member_type: TypeId,
     (class_file, class_id): (FileId, TypeItemId),
-    instance_arguments: &[TypeId],
+    instance_arguments: &[KindOrType],
 ) -> QueryResult<Option<TypeId>>
 where
     Q: ExternalQueries,
@@ -407,22 +407,29 @@ where
         )?;
 
     let class_binder_count = class_info.kind_binders.len() + class_info.type_parameters.len();
-    if binders.len() < class_binder_count
-        || instance_arguments.len() != class_info.type_parameters.len()
-    {
+    if binders.len() < class_binder_count {
         return Ok(None);
     }
 
     let (class_binders, member_binders) = binders.split_at(class_binder_count);
-    let (kind_binders, type_binders) = class_binders.split_at(class_info.kind_binders.len());
 
     let mut bindings = NameToType::default();
-    for binder in kind_binders {
-        let replacement = state.fresh_unification(context.queries, binder.kind);
-        bindings.insert(binder.name, replacement);
-    }
-    for (binder, &argument) in type_binders.iter().zip(instance_arguments) {
+    let mut instance_arguments = instance_arguments.iter().copied();
+
+    for binder in class_binders {
+        let Some(argument) = instance_arguments.next() else {
+            return Ok(None);
+        };
+
+        let argument = match argument {
+            KindOrType::Kind(argument) | KindOrType::Type(argument) => argument,
+        };
+
         bindings.insert(binder.name, argument);
+    }
+
+    if instance_arguments.next().is_some() {
+        return Ok(None);
     }
 
     let constraints = substitute_normalise_types(state, context, &bindings, &constraints)?;
@@ -483,6 +490,25 @@ where
         .iter()
         .map(|&type_id| substitute_normalise_type(state, context, bindings, type_id))
         .collect()
+}
+
+fn substitute_kind_or_type<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    bindings: &NameToType,
+    argument: KindOrType,
+) -> QueryResult<KindOrType>
+where
+    Q: ExternalQueries,
+{
+    Ok(match argument {
+        KindOrType::Kind(argument) => {
+            KindOrType::Kind(SubstituteName::many(state, context, bindings, argument)?)
+        }
+        KindOrType::Type(argument) => {
+            KindOrType::Type(SubstituteName::many(state, context, bindings, argument)?)
+        }
+    })
 }
 
 fn prepare_binding_group<Q>(state: &mut CheckState, context: &CheckContext<Q>, items: &[TermItemId])

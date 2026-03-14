@@ -23,7 +23,7 @@ backwardRight ::
     Proxy @(Row Type) (r :: Row Type)
 forceSolve ::
   forall (t14 :: Row Type) (t13 :: Row Type) (t12 :: Row Type) (t11 :: Row Type) (t10 :: Row Type).
-    Union (t14 :: Row Type) ( b :: String ) (t13 :: Row Type) =>
+    Union @Type (t14 :: Row Type) ( b :: String ) (t13 :: Row Type) =>
     { backwardLeft :: Proxy @(Row Type) ( a :: Int | (t12 :: Row Type) )
     , backwardRight :: Proxy @(Row Type) ( b :: String | (t11 :: Row Type) )
     , openLeft :: Proxy @(Row Type) ( a :: Int | (t13 :: Row Type) )

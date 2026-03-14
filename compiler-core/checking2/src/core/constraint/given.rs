@@ -5,7 +5,7 @@ use itertools::Itertools;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::{Type, TypeId, normalise};
+use crate::core::{KindOrType, Type, TypeId, normalise};
 use crate::state::CheckState;
 
 use super::{
@@ -37,14 +37,26 @@ where
         let is_coercible = application.file_id == context.prim_coerce.file_id
             && application.item_id == context.prim_coerce.coercible;
 
-        let &[left, right] = application.arguments.as_slice() else {
+        let type_positions = application
+            .arguments
+            .iter()
+            .enumerate()
+            .filter_map(|(index, argument)| {
+                matches!(argument, KindOrType::Type(_)).then_some(index)
+            })
+            .collect_vec();
+
+        let &[left, right] = type_positions.as_slice() else {
             return None;
         };
+
+        let mut arguments = application.arguments.clone();
+        arguments.swap(left, right);
 
         is_coercible.then(|| ConstraintApplication {
             file_id: application.file_id,
             item_id: application.item_id,
-            arguments: vec![right, left],
+            arguments,
         })
     });
 
@@ -78,7 +90,13 @@ where
         for (index, (&wanted_argument, &given_argument)) in
             iter::zip(wanted.arguments.iter(), given.arguments.iter()).enumerate()
         {
-            let match_result = match_given_type(state, context, wanted_argument, given_argument)?;
+            let match_result = match (wanted_argument, given_argument) {
+                (KindOrType::Kind(wanted_argument), KindOrType::Kind(given_argument))
+                | (KindOrType::Type(wanted_argument), KindOrType::Type(given_argument)) => {
+                    match_given_type(state, context, wanted_argument, given_argument)?
+                }
+                _ => continue 'given,
+            };
 
             if matches!(match_result, MatchType::Apart) {
                 continue 'given;
@@ -94,11 +112,16 @@ where
         // rather than require functional dependencies to cover it.
         let equalities = stuck_positions
             .into_iter()
-            .map(|index| (wanted.arguments[index], given.arguments[index]));
-        return Ok(Some(MatchInstance::Match {
-            constraints: vec![],
-            equalities: equalities.collect(),
-        }));
+            .map(|index| match (wanted.arguments[index], given.arguments[index]) {
+                (KindOrType::Kind(wanted_argument), KindOrType::Kind(given_argument))
+                | (KindOrType::Type(wanted_argument), KindOrType::Type(given_argument)) => {
+                    (wanted_argument, given_argument)
+                }
+                _ => unreachable!("kind/type mismatch after positional argument matching"),
+            })
+            .collect();
+
+        return Ok(Some(MatchInstance::Match { constraints: vec![], equalities }));
     }
 
     Ok(None)

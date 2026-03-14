@@ -11,7 +11,9 @@ use crate::context::CheckContext;
 use crate::core::substitute::SubstituteName;
 use crate::core::unification::{CanUnify, can_unify};
 use crate::core::walk::{TypeWalker, WalkAction, walk_type};
-use crate::core::{CheckedInstance, Name, RowField, RowType, Type, TypeId, normalise, toolkit};
+use crate::core::{
+    CheckedInstance, KindOrType, Name, RowField, RowType, Type, TypeId, normalise, toolkit,
+};
 use crate::error::ErrorKind;
 use crate::state::CheckState;
 use crate::{CheckedModule, ExternalQueries};
@@ -39,6 +41,9 @@ where
     files_to_search.insert(application.file_id);
 
     for &argument in &application.arguments {
+        let argument = match argument {
+            KindOrType::Kind(argument) | KindOrType::Type(argument) => argument,
+        };
         CollectFileReferences::collect(state, context, argument, &mut files_to_search)?;
     }
 
@@ -188,17 +193,34 @@ where
         return Ok(MatchInstance::Apart);
     };
 
-    if wanted.arguments.len() != decomposed.arguments.len() {
+    let wanted_arguments = wanted
+        .arguments
+        .iter()
+        .filter_map(|argument| match argument {
+            KindOrType::Type(argument) => Some(*argument),
+            KindOrType::Kind(_) => None,
+        })
+        .collect_vec();
+    let decomposed_arguments = decomposed
+        .arguments
+        .iter()
+        .filter_map(|argument| match argument {
+            KindOrType::Type(argument) => Some(*argument),
+            KindOrType::Kind(_) => None,
+        })
+        .collect_vec();
+
+    if wanted_arguments.len() != decomposed_arguments.len() {
         return Ok(MatchInstance::Apart);
     }
 
     let mut bindings = FxHashMap::default();
     let mut equalities = vec![];
-    let mut match_results = vec![];
+    let mut type_match_results = vec![];
     let mut stuck_positions = vec![];
 
     for (index, (&wanted_argument, &instance_argument)) in
-        iter::zip(wanted.arguments.iter(), decomposed.arguments.iter()).enumerate()
+        iter::zip(wanted_arguments.iter(), decomposed_arguments.iter()).enumerate()
     {
         let match_result = match_type(
             state,
@@ -217,7 +239,7 @@ where
             stuck_positions.push(index);
         }
 
-        match_results.push(match_result);
+        type_match_results.push(match_result);
     }
 
     if !stuck_positions.is_empty()
@@ -225,7 +247,7 @@ where
             context,
             wanted.file_id,
             wanted.item_id,
-            &match_results,
+            &type_match_results,
             &stuck_positions,
         )?
     {
@@ -234,8 +256,9 @@ where
 
     for &index in &stuck_positions {
         let substituted =
-            SubstituteName::many(state, context, &bindings, decomposed.arguments[index])?;
-        equalities.push((wanted.arguments[index], substituted));
+            SubstituteName::many(state, context, &bindings, decomposed_arguments[index])?;
+        let wanted_argument = wanted_arguments[index];
+        equalities.push((wanted_argument, substituted));
     }
 
     for binder in &decomposed.binders {

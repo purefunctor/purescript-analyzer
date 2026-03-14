@@ -1,6 +1,7 @@
 use std::cmp::Ordering;
 
 use building_types::QueryResult;
+use indexing::TypeItemId;
 use itertools::Itertools;
 use rustc_hash::FxHashSet;
 
@@ -8,7 +9,8 @@ use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::constraint::MatchInstance;
 use crate::core::unification::{CanUnify, can_unify};
-use crate::core::{RowField, RowType, Type, TypeId};
+use crate::core::{RowField, RowType, Type, TypeId, normalise};
+use crate::source::types;
 use crate::state::CheckState;
 
 use super::{extract_row, extract_symbol, match_equality};
@@ -19,6 +21,49 @@ where
 {
     let row_id = context.intern_row_type(row);
     context.intern_row(row_id)
+}
+
+fn make_prim_row_constraint<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    class_id: TypeItemId,
+    arguments: &[TypeId],
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let row_kind = infer_row_constraint_kind(state, context, arguments)?;
+
+    let constructor =
+        context.queries.intern_type(Type::Constructor(context.prim_row.file_id, class_id));
+    let mut constraint = context.intern_kind_application(constructor, row_kind);
+    for &argument in arguments {
+        constraint = context.intern_application(constraint, argument);
+    }
+    Ok(constraint)
+}
+
+fn infer_row_constraint_kind<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    arguments: &[TypeId],
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    for &argument in arguments {
+        let argument_kind = types::elaborate_kind(state, context, argument)?;
+        let argument_kind = normalise::expand(state, context, argument_kind)?;
+
+        if let Type::Application(row_constructor, row_kind) = context.lookup_type(argument_kind) {
+            let row_constructor = normalise::expand(state, context, row_constructor)?;
+            if row_constructor == context.prim.row {
+                return Ok(row_kind);
+            }
+        }
+    }
+
+    Ok(state.fresh_unification(context.queries, context.prim.t))
 }
 
 fn extract_closed_row<Q>(
@@ -110,14 +155,12 @@ where
                     RowType::new(left_row.fields.iter().cloned(), Some(fresh_tail)),
                 );
 
-                let prim_row = &context.prim_row;
-
-                let constraint = context
-                    .queries
-                    .intern_type(Type::Constructor(prim_row.file_id, prim_row.union));
-                let constraint = context.intern_application(constraint, rest);
-                let constraint = context.intern_application(constraint, right);
-                let constraint = context.intern_application(constraint, fresh_tail);
+                let constraint = make_prim_row_constraint(
+                    state,
+                    context,
+                    context.prim_row.union,
+                    &[rest, right, fresh_tail],
+                )?;
 
                 return Ok(Some(MatchInstance::Match {
                     constraints: vec![constraint],
@@ -247,11 +290,8 @@ where
             return Ok(Some(MatchInstance::Stuck));
         }
 
-        let constraint = context
-            .queries
-            .intern_type(Type::Constructor(context.prim_row.file_id, context.prim_row.lacks));
-        let constraint = context.intern_application(constraint, label);
-        let constraint = context.intern_application(constraint, tail);
+        let constraint =
+            make_prim_row_constraint(state, context, context.prim_row.lacks, &[label, tail])?;
 
         Ok(Some(MatchInstance::Match { constraints: vec![constraint], equalities: vec![] }))
     } else {

@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -41,7 +42,7 @@ lacksPresent ::
 forceSolve ::
   forall (t23 :: Row Type) (t22 :: Row Type) (t21 :: Row Type) (t20 :: Row Type) (t19 :: Row Type)
     (t18 :: Row Type) (t17 :: Row Type).
-    Union (t23 :: Row Type) ( b :: String ) (t22 :: Row Type) =>
+    Union @Type (t23 :: Row Type) ( b :: String ) (t22 :: Row Type) =>
     { backwardLeft :: Proxy @(Row Type) ( a :: Int | (t21 :: Row Type) )
     , backwardRight :: Proxy @(Row Type) ( b :: String | (t20 :: Row Type) )
     , consOpen :: Proxy @(Row Type) ( a :: String, x :: Int | (t19 :: Row Type) )

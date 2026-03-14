@@ -124,7 +124,7 @@ where
             continue;
         }
 
-        let &[a, b, relation] = constraint.arguments.as_slice() else {
+        let Some([a, b, relation]) = constraint.expect_type_arguments::<3>() else {
             continue;
         };
 

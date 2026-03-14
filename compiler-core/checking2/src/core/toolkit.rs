@@ -36,7 +36,7 @@ pub enum InspectMode {
 pub struct DecomposedInstance {
     pub binders: Vec<ForallBinder>,
     pub constraints: Vec<TypeId>,
-    pub arguments: Vec<TypeId>,
+    pub arguments: Vec<KindOrType>,
 }
 
 pub struct NewtypeInner {
