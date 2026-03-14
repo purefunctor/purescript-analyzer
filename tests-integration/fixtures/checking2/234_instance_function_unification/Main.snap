@@ -1,0 +1,72 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+identity ::
+  forall (t3 :: Type) (t2 :: Type) (f :: (t3 :: Type) -> (t3 :: Type) -> (t2 :: Type))
+    (a :: (t3 :: Type)).
+    Category @(t3 :: Type) @(t2 :: Type) (f :: (t3 :: Type) -> (t3 :: Type) -> (t2 :: Type)) =>
+    (f :: (t3 :: Type) -> (t3 :: Type) -> (t2 :: Type)) (a :: (t3 :: Type)) (a :: (t3 :: Type))
+
+Types
+Category ::
+  forall (t3 :: Type) (t2 :: Type). ((t3 :: Type) -> (t3 :: Type) -> (t2 :: Type)) -> Constraint
+
+Classes
+class forall (t3 :: Type) (t2 :: Type) (f :: (t3 :: Type) -> (t3 :: Type) -> (t2 :: Type)). Category @(t3 :: Type) @(t2 :: Type) (f :: (t3 :: Type) -> (t3 :: Type) -> (t2 :: Type))
+  identity ::
+  forall (t3 :: Type) (t2 :: Type) (f :: (t3 :: Type) -> (t3 :: Type) -> (t2 :: Type))
+    (a :: (t3 :: Type)).
+    Category @(t3 :: Type) @(t2 :: Type) (f :: (t3 :: Type) -> (t3 :: Type) -> (t2 :: Type)) =>
+    (f :: (t3 :: Type) -> (t3 :: Type) -> (t2 :: Type)) (a :: (t3 :: Type)) (a :: (t3 :: Type))
+
+Instances
+instance Category @Type @Type Function
+
+Errors
+CheckError {
+    kind: CannotUnify {
+        t1: Id<smol_str::SmolStr>(5),
+        t2: Id<smol_str::SmolStr>(6),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(1),
+        ),
+    ],
+}
+CheckError {
+    kind: CannotUnify {
+        t1: Id<smol_str::SmolStr>(7),
+        t2: Id<smol_str::SmolStr>(8),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(1),
+        ),
+    ],
+}
+CheckError {
+    kind: CannotUnify {
+        t1: Id<smol_str::SmolStr>(9),
+        t2: Id<smol_str::SmolStr>(10),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(1),
+        ),
+    ],
+}
+CheckError {
+    kind: InstanceMemberTypeMismatch {
+        expected: Id<smol_str::SmolStr>(10),
+        actual: Id<smol_str::SmolStr>(9),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(1),
+        ),
+    ],
+}
