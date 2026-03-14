@@ -43,11 +43,3 @@ class forall (k :: Type) (a :: (k :: Type) -> (k :: Type) -> Type). Semigroupoid
 Instances
 instance Semigroupoid @Type Function
 instance Category @Type Function
-
-Errors
-CheckError {
-    kind: InvalidTypeOperator {
-        kind_message: Id<smol_str::SmolStr>(9),
-    },
-    crumbs: [],
-}

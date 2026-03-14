@@ -1,4 +1,3 @@
-use std::mem;
 
 use building_types::QueryResult;
 use files::FileId;
@@ -20,7 +19,6 @@ use crate::state::CheckState;
 
 #[derive(Default)]
 struct TermSccState {
-    operator: Vec<TermItemId>,
     value_groups: FxHashMap<TermItemId, PendingValueGroup>,
 }
 
@@ -175,7 +173,6 @@ where
         }
 
         finalise_term_binding_group(state, context, &mut term_scc, items)?;
-        finalise_term_operators(state, context, &mut term_scc)?;
     }
 
     Ok(())
@@ -556,7 +553,7 @@ where
 
     match item {
         TermItemIr::Operator { resolution, .. } => {
-            check_term_operator(state, context, scc, item_id, *resolution)?;
+            check_term_operator(state, context, item_id, *resolution)?;
         }
         TermItemIr::ValueGroup { signature, equations } => {
             let pending = state.with_implication(|state| {
@@ -724,7 +721,6 @@ where
 fn check_term_operator<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    scc: &mut TermSccState,
     item_id: TermItemId,
     resolution: Option<(FileId, TermItemId)>,
 ) -> QueryResult<()>
@@ -738,30 +734,6 @@ where
         unification::subtype(state, context, operator_type, item_type)?;
     } else {
         state.checked.terms.insert(item_id, operator_type);
-    }
-
-    scc.operator.push(item_id);
-
-    Ok(())
-}
-
-fn finalise_term_operators<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    scc: &mut TermSccState,
-) -> QueryResult<()>
-where
-    Q: ExternalQueries,
-{
-    for item_id in mem::take(&mut scc.operator) {
-        let Some(t) = state.checked.terms.get(&item_id).copied() else {
-            continue;
-        };
-
-        if !toolkit::is_binary_operator_type(state, context, t)? {
-            let kind_message = state.pretty_id(context, t)?;
-            state.insert_error(ErrorKind::InvalidTypeOperator { kind_message });
-        }
     }
 
     Ok(())

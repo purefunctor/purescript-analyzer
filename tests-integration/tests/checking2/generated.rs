@@ -489,3 +489,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_231_type_synonym_higher_order_operator_main() { run_test("231_type_synonym_higher_order_operator", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_232_category_identity_operator_alias_main() { run_test("232_category_identity_operator_alias", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_233_operator_alias_kind_application_main() { run_test("233_operator_alias_kind_application", "Main"); }

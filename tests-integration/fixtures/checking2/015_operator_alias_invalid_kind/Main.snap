@@ -11,11 +11,3 @@ Identity :: forall (t1 :: Type). (t1 :: Type) -> (t1 :: Type)
 
 Synonyms
 type Identity a = (a :: (t1 :: Type))
-
-Errors
-CheckError {
-    kind: InvalidTypeOperator {
-        kind_message: Id<smol_str::SmolStr>(4),
-    },
-    crumbs: [],
-}

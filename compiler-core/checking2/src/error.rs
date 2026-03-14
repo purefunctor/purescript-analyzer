@@ -90,9 +90,6 @@ pub enum ErrorKind {
         function_kind: SmolStrId,
         argument_type: SmolStrId,
     },
-    InvalidTypeOperator {
-        kind_message: SmolStrId,
-    },
     ExpectedNewtype {
         type_message: SmolStrId,
     },

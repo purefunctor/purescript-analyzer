@@ -17,7 +17,7 @@ use crate::core::{
     CheckedClass, CheckedSynonym, ForallBinder, Role, Type, TypeId, generalise, signature, toolkit,
     unification, zonk,
 };
-use crate::error::{ErrorCrumb, ErrorKind};
+use crate::error::ErrorCrumb;
 use crate::source::types;
 use crate::state::CheckState;
 
@@ -45,7 +45,6 @@ struct TypeSccState {
     synonym: Vec<(TypeItemId, PendingSynonymType)>,
     class: Vec<(TypeItemId, PendingClassType)>,
     foreign: Vec<(TypeItemId, Arc<[lowering::Role]>)>,
-    operator: Vec<TypeItemId>,
 }
 
 /// Checks all type items in topological order.
@@ -85,7 +84,6 @@ where
         finalise_data_constructors(state, context, &mut scc_state)?;
         finalise_synonym_replacements(state, context, &mut scc_state)?;
         finalise_classes(state, context, &mut scc_state)?;
-        finalise_type_operators(state, context, &mut scc_state)?;
     }
     Ok(())
 }
@@ -264,7 +262,7 @@ where
             scc.foreign.push((item_id, Arc::clone(roles)));
         }
         TypeItemIr::Operator { resolution, .. } => {
-            check_type_operator(state, context, scc, item_id, *resolution)?;
+            check_type_operator(state, context, item_id, *resolution)?;
         }
     }
 
@@ -895,7 +893,6 @@ where
 fn check_type_operator<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    scc: &mut TypeSccState,
     item_id: TypeItemId,
     resolution: Option<(FileId, TypeItemId)>,
 ) -> QueryResult<()>
@@ -909,30 +906,6 @@ where
         unification::subtype(state, context, operator_kind, item_kind)?;
     } else {
         state.checked.types.insert(item_id, operator_kind);
-    }
-
-    scc.operator.push(item_id);
-
-    Ok(())
-}
-
-fn finalise_type_operators<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    scc: &mut TypeSccState,
-) -> QueryResult<()>
-where
-    Q: ExternalQueries,
-{
-    for item_id in mem::take(&mut scc.operator) {
-        let Some(kind) = state.checked.types.get(&item_id).copied() else {
-            continue;
-        };
-
-        if !toolkit::is_binary_operator_type(state, context, kind)? {
-            let kind_message = state.pretty_id(context, kind)?;
-            state.insert_error(ErrorKind::InvalidTypeOperator { kind_message });
-        }
     }
 
     Ok(())
