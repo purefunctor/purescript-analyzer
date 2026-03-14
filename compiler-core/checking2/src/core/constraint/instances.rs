@@ -531,6 +531,7 @@ impl<'a> CollectFileReferences<'a> {
     where
         Q: ExternalQueries,
     {
+        let id = normalise::expand(state, context, id)?;
         walk_type(state, context, id, &mut CollectFileReferences { files })
     }
 }
