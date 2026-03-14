@@ -14,7 +14,7 @@ use crate::core::exhaustive::{
 use crate::core::substitute::{NameToType, SubstituteName};
 use crate::core::{Depth, Name, SmolStrId, Type, TypeId, constraint, pretty, zonk};
 use crate::error::{CheckError, ErrorCrumb, ErrorKind};
-use crate::implication::Implications;
+use crate::implication::{Implications, Patterns};
 use crate::{CheckedModule, ExternalQueries};
 
 /// Manages [`Name`] values for [`CheckState`].
@@ -288,7 +288,9 @@ impl CheckState {
                 .into_iter()
                 .map(|pattern| context.queries.intern_smol_str(pattern))
                 .collect();
-            self.insert_error(ErrorKind::MissingPatterns { patterns: Arc::from(patterns) });
+            let crumbs = self.crumbs.iter().copied().collect();
+            let patterns = Patterns { patterns: Arc::from(patterns), crumbs };
+            self.implications.current_mut().patterns.push(patterns);
         }
 
         if !exhaustiveness.redundant.is_empty() {

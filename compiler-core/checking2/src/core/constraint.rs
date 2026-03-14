@@ -16,6 +16,7 @@ use crate::context::CheckContext;
 use crate::core::substitute::{NameToType, SubstituteName};
 use crate::core::{KindOrType, Type, TypeId, normalise, toolkit, unification};
 use crate::implication::ImplicationId;
+use crate::error::ErrorKind;
 use crate::state::CheckState;
 
 use compiler::match_compiler_instances;
@@ -82,9 +83,14 @@ fn solve_implication_id<Q>(
 where
     Q: ExternalQueries,
 {
-    let (wanted, given, children) = {
+    let (wanted, given, patterns, children) = {
         let node = &mut state.implications[implication];
-        (mem::take(&mut node.wanted), mem::take(&mut node.given), node.children.clone())
+        (
+            mem::take(&mut node.wanted),
+            mem::take(&mut node.given),
+            mem::take(&mut node.patterns),
+            node.children.clone(),
+        )
     };
 
     let all_given = inherited.iter().copied().chain(given.iter().copied()).collect_vec();
@@ -105,6 +111,16 @@ where
     let implication = &mut state.implications[implication];
     implication.given = given;
     implication.wanted = residuals.iter().copied().collect();
+
+    let has_given_partial = all_given.contains(&context.prim.partial);
+    if !has_given_partial {
+        for deferred in patterns {
+            state.checked.errors.push(crate::error::CheckError {
+                kind: ErrorKind::MissingPatterns { patterns: deferred.patterns },
+                crumbs: deferred.crumbs,
+            });
+        }
+    }
 
     Ok(residuals)
 }

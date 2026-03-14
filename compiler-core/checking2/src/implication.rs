@@ -2,8 +2,17 @@
 
 use std::collections::VecDeque;
 use std::ops::{Index, IndexMut};
+use std::sync::Arc;
 
+use crate::core::SmolStrId;
 use crate::core::TypeId;
+use crate::error::ErrorCrumb;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Patterns {
+    pub patterns: Arc<[SmolStrId]>,
+    pub crumbs: Arc<[ErrorCrumb]>,
+}
 
 /// A unique identifier for an implication scope.
 pub type ImplicationId = u32;
@@ -13,6 +22,7 @@ pub type ImplicationId = u32;
 pub struct Implication {
     pub given: Vec<TypeId>,
     pub wanted: VecDeque<TypeId>,
+    pub patterns: Vec<Patterns>,
     pub children: Vec<ImplicationId>,
     pub parent: Option<ImplicationId>,
 }

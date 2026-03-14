@@ -19,36 +19,6 @@ Errors
 CheckError {
     kind: MissingPatterns {
         patterns: [
-            Id<smol_str::SmolStr>(7),
-        ],
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(2),
-        ),
-    ],
-}
-CheckError {
-    kind: MissingPatterns {
-        patterns: [
-            Id<smol_str::SmolStr>(7),
-        ],
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(3),
-        ),
-        CheckingExpression(
-            AstId<syntax::cst::Expression>(35),
-        ),
-        CheckingLetName(
-            Idx::<LetBindingNameGroup>(0),
-        ),
-    ],
-}
-CheckError {
-    kind: MissingPatterns {
-        patterns: [
             Id<smol_str::SmolStr>(8),
         ],
     },

@@ -9,38 +9,3 @@ unsafeZeroLambda :: Int -> Int
 unsafeZeroName :: Int -> Int
 
 Types
-
-Errors
-CheckError {
-    kind: MissingPatterns {
-        patterns: [
-            Id<smol_str::SmolStr>(4),
-        ],
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(0),
-        ),
-        CheckingExpression(
-            AstId<syntax::cst::Expression>(20),
-        ),
-    ],
-}
-CheckError {
-    kind: MissingPatterns {
-        patterns: [
-            Id<smol_str::SmolStr>(4),
-        ],
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(1),
-        ),
-        InferringExpression(
-            AstId<syntax::cst::Expression>(27),
-        ),
-        CheckingExpression(
-            AstId<syntax::cst::Expression>(30),
-        ),
-    ],
-}

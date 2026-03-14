@@ -46,36 +46,6 @@ CheckError {
     ],
 }
 CheckError {
-    kind: MissingPatterns {
-        patterns: [
-            Id<smol_str::SmolStr>(9),
-        ],
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(4),
-        ),
-        CheckingExpression(
-            AstId<syntax::cst::Expression>(38),
-        ),
-    ],
-}
-CheckError {
-    kind: MissingPatterns {
-        patterns: [
-            Id<smol_str::SmolStr>(9),
-        ],
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(6),
-        ),
-        CheckingExpression(
-            AstId<syntax::cst::Expression>(100),
-        ),
-    ],
-}
-CheckError {
     kind: CannotUnify {
         t1: Id<smol_str::SmolStr>(7),
         t2: Id<smol_str::SmolStr>(8),
