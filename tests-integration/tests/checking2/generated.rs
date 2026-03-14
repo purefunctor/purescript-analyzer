@@ -376,9 +376,9 @@ fn run_test(folder: &str, file: &str) {
 
 #[rustfmt::skip] #[test] fn test_174_exhaustive_instance_equation_main() { run_test("174_exhaustive_instance_equation", "Main"); }
 
-#[rustfmt::skip] #[test] fn test_175_record_constructor_exhaustive_main() { run_test("175_record_constructor_exhaustive", "Main"); }
+#[rustfmt::skip] #[test] fn test_175_exhaustive_record_main() { run_test("175_exhaustive_record", "Main"); }
 
-#[rustfmt::skip] #[test] fn test_176_array_exhaustive_main() { run_test("176_array_exhaustive", "Main"); }
+#[rustfmt::skip] #[test] fn test_176_exhaustive_array_main() { run_test("176_exhaustive_array", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_177_exhaustive_guards_otherwise_true_main() { run_test("177_exhaustive_guards_otherwise_true", "Main"); }
 
@@ -495,3 +495,7 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_234_instance_function_unification_main() { run_test("234_instance_function_unification", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_235_derive_eq_ord_1_kind_arguments_main() { run_test("235_derive_eq_ord_1_kind_arguments", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_236_exhaustive_missing_patterns_main() { run_test("236_exhaustive_missing_patterns", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_237_exhaustive_unsafe_partial_main() { run_test("237_exhaustive_unsafe_partial", "Main"); }
