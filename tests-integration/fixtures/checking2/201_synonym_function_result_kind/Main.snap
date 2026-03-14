@@ -5,7 +5,7 @@ expression: report
 ---
 Terms
 Box ::
-  forall (f :: Type -> Type) (a :: Type).
+  forall (@f :: Type -> Type) (@a :: Type).
     (f :: Type -> Type) (a :: Type) -> Box (f :: Type -> Type) (a :: Type)
 test :: forall (f :: Type -> Type). Wrap (f :: Type -> Type) Int -> Wrap (f :: Type -> Type) Int
 

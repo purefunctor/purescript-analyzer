@@ -4,7 +4,8 @@ assertion_line: 28
 expression: report
 ---
 Terms
-Tuple :: forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type) -> Tuple (a :: Type) (b :: Type)
+Tuple ::
+  forall (@a :: Type) (@b :: Type). (a :: Type) -> (b :: Type) -> Tuple (a :: Type) (b :: Type)
 bind ::
   forall (m :: Type -> Type) (a :: Type) (b :: Type).
     (m :: Type -> Type) (a :: Type) ->

@@ -309,10 +309,11 @@ where
         let binders = binders
             .iter()
             .map(|binder| {
-                let text = match self.names.get(&binder.name) {
+                let name = match self.names.get(&binder.name) {
                     Some(&id) => self.lookup_smol_str(id),
                     None => binder.name.as_text(),
                 };
+                let text = if binder.visible { format!("@{name}") } else { name.to_string() };
                 let kind = self.traverse(Precedence::Top, binder.kind);
                 self.arena
                     .text(format!("({} :: ", text))

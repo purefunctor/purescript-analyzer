@@ -5,7 +5,7 @@ expression: report
 ---
 Terms
 Builder ::
-  forall (a :: Type) (b :: Type). ((a :: Type) -> (b :: Type)) -> Builder (a :: Type) (b :: Type)
+  forall (@a :: Type) (@b :: Type). ((a :: Type) -> (b :: Type)) -> Builder (a :: Type) (b :: Type)
 
 Types
 Builder :: Type -> Type -> Type

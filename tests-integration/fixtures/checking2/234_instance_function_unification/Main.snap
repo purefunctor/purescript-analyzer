@@ -5,7 +5,7 @@ expression: report
 ---
 Terms
 identity ::
-  forall (t3 :: Type) (t2 :: Type) (f :: (t3 :: Type) -> (t3 :: Type) -> (t2 :: Type))
+  forall (t3 :: Type) (t2 :: Type) (@f :: (t3 :: Type) -> (t3 :: Type) -> (t2 :: Type))
     (a :: (t3 :: Type)).
     Category @(t3 :: Type) @(t2 :: Type) (f :: (t3 :: Type) -> (t3 :: Type) -> (t2 :: Type)) =>
     (f :: (t3 :: Type) -> (t3 :: Type) -> (t2 :: Type)) (a :: (t3 :: Type)) (a :: (t3 :: Type))
@@ -17,7 +17,7 @@ Category ::
 Classes
 class forall (t3 :: Type) (t2 :: Type) (f :: (t3 :: Type) -> (t3 :: Type) -> (t2 :: Type)). Category @(t3 :: Type) @(t2 :: Type) (f :: (t3 :: Type) -> (t3 :: Type) -> (t2 :: Type))
   identity ::
-  forall (t3 :: Type) (t2 :: Type) (f :: (t3 :: Type) -> (t3 :: Type) -> (t2 :: Type))
+  forall (t3 :: Type) (t2 :: Type) (@f :: (t3 :: Type) -> (t3 :: Type) -> (t2 :: Type))
     (a :: (t3 :: Type)).
     Category @(t3 :: Type) @(t2 :: Type) (f :: (t3 :: Type) -> (t3 :: Type) -> (t2 :: Type)) =>
     (f :: (t3 :: Type) -> (t3 :: Type) -> (t2 :: Type)) (a :: (t3 :: Type)) (a :: (t3 :: Type))

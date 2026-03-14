@@ -5,8 +5,8 @@ expression: report
 ---
 Terms
 Compose ::
-  forall (t4 :: Type) (t3 :: Type) (f :: (t4 :: Type) -> Type) (g :: (t3 :: Type) -> (t4 :: Type))
-    (a :: (t3 :: Type)).
+  forall (t4 :: Type) (t3 :: Type) (@f :: (t4 :: Type) -> Type) (@g :: (t3 :: Type) -> (t4 :: Type))
+    (@a :: (t3 :: Type)).
     (f :: (t4 :: Type) -> Type) ((g :: (t3 :: Type) -> (t4 :: Type)) (a :: (t3 :: Type))) ->
     Compose @(t4 :: Type) @(t3 :: Type)
       (f :: (t4 :: Type) -> Type)

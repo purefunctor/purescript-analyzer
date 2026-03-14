@@ -5,7 +5,7 @@ expression: report
 ---
 Terms
 convert ::
-  forall (a :: Type) (b :: Type). Convert (a :: Type) (b :: Type) => (a :: Type) -> (b :: Type)
+  forall (@a :: Type) (@b :: Type). Convert (a :: Type) (b :: Type) => (a :: Type) -> (b :: Type)
 test :: String
 
 Types
@@ -15,7 +15,7 @@ TypeEq :: forall (k :: Type). (k :: Type) -> (k :: Type) -> Constraint
 Classes
 class forall (a :: Type) (b :: Type). Convert (a :: Type) (b :: Type)
   convert ::
-  forall (a :: Type) (b :: Type). Convert (a :: Type) (b :: Type) => (a :: Type) -> (b :: Type)
+  forall (@a :: Type) (@b :: Type). Convert (a :: Type) (b :: Type) => (a :: Type) -> (b :: Type)
 class forall (k :: Type) (a :: (k :: Type)) (b :: (k :: Type)). TypeEq @(k :: Type) (a :: (k :: Type)) (b :: (k :: Type))
 
 Instances

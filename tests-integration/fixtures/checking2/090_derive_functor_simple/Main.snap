@@ -4,12 +4,12 @@ assertion_line: 28
 expression: report
 ---
 Terms
-Identity :: forall (a :: Type). (a :: Type) -> Identity (a :: Type)
+Identity :: forall (@a :: Type). (a :: Type) -> Identity (a :: Type)
 Const ::
-  forall (t3 :: Type) (e :: Type) (a :: (t3 :: Type)).
+  forall (t3 :: Type) (@e :: Type) (@a :: (t3 :: Type)).
     (e :: Type) -> Const @(t3 :: Type) (e :: Type) (a :: (t3 :: Type))
-Nothing :: forall (a :: Type). Maybe (a :: Type)
-Just :: forall (a :: Type). (a :: Type) -> Maybe (a :: Type)
+Nothing :: forall (@a :: Type). Maybe (a :: Type)
+Just :: forall (@a :: Type). (a :: Type) -> Maybe (a :: Type)
 
 Types
 Identity :: Type -> Type

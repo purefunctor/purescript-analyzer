@@ -4,11 +4,11 @@ assertion_line: 28
 expression: report
 ---
 Terms
-Predicate :: forall (a :: Type). ((a :: Type) -> Boolean) -> Predicate (a :: Type)
+Predicate :: forall (@a :: Type). ((a :: Type) -> Boolean) -> Predicate (a :: Type)
 Reader ::
-  forall (r :: Type) (a :: Type). ((r :: Type) -> (a :: Type)) -> Reader (r :: Type) (a :: Type)
+  forall (@r :: Type) (@a :: Type). ((r :: Type) -> (a :: Type)) -> Reader (r :: Type) (a :: Type)
 Cont ::
-  forall (r :: Type) (a :: Type).
+  forall (@r :: Type) (@a :: Type).
     (((a :: Type) -> (r :: Type)) -> (r :: Type)) -> Cont (r :: Type) (a :: Type)
 
 Types

@@ -5,7 +5,7 @@ expression: report
 ---
 Terms
 App ::
-  forall (k :: Type) (f :: (k :: Type) -> Type) (a :: (k :: Type)).
+  forall (k :: Type) (@f :: (k :: Type) -> Type) (@a :: (k :: Type)).
     (f :: (k :: Type) -> Type) (a :: (k :: Type)) ->
     App @(k :: Type) (f :: (k :: Type) -> Type) (a :: (k :: Type))
 

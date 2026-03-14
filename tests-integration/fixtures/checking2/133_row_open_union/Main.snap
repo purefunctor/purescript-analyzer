@@ -4,7 +4,7 @@ assertion_line: 28
 expression: report
 ---
 Terms
-Proxy :: forall (k :: Type) (a :: (k :: Type)). Proxy @(k :: Type) (a :: (k :: Type))
+Proxy :: forall (k :: Type) (@a :: (k :: Type)). Proxy @(k :: Type) (a :: (k :: Type))
 openLeft ::
   forall (r :: Row Type) (u :: Row Type).
     Union @Type ( a :: Int | (r :: Row Type) ) ( b :: String ) (u :: Row Type) =>

@@ -4,25 +4,25 @@ assertion_line: 28
 expression: report
 ---
 Terms
-Id :: forall (a :: Type). (a :: Type) -> Id (a :: Type)
-Pair :: forall (a :: Type). (a :: Type) -> (a :: Type) -> Pair (a :: Type)
-Mixed :: forall (a :: Type). Int -> (a :: Type) -> Boolean -> Mixed (a :: Type)
-Rec :: forall (a :: Type). { count :: Int, value :: (a :: Type) } -> Rec (a :: Type)
+Id :: forall (@a :: Type). (a :: Type) -> Id (a :: Type)
+Pair :: forall (@a :: Type). (a :: Type) -> (a :: Type) -> Pair (a :: Type)
+Mixed :: forall (@a :: Type). Int -> (a :: Type) -> Boolean -> Mixed (a :: Type)
+Rec :: forall (@a :: Type). { count :: Int, value :: (a :: Type) } -> Rec (a :: Type)
 Wrap ::
-  forall (t6 :: Type) (f :: (t6 :: Type) -> Type) (a :: (t6 :: Type)).
+  forall (t6 :: Type) (@f :: (t6 :: Type) -> Type) (@a :: (t6 :: Type)).
     (f :: (t6 :: Type) -> Type) (a :: (t6 :: Type)) ->
     Wrap @(t6 :: Type) (f :: (t6 :: Type) -> Type) (a :: (t6 :: Type))
 Compose ::
-  forall (t11 :: Type) (t10 :: Type) (f :: (t11 :: Type) -> Type)
-    (g :: (t10 :: Type) -> (t11 :: Type)) (a :: (t10 :: Type)).
+  forall (t11 :: Type) (t10 :: Type) (@f :: (t11 :: Type) -> Type)
+    (@g :: (t10 :: Type) -> (t11 :: Type)) (@a :: (t10 :: Type)).
     (f :: (t11 :: Type) -> Type) ((g :: (t10 :: Type) -> (t11 :: Type)) (a :: (t10 :: Type))) ->
     Compose @(t11 :: Type) @(t10 :: Type)
       (f :: (t11 :: Type) -> Type)
       (g :: (t10 :: Type) -> (t11 :: Type))
       (a :: (t10 :: Type))
-Left' :: forall (a :: Type). (a :: Type) -> Either' (a :: Type)
-Right' :: forall (a :: Type). (a :: Type) -> Either' (a :: Type)
-NoEq :: forall (a :: Type). (a :: Type) -> NoEq (a :: Type)
+Left' :: forall (@a :: Type). (a :: Type) -> Either' (a :: Type)
+Right' :: forall (@a :: Type). (a :: Type) -> Either' (a :: Type)
+NoEq :: forall (@a :: Type). (a :: Type) -> NoEq (a :: Type)
 
 Types
 Id :: Type -> Type

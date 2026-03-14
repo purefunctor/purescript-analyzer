@@ -4,14 +4,14 @@ assertion_line: 28
 expression: report
 ---
 Terms
-c :: forall (a :: Type). C (a :: Type) => (a :: Type) -> Int
+c :: forall (@a :: Type). C (a :: Type) => (a :: Type) -> Int
 
 Types
 C :: Type -> Constraint
 
 Classes
 class forall (a :: Type). C (a :: Type)
-  c :: forall (a :: Type). C (a :: Type) => (a :: Type) -> Int
+  c :: forall (@a :: Type). C (a :: Type) => (a :: Type) -> Int
 
 Instances
 instance C Boolean

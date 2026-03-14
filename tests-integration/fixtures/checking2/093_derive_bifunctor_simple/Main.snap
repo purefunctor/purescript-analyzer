@@ -4,11 +4,11 @@ assertion_line: 28
 expression: report
 ---
 Terms
-Left :: forall (a :: Type) (b :: Type). (a :: Type) -> Either (a :: Type) (b :: Type)
-Right :: forall (a :: Type) (b :: Type). (b :: Type) -> Either (a :: Type) (b :: Type)
-Pair :: forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type) -> Pair (a :: Type) (b :: Type)
+Left :: forall (@a :: Type) (@b :: Type). (a :: Type) -> Either (a :: Type) (b :: Type)
+Right :: forall (@a :: Type) (@b :: Type). (b :: Type) -> Either (a :: Type) (b :: Type)
+Pair :: forall (@a :: Type) (@b :: Type). (a :: Type) -> (b :: Type) -> Pair (a :: Type) (b :: Type)
 Const2 ::
-  forall (t8 :: Type) (t7 :: Type) (e :: Type) (a :: (t8 :: Type)) (b :: (t7 :: Type)).
+  forall (t8 :: Type) (t7 :: Type) (@e :: Type) (@a :: (t8 :: Type)) (@b :: (t7 :: Type)).
     (e :: Type) ->
     Const2 @(t8 :: Type) @(t7 :: Type) (e :: Type) (a :: (t8 :: Type)) (b :: (t7 :: Type))
 

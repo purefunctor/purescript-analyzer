@@ -4,10 +4,10 @@ assertion_line: 28
 expression: report
 ---
 Terms
-Nothing :: forall (a :: Type). Maybe (a :: Type)
-Just :: forall (a :: Type). (a :: Type) -> Maybe (a :: Type)
-Left :: forall (a :: Type) (b :: Type). (a :: Type) -> Either (a :: Type) (b :: Type)
-Right :: forall (a :: Type) (b :: Type). (b :: Type) -> Either (a :: Type) (b :: Type)
+Nothing :: forall (@a :: Type). Maybe (a :: Type)
+Just :: forall (@a :: Type). (a :: Type) -> Maybe (a :: Type)
+Left :: forall (@a :: Type) (@b :: Type). (a :: Type) -> Either (a :: Type) (b :: Type)
+Right :: forall (@a :: Type) (@b :: Type). (b :: Type) -> Either (a :: Type) (b :: Type)
 coerceDifferent :: Maybe Int -> Either Int String
 
 Types

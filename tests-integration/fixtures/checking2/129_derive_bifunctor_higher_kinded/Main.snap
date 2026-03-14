@@ -5,8 +5,8 @@ expression: report
 ---
 Terms
 WrapBoth ::
-  forall (t5 :: Type) (t4 :: Type) (f :: (t5 :: Type) -> Type) (g :: (t4 :: Type) -> Type)
-    (a :: (t5 :: Type)) (b :: (t4 :: Type)).
+  forall (t5 :: Type) (t4 :: Type) (@f :: (t5 :: Type) -> Type) (@g :: (t4 :: Type) -> Type)
+    (@a :: (t5 :: Type)) (@b :: (t4 :: Type)).
     (f :: (t5 :: Type) -> Type) (a :: (t5 :: Type)) ->
     (g :: (t4 :: Type) -> Type) (b :: (t4 :: Type)) ->
     WrapBoth @(t5 :: Type) @(t4 :: Type)
@@ -15,8 +15,8 @@ WrapBoth ::
       (a :: (t5 :: Type))
       (b :: (t4 :: Type))
 WrapBothNoConstraint ::
-  forall (t11 :: Type) (t10 :: Type) (f :: (t11 :: Type) -> Type) (g :: (t10 :: Type) -> Type)
-    (a :: (t11 :: Type)) (b :: (t10 :: Type)).
+  forall (t11 :: Type) (t10 :: Type) (@f :: (t11 :: Type) -> Type) (@g :: (t10 :: Type) -> Type)
+    (@a :: (t11 :: Type)) (@b :: (t10 :: Type)).
     (f :: (t11 :: Type) -> Type) (a :: (t11 :: Type)) ->
     (g :: (t10 :: Type) -> Type) (b :: (t10 :: Type)) ->
     WrapBothNoConstraint @(t11 :: Type) @(t10 :: Type)

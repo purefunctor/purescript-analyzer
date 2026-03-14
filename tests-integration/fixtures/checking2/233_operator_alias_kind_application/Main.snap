@@ -5,7 +5,7 @@ expression: report
 ---
 Terms
 Pair ::
-  forall (k :: Type) (a :: (k :: Type)) (b :: (k :: Type)).
+  forall (k :: Type) (@a :: (k :: Type)) (@b :: (k :: Type)).
     Pair @(k :: Type) (a :: (k :: Type)) (b :: (k :: Type))
 
 Types

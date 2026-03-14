@@ -5,13 +5,13 @@ expression: report
 ---
 Terms
 Just ::
-  forall (k :: Type) (n :: (k :: Type)) (a :: Type).
+  forall (k :: Type) (@n :: (k :: Type)) (@a :: Type).
     (a :: Type) -> Maybe @(k :: Type) (n :: (k :: Type)) (a :: Type)
 Nothing ::
-  forall (k :: Type) (n :: (k :: Type)) (a :: Type).
+  forall (k :: Type) (@n :: (k :: Type)) (@a :: Type).
     Maybe @(k :: Type) (n :: (k :: Type)) (a :: Type)
 MaybeAlias ::
-  forall (k :: Type) (n :: (k :: Type)) (a :: Type).
+  forall (k :: Type) (@n :: (k :: Type)) (@a :: Type).
     Maybe @(k :: Type) (n :: (k :: Type)) (a :: Type) ->
     MaybeAlias @(k :: Type) (n :: (k :: Type)) (a :: Type)
 coerceContainer :: Container (Maybe @Type) -> Container (MaybeAlias @Type)

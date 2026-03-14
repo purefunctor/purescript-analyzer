@@ -5,7 +5,7 @@ expression: report
 ---
 Terms
 identity ::
-  forall (k :: Type) (a :: (k :: Type) -> (k :: Type) -> Type) (t :: (k :: Type)).
+  forall (k :: Type) (@a :: (k :: Type) -> (k :: Type) -> Type) (t :: (k :: Type)).
     Category @(k :: Type) (a :: (k :: Type) -> (k :: Type) -> Type) =>
     (a :: (k :: Type) -> (k :: Type) -> Type) (t :: (k :: Type)) (t :: (k :: Type))
 test :: Function Int Int
@@ -17,7 +17,7 @@ Category :: forall (k :: Type). ((k :: Type) -> (k :: Type) -> Type) -> Constrai
 Classes
 class forall (k :: Type) (a :: (k :: Type) -> (k :: Type) -> Type). Category @(k :: Type) (a :: (k :: Type) -> (k :: Type) -> Type)
   identity ::
-  forall (k :: Type) (a :: (k :: Type) -> (k :: Type) -> Type) (t :: (k :: Type)).
+  forall (k :: Type) (@a :: (k :: Type) -> (k :: Type) -> Type) (t :: (k :: Type)).
     Category @(k :: Type) (a :: (k :: Type) -> (k :: Type) -> Type) =>
     (a :: (k :: Type) -> (k :: Type) -> Type) (t :: (k :: Type)) (t :: (k :: Type))
 

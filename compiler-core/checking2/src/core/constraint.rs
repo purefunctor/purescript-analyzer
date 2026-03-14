@@ -15,8 +15,8 @@ use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::substitute::{NameToType, SubstituteName};
 use crate::core::{KindOrType, Type, TypeId, normalise, toolkit, unification};
-use crate::implication::ImplicationId;
 use crate::error::ErrorKind;
+use crate::implication::ImplicationId;
 use crate::state::CheckState;
 
 use compiler::match_compiler_instances;

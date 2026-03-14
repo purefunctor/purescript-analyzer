@@ -4,10 +4,10 @@ assertion_line: 28
 expression: report
 ---
 Terms
-make :: forall (a :: Type) (b :: Type). Make (a :: Type) (b :: Type) => (a :: Type) -> (b :: Type)
+make :: forall (@a :: Type) (@b :: Type). Make (a :: Type) (b :: Type) => (a :: Type) -> (b :: Type)
 testMake :: { a :: Int, b :: String } -> { a :: Int, b :: String }
 convert ::
-  forall (a :: Type) (b :: Type). Convert (a :: Type) (b :: Type) => (a :: Type) -> (b :: Type)
+  forall (@a :: Type) (@b :: Type). Convert (a :: Type) (b :: Type) => (a :: Type) -> (b :: Type)
 testConvert :: { x :: Int } -> { converted :: { x :: Int } }
 
 Types
@@ -16,10 +16,10 @@ Convert :: Type -> Type -> Constraint
 
 Classes
 class forall (a :: Type) (b :: Type). Make (a :: Type) (b :: Type)
-  make :: forall (a :: Type) (b :: Type). Make (a :: Type) (b :: Type) => (a :: Type) -> (b :: Type)
+  make :: forall (@a :: Type) (@b :: Type). Make (a :: Type) (b :: Type) => (a :: Type) -> (b :: Type)
 class forall (a :: Type) (b :: Type). Convert (a :: Type) (b :: Type)
   convert ::
-  forall (a :: Type) (b :: Type). Convert (a :: Type) (b :: Type) => (a :: Type) -> (b :: Type)
+  forall (@a :: Type) (@b :: Type). Convert (a :: Type) (b :: Type) => (a :: Type) -> (b :: Type)
 
 Instances
 instance forall (t4 :: Row Type). Make {| (t4 :: Row Type) } {| (t4 :: Row Type) }

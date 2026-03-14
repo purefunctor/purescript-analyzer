@@ -932,7 +932,9 @@ fn lower_type_kind(
         cst::Type::TypeForall(cst) => state.with_scope(|s| {
             s.push_forall_scope();
             let bindings =
-                cst.children().map(|cst| lower_type_variable_binding(s, context, &cst)).collect();
+                cst.children()
+                    .map(|cst| lower_type_variable_binding(s, context, &cst, false))
+                    .collect();
             let inner = cst.type_().map(|cst| lower_type(s, context, &cst));
             TypeKind::Forall { bindings, inner }
         }),
@@ -1078,7 +1080,9 @@ pub(crate) fn lower_forall(state: &mut State, context: &Context, cst: &cst::Type
         let id = context.stabilized.lookup_cst(cst).expect_id();
         state.push_forall_scope();
         let bindings =
-            f.children().map(|cst| lower_type_variable_binding(state, context, &cst)).collect();
+            f.children()
+                .map(|cst| lower_type_variable_binding(state, context, &cst, false))
+                .collect();
         let inner = f.type_().map(|cst| lower_forall(state, context, &cst));
         let kind = TypeKind::Forall { bindings, inner };
         state.associate_type_info(id, kind);
@@ -1165,9 +1169,10 @@ pub(crate) fn lower_type_variable_binding(
     state: &mut State,
     context: &Context,
     cst: &cst::TypeVariableBinding,
+    default_visible: bool,
 ) -> TypeVariableBinding {
     let id = context.stabilized.lookup_cst(cst).expect_id();
-    let visible = cst.at().is_some();
+    let visible = cst.at().is_some() || default_visible;
     let name = cst.name().map(|cst| {
         let text = cst.text();
         SmolStr::from(text)

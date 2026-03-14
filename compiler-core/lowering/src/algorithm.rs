@@ -571,7 +571,7 @@ fn lower_type_item(state: &mut State, context: &Context, item_id: TypeItemId, it
                 state.push_forall_scope();
                 let variables = cst
                     .type_variables()
-                    .map(|t| recursive::lower_type_variable_binding(state, context, &t))
+                    .map(|t| recursive::lower_type_variable_binding(state, context, &t, true))
                     .collect();
 
                 Some(DataIr { variables })
@@ -604,7 +604,7 @@ fn lower_type_item(state: &mut State, context: &Context, item_id: TypeItemId, it
                 state.push_forall_scope();
                 let variables = cst
                     .type_variables()
-                    .map(|t| recursive::lower_type_variable_binding(state, context, &t))
+                    .map(|t| recursive::lower_type_variable_binding(state, context, &t, true))
                     .collect();
 
                 Some(NewtypeIr { variables })
@@ -639,7 +639,7 @@ fn lower_type_item(state: &mut State, context: &Context, item_id: TypeItemId, it
                 state.push_forall_scope();
                 let variables = cst
                     .children()
-                    .map(|cst| recursive::lower_type_variable_binding(state, context, &cst))
+                    .map(|cst| recursive::lower_type_variable_binding(state, context, &cst, false))
                     .collect();
 
                 let synonym = cst.type_().map(|cst| recursive::lower_type(state, context, &cst));
@@ -673,7 +673,7 @@ fn lower_type_item(state: &mut State, context: &Context, item_id: TypeItemId, it
                 let variables: Arc<[_]> = recover! {
                     cst.class_head()?
                         .children()
-                        .map(|cst| recursive::lower_type_variable_binding(state, context, &cst))
+                        .map(|cst| recursive::lower_type_variable_binding(state, context, &cst, true))
                         .collect()
                 };
 

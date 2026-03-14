@@ -5,7 +5,7 @@ expression: report
 ---
 Terms
 Tagged ::
-  forall (k :: Type) (t :: (k :: Type)) (a :: Type).
+  forall (k :: Type) (@t :: (k :: Type)) (@a :: Type).
     (a :: Type) -> Tagged @(k :: Type) (t :: (k :: Type)) (a :: Type)
 
 Types

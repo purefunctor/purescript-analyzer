@@ -4,7 +4,7 @@ assertion_line: 28
 expression: report
 ---
 Terms
-eq :: forall (a :: Type). Eq (a :: Type) => (a :: Type) -> (a :: Type) -> Boolean
+eq :: forall (@a :: Type). Eq (a :: Type) => (a :: Type) -> (a :: Type) -> Boolean
 test :: Boolean
 test2 :: Boolean
 test3 :: forall (t2 :: Type). Eq (t2 :: Type) => (t2 :: Type) -> (t2 :: Type) -> Boolean
@@ -14,7 +14,7 @@ Eq :: Type -> Constraint
 
 Classes
 class forall (a :: Type). Eq (a :: Type)
-  eq :: forall (a :: Type). Eq (a :: Type) => (a :: Type) -> (a :: Type) -> Boolean
+  eq :: forall (@a :: Type). Eq (a :: Type) => (a :: Type) -> (a :: Type) -> Boolean
 
 Instances
 instance Eq Int

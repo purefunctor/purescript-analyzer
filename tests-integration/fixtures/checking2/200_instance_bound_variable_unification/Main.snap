@@ -8,7 +8,7 @@ unsafeSet ::
   forall (r1 :: Row Type) (r2 :: Row Type) (a :: Type).
     String -> (a :: Type) -> {| (r1 :: Row Type) } -> {| (r2 :: Row Type) }
 buildIt ::
-  forall (row :: Row Type) (subrow :: Row Type).
+  forall (@row :: Row Type) (@subrow :: Row Type).
     BuildRecord (row :: Row Type) (subrow :: Row Type) => {| (subrow :: Row Type) }
 test ::
   forall (r :: Row Type) (s :: Row Type).
@@ -20,7 +20,7 @@ BuildRecord :: Row Type -> Row Type -> Constraint
 Classes
 class forall (row :: Row Type) (subrow :: Row Type). BuildRecord (row :: Row Type) (subrow :: Row Type)
   buildIt ::
-  forall (row :: Row Type) (subrow :: Row Type).
+  forall (@row :: Row Type) (@subrow :: Row Type).
     BuildRecord (row :: Row Type) (subrow :: Row Type) => {| (subrow :: Row Type) }
 
 Instances

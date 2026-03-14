@@ -7,7 +7,7 @@ Terms
 UserId :: Int -> UserId
 wrapUserId :: Int -> UserId
 unwrapUserId :: UserId -> Int
-Wrapper :: forall (a :: Type). (a :: Type) -> Wrapper (a :: Type)
+Wrapper :: forall (@a :: Type). (a :: Type) -> Wrapper (a :: Type)
 wrapWrapper :: forall (a :: Type). (a :: Type) -> Wrapper (a :: Type)
 unwrapWrapper :: forall (a :: Type). Wrapper (a :: Type) -> (a :: Type)
 

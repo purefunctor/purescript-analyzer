@@ -5,7 +5,7 @@ expression: report
 ---
 Terms
 Triple ::
-  forall (a :: Type) (b :: Type) (c :: Type).
+  forall (@a :: Type) (@b :: Type) (@c :: Type).
     (a :: Type) -> (b :: Type) -> (c :: Type) -> Triple (a :: Type) (b :: Type) (c :: Type)
 
 Types

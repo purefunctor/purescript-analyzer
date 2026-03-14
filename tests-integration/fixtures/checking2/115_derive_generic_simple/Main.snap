@@ -5,12 +5,13 @@ expression: report
 ---
 Terms
 MyUnit :: MyUnit
-Identity :: forall (a :: Type). (a :: Type) -> Identity (a :: Type)
-Left :: forall (a :: Type) (b :: Type). (a :: Type) -> Either (a :: Type) (b :: Type)
-Right :: forall (a :: Type) (b :: Type). (b :: Type) -> Either (a :: Type) (b :: Type)
-Tuple :: forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type) -> Tuple (a :: Type) (b :: Type)
-Wrapper :: forall (a :: Type). (a :: Type) -> Wrapper (a :: Type)
-Proxy :: forall (t7 :: Type) (a :: (t7 :: Type)). Proxy @(t7 :: Type) (a :: (t7 :: Type))
+Identity :: forall (@a :: Type). (a :: Type) -> Identity (a :: Type)
+Left :: forall (@a :: Type) (@b :: Type). (a :: Type) -> Either (a :: Type) (b :: Type)
+Right :: forall (@a :: Type) (@b :: Type). (b :: Type) -> Either (a :: Type) (b :: Type)
+Tuple ::
+  forall (@a :: Type) (@b :: Type). (a :: Type) -> (b :: Type) -> Tuple (a :: Type) (b :: Type)
+Wrapper :: forall (@a :: Type). (a :: Type) -> Wrapper (a :: Type)
+Proxy :: forall (t7 :: Type) (@a :: (t7 :: Type)). Proxy @(t7 :: Type) (a :: (t7 :: Type))
 getVoid :: forall (rep :: Type). Generic Void (rep :: Type) => Proxy @Type (rep :: Type)
 getMyUnit :: forall (rep :: Type). Generic MyUnit (rep :: Type) => Proxy @Type (rep :: Type)
 getIdentity ::

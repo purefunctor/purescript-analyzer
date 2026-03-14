@@ -5,7 +5,7 @@ expression: report
 ---
 Terms
 Endo ::
-  forall (k :: Type) (c :: (k :: Type) -> (k :: Type) -> Type) (a :: (k :: Type)).
+  forall (k :: Type) (@c :: (k :: Type) -> (k :: Type) -> Type) (@a :: (k :: Type)).
     (c :: (k :: Type) -> (k :: Type) -> Type) (a :: (k :: Type)) (a :: (k :: Type)) ->
     Endo @(k :: Type) (c :: (k :: Type) -> (k :: Type) -> Type) (a :: (k :: Type))
 test :: forall (b :: Type). Endo @Type Function (b :: Type) -> (b :: Type) -> (b :: Type)

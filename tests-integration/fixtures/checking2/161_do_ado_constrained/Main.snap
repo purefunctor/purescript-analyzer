@@ -4,30 +4,31 @@ assertion_line: 28
 expression: report
 ---
 Terms
-Tuple :: forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type) -> Tuple (a :: Type) (b :: Type)
+Tuple ::
+  forall (@a :: Type) (@b :: Type). (a :: Type) -> (b :: Type) -> Tuple (a :: Type) (b :: Type)
 map ::
-  forall (f :: Type -> Type) (a :: Type) (b :: Type).
+  forall (@f :: Type -> Type) (a :: Type) (b :: Type).
     Functor (f :: Type -> Type) =>
     ((a :: Type) -> (b :: Type)) ->
     (f :: Type -> Type) (a :: Type) ->
     (f :: Type -> Type) (b :: Type)
 apply ::
-  forall (f :: Type -> Type) (a :: Type) (b :: Type).
+  forall (@f :: Type -> Type) (a :: Type) (b :: Type).
     Apply (f :: Type -> Type) =>
     (f :: Type -> Type) ((a :: Type) -> (b :: Type)) ->
     (f :: Type -> Type) (a :: Type) ->
     (f :: Type -> Type) (b :: Type)
 pure ::
-  forall (f :: Type -> Type) (a :: Type).
+  forall (@f :: Type -> Type) (a :: Type).
     Applicative (f :: Type -> Type) => (a :: Type) -> (f :: Type -> Type) (a :: Type)
 discard ::
-  forall (m :: Type -> Type) (a :: Type) (b :: Type).
+  forall (@m :: Type -> Type) (a :: Type) (b :: Type).
     Discard (m :: Type -> Type) =>
     (m :: Type -> Type) (a :: Type) ->
     ((a :: Type) -> (m :: Type -> Type) (b :: Type)) ->
     (m :: Type -> Type) (b :: Type)
 bind ::
-  forall (m :: Type -> Type) (a :: Type) (b :: Type).
+  forall (@m :: Type -> Type) (a :: Type) (b :: Type).
     Bind (m :: Type -> Type) =>
     (m :: Type -> Type) (a :: Type) ->
     ((a :: Type) -> (m :: Type -> Type) (b :: Type)) ->
@@ -59,32 +60,32 @@ Monad :: (Type -> Type) -> Constraint
 Classes
 class forall (f :: Type -> Type). Functor (f :: Type -> Type)
   map ::
-  forall (f :: Type -> Type) (a :: Type) (b :: Type).
+  forall (@f :: Type -> Type) (a :: Type) (b :: Type).
     Functor (f :: Type -> Type) =>
     ((a :: Type) -> (b :: Type)) ->
     (f :: Type -> Type) (a :: Type) ->
     (f :: Type -> Type) (b :: Type)
 class forall (f :: Type -> Type). Functor (f :: Type -> Type) <= Apply (f :: Type -> Type)
   apply ::
-  forall (f :: Type -> Type) (a :: Type) (b :: Type).
+  forall (@f :: Type -> Type) (a :: Type) (b :: Type).
     Apply (f :: Type -> Type) =>
     (f :: Type -> Type) ((a :: Type) -> (b :: Type)) ->
     (f :: Type -> Type) (a :: Type) ->
     (f :: Type -> Type) (b :: Type)
 class forall (f :: Type -> Type). Apply (f :: Type -> Type) <= Applicative (f :: Type -> Type)
   pure ::
-  forall (f :: Type -> Type) (a :: Type).
+  forall (@f :: Type -> Type) (a :: Type).
     Applicative (f :: Type -> Type) => (a :: Type) -> (f :: Type -> Type) (a :: Type)
 class forall (m :: Type -> Type). Applicative (m :: Type -> Type) <= Discard (m :: Type -> Type)
   discard ::
-  forall (m :: Type -> Type) (a :: Type) (b :: Type).
+  forall (@m :: Type -> Type) (a :: Type) (b :: Type).
     Discard (m :: Type -> Type) =>
     (m :: Type -> Type) (a :: Type) ->
     ((a :: Type) -> (m :: Type -> Type) (b :: Type)) ->
     (m :: Type -> Type) (b :: Type)
 class forall (m :: Type -> Type). Applicative (m :: Type -> Type) <= Bind (m :: Type -> Type)
   bind ::
-  forall (m :: Type -> Type) (a :: Type) (b :: Type).
+  forall (@m :: Type -> Type) (a :: Type) (b :: Type).
     Bind (m :: Type -> Type) =>
     (m :: Type -> Type) (a :: Type) ->
     ((a :: Type) -> (m :: Type -> Type) (b :: Type)) ->

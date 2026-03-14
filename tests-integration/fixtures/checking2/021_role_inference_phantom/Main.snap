@@ -4,7 +4,7 @@ assertion_line: 28
 expression: report
 ---
 Terms
-Proxy :: forall (t1 :: Type) (a :: (t1 :: Type)). Proxy @(t1 :: Type) (a :: (t1 :: Type))
+Proxy :: forall (t1 :: Type) (@a :: (t1 :: Type)). Proxy @(t1 :: Type) (a :: (t1 :: Type))
 
 Types
 Proxy :: forall (t1 :: Type). (t1 :: Type) -> Type

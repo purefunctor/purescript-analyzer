@@ -5,10 +5,10 @@ expression: report
 ---
 Terms
 F ::
-  forall (t2 :: Type) (a :: (t2 :: Type)).
+  forall (t2 :: Type) (@a :: (t2 :: Type)).
     G (a :: (t2 :: Type)) -> F @(t2 :: Type) (a :: (t2 :: Type))
 G ::
-  forall (t2 :: Type) (a :: (t2 :: Type)).
+  forall (t2 :: Type) (@a :: (t2 :: Type)).
     F (a :: (t2 :: Type)) -> G @(t2 :: Type) (a :: (t2 :: Type))
 
 Types

@@ -5,13 +5,13 @@ expression: report
 ---
 Terms
 map ::
-  forall (f :: Type -> Type) (a :: Type) (b :: Type).
+  forall (@f :: Type -> Type) (a :: Type) (b :: Type).
     Functor (f :: Type -> Type) =>
     ((a :: Type) -> (b :: Type)) ->
     (f :: Type -> Type) (a :: Type) ->
     (f :: Type -> Type) (b :: Type)
 Wrap ::
-  forall (k :: Type) (e :: Type) (w :: (k :: Type) -> Type) (a :: (k :: Type)).
+  forall (k :: Type) (@e :: Type) (@w :: (k :: Type) -> Type) (@a :: (k :: Type)).
     (w :: (k :: Type) -> Type) (a :: (k :: Type)) ->
     Wrap @(k :: Type) (e :: Type) (w :: (k :: Type) -> Type) (a :: (k :: Type))
 
@@ -22,7 +22,7 @@ Wrap :: forall (k :: Type). Type -> ((k :: Type) -> Type) -> (k :: Type) -> Type
 Classes
 class forall (f :: Type -> Type). Functor (f :: Type -> Type)
   map ::
-  forall (f :: Type -> Type) (a :: Type) (b :: Type).
+  forall (@f :: Type -> Type) (a :: Type) (b :: Type).
     Functor (f :: Type -> Type) =>
     ((a :: Type) -> (b :: Type)) ->
     (f :: Type -> Type) (a :: Type) ->

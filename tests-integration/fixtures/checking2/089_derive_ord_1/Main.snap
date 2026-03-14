@@ -4,20 +4,20 @@ assertion_line: 28
 expression: report
 ---
 Terms
-Id :: forall (a :: Type). (a :: Type) -> Id (a :: Type)
+Id :: forall (@a :: Type). (a :: Type) -> Id (a :: Type)
 Wrap ::
-  forall (t3 :: Type) (f :: (t3 :: Type) -> Type) (a :: (t3 :: Type)).
+  forall (t3 :: Type) (@f :: (t3 :: Type) -> Type) (@a :: (t3 :: Type)).
     (f :: (t3 :: Type) -> Type) (a :: (t3 :: Type)) ->
     Wrap @(t3 :: Type) (f :: (t3 :: Type) -> Type) (a :: (t3 :: Type))
 Compose ::
-  forall (t8 :: Type) (t7 :: Type) (f :: (t8 :: Type) -> Type) (g :: (t7 :: Type) -> (t8 :: Type))
-    (a :: (t7 :: Type)).
+  forall (t8 :: Type) (t7 :: Type) (@f :: (t8 :: Type) -> Type) (@g :: (t7 :: Type) -> (t8 :: Type))
+    (@a :: (t7 :: Type)).
     (f :: (t8 :: Type) -> Type) ((g :: (t7 :: Type) -> (t8 :: Type)) (a :: (t7 :: Type))) ->
     Compose @(t8 :: Type) @(t7 :: Type)
       (f :: (t8 :: Type) -> Type)
       (g :: (t7 :: Type) -> (t8 :: Type))
       (a :: (t7 :: Type))
-NoOrd :: forall (a :: Type). (a :: Type) -> NoOrd (a :: Type)
+NoOrd :: forall (@a :: Type). (a :: Type) -> NoOrd (a :: Type)
 
 Types
 Id :: Type -> Type

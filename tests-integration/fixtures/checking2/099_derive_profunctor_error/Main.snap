@@ -5,9 +5,9 @@ expression: report
 ---
 Terms
 WrongFirst ::
-  forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type) -> WrongFirst (a :: Type) (b :: Type)
+  forall (@a :: Type) (@b :: Type). (a :: Type) -> (b :: Type) -> WrongFirst (a :: Type) (b :: Type)
 WrongSecond ::
-  forall (a :: Type) (b :: Type).
+  forall (@a :: Type) (@b :: Type).
     ((b :: Type) -> (a :: Type)) -> WrongSecond (a :: Type) (b :: Type)
 
 Types

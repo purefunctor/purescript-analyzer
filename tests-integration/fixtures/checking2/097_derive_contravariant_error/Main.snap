@@ -4,8 +4,8 @@ assertion_line: 28
 expression: report
 ---
 Terms
-Identity :: forall (a :: Type). (a :: Type) -> Identity (a :: Type)
-Producer :: forall (a :: Type). (Int -> (a :: Type)) -> Producer (a :: Type)
+Identity :: forall (@a :: Type). (a :: Type) -> Identity (a :: Type)
+Producer :: forall (@a :: Type). (Int -> (a :: Type)) -> Producer (a :: Type)
 
 Types
 Identity :: Type -> Type

@@ -12,9 +12,9 @@ map ::
 apply ::
   forall (a :: Type) (b :: Type).
     Effect ((a :: Type) -> (b :: Type)) -> Effect (a :: Type) -> Effect (b :: Type)
-add :: forall (a :: Type). Semiring (a :: Type) => (a :: Type) -> (a :: Type) -> (a :: Type)
+add :: forall (@a :: Type). Semiring (a :: Type) => (a :: Type) -> (a :: Type) -> (a :: Type)
 addImpl :: Int -> Int -> Int
-+ :: forall (a :: Type). Semiring (a :: Type) => (a :: Type) -> (a :: Type) -> (a :: Type)
++ :: forall (@a :: Type). Semiring (a :: Type) => (a :: Type) -> (a :: Type) -> (a :: Type)
 thing1 :: Effect String
 test :: Effect Unit
 
@@ -25,7 +25,7 @@ Semiring :: Type -> Constraint
 
 Classes
 class forall (a :: Type). Semiring (a :: Type)
-  add :: forall (a :: Type). Semiring (a :: Type) => (a :: Type) -> (a :: Type) -> (a :: Type)
+  add :: forall (@a :: Type). Semiring (a :: Type) => (a :: Type) -> (a :: Type) -> (a :: Type)
 
 Instances
 instance Semiring Int

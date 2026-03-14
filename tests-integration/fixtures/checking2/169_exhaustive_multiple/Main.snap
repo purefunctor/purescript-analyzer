@@ -4,8 +4,8 @@ assertion_line: 28
 expression: report
 ---
 Terms
-Just :: forall (a :: Type). (a :: Type) -> Maybe (a :: Type)
-Nothing :: forall (a :: Type). Maybe (a :: Type)
+Just :: forall (@a :: Type). (a :: Type) -> Maybe (a :: Type)
+Nothing :: forall (@a :: Type). Maybe (a :: Type)
 complete :: forall (t2 :: Type) (t1 :: Type). Maybe (t2 :: Type) -> Maybe (t1 :: Type) -> Int
 incomplete1 ::
   forall (t4 :: Type) (t3 :: Type). Partial => Maybe (t4 :: Type) -> Maybe (t3 :: Type) -> Int

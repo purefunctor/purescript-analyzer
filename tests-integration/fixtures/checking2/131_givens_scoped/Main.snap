@@ -4,7 +4,7 @@ assertion_line: 28
 expression: report
 ---
 Terms
-consume :: forall (a :: Type). Given (a :: Type) => (a :: Type) -> (a :: Type)
+consume :: forall (@a :: Type). Given (a :: Type) => (a :: Type) -> (a :: Type)
 testGiven :: forall (a :: Type). Given (a :: Type) => (a :: Type) -> (a :: Type)
 
 Types
@@ -12,7 +12,7 @@ Given :: Type -> Constraint
 
 Classes
 class forall (a :: Type). Given (a :: Type)
-  consume :: forall (a :: Type). Given (a :: Type) => (a :: Type) -> (a :: Type)
+  consume :: forall (@a :: Type). Given (a :: Type) => (a :: Type) -> (a :: Type)
 
 Errors
 CheckError {

@@ -5,11 +5,11 @@ expression: report
 ---
 Terms
 Wrap ::
-  forall (t2 :: Type) (f :: (t2 :: Type) -> Type) (a :: (t2 :: Type)).
+  forall (t2 :: Type) (@f :: (t2 :: Type) -> Type) (@a :: (t2 :: Type)).
     (f :: (t2 :: Type) -> Type) (a :: (t2 :: Type)) ->
     Wrap @(t2 :: Type) (f :: (t2 :: Type) -> Type) (a :: (t2 :: Type))
 WrapNoFunctor ::
-  forall (t5 :: Type) (f :: (t5 :: Type) -> Type) (a :: (t5 :: Type)).
+  forall (t5 :: Type) (@f :: (t5 :: Type) -> Type) (@a :: (t5 :: Type)).
     (f :: (t5 :: Type) -> Type) (a :: (t5 :: Type)) ->
     WrapNoFunctor @(t5 :: Type) (f :: (t5 :: Type) -> Type) (a :: (t5 :: Type))
 

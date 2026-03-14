@@ -7,7 +7,7 @@ Terms
 Age :: Int -> Age
 wrapAge :: Int -> Age
 unwrapAge :: Age -> Int
-Wrapper :: forall (a :: Type). (a :: Type) -> Wrapper (a :: Type)
+Wrapper :: forall (@a :: Type). (a :: Type) -> Wrapper (a :: Type)
 wrapValue :: forall (a :: Type). (a :: Type) -> Wrapper (a :: Type)
 unwrapValue :: forall (a :: Type). Wrapper (a :: Type) -> (a :: Type)
 

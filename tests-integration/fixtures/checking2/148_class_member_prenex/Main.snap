@@ -5,7 +5,7 @@ expression: report
 ---
 Terms
 const ::
-  forall (f :: Type -> Type) (a :: Type) (b :: Type).
+  forall (@f :: Type -> Type) (a :: Type) (b :: Type).
     Const (f :: Type -> Type) =>
     (f :: Type -> Type) (a :: Type) ->
     (f :: Type -> Type) (b :: Type) ->
@@ -17,7 +17,7 @@ Const :: (Type -> Type) -> Constraint
 Classes
 class forall (f :: Type -> Type). Const (f :: Type -> Type)
   const ::
-  forall (f :: Type -> Type) (a :: Type) (b :: Type).
+  forall (@f :: Type -> Type) (a :: Type) (b :: Type).
     Const (f :: Type -> Type) =>
     (f :: Type -> Type) (a :: Type) ->
     (f :: Type -> Type) (b :: Type) ->

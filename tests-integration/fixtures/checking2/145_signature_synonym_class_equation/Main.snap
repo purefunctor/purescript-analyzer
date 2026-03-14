@@ -4,7 +4,7 @@ assertion_line: 28
 expression: report
 ---
 Terms
-eqLike :: forall (a :: Type). EqLike (a :: Type) => (a :: Type) -> (a :: Type) -> Boolean
+eqLike :: forall (@a :: Type). EqLike (a :: Type) => (a :: Type) -> (a :: Type) -> Boolean
 
 Types
 ClassHead :: Type
@@ -15,4 +15,4 @@ type ClassHead = Type -> Constraint
 
 Classes
 class forall (a :: Type). EqLike (a :: Type)
-  eqLike :: forall (a :: Type). EqLike (a :: Type) => (a :: Type) -> (a :: Type) -> Boolean
+  eqLike :: forall (@a :: Type). EqLike (a :: Type) => (a :: Type) -> (a :: Type) -> Boolean

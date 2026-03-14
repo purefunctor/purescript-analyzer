@@ -4,32 +4,32 @@ assertion_line: 28
 expression: report
 ---
 Terms
-Just :: forall (a :: Type). (a :: Type) -> Maybe (a :: Type)
-Nothing :: forall (a :: Type). Maybe (a :: Type)
+Just :: forall (@a :: Type). (a :: Type) -> Maybe (a :: Type)
+Nothing :: forall (@a :: Type). Maybe (a :: Type)
 foldMap ::
-  forall (f :: Type -> Type) (a :: Type) (m :: Type).
+  forall (@f :: Type -> Type) (a :: Type) (m :: Type).
     Foldable (f :: Type -> Type) =>
     ((a :: Type) -> (m :: Type)) -> (f :: Type -> Type) (a :: Type) -> (m :: Type)
 foldMapWithIndex ::
-  forall (i :: Type) (f :: Type -> Type) (a :: Type) (m :: Type).
+  forall (@i :: Type) (@f :: Type -> Type) (a :: Type) (m :: Type).
     FoldableWithIndex (i :: Type) (f :: Type -> Type) =>
     ((i :: Type) -> (a :: Type) -> (m :: Type)) -> (f :: Type -> Type) (a :: Type) -> (m :: Type)
 foldlWithIndex ::
-  forall (i :: Type) (f :: Type -> Type) (a :: Type) (b :: Type).
+  forall (@i :: Type) (@f :: Type -> Type) (a :: Type) (b :: Type).
     FoldableWithIndex (i :: Type) (f :: Type -> Type) =>
     ((i :: Type) -> (b :: Type) -> (a :: Type) -> (b :: Type)) ->
     (b :: Type) ->
     (f :: Type -> Type) (a :: Type) ->
     (b :: Type)
 foldrWithIndex ::
-  forall (i :: Type) (f :: Type -> Type) (a :: Type) (b :: Type).
+  forall (@i :: Type) (@f :: Type -> Type) (a :: Type) (b :: Type).
     FoldableWithIndex (i :: Type) (f :: Type -> Type) =>
     ((i :: Type) -> (a :: Type) -> (b :: Type) -> (b :: Type)) ->
     (b :: Type) ->
     (f :: Type -> Type) (a :: Type) ->
     (b :: Type)
 NonEmpty ::
-  forall (f :: Type -> Type) (a :: Type).
+  forall (@f :: Type -> Type) (@a :: Type).
     (a :: Type) -> (f :: Type -> Type) (a :: Type) -> NonEmpty (f :: Type -> Type) (a :: Type)
 
 Types
@@ -41,23 +41,23 @@ NonEmpty :: (Type -> Type) -> Type -> Type
 Classes
 class forall (f :: Type -> Type). Foldable (f :: Type -> Type)
   foldMap ::
-  forall (f :: Type -> Type) (a :: Type) (m :: Type).
+  forall (@f :: Type -> Type) (a :: Type) (m :: Type).
     Foldable (f :: Type -> Type) =>
     ((a :: Type) -> (m :: Type)) -> (f :: Type -> Type) (a :: Type) -> (m :: Type)
 class forall (i :: Type) (f :: Type -> Type). Foldable (f :: Type -> Type) <= FoldableWithIndex (i :: Type) (f :: Type -> Type)
   foldMapWithIndex ::
-  forall (i :: Type) (f :: Type -> Type) (a :: Type) (m :: Type).
+  forall (@i :: Type) (@f :: Type -> Type) (a :: Type) (m :: Type).
     FoldableWithIndex (i :: Type) (f :: Type -> Type) =>
     ((i :: Type) -> (a :: Type) -> (m :: Type)) -> (f :: Type -> Type) (a :: Type) -> (m :: Type)
   foldlWithIndex ::
-  forall (i :: Type) (f :: Type -> Type) (a :: Type) (b :: Type).
+  forall (@i :: Type) (@f :: Type -> Type) (a :: Type) (b :: Type).
     FoldableWithIndex (i :: Type) (f :: Type -> Type) =>
     ((i :: Type) -> (b :: Type) -> (a :: Type) -> (b :: Type)) ->
     (b :: Type) ->
     (f :: Type -> Type) (a :: Type) ->
     (b :: Type)
   foldrWithIndex ::
-  forall (i :: Type) (f :: Type -> Type) (a :: Type) (b :: Type).
+  forall (@i :: Type) (@f :: Type -> Type) (a :: Type) (b :: Type).
     FoldableWithIndex (i :: Type) (f :: Type -> Type) =>
     ((i :: Type) -> (a :: Type) -> (b :: Type) -> (b :: Type)) ->
     (b :: Type) ->

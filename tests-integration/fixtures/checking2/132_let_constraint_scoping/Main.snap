@@ -4,7 +4,7 @@ assertion_line: 28
 expression: report
 ---
 Terms
-method :: forall (a :: Type). MyClass (a :: Type) => (a :: Type) -> Int
+method :: forall (@a :: Type). MyClass (a :: Type) => (a :: Type) -> Int
 test :: forall (a :: Type). MyClass (a :: Type) => (a :: Type) -> Int
 
 Types
@@ -12,7 +12,7 @@ MyClass :: Type -> Constraint
 
 Classes
 class forall (a :: Type). MyClass (a :: Type)
-  method :: forall (a :: Type). MyClass (a :: Type) => (a :: Type) -> Int
+  method :: forall (@a :: Type). MyClass (a :: Type) => (a :: Type) -> Int
 
 Instances
 instance MyClass Int

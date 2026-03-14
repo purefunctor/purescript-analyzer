@@ -4,7 +4,7 @@ assertion_line: 28
 expression: report
 ---
 Terms
-Pair :: forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type) -> Pair (a :: Type) (b :: Type)
+Pair :: forall (@a :: Type) (@b :: Type). (a :: Type) -> (b :: Type) -> Pair (a :: Type) (b :: Type)
 Unit :: Unit
 
 Types
