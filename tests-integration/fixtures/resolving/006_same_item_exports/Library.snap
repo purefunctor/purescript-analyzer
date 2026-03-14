@@ -1,0 +1,32 @@
+---
+source: tests-integration/tests/resolving/generated.rs
+assertion_line: 12
+expression: report
+---
+module Library
+
+Unqualified Imports:
+
+Qualified Imports:
+
+Exported Terms:
+  - lift
+  - Thing
+
+Exported Types:
+  - Thing
+
+Exported Classes:
+
+Local Terms:
+  - lift
+  - Thing
+
+Local Types:
+  - Thing
+
+Local Classes:
+
+Class Members:
+
+Errors:

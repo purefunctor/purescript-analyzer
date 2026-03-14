@@ -69,3 +69,7 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_005_class_members_re_export_consumer() { run_test("005_class_members", "ReExportConsumer"); }
 
 #[rustfmt::skip] #[test] fn test_005_class_members_re_exporter() { run_test("005_class_members", "ReExporter"); }
+
+#[rustfmt::skip] #[test] fn test_006_same_item_exports_library() { run_test("006_same_item_exports", "Library"); }
+
+#[rustfmt::skip] #[test] fn test_006_same_item_exports_main() { run_test("006_same_item_exports", "Main"); }
