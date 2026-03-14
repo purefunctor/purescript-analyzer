@@ -42,5 +42,3 @@ Local Classes:
 Class Members:
 
 Errors:
-  - TermExportConflict { existing: (Idx::<File>(9), Idx::<TermItem>(0), Import(AstId<syntax::cst::ImportStatement>(17))), duplicate: (Idx::<File>(9), Idx::<TermItem>(0), Import(AstId<syntax::cst::ImportStatement>(10))) }
-  - TypeExportConflict { existing: (Idx::<File>(9), Idx::<TypeItem>(0), Import(AstId<syntax::cst::ImportStatement>(17))), duplicate: (Idx::<File>(9), Idx::<TypeItem>(0), Import(AstId<syntax::cst::ImportStatement>(10))) }

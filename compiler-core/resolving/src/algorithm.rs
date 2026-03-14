@@ -448,7 +448,7 @@ fn add_export_term(
 ) {
     if let Some(&existing) = items.terms.get(name) {
         let duplicate = (file, id, source);
-        if existing != duplicate {
+        if !same_term_export(existing, duplicate) {
             errors.push(ResolvingError::TermExportConflict { existing, duplicate });
         }
     } else {
@@ -479,7 +479,7 @@ fn add_export_type(
 ) {
     if let Some(&existing) = items.types.get(name) {
         let duplicate = (file, id, source);
-        if existing != duplicate {
+        if !same_type_export(existing, duplicate) {
             errors.push(ResolvingError::TypeExportConflict { existing, duplicate });
         }
     } else {
@@ -510,11 +510,25 @@ fn add_export_class(
 ) {
     if let Some(&existing) = items.classes.get(name) {
         let duplicate = (file, id, source);
-        if existing != duplicate {
+        if !same_type_export(existing, duplicate) {
             errors.push(ResolvingError::TypeExportConflict { existing, duplicate });
         }
     } else {
         let name = SmolStr::clone(name);
         items.classes.insert(name, (file, id, source));
     }
+}
+
+fn same_term_export(
+    (existing_file, existing_id, _): (FileId, TermItemId, ExportSource),
+    (duplicate_file, duplicate_id, _): (FileId, TermItemId, ExportSource),
+) -> bool {
+    existing_file == duplicate_file && existing_id == duplicate_id
+}
+
+fn same_type_export(
+    (existing_file, existing_id, _): (FileId, TypeItemId, ExportSource),
+    (duplicate_file, duplicate_id, _): (FileId, TypeItemId, ExportSource),
+) -> bool {
+    existing_file == duplicate_file && existing_id == duplicate_id
 }
