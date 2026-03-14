@@ -499,3 +499,15 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_236_exhaustive_missing_patterns_main() { run_test("236_exhaustive_missing_patterns", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_237_exhaustive_unsafe_partial_main() { run_test("237_exhaustive_unsafe_partial", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_238_visible_type_application_value_main() { run_test("238_visible_type_application_value", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_239_visible_type_application_data_newtype_main() { run_test("239_visible_type_application_data_newtype", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_240_visible_type_application_class_main() { run_test("240_visible_type_application_class", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_241_visible_type_application_tuple_main() { run_test("241_visible_type_application_tuple", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_242_visible_type_application_either_main() { run_test("242_visible_type_application_either", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_243_visible_type_application_error_main() { run_test("243_visible_type_application_error", "Main"); }

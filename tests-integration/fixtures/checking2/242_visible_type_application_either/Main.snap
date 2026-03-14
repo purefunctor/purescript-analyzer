@@ -1,0 +1,20 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Left :: forall (@a :: Type) (@b :: Type). (a :: Type) -> Either (a :: Type) (b :: Type)
+Right :: forall (@a :: Type) (@b :: Type). (b :: Type) -> Either (a :: Type) (b :: Type)
+testBothLeft :: Int -> Either Int String
+testBothRight :: String -> Either Int String
+testLeftLeft :: forall (t2 :: Type). Int -> Either Int (t2 :: Type)
+testLeftRight :: forall (t3 :: Type). (t3 :: Type) -> Either (t3 :: Type) String
+testRightLeft :: forall (t4 :: Type). (t4 :: Type) -> Either Int (t4 :: Type)
+testRightRight :: forall (t5 :: Type). String -> Either (t5 :: Type) String
+
+Types
+Either :: Type -> Type -> Type
+
+Roles
+Either = [Representational, Representational]
