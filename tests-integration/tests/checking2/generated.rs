@@ -515,3 +515,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_244_record_quoted_label_main() { run_test("244_record_quoted_label", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_245_record_field_instantiation_main() { run_test("245_record_field_instantiation", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_246_data_argument_kind_applications_main() { run_test("246_data_argument_kind_applications", "Main"); }
