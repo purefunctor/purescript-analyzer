@@ -511,3 +511,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_242_visible_type_application_either_main() { run_test("242_visible_type_application_either", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_243_visible_type_application_error_main() { run_test("243_visible_type_application_error", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_244_record_quoted_label_main() { run_test("244_record_quoted_label", "Main"); }
