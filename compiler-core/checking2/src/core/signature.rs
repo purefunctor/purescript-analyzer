@@ -112,7 +112,7 @@ where
 
     let mut remaining = signature.arguments.into_iter();
     let arguments = remaining.by_ref().take(actual as usize).collect();
-    let result = context.intern_function_chain_iter(remaining, signature.result);
+    let result = context.intern_function_iter(remaining, signature.result);
 
     Ok(DecomposedSignature {
         binders: signature.binders,

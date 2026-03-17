@@ -150,9 +150,9 @@ where
     }
 
     /// Interns a [`Type::Function`] given a list of arguments.
-    pub fn intern_function_chain(&self, arguments: &[TypeId], result: TypeId) -> TypeId {
+    pub fn intern_function_list(&self, arguments: &[TypeId], result: TypeId) -> TypeId {
         let arguments = arguments.iter().copied();
-        self.intern_function_chain_iter(arguments, result)
+        self.intern_function_iter(arguments, result)
     }
 
     /// Interns a list of [`Type::Constrained`] over a type.
@@ -175,7 +175,7 @@ where
     }
 
     /// Interns a right-associated function chain from iterator arguments to result.
-    pub fn intern_function_chain_iter<I>(&self, arguments: I, result: TypeId) -> TypeId
+    pub fn intern_function_iter<I>(&self, arguments: I, result: TypeId) -> TypeId
     where
         I: IntoIterator<Item = TypeId>,
         I::IntoIter: DoubleEndedIterator,

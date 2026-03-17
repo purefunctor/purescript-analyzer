@@ -449,7 +449,7 @@ where
         return Ok(None);
     }
 
-    constrained = context.intern_function_chain(&arguments, constrained);
+    constrained = context.intern_function_list(&arguments, constrained);
     for constraint in constraints.rev() {
         constrained = context.intern_constrained(constraint, constrained);
     }

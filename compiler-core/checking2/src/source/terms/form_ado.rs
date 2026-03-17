@@ -107,7 +107,7 @@ where
     //   in_expression_type := ?in_expression
     //   lambda_type        := ?a -> ?b -> ?in_expression
     let in_expression_type = state.fresh_unification(context.queries, context.prim.t);
-    let lambda_type = context.intern_function_chain(&binder_types, in_expression_type);
+    let lambda_type = context.intern_function_list(&binder_types, in_expression_type);
 
     // The desugared form of an ado-expression is a forward applicative
     // pipeline, unlike do-notation which works inside-out. The example

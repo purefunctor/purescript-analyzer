@@ -41,7 +41,7 @@ where
             let signature::DecomposedSignature { arguments, result, .. } =
                 signature::expect_signature_patterns(state, context, expected_type, required)?;
 
-            let function = context.intern_function_chain(&arguments, result);
+            let function = context.intern_function_list(&arguments, result);
             check_equations_core(state, context, origin, &arguments, result, function, equations)?;
 
             Ok(EquationSet { arguments })
@@ -91,7 +91,7 @@ where
         let result_type = state.fresh_unification(context.queries, context.prim.t);
 
         let argument_types = &argument_types[..minimum_equation_arity];
-        let equation_type = context.intern_function_chain(argument_types, result_type);
+        let equation_type = context.intern_function_list(argument_types, result_type);
         unification::subtype(state, context, equation_type, group_type)?;
 
         if let Some(guarded) = &equation.guarded {
@@ -155,7 +155,7 @@ where
             result
         } else {
             let remaining = &arguments[equation_arity..];
-            context.intern_function_chain(remaining, result)
+            context.intern_function_list(remaining, result)
         };
 
         if let Some(guarded) = &equation.guarded {

@@ -226,7 +226,7 @@ where
 
     let binders = binders.iter().skip(index + 1).copied();
 
-    let function = context.intern_function_chain(&arguments, result);
+    let function = context.intern_function_list(&arguments, result);
     let constrained = context.intern_constrained_list(&constraints, function);
     let quantified = context.intern_forall_iter(binders, constrained);
 
