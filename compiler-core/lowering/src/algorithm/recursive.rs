@@ -13,6 +13,15 @@ use crate::*;
 
 use super::{Context, State};
 
+fn string_text(token: SyntaxToken) -> SmolStr {
+    let original = token.text();
+    let text = original
+        .strip_prefix("\"\"\"")
+        .and_then(|t| t.strip_suffix("\"\"\""))
+        .or_else(|| original.strip_prefix('"').and_then(|t| t.strip_suffix('"')));
+    SmolStr::from(text.unwrap_or(original))
+}
+
 pub(crate) fn lower_binder(state: &mut State, context: &Context, cst: &cst::Binder) -> BinderId {
     let id = context.stabilized.lookup_cst(cst).expect_id();
     let kind = lower_binder_kind(state, context, cst, id);
@@ -96,19 +105,9 @@ fn lower_binder_kind(
         cst::Binder::BinderWildcard(_) => BinderKind::Wildcard,
         cst::Binder::BinderString(cst) => {
             let (kind, value) = if let Some(token) = cst.string() {
-                let text = token.text();
-                let value = text
-                    .strip_prefix('"')
-                    .and_then(|text| text.strip_suffix('"'))
-                    .map(SmolStr::from);
-                (StringKind::String, value)
+                (StringKind::String, Some(string_text(token)))
             } else if let Some(token) = cst.raw_string() {
-                let text = token.text();
-                let value = text
-                    .strip_prefix("\"\"\"")
-                    .and_then(|text| text.strip_suffix("\"\"\""))
-                    .map(SmolStr::from);
-                (StringKind::RawString, value)
+                (StringKind::RawString, Some(string_text(token)))
             } else {
                 (StringKind::String, None)
             };
@@ -149,8 +148,7 @@ fn lower_binder_kind(
                 cst::RecordItem::RecordField(cst) => {
                     let name = cst.name().and_then(|cst| {
                         let token = cst.text()?;
-                        let text = token.text();
-                        Some(SmolStr::from(text))
+                        Some(string_text(token))
                     });
                     let value = cst.binder().map(|cst| lower_binder(state, context, &cst));
                     BinderRecordItem::RecordField { name, value }
@@ -161,8 +159,7 @@ fn lower_binder_kind(
 
                     let name = cst.name().and_then(|cst| {
                         let token = cst.text()?;
-                        let text = token.text();
-                        Some(SmolStr::from(text))
+                        Some(string_text(token))
                     });
 
                     if let Some(name) = &name {
@@ -491,8 +488,7 @@ fn lower_expression_kind(
                 cst::RecordItem::RecordField(cst) => {
                     let name = cst.name().and_then(|cst| {
                         let token = cst.text()?;
-                        let text = token.text();
-                        Some(SmolStr::from(text))
+                        Some(string_text(token))
                     });
                     let value = cst.expression().map(|cst| lower_expression(state, context, &cst));
                     ExpressionRecordItem::RecordField { name, value }
@@ -500,8 +496,7 @@ fn lower_expression_kind(
                 cst::RecordItem::RecordPun(cst) => {
                     let name = cst.name().and_then(|cst| {
                         let token = cst.text()?;
-                        let text = token.text();
-                        Some(SmolStr::from(text))
+                        Some(string_text(token))
                     });
                     let resolution = name.as_ref().and_then(|name| {
                         let qualifier: Option<&str> = None;
@@ -523,8 +518,7 @@ fn lower_expression_kind(
                 .children()
                 .map(|cst| {
                     let token = cst.text()?;
-                    let text = token.text();
-                    Some(SmolStr::from(text))
+                    Some(string_text(token))
                 })
                 .collect();
             ExpressionKind::RecordAccess { record, labels }
@@ -855,8 +849,7 @@ fn lower_record_updates(
             cst::RecordUpdate::RecordUpdateLeaf(cst) => {
                 let name = cst.name().and_then(|cst| {
                     let token = cst.text()?;
-                    let text = token.text();
-                    Some(SmolStr::from(text))
+                    Some(string_text(token))
                 });
                 let expression = cst.expression().map(|cst| lower_expression(state, context, &cst));
                 RecordUpdate::Leaf { name, expression }
@@ -864,8 +857,7 @@ fn lower_record_updates(
             cst::RecordUpdate::RecordUpdateBranch(cst) => {
                 let name = cst.name().and_then(|cst| {
                     let token = cst.text()?;
-                    let text = token.text();
-                    Some(SmolStr::from(text))
+                    Some(string_text(token))
                 });
                 let updates =
                     recover! { lower_record_updates(state, context, &cst.record_updates()?) };
@@ -1014,19 +1006,9 @@ fn lower_type_kind(
         }
         cst::Type::TypeString(cst) => {
             let (kind, value) = if let Some(token) = cst.string() {
-                let text = token.text();
-                let value = text
-                    .strip_prefix('"')
-                    .and_then(|text| text.strip_suffix('"'))
-                    .map(SmolStr::from);
-                (StringKind::String, value)
+                (StringKind::String, Some(string_text(token)))
             } else if let Some(token) = cst.raw_string() {
-                let text = token.text();
-                let value = text
-                    .strip_prefix("\"\"\"")
-                    .and_then(|text| text.strip_suffix("\"\"\""))
-                    .map(SmolStr::from);
-                (StringKind::RawString, value)
+                (StringKind::RawString, Some(string_text(token)))
             } else {
                 (StringKind::String, None)
             };
@@ -1187,8 +1169,7 @@ pub(crate) fn lower_type_variable_binding(
 fn lower_row_item(state: &mut State, context: &Context, cst: &cst::TypeRowItem) -> TypeRowItem {
     let name = cst.name().and_then(|cst| {
         let token = cst.text()?;
-        let text = token.text();
-        Some(SmolStr::from(text))
+        Some(string_text(token))
     });
     let type_ = cst.type_().map(|t| lower_type(state, context, &t));
     TypeRowItem { name, type_ }

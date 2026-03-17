@@ -1,41 +1,8 @@
 ---
 source: tests-integration/tests/checking2/generated.rs
-assertion_line: 28
 expression: report
 ---
 Terms
 test :: { module :: String }
 
 Types
-
-Errors
-CheckError {
-    kind: PropertyIsMissing {
-        labels: [
-            "module",
-        ],
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(0),
-        ),
-        CheckingExpression(
-            AstId<syntax::cst::Expression>(12),
-        ),
-    ],
-}
-CheckError {
-    kind: AdditionalProperty {
-        labels: [
-            "\"module\"",
-        ],
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(0),
-        ),
-        CheckingExpression(
-            AstId<syntax::cst::Expression>(12),
-        ),
-    ],
-}
