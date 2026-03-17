@@ -22,9 +22,6 @@ CheckError {
         CheckingExpression(
             AstId<syntax::cst::Expression>(14),
         ),
-        CheckingExpression(
-            AstId<syntax::cst::Expression>(16),
-        ),
     ],
 }
 CheckError {

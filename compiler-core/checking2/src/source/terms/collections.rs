@@ -6,6 +6,43 @@ use crate::context::CheckContext;
 use crate::core::{RowField, RowType, Type, TypeId, normalise, toolkit, unification};
 use crate::state::CheckState;
 
+fn infer_record_field_expression<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    expression: lowering::ExpressionId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let id = super::infer_expression(state, context, expression)?;
+
+    let Some(kind) = context.lowered.info.get_expression_kind(expression) else {
+        return Ok(id);
+    };
+
+    match kind {
+        lowering::ExpressionKind::Constructor { .. }
+        | lowering::ExpressionKind::Variable { .. } => {
+            let id = toolkit::instantiate_unifications(state, context, id)?;
+            toolkit::collect_wanteds(state, context, id)
+        }
+        _ => Ok(id),
+    }
+}
+
+fn instantiate_variable<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    resolution: lowering::TermVariableResolution,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let id = toolkit::lookup_term_variable(state, context, resolution)?;
+    let id = toolkit::instantiate_unifications(state, context, id)?;
+    toolkit::collect_wanteds(state, context, id)
+}
+
 pub fn infer_array<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -68,9 +105,7 @@ where
                 let Some(value) = value else { continue };
 
                 let label = SmolStr::clone(name);
-                let id = super::infer_expression(state, context, *value)?;
-                let id = toolkit::instantiate_unifications(state, context, id)?;
-                let id = toolkit::collect_wanteds(state, context, id)?;
+                let id = infer_record_field_expression(state, context, *value)?;
 
                 fields.push(RowField { label, id });
             }
@@ -79,9 +114,7 @@ where
                 let Some(resolution) = resolution else { continue };
 
                 let label = SmolStr::clone(name);
-                let id = toolkit::lookup_term_variable(state, context, *resolution)?;
-                let id = toolkit::instantiate_unifications(state, context, id)?;
-                let id = toolkit::collect_wanteds(state, context, id)?;
+                let id = instantiate_variable(state, context, *resolution)?;
 
                 fields.push(RowField { label, id });
             }
@@ -126,15 +159,15 @@ where
                             let expected_field_type = expected_fields
                                 .fields
                                 .iter()
-                                .find(|f| f.label == label)
-                                .map(|f| f.id);
+                                .find(|field| field.label == label)
+                                .map(|field| field.id);
 
                             let id = if let Some(expected_type) = expected_field_type {
-                                super::check_expression(state, context, *value, expected_type)?
+                                let id = infer_record_field_expression(state, context, *value)?;
+                                unification::subtype(state, context, id, expected_type)?;
+                                id
                             } else {
-                                let id = super::infer_expression(state, context, *value)?;
-                                let id = toolkit::instantiate_unifications(state, context, id)?;
-                                toolkit::collect_wanteds(state, context, id)?
+                                infer_record_field_expression(state, context, *value)?
                             };
 
                             fields.push(RowField { label, id });
@@ -148,17 +181,16 @@ where
                             let expected_field_type = expected_fields
                                 .fields
                                 .iter()
-                                .find(|f| f.label == label)
-                                .map(|f| f.id);
+                                .find(|field| field.label == label)
+                                .map(|field| field.id);
 
-                            let id = toolkit::lookup_term_variable(state, context, *resolution)?;
+                            let id = instantiate_variable(state, context, *resolution)?;
 
                             let id = if let Some(expected_type) = expected_field_type {
                                 unification::subtype(state, context, id, expected_type)?;
                                 id
                             } else {
-                                let id = toolkit::instantiate_unifications(state, context, id)?;
-                                toolkit::collect_wanteds(state, context, id)?
+                                id
                             };
 
                             fields.push(RowField { label, id });
@@ -256,7 +288,7 @@ where
 
                 let input_id = state.fresh_unification(context.queries, context.prim.t);
                 let output_id = if let Some(expression) = expression {
-                    super::infer_expression(state, context, *expression)?
+                    infer_record_field_expression(state, context, *expression)?
                 } else {
                     context.unknown("missing record update expression")
                 };
