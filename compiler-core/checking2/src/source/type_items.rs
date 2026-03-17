@@ -14,8 +14,8 @@ use smol_str::SmolStr;
 use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::{
-    CheckedClass, CheckedSynonym, ForallBinder, Role, Type, TypeId, generalise, signature, toolkit,
-    unification, zonk,
+    CheckedClass, CheckedSynonym, ForallBinder, Role, Type, TypeId, fold, generalise, signature,
+    toolkit, unification, zonk,
 };
 use crate::error::ErrorCrumb;
 use crate::source::types;
@@ -45,6 +45,46 @@ struct TypeSccState {
     synonym: Vec<(TypeItemId, PendingSynonymType)>,
     class: Vec<(TypeItemId, PendingClassType)>,
     foreign: Vec<(TypeItemId, Arc<[lowering::Role]>)>,
+}
+
+struct KindAppliedReferenceFolder {
+    reference: (FileId, TypeItemId),
+    replacement: TypeId,
+}
+
+impl KindAppliedReferenceFolder {
+    fn on<Q>(
+        state: &mut CheckState,
+        context: &CheckContext<Q>,
+        item_id: TypeItemId,
+        replacement: TypeId,
+        argument: TypeId,
+    ) -> QueryResult<TypeId>
+    where
+        Q: ExternalQueries,
+    {
+        let mut folder =
+            KindAppliedReferenceFolder { reference: (context.id, item_id), replacement };
+        fold::fold_type(state, context, argument, &mut folder)
+    }
+}
+
+impl fold::TypeFold for KindAppliedReferenceFolder {
+    fn transform<Q: ExternalQueries>(
+        &mut self,
+        _state: &mut CheckState,
+        _context: &CheckContext<Q>,
+        _id: TypeId,
+        t: &Type,
+    ) -> QueryResult<fold::FoldAction> {
+        if let Type::Constructor(file_id, item_id) = t
+            && self.reference == (*file_id, *item_id)
+        {
+            Ok(fold::FoldAction::Replace(self.replacement))
+        } else {
+            Ok(fold::FoldAction::Continue)
+        }
+    }
 }
 
 /// Checks all type items in topological order.
@@ -468,20 +508,21 @@ where
             }
         };
 
-        let type_reference = context.queries.intern_type(Type::Constructor(context.id, item_id));
-
-        // For the following code loop, let's trace through the declaration:
+        // For the following code, let's trace through the declaration:
         //
         //   newtype Tagged :: forall k. k -> Type -> Type
-        //
+
+        let mut type_reference =
+            context.queries.intern_type(Type::Constructor(context.id, item_id));
+
+        // Tagged @k
+        for binder in &kind_binders {
+            let rigid = context.intern_rigid(binder.name, state.depth, binder.kind);
+            type_reference = context.intern_kind_application(type_reference, rigid);
+        }
+
         for (constructor_id, checked_arguments) in constructors {
             let mut result = type_reference;
-
-            // Tagged @k
-            for binder in &kind_binders {
-                let rigid = context.intern_rigid(binder.name, state.depth, binder.kind);
-                result = context.intern_kind_application(result, rigid);
-            }
 
             // Tagged @k t a
             for (index, parameter) in parameters.iter().enumerate() {
@@ -493,6 +534,13 @@ where
             // a -> Tagged @k t a
             for argument in checked_arguments.into_iter().rev() {
                 let argument = zonk::zonk(state, context, argument)?;
+                let argument = KindAppliedReferenceFolder::on(
+                    state,
+                    context,
+                    item_id,
+                    type_reference,
+                    argument,
+                )?;
                 result = context.intern_function(argument, result);
             }
 
