@@ -53,7 +53,7 @@ where
         let mut arguments = application.arguments.clone();
         arguments.swap(left, right);
 
-        is_coercible.then(|| ConstraintApplication {
+        is_coercible.then_some(ConstraintApplication {
             file_id: application.file_id,
             item_id: application.item_id,
             arguments,
