@@ -519,3 +519,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_246_data_argument_kind_applications_main() { run_test("246_data_argument_kind_applications", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_247_instance_kind_substitution_main() { run_test("247_instance_kind_substitution", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_248_prim_row_cons_tail_synonym_main() { run_test("248_prim_row_cons_tail_synonym", "Main"); }
