@@ -262,9 +262,13 @@ where
     }
 
     for binder in &decomposed.binders {
-        bindings
-            .entry(binder.name)
-            .or_insert_with(|| state.fresh_unification(context.queries, binder.kind));
+        if bindings.contains_key(&binder.name) {
+            continue;
+        }
+
+        let binder_kind = SubstituteName::many(state, context, &bindings, binder.kind)?;
+        let fresh_unification = state.fresh_unification(context.queries, binder_kind);
+        bindings.insert(binder.name, fresh_unification);
     }
 
     let constraints = decomposed

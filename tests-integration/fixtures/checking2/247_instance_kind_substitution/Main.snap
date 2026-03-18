@@ -27,27 +27,3 @@ instance forall (t6 :: Type) (t4 :: (t6 :: Type)) (t5 :: RowList (t6 :: Type)).
 
 Roles
 Proxy = [Phantom]
-
-Errors
-CheckError {
-    kind: CannotUnify {
-        t1: Id<smol_str::SmolStr>(13),
-        t2: Id<smol_str::SmolStr>(14),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(3),
-        ),
-    ],
-}
-CheckError {
-    kind: CannotUnify {
-        t1: Id<smol_str::SmolStr>(15),
-        t2: Id<smol_str::SmolStr>(16),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(3),
-        ),
-    ],
-}
