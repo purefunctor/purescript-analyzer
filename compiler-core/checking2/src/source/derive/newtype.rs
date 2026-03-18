@@ -6,6 +6,8 @@ use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::{Type, TypeId, normalise, toolkit, unification};
 use crate::error::ErrorKind;
+use crate::source::types;
+use crate::source::types::application::{self, Argument, Options, Records};
 use crate::state::CheckState;
 
 use super::DeriveStrategy;
@@ -55,13 +57,25 @@ where
 
     let inner = normalise::normalise(state, context, inner)?;
     let class = context.queries.intern_type(Type::Constructor(class_file, class_id));
+    let class_kind = toolkit::lookup_file_type(state, context, class_file, class_id)?;
 
-    let mut delegate_constraint = preceding_arguments
+    let (delegate_constraint, _) = preceding_arguments
         .iter()
         .copied()
-        .fold(class, |function, argument| context.intern_application(function, argument));
+        .chain([inner])
+        .try_fold((class, class_kind), |function, argument| {
+            let argument_kind = types::elaborate_kind(state, context, argument)?;
+            let ((function, function_kind), _) = application::infer_application_kind(
+                state,
+                context,
+                function,
+                Argument::Core(argument, argument_kind),
+                Options::TYPES,
+                Records::Ignore,
+            )?;
+            Ok((function, function_kind))
+        })?;
 
-    delegate_constraint = context.intern_application(delegate_constraint, inner);
     Ok(Some(DeriveStrategy::NewtypeDeriveConstraint { delegate_constraint }))
 }
 
