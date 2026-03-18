@@ -239,6 +239,16 @@ where
         }
     }
 
+    for binder in &decomposed.binders {
+        if bindings.contains_key(&binder.name) {
+            continue;
+        }
+
+        let binder_kind = SubstituteName::many(state, context, &bindings, binder.kind)?;
+        let fresh_unification = state.fresh_unification(context.queries, binder_kind);
+        bindings.insert(binder.name, fresh_unification);
+    }
+
     if !stuck_type_positions.is_empty()
         && !can_determine_stuck(
             context,
@@ -252,25 +262,15 @@ where
     }
 
     for &index in &stuck_positions {
+        let wanted_argument = match wanted.arguments[index] {
+            KindOrType::Kind(argument) | KindOrType::Type(argument) => argument,
+        };
         let substituted = match decomposed.arguments[index] {
             KindOrType::Kind(argument) | KindOrType::Type(argument) => {
                 SubstituteName::many(state, context, &bindings, argument)?
             }
         };
-        let wanted_argument = match wanted.arguments[index] {
-            KindOrType::Kind(argument) | KindOrType::Type(argument) => argument,
-        };
         equalities.push((wanted_argument, substituted));
-    }
-
-    for binder in &decomposed.binders {
-        if bindings.contains_key(&binder.name) {
-            continue;
-        }
-
-        let binder_kind = SubstituteName::many(state, context, &bindings, binder.kind)?;
-        let fresh_unification = state.fresh_unification(context.queries, binder_kind);
-        bindings.insert(binder.name, fresh_unification);
     }
 
     let constraints = decomposed
