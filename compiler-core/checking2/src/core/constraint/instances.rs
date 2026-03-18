@@ -193,43 +193,34 @@ where
         return Ok(MatchInstance::Apart);
     };
 
-    let wanted_arguments = wanted
-        .arguments
-        .iter()
-        .filter_map(|argument| match argument {
-            KindOrType::Type(argument) => Some(*argument),
-            KindOrType::Kind(_) => None,
-        })
-        .collect_vec();
-    let decomposed_arguments = decomposed
-        .arguments
-        .iter()
-        .filter_map(|argument| match argument {
-            KindOrType::Type(argument) => Some(*argument),
-            KindOrType::Kind(_) => None,
-        })
-        .collect_vec();
-
-    if wanted_arguments.len() != decomposed_arguments.len() {
+    if wanted.arguments.len() != decomposed.arguments.len() {
         return Ok(MatchInstance::Apart);
     }
 
     let mut bindings = FxHashMap::default();
     let mut equalities = vec![];
     let mut type_match_results = vec![];
+
     let mut stuck_positions = vec![];
+    let mut stuck_type_positions = vec![];
 
     for (index, (&wanted_argument, &instance_argument)) in
-        iter::zip(wanted_arguments.iter(), decomposed_arguments.iter()).enumerate()
+        iter::zip(wanted.arguments.iter(), decomposed.arguments.iter()).enumerate()
     {
-        let match_result = match_type(
-            state,
-            context,
-            &mut bindings,
-            &mut equalities,
-            wanted_argument,
-            instance_argument,
-        )?;
+        let match_result = match (wanted_argument, instance_argument) {
+            (KindOrType::Kind(wanted_argument), KindOrType::Kind(instance_argument))
+            | (KindOrType::Type(wanted_argument), KindOrType::Type(instance_argument)) => {
+                match_type(
+                    state,
+                    context,
+                    &mut bindings,
+                    &mut equalities,
+                    wanted_argument,
+                    instance_argument,
+                )?
+            }
+            _ => return Ok(MatchInstance::Apart),
+        };
 
         if matches!(match_result, MatchType::Apart) {
             return Ok(MatchInstance::Apart);
@@ -239,25 +230,36 @@ where
             stuck_positions.push(index);
         }
 
-        type_match_results.push(match_result);
+        if matches!(wanted_argument, KindOrType::Type(_)) {
+            let type_index = type_match_results.len();
+            if matches!(match_result, MatchType::Stuck) {
+                stuck_type_positions.push(type_index);
+            }
+            type_match_results.push(match_result);
+        }
     }
 
-    if !stuck_positions.is_empty()
+    if !stuck_type_positions.is_empty()
         && !can_determine_stuck(
             context,
             wanted.file_id,
             wanted.item_id,
             &type_match_results,
-            &stuck_positions,
+            &stuck_type_positions,
         )?
     {
         return Ok(MatchInstance::Stuck);
     }
 
     for &index in &stuck_positions {
-        let substituted =
-            SubstituteName::many(state, context, &bindings, decomposed_arguments[index])?;
-        let wanted_argument = wanted_arguments[index];
+        let substituted = match decomposed.arguments[index] {
+            KindOrType::Kind(argument) | KindOrType::Type(argument) => {
+                SubstituteName::many(state, context, &bindings, argument)?
+            }
+        };
+        let wanted_argument = match wanted.arguments[index] {
+            KindOrType::Kind(argument) | KindOrType::Type(argument) => argument,
+        };
         equalities.push((wanted_argument, substituted));
     }
 
