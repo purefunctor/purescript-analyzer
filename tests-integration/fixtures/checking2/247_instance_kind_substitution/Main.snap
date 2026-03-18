@@ -1,0 +1,53 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Proxy :: forall (k :: Type) (@a :: (k :: Type)). Proxy @(k :: Type) (a :: (k :: Type))
+use ::
+  forall (k :: Type) (@a :: (k :: Type)).
+    Use @(k :: Type) (a :: (k :: Type)) => Proxy @(k :: Type) (a :: (k :: Type))
+test :: Proxy @Type String
+
+Types
+Proxy :: forall (k :: Type). (k :: Type) -> Type
+Use :: forall (k :: Type). (k :: Type) -> Constraint
+
+Classes
+class forall (k :: Type) (a :: (k :: Type)). Use @(k :: Type) (a :: (k :: Type))
+  use ::
+  forall (k :: Type) (@a :: (k :: Type)).
+    Use @(k :: Type) (a :: (k :: Type)) => Proxy @(k :: Type) (a :: (k :: Type))
+
+Instances
+instance forall (t6 :: Type) (t4 :: (t6 :: Type)) (t5 :: RowList (t6 :: Type)).
+  RowToList @(t6 :: Type) ( x :: (t4 :: (t6 :: Type)) ) (t5 :: RowList (t6 :: Type)) =>
+  Use @(t6 :: Type) (t4 :: (t6 :: Type))
+
+Roles
+Proxy = [Phantom]
+
+Errors
+CheckError {
+    kind: CannotUnify {
+        t1: Id<smol_str::SmolStr>(13),
+        t2: Id<smol_str::SmolStr>(14),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(3),
+        ),
+    ],
+}
+CheckError {
+    kind: CannotUnify {
+        t1: Id<smol_str::SmolStr>(15),
+        t2: Id<smol_str::SmolStr>(16),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(3),
+        ),
+    ],
+}
