@@ -23,5 +23,5 @@ forceSolve =
   , rowToListMultiple
   , rowToListEmpty
   , rowToListThree
-  , keepStuck: stuckOpenRow (Proxy :: Proxy ())
+  , nowSolved: stuckOpenRow (Proxy :: Proxy ())
   }

@@ -25,9 +25,8 @@ stuckOpenRow ::
     RowToList @Type ( a :: Int | (tail :: Row Type) ) (list :: RowList Type) =>
     Proxy @(Row Type) (tail :: Row Type) -> Proxy @(RowList Type) (list :: RowList Type)
 forceSolve ::
-  forall (t8 :: RowList Type) (t7 :: Type).
-    RowToList @Type ( a :: Int ) (t8 :: RowList Type) =>
-    { keepStuck :: Proxy @(RowList Type) (t8 :: RowList Type)
+  forall (t7 :: Type).
+    { nowSolved :: Proxy @(RowList Type) (Cons @Type "a" Int (Nil @Type))
     , rowToListEmpty :: Proxy @(RowList (t7 :: Type)) (Nil @(t7 :: Type))
     , rowToListMultiple ::
         Proxy @(RowList Type) (Cons @Type "a" Int (Cons @Type "b" String (Nil @Type)))

@@ -25,11 +25,3 @@ type RowApply f a = (f :: Row (k :: Type) -> Row (k :: Type)) (a :: Row (k :: Ty
 type LeftRow r = ( left :: Boolean | (r :: Row Type) )
 type RightRow r = ( right :: String | (r :: Row Type) )
 type CombinedRow r = RowApply @Type LeftRow (RowApply @Type RightRow (r :: Row Type))
-
-Errors
-CheckError {
-    kind: NoInstanceFound {
-        constraint: Id<smol_str::SmolStr>(22),
-    },
-    crumbs: [],
-}

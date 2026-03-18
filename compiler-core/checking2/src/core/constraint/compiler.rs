@@ -11,11 +11,54 @@ use smol_str::SmolStr;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
+use crate::core::fold::{FoldAction, TypeFold, fold_type};
 use crate::core::unification::{CanUnify, can_unify};
 use crate::core::{RowType, Type, TypeId, normalise};
 use crate::state::CheckState;
+use crate::safe_loop;
 
 use super::{ConstraintApplication, MatchInstance};
+
+struct RecursivelyNormalise;
+
+impl TypeFold for RecursivelyNormalise {
+    fn transform<Q>(
+        &mut self,
+        state: &mut CheckState,
+        context: &CheckContext<Q>,
+        id: TypeId,
+        _t: &Type,
+    ) -> QueryResult<FoldAction>
+    where
+        Q: ExternalQueries,
+    {
+        let expanded = normalise::expand(state, context, id)?;
+        if expanded == id {
+            Ok(FoldAction::Continue)
+        } else {
+            Ok(FoldAction::ReplaceThen(expanded))
+        }
+    }
+}
+
+fn recursively_normalise<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    mut id: TypeId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let mut folder = RecursivelyNormalise;
+
+    safe_loop! {
+        let next = fold_type(state, context, id, &mut folder)?;
+        if next == id {
+            return Ok(id);
+        }
+        id = next;
+    }
+}
 
 pub fn extract_integer<Q>(
     state: &mut CheckState,
@@ -25,7 +68,7 @@ pub fn extract_integer<Q>(
 where
     Q: ExternalQueries,
 {
-    let id = normalise::expand(state, context, id)?;
+    let id = recursively_normalise(state, context, id)?;
     match context.lookup_type(id) {
         Type::Integer(value) => Ok(Some(value)),
         _ => Ok(None),
@@ -40,7 +83,7 @@ pub fn extract_symbol<Q>(
 where
     Q: ExternalQueries,
 {
-    let id = normalise::expand(state, context, id)?;
+    let id = recursively_normalise(state, context, id)?;
     if let Type::String(_, id) = context.lookup_type(id) {
         Ok(Some(context.queries.lookup_smol_str(id)))
     } else {
@@ -56,7 +99,7 @@ pub fn extract_row<Q>(
 where
     Q: ExternalQueries,
 {
-    let id = normalise::expand(state, context, id)?;
+    let id = recursively_normalise(state, context, id)?;
     if let Type::Row(id) = context.lookup_type(id) {
         Ok(Some(context.lookup_row_type(id)))
     } else {
