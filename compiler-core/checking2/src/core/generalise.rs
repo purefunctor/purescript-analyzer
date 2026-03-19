@@ -332,7 +332,7 @@ where
     Q: ExternalQueries,
 {
     let mut superclasses = vec![];
-    constraint::elaborate_superclasses(state, context, constraint, &mut superclasses)?;
+    constraint::elaborate::elaborate_superclasses(state, context, constraint, &mut superclasses)?;
     superclasses
         .into_iter()
         .map(|constraint| constraint::constraint_application(state, context, constraint))

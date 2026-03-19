@@ -1,70 +1,13 @@
 use std::iter;
 
 use building_types::QueryResult;
-use itertools::Itertools;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::{KindOrType, Type, TypeId, normalise};
 use crate::state::CheckState;
 
-use super::{
-    ConstraintApplication, MatchInstance, MatchType, constraint_application, elaborate_superclasses,
-};
-
-pub fn elaborate_given<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    given: &[TypeId],
-) -> QueryResult<Vec<ConstraintApplication>>
-where
-    Q: ExternalQueries,
-{
-    let mut elaborated = vec![];
-
-    for &constraint in given {
-        elaborated.push(constraint);
-        elaborate_superclasses(state, context, constraint, &mut elaborated)?;
-    }
-
-    let mut applications = elaborated
-        .into_iter()
-        .map(|constraint| constraint_application(state, context, constraint))
-        .filter_map_ok(|constraint| constraint)
-        .collect::<QueryResult<Vec<_>>>()?;
-
-    let symmetric = applications.iter().filter_map(|application| {
-        let is_coercible = application.file_id == context.prim_coerce.file_id
-            && application.item_id == context.prim_coerce.coercible;
-
-        let type_positions = application
-            .arguments
-            .iter()
-            .enumerate()
-            .filter_map(|(index, argument)| {
-                matches!(argument, KindOrType::Type(_)).then_some(index)
-            })
-            .collect_vec();
-
-        let &[left, right] = type_positions.as_slice() else {
-            return None;
-        };
-
-        let mut arguments = application.arguments.clone();
-        arguments.swap(left, right);
-
-        is_coercible.then_some(ConstraintApplication {
-            file_id: application.file_id,
-            item_id: application.item_id,
-            arguments,
-        })
-    });
-
-    let symmetric = symmetric.collect_vec();
-    applications.extend(symmetric);
-
-    Ok(applications)
-}
+use super::{ConstraintApplication, MatchInstance, MatchType};
 
 /// Matches a wanted constraint to given constraints.
 pub fn match_given_instances<Q>(

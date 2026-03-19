@@ -521,3 +521,7 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_247_instance_kind_substitution_main() { run_test("247_instance_kind_substitution", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_248_prim_row_cons_tail_synonym_main() { run_test("248_prim_row_cons_tail_synonym", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_249_prim_int_given_improvement_chain_main() { run_test("249_prim_int_given_improvement_chain", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_250_given_non_head_improvement_chain_main() { run_test("250_given_non_head_improvement_chain", "Main"); }

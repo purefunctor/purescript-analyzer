@@ -59,11 +59,9 @@ where
     let class = context.queries.intern_type(Type::Constructor(class_file, class_id));
     let class_kind = toolkit::lookup_file_type(state, context, class_file, class_id)?;
 
-    let (delegate_constraint, _) = preceding_arguments
-        .iter()
-        .copied()
-        .chain([inner])
-        .try_fold((class, class_kind), |function, argument| {
+    let (delegate_constraint, _) = preceding_arguments.iter().copied().chain([inner]).try_fold(
+        (class, class_kind),
+        |function, argument| {
             let argument_kind = types::elaborate_kind(state, context, argument)?;
             let ((function, function_kind), _) = application::infer_application_kind(
                 state,
@@ -74,7 +72,8 @@ where
                 Records::Ignore,
             )?;
             Ok((function, function_kind))
-        })?;
+        },
+    )?;
 
     Ok(Some(DeriveStrategy::NewtypeDeriveConstraint { delegate_constraint }))
 }

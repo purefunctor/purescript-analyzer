@@ -1,10 +1,10 @@
-mod prim_coerce;
-mod prim_int;
-mod prim_reflectable;
-mod prim_row;
-mod prim_row_list;
-mod prim_symbol;
-mod prim_type_error;
+pub mod prim_coerce;
+pub mod prim_int;
+pub mod prim_reflectable;
+pub mod prim_row;
+pub mod prim_row_list;
+pub mod prim_symbol;
+pub mod prim_type_error;
 
 use building_types::QueryResult;
 use smol_str::SmolStr;
@@ -14,8 +14,8 @@ use crate::context::CheckContext;
 use crate::core::fold::{FoldAction, TypeFold, fold_type};
 use crate::core::unification::{CanUnify, can_unify};
 use crate::core::{RowType, Type, TypeId, normalise};
-use crate::state::CheckState;
 use crate::safe_loop;
+use crate::state::CheckState;
 
 use super::{ConstraintApplication, MatchInstance};
 

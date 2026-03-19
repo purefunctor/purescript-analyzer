@@ -1,9 +1,10 @@
 pub mod compiler;
+pub mod elaborate;
 pub mod fd;
 pub mod given;
 pub mod instances;
 
-use std::collections::{HashSet, VecDeque};
+use std::collections::VecDeque;
 use std::mem;
 
 use building_types::QueryResult;
@@ -13,14 +14,14 @@ use itertools::Itertools;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::substitute::{NameToType, SubstituteName};
 use crate::core::{KindOrType, Type, TypeId, normalise, toolkit, unification};
 use crate::error::ErrorKind;
 use crate::implication::ImplicationId;
 use crate::state::CheckState;
 
 use compiler::match_compiler_instances;
-use given::{elaborate_given, match_given_instances};
+use elaborate::{elaborate_given, substitute_constraint, substitute_constraints};
+use given::match_given_instances;
 use instances::{collect_instance_chains, match_instance};
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -134,8 +135,15 @@ fn solve_constraints<Q>(
 where
     Q: ExternalQueries,
 {
-    let given = elaborate_given(state, context, given)?;
-    let mut work_queue = wanted;
+    let elaborate::ElaboratedGiven { given, substitution } =
+        elaborate_given(state, context, given)?;
+
+    let work_queue = wanted
+        .into_iter()
+        .map(|constraint| substitute_constraint(state, context, &substitution, constraint))
+        .collect::<QueryResult<VecDeque<_>>>()?;
+
+    let mut work_queue = work_queue;
     let mut residual = vec![];
 
     loop {
@@ -166,6 +174,8 @@ where
                             made_progress = true;
                         }
                     }
+                    let constraints =
+                        substitute_constraints(state, context, &substitution, constraints)?;
                     work_queue.extend(constraints);
                     continue 'work;
                 }
@@ -187,6 +197,8 @@ where
                                     made_progress = true;
                                 }
                             }
+                            let constraints =
+                                substitute_constraints(state, context, &substitution, constraints)?;
                             work_queue.extend(constraints);
                             continue 'work;
                         }
@@ -225,91 +237,4 @@ where
         }
         _ => None,
     })
-}
-
-/// Discovers superclass constraints for a given constraint.
-pub fn elaborate_superclasses<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    constraint: TypeId,
-    constraints: &mut Vec<TypeId>,
-) -> QueryResult<()>
-where
-    Q: ExternalQueries,
-{
-    fn aux<Q>(
-        state: &mut CheckState,
-        context: &CheckContext<Q>,
-        constraint: TypeId,
-        constraints: &mut Vec<TypeId>,
-        seen: &mut HashSet<(FileId, TypeItemId)>,
-    ) -> QueryResult<()>
-    where
-        Q: ExternalQueries,
-    {
-        let Some(application) = constraint_application(state, context, constraint)? else {
-            return Ok(());
-        };
-
-        if !seen.insert((application.file_id, application.item_id)) {
-            return Ok(());
-        }
-
-        let Some(class_info) =
-            toolkit::lookup_file_class(state, context, application.file_id, application.item_id)?
-        else {
-            return Ok(());
-        };
-
-        if class_info.superclasses.is_empty() {
-            return Ok(());
-        }
-
-        let mut bindings = NameToType::default();
-        let kind_arguments = application
-            .arguments
-            .iter()
-            .filter_map(|argument| match argument {
-                KindOrType::Kind(argument) => Some(*argument),
-                KindOrType::Type(_) => None,
-            })
-            .collect_vec();
-        let type_arguments = application
-            .arguments
-            .iter()
-            .filter_map(|argument| match argument {
-                KindOrType::Type(argument) => Some(*argument),
-                KindOrType::Kind(_) => None,
-            })
-            .collect_vec();
-
-        if type_arguments.len() != class_info.type_parameters.len() {
-            return Ok(());
-        }
-
-        for (index, &binder_id) in class_info.kind_binders.iter().enumerate() {
-            let binder = context.lookup_forall_binder(binder_id);
-            let argument = kind_arguments
-                .get(index)
-                .copied()
-                .unwrap_or_else(|| state.fresh_unification(context.queries, binder.kind));
-            bindings.insert(binder.name, argument);
-        }
-
-        for (&binder_id, argument) in class_info.type_parameters.iter().zip(type_arguments) {
-            let binder = context.lookup_forall_binder(binder_id);
-            bindings.insert(binder.name, argument);
-        }
-
-        for &superclass in &class_info.superclasses {
-            let substituted = SubstituteName::many(state, context, &bindings, superclass)?;
-            constraints.push(substituted);
-            aux(state, context, substituted, constraints, seen)?;
-        }
-
-        Ok(())
-    }
-
-    let mut seen = HashSet::new();
-    aux(state, context, constraint, constraints, &mut seen)
 }
