@@ -142,9 +142,23 @@ where
     let union_row = extract_row(state, context, union)?;
 
     match (left_row, right_row, union_row) {
-        (Some(left_row), Some(right_row), _) => {
+        (Some(left_row), Some(right_row), union_row) => {
             if let Some(rest) = left_row.tail {
                 if left_row.fields.is_empty() {
+                    if let Some(union_row) = union_row {
+                        if right_row.tail.is_none() {
+                            if let Some((remaining, mut equalities)) =
+                                subtract_row_fields(state, context, &union_row.fields, &right_row.fields)?
+                            {
+                                let result = intern_row_value(context, RowType::new(remaining, union_row.tail));
+                                equalities.push((left, result));
+                                return Ok(Some(MatchInstance::Match { constraints: vec![], equalities }));
+                            }
+
+                            return Ok(Some(MatchInstance::Apart));
+                        }
+                    }
+
                     return Ok(Some(MatchInstance::Stuck));
                 }
 
