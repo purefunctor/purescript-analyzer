@@ -522,6 +522,8 @@ fn run_test(folder: &str, file: &str) {
 
 #[rustfmt::skip] #[test] fn test_248_prim_row_cons_tail_synonym_main() { run_test("248_prim_row_cons_tail_synonym", "Main"); }
 
-#[rustfmt::skip] #[test] fn test_249_prim_int_given_improvement_chain_main() { run_test("249_prim_int_given_improvement_chain", "Main"); }
+#[rustfmt::skip] #[test] fn test_249_prim_int_given_improvement_main() { run_test("249_prim_int_given_improvement", "Main"); }
 
-#[rustfmt::skip] #[test] fn test_250_given_non_head_improvement_chain_main() { run_test("250_given_non_head_improvement_chain", "Main"); }
+#[rustfmt::skip] #[test] fn test_250_given_deep_name_improvement_main() { run_test("250_given_deep_name_improvement", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_251_prim_row_nub_union_class_constraint_main() { run_test("251_prim_row_nub_union_class_constraint", "Main"); }

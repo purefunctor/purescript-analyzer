@@ -1,0 +1,49 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+unsafeCoerce :: forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type)
+consume ::
+  forall (given :: Row Type) (given_ :: Row Type).
+    Union @Type (given :: Row Type) (given_ :: Row Type) Required =>
+    {| (given :: Row Type) } -> String
+merge ::
+  forall (r1 :: Row Type) (r2 :: Row Type) (r3 :: Row Type) (r4 :: Row Type).
+    Union @Type (r1 :: Row Type) (r2 :: Row Type) (r3 :: Row Type) =>
+    Nub @Type (r3 :: Row Type) (r4 :: Row Type) =>
+    {| (r1 :: Row Type) } -> {| (r2 :: Row Type) } -> {| (r4 :: Row Type) }
+collect :: forall (@a :: Type). Collect (a :: Type) => (a :: Type) -> Array String
+combine ::
+  forall (partial :: Row Type) (duplicated :: Row Type) (deduped :: Row Type) (deduped_ :: Row Type)
+    (items :: Type).
+    Collect (items :: Type) =>
+    Union @Type ( key :: String ) (partial :: Row Type) (duplicated :: Row Type) =>
+    Nub @Type ( key :: String | (partial :: Row Type) ) (deduped :: Row Type) =>
+    Union @Type (deduped :: Row Type) (deduped_ :: Row Type) Required =>
+    {| (partial :: Row Type) } -> (items :: Type) -> String
+combine' :: forall (items :: Type). Collect (items :: Type) => (items :: Type) -> String
+repro :: String
+
+Types
+Required :: Row Type
+Collect :: Type -> Constraint
+
+Synonyms
+type Required = ( key :: String )
+
+Classes
+class forall (a :: Type). Collect (a :: Type)
+  collect :: forall (@a :: Type). Collect (a :: Type) => (a :: Type) -> Array String
+
+Instances
+instance Collect (Array String)
+
+Errors
+CheckError {
+    kind: NoInstanceFound {
+        constraint: Id<smol_str::SmolStr>(28),
+    },
+    crumbs: [],
+}
