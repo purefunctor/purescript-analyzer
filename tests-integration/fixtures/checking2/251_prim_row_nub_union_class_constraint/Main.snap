@@ -39,11 +39,3 @@ class forall (a :: Type). Collect (a :: Type)
 
 Instances
 instance Collect (Array String)
-
-Errors
-CheckError {
-    kind: NoInstanceFound {
-        constraint: Id<smol_str::SmolStr>(28),
-    },
-    crumbs: [],
-}

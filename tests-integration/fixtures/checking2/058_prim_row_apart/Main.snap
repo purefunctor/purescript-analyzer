@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -16,7 +17,6 @@ lacksPresent ::
 forceSolve ::
   forall (t3 :: Row Type) (t2 :: Row Type).
     Union @Type (t3 :: Row Type) ( b :: String ) ( a :: Int, b :: Int ) =>
-    Cons @Type "missing" Int (t2 :: Row Type) ( a :: Int, b :: String ) =>
     { consMissingLabel :: Proxy @(Row Type) (t2 :: Row Type)
     , lacksPresent :: Proxy @(Row Type) ( a :: Int, b :: String )
     , unionTypeMismatch :: Proxy @(Row Type) (t3 :: Row Type)
@@ -26,8 +26,19 @@ Types
 
 Errors
 CheckError {
+    kind: CannotUnify {
+        t1: Id<smol_str::SmolStr>(18),
+        t2: Id<smol_str::SmolStr>(19),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(3),
+        ),
+    ],
+}
+CheckError {
     kind: NoInstanceFound {
-        constraint: Id<smol_str::SmolStr>(18),
+        constraint: Id<smol_str::SmolStr>(20),
     },
     crumbs: [],
 }

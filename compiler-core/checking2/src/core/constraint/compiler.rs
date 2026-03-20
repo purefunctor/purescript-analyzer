@@ -100,11 +100,10 @@ where
     Q: ExternalQueries,
 {
     let id = recursively_normalise(state, context, id)?;
-    if let Type::Row(id) = context.lookup_type(id) {
-        Ok(Some(context.lookup_row_type(id)))
-    } else {
-        Ok(None)
-    }
+    Ok(Some(match context.lookup_type(id) {
+        Type::Row(id) => context.lookup_row_type(id),
+        _ => RowType::new([], Some(id)),
+    }))
 }
 
 pub fn intern_symbol<Q>(context: &CheckContext<Q>, value: &str) -> TypeId
