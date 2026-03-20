@@ -1,8 +1,8 @@
 use std::cmp::Ordering;
+use std::iter;
 
 use building_types::QueryResult;
 use indexing::TypeItemId;
-use itertools::Itertools;
 use rustc_hash::FxHashSet;
 
 use crate::ExternalQueries;
@@ -125,6 +125,131 @@ where
     Ok(Some((result, equalities)))
 }
 
+fn solve_union_left_empty_prefix<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    left: TypeId,
+    right_row: &RowType,
+    union_row: &Option<RowType>,
+) -> QueryResult<MatchInstance>
+where
+    Q: ExternalQueries,
+{
+    if let Some(union_row) = union_row
+        && right_row.tail.is_none()
+    {
+        if let Some((remaining, mut equalities)) =
+            subtract_row_fields(state, context, &union_row.fields, &right_row.fields)?
+        {
+            let row_type = RowType::new(remaining, union_row.tail);
+            let result = intern_row_value(context, row_type);
+
+            equalities.push((left, result));
+            return Ok(MatchInstance::Match { constraints: vec![], equalities });
+        }
+        return Ok(MatchInstance::Apart);
+    }
+    Ok(MatchInstance::Stuck)
+}
+
+fn solve_union_left_open_prefix<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    left_row: &RowType,
+    rest: TypeId,
+    right: TypeId,
+    union: TypeId,
+) -> QueryResult<MatchInstance>
+where
+    Q: ExternalQueries,
+{
+    let fresh_tail = state.fresh_unification(context.queries, context.prim.row_type);
+
+    let fields = left_row.fields.iter().cloned();
+    let row_type = RowType::new(fields, Some(fresh_tail));
+    let result = intern_row_value(context, row_type);
+
+    let constraint = make_prim_row_constraint(
+        state,
+        context,
+        context.prim_row.union,
+        &[rest, right, fresh_tail],
+    )?;
+
+    Ok(MatchInstance::Match { constraints: vec![constraint], equalities: vec![(union, result)] })
+}
+
+fn solve_union_left_closed<Q>(
+    context: &CheckContext<Q>,
+    left_row: &RowType,
+    right_row: &RowType,
+    union: TypeId,
+) -> MatchInstance
+where
+    Q: ExternalQueries,
+{
+    let left = left_row.fields.iter();
+    let right = right_row.fields.iter();
+
+    let fields = iter::chain(left, right).cloned();
+    let row_type = RowType::new(fields, right_row.tail);
+    let result = intern_row_value(context, row_type);
+
+    MatchInstance::Match { constraints: vec![], equalities: vec![(union, result)] }
+}
+
+fn solve_union_from_right_and_union<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    left: TypeId,
+    right_row: &RowType,
+    union_row: &RowType,
+) -> QueryResult<MatchInstance>
+where
+    Q: ExternalQueries,
+{
+    if right_row.tail.is_some() {
+        return Ok(MatchInstance::Stuck);
+    }
+    if let Some((remaining, mut equalities)) =
+        subtract_row_fields(state, context, &union_row.fields, &right_row.fields)?
+    {
+        let row_type = RowType::new(remaining, union_row.tail);
+        let result = intern_row_value(context, row_type);
+
+        equalities.push((left, result));
+        Ok(MatchInstance::Match { constraints: vec![], equalities })
+    } else {
+        Ok(MatchInstance::Apart)
+    }
+}
+
+fn solve_union_from_left_and_union<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    right: TypeId,
+    left_row: &RowType,
+    union_row: &RowType,
+) -> QueryResult<MatchInstance>
+where
+    Q: ExternalQueries,
+{
+    if left_row.tail.is_some() {
+        return Ok(MatchInstance::Stuck);
+    }
+    if let Some((remaining, mut equalities)) =
+        subtract_row_fields(state, context, &union_row.fields, &left_row.fields)?
+    {
+        let row_type = RowType::new(remaining, union_row.tail);
+        let result = intern_row_value(context, row_type);
+
+        equalities.push((right, result));
+        Ok(MatchInstance::Match { constraints: vec![], equalities })
+    } else {
+        Ok(MatchInstance::Apart)
+    }
+}
+
 pub fn match_union<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -145,80 +270,29 @@ where
         (Some(left_row), Some(right_row), union_row) => {
             if let Some(rest) = left_row.tail {
                 if left_row.fields.is_empty() {
-                    if let Some(union_row) = union_row {
-                        if right_row.tail.is_none() {
-                            if let Some((remaining, mut equalities)) =
-                                subtract_row_fields(state, context, &union_row.fields, &right_row.fields)?
-                            {
-                                let result = intern_row_value(context, RowType::new(remaining, union_row.tail));
-                                equalities.push((left, result));
-                                return Ok(Some(MatchInstance::Match { constraints: vec![], equalities }));
-                            }
-
-                            return Ok(Some(MatchInstance::Apart));
-                        }
-                    }
-
-                    return Ok(Some(MatchInstance::Stuck));
+                    let solution = solve_union_left_empty_prefix(
+                        state, context, left, &right_row, &union_row,
+                    )?;
+                    return Ok(Some(solution));
                 }
 
-                let fresh_tail = state.fresh_unification(context.queries, context.prim.row_type);
-
-                let result = intern_row_value(
-                    context,
-                    RowType::new(left_row.fields.iter().cloned(), Some(fresh_tail)),
-                );
-
-                let constraint = make_prim_row_constraint(
-                    state,
-                    context,
-                    context.prim_row.union,
-                    &[rest, right, fresh_tail],
-                )?;
-
-                return Ok(Some(MatchInstance::Match {
-                    constraints: vec![constraint],
-                    equalities: vec![(union, result)],
-                }));
+                let solution =
+                    solve_union_left_open_prefix(state, context, &left_row, rest, right, union)?;
+                Ok(Some(solution))
+            } else {
+                let solution = solve_union_left_closed(context, &left_row, &right_row, union);
+                Ok(Some(solution))
             }
-
-            let union_fields =
-                left_row.fields.iter().chain(right_row.fields.iter()).cloned().collect_vec();
-
-            let result = intern_row_value(context, RowType::new(union_fields, right_row.tail));
-
-            Ok(Some(MatchInstance::Match {
-                constraints: vec![],
-                equalities: vec![(union, result)],
-            }))
         }
         (_, Some(right_row), Some(union_row)) => {
-            if right_row.tail.is_some() {
-                return Ok(Some(MatchInstance::Stuck));
-            }
-            if let Some((remaining, mut equalities)) =
-                subtract_row_fields(state, context, &union_row.fields, &right_row.fields)?
-            {
-                let result = intern_row_value(context, RowType::new(remaining, union_row.tail));
-                equalities.push((left, result));
-                Ok(Some(MatchInstance::Match { constraints: vec![], equalities }))
-            } else {
-                Ok(Some(MatchInstance::Apart))
-            }
+            let solution =
+                solve_union_from_right_and_union(state, context, left, &right_row, &union_row)?;
+            Ok(Some(solution))
         }
         (Some(left_row), _, Some(union_row)) => {
-            if left_row.tail.is_some() {
-                return Ok(Some(MatchInstance::Stuck));
-            }
-            if let Some((remaining, mut equalities)) =
-                subtract_row_fields(state, context, &union_row.fields, &left_row.fields)?
-            {
-                let result = intern_row_value(context, RowType::new(remaining, union_row.tail));
-                equalities.push((right, result));
-                Ok(Some(MatchInstance::Match { constraints: vec![], equalities }))
-            } else {
-                Ok(Some(MatchInstance::Apart))
-            }
+            let solution =
+                solve_union_from_left_and_union(state, context, right, &left_row, &union_row)?;
+            Ok(Some(solution))
         }
         _ => Ok(Some(MatchInstance::Stuck)),
     }
