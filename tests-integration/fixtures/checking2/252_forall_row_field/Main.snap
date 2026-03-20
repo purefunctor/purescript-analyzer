@@ -9,4 +9,4 @@ Types
 Test :: Row Type
 
 Synonyms
-type Test = ( test :: forall (a :: ?2). (a :: ?2) )
+type Test = ( test :: forall (a :: Type). (a :: Type) )

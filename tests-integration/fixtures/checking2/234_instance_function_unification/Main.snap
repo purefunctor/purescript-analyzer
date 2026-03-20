@@ -5,22 +5,19 @@ expression: report
 ---
 Terms
 identity ::
-  forall (t3 :: Type) (t2 :: Type) (@f :: (t3 :: Type) -> (t3 :: Type) -> (t2 :: Type))
-    (a :: (t3 :: Type)).
-    Category @(t3 :: Type) @(t2 :: Type) (f :: (t3 :: Type) -> (t3 :: Type) -> (t2 :: Type)) =>
-    (f :: (t3 :: Type) -> (t3 :: Type) -> (t2 :: Type)) (a :: (t3 :: Type)) (a :: (t3 :: Type))
+  forall (t2 :: Type) (@f :: (t2 :: Type) -> (t2 :: Type) -> Type) (a :: (t2 :: Type)).
+    Category @(t2 :: Type) (f :: (t2 :: Type) -> (t2 :: Type) -> Type) =>
+    (f :: (t2 :: Type) -> (t2 :: Type) -> Type) (a :: (t2 :: Type)) (a :: (t2 :: Type))
 
 Types
-Category ::
-  forall (t3 :: Type) (t2 :: Type). ((t3 :: Type) -> (t3 :: Type) -> (t2 :: Type)) -> Constraint
+Category :: forall (t2 :: Type). ((t2 :: Type) -> (t2 :: Type) -> Type) -> Constraint
 
 Classes
-class forall (t3 :: Type) (t2 :: Type) (f :: (t3 :: Type) -> (t3 :: Type) -> (t2 :: Type)). Category @(t3 :: Type) @(t2 :: Type) (f :: (t3 :: Type) -> (t3 :: Type) -> (t2 :: Type))
+class forall (t2 :: Type) (f :: (t2 :: Type) -> (t2 :: Type) -> Type). Category @(t2 :: Type) (f :: (t2 :: Type) -> (t2 :: Type) -> Type)
   identity ::
-  forall (t3 :: Type) (t2 :: Type) (@f :: (t3 :: Type) -> (t3 :: Type) -> (t2 :: Type))
-    (a :: (t3 :: Type)).
-    Category @(t3 :: Type) @(t2 :: Type) (f :: (t3 :: Type) -> (t3 :: Type) -> (t2 :: Type)) =>
-    (f :: (t3 :: Type) -> (t3 :: Type) -> (t2 :: Type)) (a :: (t3 :: Type)) (a :: (t3 :: Type))
+  forall (t2 :: Type) (@f :: (t2 :: Type) -> (t2 :: Type) -> Type) (a :: (t2 :: Type)).
+    Category @(t2 :: Type) (f :: (t2 :: Type) -> (t2 :: Type) -> Type) =>
+    (f :: (t2 :: Type) -> (t2 :: Type) -> Type) (a :: (t2 :: Type)) (a :: (t2 :: Type))
 
 Instances
-instance Category @Type @Type Function
+instance Category @Type Function

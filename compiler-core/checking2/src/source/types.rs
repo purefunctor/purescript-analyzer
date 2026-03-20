@@ -165,7 +165,7 @@ where
                 .collect::<QueryResult<Vec<_>>>()?;
 
             let inner = if let Some(inner) = inner {
-                let (inner, _) = infer_kind(state, context, *inner)?;
+                let (inner, _) = check_kind(state, context, *inner, context.prim.t)?;
                 inner
             } else {
                 context.unknown("missing forall inner")
@@ -176,9 +176,7 @@ where
                 context.intern_forall(binder_id, inner)
             });
 
-            let k = context.prim.t;
-
-            Ok((t, k))
+            Ok((t, context.prim.t))
         }
 
         lowering::TypeKind::Hole => {
@@ -415,8 +413,7 @@ where
     let fields = items.iter().map(|item| {
         let label = item.name.clone().unwrap_or(MISSING_NAME);
         let id = if let Some(t) = item.type_ {
-            let (t, k) = infer_kind(state, context, t)?;
-            unification::unify(state, context, field_kind, k)?;
+            let (t, _) = check_kind(state, context, t, field_kind)?;
             t
         } else {
             context.unknown("missing field type")
