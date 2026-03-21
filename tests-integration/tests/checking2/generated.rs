@@ -529,3 +529,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_251_prim_row_nub_union_class_constraint_main() { run_test("251_prim_row_nub_union_class_constraint", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_252_forall_row_field_main() { run_test("252_forall_row_field", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_253_kind_applied_reference_double_application_main() { run_test("253_kind_applied_reference_double_application", "Main"); }
