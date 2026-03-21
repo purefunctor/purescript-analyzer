@@ -11,7 +11,6 @@ use lowering::{
 };
 use smol_str::SmolStr;
 
-use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::{
     CheckedClass, CheckedSynonym, ForallBinder, Role, Type, TypeId, fold, generalise, signature,
@@ -20,6 +19,7 @@ use crate::core::{
 use crate::error::ErrorCrumb;
 use crate::source::types;
 use crate::state::CheckState;
+use crate::{ExternalQueries, safe_loop};
 
 struct PendingDataType {
     parameters: Vec<ForallBinder>,
@@ -47,12 +47,12 @@ struct TypeSccState {
     foreign: Vec<(TypeItemId, Arc<[lowering::Role]>)>,
 }
 
-struct KindAppliedReferenceFolder {
+struct ApplyKinds {
     reference: (FileId, TypeItemId),
     replacement: TypeId,
 }
 
-impl KindAppliedReferenceFolder {
+impl ApplyKinds {
     fn on<Q>(
         state: &mut CheckState,
         context: &CheckContext<Q>,
@@ -63,20 +63,38 @@ impl KindAppliedReferenceFolder {
     where
         Q: ExternalQueries,
     {
-        let mut folder =
-            KindAppliedReferenceFolder { reference: (context.id, item_id), replacement };
+        let mut folder = ApplyKinds { reference: (context.id, item_id), replacement };
         fold::fold_type(state, context, argument, &mut folder)
+    }
+
+    fn has_constructor<Q>(&self, context: &CheckContext<Q>, mut function: TypeId) -> bool
+    where
+        Q: ExternalQueries,
+    {
+        safe_loop! {
+            match context.lookup_type(function) {
+                Type::KindApplication(inner_function, _) => function = inner_function,
+                Type::Constructor(file_id, item_id) => return self.reference == (file_id, item_id),
+                _ => return false,
+            }
+        }
     }
 }
 
-impl fold::TypeFold for KindAppliedReferenceFolder {
+impl fold::TypeFold for ApplyKinds {
     fn transform<Q: ExternalQueries>(
         &mut self,
         _state: &mut CheckState,
-        _context: &CheckContext<Q>,
-        _id: TypeId,
+        context: &CheckContext<Q>,
+        id: TypeId,
         t: &Type,
     ) -> QueryResult<fold::FoldAction> {
+        if let Type::KindApplication(function, _) = t
+            && self.has_constructor(context, *function)
+        {
+            return Ok(fold::FoldAction::Replace(id));
+        }
+
         if let Type::Constructor(file_id, item_id) = t
             && self.reference == (*file_id, *item_id)
         {
@@ -534,13 +552,7 @@ where
             // a -> Tagged @k t a
             for argument in checked_arguments.into_iter().rev() {
                 let argument = zonk::zonk(state, context, argument)?;
-                let argument = KindAppliedReferenceFolder::on(
-                    state,
-                    context,
-                    item_id,
-                    type_reference,
-                    argument,
-                )?;
+                let argument = ApplyKinds::on(state, context, item_id, type_reference, argument)?;
                 result = context.intern_function(argument, result);
             }
 

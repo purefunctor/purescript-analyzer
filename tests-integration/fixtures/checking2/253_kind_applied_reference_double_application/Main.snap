@@ -7,7 +7,7 @@ Terms
 Fix ::
   forall (k :: Type) (@f :: ((k :: Type) -> Type) -> (k :: Type) -> Type) (@a :: (k :: Type)).
     (f :: ((k :: Type) -> Type) -> (k :: Type) -> Type)
-      (Fix @(k :: Type) @(k :: Type) (f :: ((k :: Type) -> Type) -> (k :: Type) -> Type))
+      (Fix @(k :: Type) (f :: ((k :: Type) -> Type) -> (k :: Type) -> Type))
       (a :: (k :: Type)) ->
     Fix @(k :: Type) (f :: ((k :: Type) -> Type) -> (k :: Type) -> Type) (a :: (k :: Type))
 
