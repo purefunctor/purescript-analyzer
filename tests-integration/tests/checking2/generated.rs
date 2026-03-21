@@ -527,3 +527,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_250_given_deep_name_improvement_main() { run_test("250_given_deep_name_improvement", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_251_prim_row_nub_union_class_constraint_main() { run_test("251_prim_row_nub_union_class_constraint", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_252_forall_row_field_main() { run_test("252_forall_row_field", "Main"); }
