@@ -533,3 +533,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_253_kind_applied_reference_double_application_main() { run_test("253_kind_applied_reference_double_application", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_254_given_synonym_expansion_main() { run_test("254_given_synonym_expansion", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_255_section_rule_progress_main() { run_test("255_section_rule_progress", "Main"); }

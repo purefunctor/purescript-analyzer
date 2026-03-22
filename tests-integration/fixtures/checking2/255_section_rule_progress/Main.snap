@@ -1,0 +1,264 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Done :: forall (@a :: Type) (@b :: Type). (b :: Type) -> Step (a :: Type) (b :: Type)
+Loop :: forall (@a :: Type) (@b :: Type). (a :: Type) -> Step (a :: Type) (b :: Type)
+append :: forall (@a :: Type). Semigroup (a :: Type) => (a :: Type) -> (a :: Type) -> (a :: Type)
+mempty :: forall (@a :: Type). Monoid (a :: Type) => (a :: Type)
+tailRecM ::
+  forall (@m :: Type -> Type) (a :: Type) (b :: Type).
+    MonadRec (m :: Type -> Type) =>
+    ((a :: Type) -> (m :: Type -> Type) (Step (a :: Type) (b :: Type))) ->
+    (a :: Type) ->
+    (m :: Type -> Type) (b :: Type)
+ifM ::
+  forall (m :: Type -> Type) (a :: Type).
+    Bind (m :: Type -> Type) =>
+    (m :: Type -> Type) Boolean ->
+    (m :: Type -> Type) (a :: Type) ->
+    (m :: Type -> Type) (a :: Type) ->
+    (m :: Type -> Type) (a :: Type)
+lift2 ::
+  forall (f :: Type -> Type) (a :: Type) (b :: Type) (c :: Type).
+    Apply (f :: Type -> Type) =>
+    ((a :: Type) -> (b :: Type) -> (c :: Type)) ->
+    (f :: Type -> Type) (a :: Type) ->
+    (f :: Type -> Type) (b :: Type) ->
+    (f :: Type -> Type) (c :: Type)
+liftIfM ::
+  forall (m :: Type -> Type) (f :: Type -> Type) (a :: Type).
+    Apply (f :: Type -> Type) =>
+    Bind (m :: Type -> Type) =>
+    (m :: Type -> Type) Boolean ->
+    (f :: Type -> Type) ((m :: Type -> Type) (a :: Type)) ->
+    (f :: Type -> Type) ((m :: Type -> Type) (a :: Type)) ->
+    (f :: Type -> Type) ((m :: Type -> Type) (a :: Type))
+appendM ::
+  forall (m :: Type -> Type) (f :: Type -> Type) (a :: Type) (b :: Type).
+    MonadRec (m :: Type -> Type) =>
+    Applicative (f :: Type -> Type) =>
+    Semigroup ((f :: Type -> Type) (a :: Type)) =>
+    (f :: Type -> Type) (a :: Type) ->
+    (m :: Type -> Type) (a :: Type) ->
+    (m :: Type -> Type) (Step ((f :: Type -> Type) (a :: Type)) (b :: Type))
+<+> ::
+  forall (m :: Type -> Type) (f :: Type -> Type) (a :: Type) (b :: Type).
+    MonadRec (m :: Type -> Type) =>
+    Applicative (f :: Type -> Type) =>
+    Semigroup ((f :: Type -> Type) (a :: Type)) =>
+    (f :: Type -> Type) (a :: Type) ->
+    (m :: Type -> Type) (a :: Type) ->
+    (m :: Type -> Type) (Step ((f :: Type -> Type) (a :: Type)) (b :: Type))
+loop ::
+  forall (m :: Type -> Type) (a :: Type) (b :: Type).
+    Applicative (m :: Type -> Type) =>
+    (a :: Type) -> (m :: Type -> Type) (Step (a :: Type) (b :: Type))
+done ::
+  forall (m :: Type -> Type) (a :: Type) (b :: Type).
+    Applicative (m :: Type -> Type) =>
+    (b :: Type) -> (m :: Type -> Type) (Step (a :: Type) (b :: Type))
+whileM' ::
+  forall (a :: Type) (f :: Type -> Type) (m :: Type -> Type).
+    MonadRec (m :: Type -> Type) =>
+    Applicative (f :: Type -> Type) =>
+    Monoid ((f :: Type -> Type) (a :: Type)) =>
+    (m :: Type -> Type) Boolean ->
+    (m :: Type -> Type) (a :: Type) ->
+    (m :: Type -> Type) ((f :: Type -> Type) (a :: Type))
+
+Types
+Step :: Type -> Type -> Type
+Semigroup :: Type -> Constraint
+Monoid :: Type -> Constraint
+MonadRec :: (Type -> Type) -> Constraint
+
+Classes
+class forall (a :: Type). Semigroup (a :: Type)
+  append :: forall (@a :: Type). Semigroup (a :: Type) => (a :: Type) -> (a :: Type) -> (a :: Type)
+class forall (a :: Type). Semigroup (a :: Type) <= Monoid (a :: Type)
+  mempty :: forall (@a :: Type). Monoid (a :: Type) => (a :: Type)
+class forall (m :: Type -> Type). Applicative (m :: Type -> Type), Bind (m :: Type -> Type) <= MonadRec (m :: Type -> Type)
+  tailRecM ::
+  forall (@m :: Type -> Type) (a :: Type) (b :: Type).
+    MonadRec (m :: Type -> Type) =>
+    ((a :: Type) -> (m :: Type -> Type) (Step (a :: Type) (b :: Type))) ->
+    (a :: Type) ->
+    (m :: Type -> Type) (b :: Type)
+
+Roles
+Step = [Representational, Representational]
+
+Errors
+CheckError {
+    kind: CannotUnify {
+        t1: Id<smol_str::SmolStr>(12),
+        t2: Id<smol_str::SmolStr>(13),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(12),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(406),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(409),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(410),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(415),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(416),
+        ),
+    ],
+}
+CheckError {
+    kind: CannotUnify {
+        t1: Id<smol_str::SmolStr>(14),
+        t2: Id<smol_str::SmolStr>(15),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(12),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(406),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(409),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(410),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(415),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(416),
+        ),
+    ],
+}
+CheckError {
+    kind: CannotUnify {
+        t1: Id<smol_str::SmolStr>(16),
+        t2: Id<smol_str::SmolStr>(17),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(12),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(406),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(409),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(410),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(415),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(416),
+        ),
+    ],
+}
+CheckError {
+    kind: CannotUnify {
+        t1: Id<smol_str::SmolStr>(18),
+        t2: Id<smol_str::SmolStr>(13),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(12),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(406),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(409),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(410),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(422),
+        ),
+    ],
+}
+CheckError {
+    kind: CannotUnify {
+        t1: Id<smol_str::SmolStr>(19),
+        t2: Id<smol_str::SmolStr>(17),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(12),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(406),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(409),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(410),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(422),
+        ),
+    ],
+}
+CheckError {
+    kind: CannotUnify {
+        t1: Id<smol_str::SmolStr>(13),
+        t2: Id<smol_str::SmolStr>(20),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(12),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(406),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(409),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(410),
+        ),
+    ],
+}
+CheckError {
+    kind: CannotUnify {
+        t1: Id<smol_str::SmolStr>(17),
+        t2: Id<smol_str::SmolStr>(21),
+    },
+    crumbs: [
+        TermDeclaration(
+            Idx::<TermItem>(12),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(406),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(409),
+        ),
+        CheckingExpression(
+            AstId<syntax::cst::Expression>(410),
+        ),
+    ],
+}
+CheckError {
+    kind: NoInstanceFound {
+        constraint: Id<smol_str::SmolStr>(22),
+    },
+    crumbs: [],
+}
