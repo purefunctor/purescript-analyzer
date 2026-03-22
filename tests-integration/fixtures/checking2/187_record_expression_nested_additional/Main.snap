@@ -22,20 +22,8 @@ CheckError {
         CheckingExpression(
             AstId<syntax::cst::Expression>(14),
         ),
-    ],
-}
-CheckError {
-    kind: AdditionalProperty {
-        labels: [
-            "y",
-        ],
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(0),
-        ),
         CheckingExpression(
-            AstId<syntax::cst::Expression>(14),
+            AstId<syntax::cst::Expression>(16),
         ),
     ],
 }

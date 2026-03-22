@@ -163,9 +163,8 @@ where
                                 .map(|field| field.id);
 
                             let id = if let Some(expected_type) = expected_field_type {
-                                let id = infer_record_field_expression(state, context, *value)?;
-                                unification::subtype(state, context, id, expected_type)?;
-                                id
+                                super::check_expression(state, context, *value, expected_type)?;
+                                expected_type
                             } else {
                                 infer_record_field_expression(state, context, *value)?
                             };
@@ -188,7 +187,7 @@ where
 
                             let id = if let Some(expected_type) = expected_field_type {
                                 unification::subtype(state, context, id, expected_type)?;
-                                id
+                                expected_type
                             } else {
                                 id
                             };
