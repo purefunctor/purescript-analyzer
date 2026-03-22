@@ -29,7 +29,7 @@ Cont = [Representational, Representational]
 Errors
 CheckError {
     kind: ContravariantOccurrence {
-        type_message: Id<smol_str::SmolStr>(7),
+        type_message: Id<smol_str::SmolStr>(9),
     },
     crumbs: [
         TermDeclaration(

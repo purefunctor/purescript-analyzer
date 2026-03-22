@@ -29,7 +29,7 @@ WrapNoFunctor = [Representational, Nominal]
 Errors
 CheckError {
     kind: NoInstanceFound {
-        constraint: Id<smol_str::SmolStr>(6),
+        constraint: Id<smol_str::SmolStr>(8),
     },
     crumbs: [
         TermDeclaration(

@@ -22,8 +22,8 @@ Unit = []
 Errors
 CheckError {
     kind: CannotUnify {
-        t1: Id<smol_str::SmolStr>(6),
-        t2: Id<smol_str::SmolStr>(7),
+        t1: Id<smol_str::SmolStr>(8),
+        t2: Id<smol_str::SmolStr>(9),
     },
     crumbs: [
         TermDeclaration(
@@ -36,8 +36,8 @@ CheckError {
 }
 CheckError {
     kind: CannotUnify {
-        t1: Id<smol_str::SmolStr>(6),
-        t2: Id<smol_str::SmolStr>(7),
+        t1: Id<smol_str::SmolStr>(8),
+        t2: Id<smol_str::SmolStr>(9),
     },
     crumbs: [
         TermDeclaration(
@@ -50,7 +50,7 @@ CheckError {
 }
 CheckError {
     kind: CannotDeriveForType {
-        type_message: Id<smol_str::SmolStr>(8),
+        type_message: Id<smol_str::SmolStr>(10),
     },
     crumbs: [
         TermDeclaration(
@@ -60,7 +60,7 @@ CheckError {
 }
 CheckError {
     kind: CannotDeriveForType {
-        type_message: Id<smol_str::SmolStr>(9),
+        type_message: Id<smol_str::SmolStr>(11),
     },
     crumbs: [
         TermDeclaration(

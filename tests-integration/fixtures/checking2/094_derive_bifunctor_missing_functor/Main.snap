@@ -30,7 +30,7 @@ WrapBoth = [Representational, Representational, Nominal, Nominal]
 Errors
 CheckError {
     kind: NoInstanceFound {
-        constraint: Id<smol_str::SmolStr>(9),
+        constraint: Id<smol_str::SmolStr>(11),
     },
     crumbs: [
         TermDeclaration(
@@ -40,7 +40,7 @@ CheckError {
 }
 CheckError {
     kind: NoInstanceFound {
-        constraint: Id<smol_str::SmolStr>(10),
+        constraint: Id<smol_str::SmolStr>(12),
     },
     crumbs: [
         TermDeclaration(

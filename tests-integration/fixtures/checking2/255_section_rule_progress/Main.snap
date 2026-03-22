@@ -90,11 +90,3 @@ class forall (m :: Type -> Type). Applicative (m :: Type -> Type), Bind (m :: Ty
 
 Roles
 Step = [Representational, Representational]
-
-Errors
-CheckError {
-    kind: NoInstanceFound {
-        constraint: Id<smol_str::SmolStr>(12),
-    },
-    crumbs: [],
-}
