@@ -71,8 +71,15 @@ where
             current = result_type;
         } else {
             let parameter = state.fresh_unification(context.queries, context.prim.t);
-            state.checked.nodes.sections.insert(section_id, parameter);
+            let result = state.fresh_unification(context.queries, context.prim.t);
+
+            let function = context.intern_function(parameter, result);
+            unification::subtype(state, context, function, current)?;
+
             parameters.push(parameter);
+            current = result;
+
+            state.checked.nodes.sections.insert(section_id, parameter);
         }
     }
 
