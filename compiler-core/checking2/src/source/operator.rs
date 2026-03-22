@@ -42,6 +42,29 @@ where
     traverse_operator_tree(state, context, operator_tree, OperatorKindMode::Infer)
 }
 
+pub fn check_operator_chain<Q, E>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    id: E,
+    expected_type: TypeId,
+) -> QueryResult<(E::Elaborated, TypeId)>
+where
+    Q: ExternalQueries,
+    E: IsOperator<Q>,
+{
+    let unknown = (E::unknown_elaborated(context), expected_type);
+
+    let Some(operator_tree) = E::lookup_tree(context, id) else {
+        return Ok(unknown);
+    };
+
+    let Ok(operator_tree) = operator_tree else {
+        return Ok(unknown);
+    };
+
+    traverse_operator_tree(state, context, operator_tree, OperatorKindMode::Check { expected_type })
+}
+
 fn traverse_operator_tree<Q, E>(
     state: &mut CheckState,
     context: &CheckContext<Q>,

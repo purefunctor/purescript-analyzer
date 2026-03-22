@@ -110,6 +110,11 @@ where
         lowering::ExpressionKind::CaseOf { trunk, branches } => {
             forms::check_case_of(state, context, trunk, branches, expected)
         }
+        lowering::ExpressionKind::OperatorChain { .. } => {
+            let (_, checked_type) =
+                operator::check_operator_chain(state, context, expression, expected)?;
+            Ok(checked_type)
+        }
         lowering::ExpressionKind::LetIn { bindings, expression } => {
             forms::check_let_in(state, context, bindings, *expression, expected)
         }
