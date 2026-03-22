@@ -9,28 +9,14 @@ test :: ?[invalid visible type application]
 
 Types
 
-Errors
-CheckError {
-    kind: NoVisibleTypeVariable {
-        function_type: Id<smol_str::SmolStr>(5),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(1),
-        ),
-        InferringExpression(
-            AstId<syntax::cst::Expression>(20),
-        ),
-    ],
-}
-CheckError {
-    kind: CannotUnify {
-        t1: Id<smol_str::SmolStr>(7),
-        t2: Id<smol_str::SmolStr>(8),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(1),
-        ),
-    ],
-}
+Diagnostics
+error[NoVisibleTypeVariable]: No visible type variable for type application in: forall (a :: Type). (a :: Type) -> (a :: Type)
+  --> 6:8..6:21
+  |
+6 | test = identity @Int
+  |        ^~~~~~~~~~~~~
+error[CannotUnify]: Cannot unify 'Type' with '?[invalid kind]'
+  --> 6:1..6:21
+  |
+6 | test = identity @Int
+  | ^~~~~~~~~~~~~~~~~~~~

@@ -15,14 +15,9 @@ derive Show Foo
 Roles
 Foo = []
 
-Errors
-CheckError {
-    kind: ExpectedNewtype {
-        type_message: Id<smol_str::SmolStr>(7),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(1),
-        ),
-    ],
-}
+Diagnostics
+error[ExpectedNewtype]: Expected a newtype, got: Foo
+  --> 7:1..7:33
+  |
+7 | derive newtype instance Show Foo
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

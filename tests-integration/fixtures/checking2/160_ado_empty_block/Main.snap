@@ -20,26 +20,14 @@ Effect :: Type -> Type
 Roles
 Effect = [Nominal]
 
-Errors
-CheckError {
-    kind: EmptyAdoBlock,
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(3),
-        ),
-        InferringExpression(
-            AstId<syntax::cst::Expression>(54),
-        ),
-    ],
-}
-CheckError {
-    kind: CannotUnify {
-        t1: Id<smol_str::SmolStr>(7),
-        t2: Id<smol_str::SmolStr>(8),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(3),
-        ),
-    ],
-}
+Diagnostics
+error[EmptyAdoBlock]: Empty ado block
+  --> 9:9..9:12
+  |
+9 | test1 = ado
+  |         ^~~
+error[CannotUnify]: Cannot unify 'Type' with '?[invalid kind]'
+  --> 9:1..9:12
+  |
+9 | test1 = ado
+  | ^~~~~~~~~~~

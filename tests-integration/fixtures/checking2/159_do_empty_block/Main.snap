@@ -19,26 +19,14 @@ Effect :: Type -> Type
 Roles
 Effect = [Nominal]
 
-Errors
-CheckError {
-    kind: EmptyDoBlock,
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(3),
-        ),
-        InferringExpression(
-            AstId<syntax::cst::Expression>(56),
-        ),
-    ],
-}
-CheckError {
-    kind: CannotUnify {
-        t1: Id<smol_str::SmolStr>(9),
-        t2: Id<smol_str::SmolStr>(10),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(3),
-        ),
-    ],
-}
+Diagnostics
+error[EmptyDoBlock]: Empty do block
+  --> 9:8..9:10
+  |
+9 | test = do
+  |        ^~
+error[CannotUnify]: Cannot unify 'Type' with '?[invalid kind]'
+  --> 9:1..9:10
+  |
+9 | test = do
+  | ^~~~~~~~~

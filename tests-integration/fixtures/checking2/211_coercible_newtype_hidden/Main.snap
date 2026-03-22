@@ -9,38 +9,14 @@ coerceQualified :: Int -> HiddenAge
 
 Types
 
-Errors
-CheckError {
-    kind: CoercibleConstructorNotInScope {
-        file_id: Idx::<File>(39),
-        item_id: Idx::<TypeItem>(0),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(0),
-        ),
-    ],
-}
-CheckError {
-    kind: NoInstanceFound {
-        constraint: Id<smol_str::SmolStr>(7),
-    },
-    crumbs: [],
-}
-CheckError {
-    kind: CoercibleConstructorNotInScope {
-        file_id: Idx::<File>(39),
-        item_id: Idx::<TypeItem>(0),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(1),
-        ),
-    ],
-}
-CheckError {
-    kind: NoInstanceFound {
-        constraint: Id<smol_str::SmolStr>(7),
-    },
-    crumbs: [],
-}
+Diagnostics
+error[CoercibleConstructorNotInScope]: Constructor not in scope for Coercible
+  --> 7:1..7:33
+  |
+7 | coerceHidden :: Int -> HiddenAge
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[CoercibleConstructorNotInScope]: Constructor not in scope for Coercible
+  --> 10:1..10:38
+   |
+10 | coerceQualified :: Int -> L.HiddenAge
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

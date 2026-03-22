@@ -21,24 +21,15 @@ Proxy :: forall (k :: Type). (k :: Type) -> Type
 Roles
 Proxy = [Phantom]
 
-Errors
-CheckError {
-    kind: CustomFailure {
-        message_id: Id<smol_str::SmolStr>(12),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(2),
-        ),
-    ],
-}
-CheckError {
-    kind: CustomFailure {
-        message_id: Id<smol_str::SmolStr>(17),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(4),
-        ),
-    ],
-}
+Diagnostics
+error[CustomFailure]: This operation is not allowed
+  --> 11:1..11:20
+   |
+11 | useFailBasic :: Int
+   | ^~~~~~~~~~~~~~~~~~~
+error[CustomFailure]: Error:
+Type String
+  --> 17:1..17:31
+   |
+17 | useFailComplex :: Proxy String
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

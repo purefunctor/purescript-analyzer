@@ -11,30 +11,14 @@ Bad :: ?[cannot apply function type]
 Synonyms
 type Bad = Int String
 
-Errors
-CheckError {
-    kind: InvalidTypeApplication {
-        function_type: Id<smol_str::SmolStr>(3),
-        function_kind: Id<smol_str::SmolStr>(4),
-        argument_type: Id<smol_str::SmolStr>(5),
-    },
-    crumbs: [
-        CheckingKind(
-            AstId<syntax::cst::Type>(6),
-        ),
-        InferringKind(
-            AstId<syntax::cst::Type>(6),
-        ),
-    ],
-}
-CheckError {
-    kind: CannotUnify {
-        t1: Id<smol_str::SmolStr>(4),
-        t2: Id<smol_str::SmolStr>(7),
-    },
-    crumbs: [
-        CheckingKind(
-            AstId<syntax::cst::Type>(6),
-        ),
-    ],
-}
+Diagnostics
+error[InvalidTypeApplication]: Cannot apply type 'Int' to 'String'. 'Int' has kind 'Type', which is not a function kind.
+  --> 3:12..3:22
+  |
+3 | type Bad = Int String
+  |            ^~~~~~~~~~
+error[CannotUnify]: Cannot unify 'Type' with '?[invalid kind]'
+  --> 3:12..3:22
+  |
+3 | type Bad = Int String
+  |            ^~~~~~~~~~

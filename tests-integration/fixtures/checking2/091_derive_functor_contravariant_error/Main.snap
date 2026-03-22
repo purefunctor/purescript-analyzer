@@ -26,14 +26,9 @@ Predicate = [Representational]
 Reader = [Representational, Representational]
 Cont = [Representational, Representational]
 
-Errors
-CheckError {
-    kind: ContravariantOccurrence {
-        type_message: Id<smol_str::SmolStr>(9),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(1),
-        ),
-    ],
-}
+Diagnostics
+error[ContravariantOccurrence]: Type variable occurs in contravariant position: (t7 :: Type)
+  --> 6:1..6:34
+  |
+6 | derive instance Functor Predicate
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

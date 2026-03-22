@@ -19,24 +19,14 @@ Roles
 Identity = [Representational]
 Producer = [Representational]
 
-Errors
-CheckError {
-    kind: CovariantOccurrence {
-        type_message: Id<smol_str::SmolStr>(6),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(1),
-        ),
-    ],
-}
-CheckError {
-    kind: CovariantOccurrence {
-        type_message: Id<smol_str::SmolStr>(7),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(3),
-        ),
-    ],
-}
+Diagnostics
+error[CovariantOccurrence]: Type variable occurs in covariant position: (t2 :: Type)
+  --> 6:1..6:39
+  |
+6 | derive instance Contravariant Identity
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[CovariantOccurrence]: Type variable occurs in covariant position: (t3 :: Type)
+  --> 9:1..9:39
+  |
+9 | derive instance Contravariant Producer
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

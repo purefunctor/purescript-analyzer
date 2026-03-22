@@ -45,24 +45,14 @@ Roles
 WrapBoth = [Representational, Representational, Nominal, Nominal]
 WrapBothNoConstraint = [Representational, Representational, Nominal, Nominal]
 
-Errors
-CheckError {
-    kind: NoInstanceFound {
-        constraint: Id<smol_str::SmolStr>(9),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(3),
-        ),
-    ],
-}
-CheckError {
-    kind: NoInstanceFound {
-        constraint: Id<smol_str::SmolStr>(10),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(3),
-        ),
-    ],
-}
+Diagnostics
+error[NoInstanceFound]: No instance found for: Foldable (t14 :: Type -> Type)
+  --> 10:1..10:54
+   |
+10 | derive instance Bifoldable (WrapBothNoConstraint f g)
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[NoInstanceFound]: No instance found for: Foldable (t15 :: Type -> Type)
+  --> 10:1..10:54
+   |
+10 | derive instance Bifoldable (WrapBothNoConstraint f g)
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

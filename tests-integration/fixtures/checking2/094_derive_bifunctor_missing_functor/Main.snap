@@ -27,24 +27,14 @@ derive forall (t6 :: Type -> Type) (t7 :: Type -> Type).
 Roles
 WrapBoth = [Representational, Representational, Nominal, Nominal]
 
-Errors
-CheckError {
-    kind: NoInstanceFound {
-        constraint: Id<smol_str::SmolStr>(11),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(1),
-        ),
-    ],
-}
-CheckError {
-    kind: NoInstanceFound {
-        constraint: Id<smol_str::SmolStr>(12),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(1),
-        ),
-    ],
-}
+Diagnostics
+error[NoInstanceFound]: No instance found for: Functor (t6 :: Type -> Type)
+  --> 6:1..6:41
+  |
+6 | derive instance Bifunctor (WrapBoth f g)
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[NoInstanceFound]: No instance found for: Functor (t7 :: Type -> Type)
+  --> 6:1..6:41
+  |
+6 | derive instance Bifunctor (WrapBoth f g)
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

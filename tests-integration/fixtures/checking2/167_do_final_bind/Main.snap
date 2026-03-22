@@ -9,32 +9,14 @@ test' :: forall (t0 :: Type -> Type). Applicative (t0 :: Type -> Type) => (t0 ::
 
 Types
 
-Errors
-CheckError {
-    kind: InvalidFinalBind,
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(0),
-        ),
-        CheckingExpression(
-            AstId<syntax::cst::Expression>(27),
-        ),
-        InferringDoBind(
-            AstId<syntax::cst::DoStatement>(29),
-        ),
-    ],
-}
-CheckError {
-    kind: InvalidFinalBind,
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(1),
-        ),
-        InferringExpression(
-            AstId<syntax::cst::Expression>(38),
-        ),
-        InferringDoBind(
-            AstId<syntax::cst::DoStatement>(40),
-        ),
-    ],
-}
+Diagnostics
+warning[InvalidFinalBind]: Invalid final bind statement in do expression
+  --> 9:3..9:14
+  |
+9 |   x <- pure 1
+  |   ^~~~~~~~~~~
+warning[InvalidFinalBind]: Invalid final bind statement in do expression
+  --> 12:3..12:14
+   |
+12 |   x <- pure 1
+   |   ^~~~~~~~~~~

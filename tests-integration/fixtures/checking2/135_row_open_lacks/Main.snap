@@ -20,11 +20,3 @@ Proxy :: forall (k :: Type). (k :: Type) -> Type
 
 Roles
 Proxy = [Phantom]
-
-Errors
-CheckError {
-    kind: NoInstanceFound {
-        constraint: Id<smol_str::SmolStr>(18),
-    },
-    crumbs: [],
-}

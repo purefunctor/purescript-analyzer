@@ -537,3 +537,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_255_section_rule_progress_main() { run_test("255_section_rule_progress", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_256_record_field_polymorphic_main() { run_test("256_record_field_polymorphic", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_258_self_recursive_through_operator_main() { run_test("258_self_recursive_through_operator", "Main"); }

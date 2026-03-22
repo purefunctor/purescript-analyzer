@@ -27,14 +27,9 @@ Roles
 Wrap = [Representational, Nominal]
 WrapNoEq1 = [Representational, Nominal]
 
-Errors
-CheckError {
-    kind: NoInstanceFound {
-        constraint: Id<smol_str::SmolStr>(8),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(3),
-        ),
-    ],
-}
+Diagnostics
+error[NoInstanceFound]: No instance found for: Eq1 (t8 :: Type -> Type)
+  --> 11:1..11:43
+   |
+11 | derive instance Eq a => Eq (WrapNoEq1 f a)
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

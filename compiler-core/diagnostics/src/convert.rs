@@ -1,4 +1,5 @@
-use checking::error::{CheckError, ErrorKind};
+use checking::error::{CheckError as CheckError1, ErrorKind as ErrorKind1};
+use checking2::error::{CheckError as CheckError2, ErrorKind as ErrorKind2};
 use indexing::TypeItemKind;
 use itertools::Itertools;
 use lowering::LoweringError;
@@ -157,7 +158,7 @@ impl ToDiagnostics for ResolvingError {
     }
 }
 
-impl ToDiagnostics for CheckError {
+impl ToDiagnostics for CheckError1 {
     fn to_diagnostics(&self, context: &DiagnosticsContext<'_>) -> Vec<Diagnostic> {
         let Some(primary) = context.primary_span_from_steps(&self.step) else {
             return vec![];
@@ -166,18 +167,18 @@ impl ToDiagnostics for CheckError {
         let lookup_message = |id| context.checked.error_messages[id].as_str();
 
         let (severity, code, message) = match &self.kind {
-            ErrorKind::AmbiguousConstraint { constraint } => {
+            ErrorKind1::AmbiguousConstraint { constraint } => {
                 let msg = lookup_message(*constraint);
                 (Severity::Error, "AmbiguousConstraint", format!("Ambiguous constraint: {msg}"))
             }
-            ErrorKind::CannotDeriveClass { .. } => {
+            ErrorKind1::CannotDeriveClass { .. } => {
                 (Severity::Error, "CannotDeriveClass", "Cannot derive this class".to_string())
             }
-            ErrorKind::CannotDeriveForType { type_message } => {
+            ErrorKind1::CannotDeriveForType { type_message } => {
                 let msg = lookup_message(*type_message);
                 (Severity::Error, "CannotDeriveForType", format!("Cannot derive for type: {msg}"))
             }
-            ErrorKind::ContravariantOccurrence { type_message } => {
+            ErrorKind1::ContravariantOccurrence { type_message } => {
                 let msg = lookup_message(*type_message);
                 (
                     Severity::Error,
@@ -185,7 +186,7 @@ impl ToDiagnostics for CheckError {
                     format!("Type variable occurs in contravariant position: {msg}"),
                 )
             }
-            ErrorKind::CovariantOccurrence { type_message } => {
+            ErrorKind1::CovariantOccurrence { type_message } => {
                 let msg = lookup_message(*type_message);
                 (
                     Severity::Error,
@@ -193,43 +194,43 @@ impl ToDiagnostics for CheckError {
                     format!("Type variable occurs in covariant position: {msg}"),
                 )
             }
-            ErrorKind::CannotUnify { t1, t2 } => {
+            ErrorKind1::CannotUnify { t1, t2 } => {
                 let t1 = lookup_message(*t1);
                 let t2 = lookup_message(*t2);
                 (Severity::Error, "CannotUnify", format!("Cannot unify '{t1}' with '{t2}'"))
             }
-            ErrorKind::DeriveInvalidArity { expected, actual, .. } => (
+            ErrorKind1::DeriveInvalidArity { expected, actual, .. } => (
                 Severity::Error,
                 "DeriveInvalidArity",
                 format!("Invalid arity for derive: expected {expected}, got {actual}"),
             ),
-            ErrorKind::DeriveMissingFunctor => (
+            ErrorKind1::DeriveMissingFunctor => (
                 Severity::Error,
                 "DeriveMissingFunctor",
                 "Deriving Functor requires Data.Functor to be in scope".to_string(),
             ),
-            ErrorKind::EmptyAdoBlock => {
+            ErrorKind1::EmptyAdoBlock => {
                 (Severity::Error, "EmptyAdoBlock", "Empty ado block".to_string())
             }
-            ErrorKind::EmptyDoBlock => {
+            ErrorKind1::EmptyDoBlock => {
                 (Severity::Error, "EmptyDoBlock", "Empty do block".to_string())
             }
-            ErrorKind::InvalidFinalBind => (
+            ErrorKind1::InvalidFinalBind => (
                 Severity::Warning,
                 "InvalidFinalBind",
                 "Invalid final bind statement in do expression".to_string(),
             ),
-            ErrorKind::InvalidFinalLet => (
+            ErrorKind1::InvalidFinalLet => (
                 Severity::Error,
                 "InvalidFinalLet",
                 "Invalid final let statement in do expression".to_string(),
             ),
-            ErrorKind::InstanceHeadMismatch { expected, actual, .. } => (
+            ErrorKind1::InstanceHeadMismatch { expected, actual, .. } => (
                 Severity::Error,
                 "InstanceHeadMismatch",
                 format!("Instance head mismatch: expected {expected} arguments, got {actual}"),
             ),
-            ErrorKind::InstanceHeadLabeledRow { position, type_message, .. } => {
+            ErrorKind1::InstanceHeadLabeledRow { position, type_message, .. } => {
                 let type_msg = lookup_message(*type_message);
                 (
                     Severity::Error,
@@ -241,7 +242,7 @@ impl ToDiagnostics for CheckError {
                     ),
                 )
             }
-            ErrorKind::InstanceMemberTypeMismatch { expected, actual } => {
+            ErrorKind1::InstanceMemberTypeMismatch { expected, actual } => {
                 let expected = lookup_message(*expected);
                 let actual = lookup_message(*actual);
                 (
@@ -250,7 +251,7 @@ impl ToDiagnostics for CheckError {
                     format!("Instance member type mismatch: expected '{expected}', got '{actual}'"),
                 )
             }
-            ErrorKind::InvalidTypeApplication { function_type, function_kind, argument_type } => {
+            ErrorKind1::InvalidTypeApplication { function_type, function_kind, argument_type } => {
                 let function_type = lookup_message(*function_type);
                 let function_kind = lookup_message(*function_kind);
                 let argument_type = lookup_message(*argument_type);
@@ -263,7 +264,7 @@ impl ToDiagnostics for CheckError {
                     ),
                 )
             }
-            ErrorKind::InvalidTypeOperator { kind_message } => {
+            ErrorKind1::InvalidTypeOperator { kind_message } => {
                 let msg = lookup_message(*kind_message);
                 (
                     Severity::Error,
@@ -271,15 +272,15 @@ impl ToDiagnostics for CheckError {
                     format!("Invalid type operator kind: {msg}"),
                 )
             }
-            ErrorKind::ExpectedNewtype { type_message } => {
+            ErrorKind1::ExpectedNewtype { type_message } => {
                 let msg = lookup_message(*type_message);
                 (Severity::Error, "ExpectedNewtype", format!("Expected a newtype, got: {msg}"))
             }
-            ErrorKind::NoInstanceFound { constraint } => {
+            ErrorKind1::NoInstanceFound { constraint } => {
                 let msg = lookup_message(*constraint);
                 (Severity::Error, "NoInstanceFound", format!("No instance found for: {msg}"))
             }
-            ErrorKind::NoVisibleTypeVariable { function_type } => {
+            ErrorKind1::NoVisibleTypeVariable { function_type } => {
                 let msg = lookup_message(*function_type);
                 (
                     Severity::Error,
@@ -287,45 +288,45 @@ impl ToDiagnostics for CheckError {
                     format!("No visible type variable for type application in: {msg}"),
                 )
             }
-            ErrorKind::PartialSynonymApplication { .. } => (
+            ErrorKind1::PartialSynonymApplication { .. } => (
                 Severity::Error,
                 "PartialSynonymApplication",
                 "Partial type synonym application".to_string(),
             ),
-            ErrorKind::RecursiveSynonymExpansion { .. } => (
+            ErrorKind1::RecursiveSynonymExpansion { .. } => (
                 Severity::Error,
                 "RecursiveSynonymExpansion",
                 "Recursive type synonym expansion".to_string(),
             ),
-            ErrorKind::TooManyBinders { expected, actual, .. } => (
+            ErrorKind1::TooManyBinders { expected, actual, .. } => (
                 Severity::Error,
                 "TooManyBinders",
                 format!("Too many binders: expected {expected}, got {actual}"),
             ),
-            ErrorKind::TypeSignatureVariableMismatch { expected, actual, .. } => (
+            ErrorKind1::TypeSignatureVariableMismatch { expected, actual, .. } => (
                 Severity::Error,
                 "TypeSignatureVariableMismatch",
                 format!(
                     "Type signature variable mismatch: expected {expected} variables, got {actual}"
                 ),
             ),
-            ErrorKind::InvalidRoleDeclaration { declared, inferred, .. } => (
+            ErrorKind1::InvalidRoleDeclaration { declared, inferred, .. } => (
                 Severity::Error,
                 "InvalidRoleDeclaration",
                 format!("Invalid role declaration: declared {declared:?}, inferred {inferred:?}"),
             ),
-            ErrorKind::CoercibleConstructorNotInScope { .. } => (
+            ErrorKind1::CoercibleConstructorNotInScope { .. } => (
                 Severity::Error,
                 "CoercibleConstructorNotInScope",
                 "Constructor not in scope for Coercible".to_string(),
             ),
-            ErrorKind::InvalidNewtypeDeriveSkolemArguments => (
+            ErrorKind1::InvalidNewtypeDeriveSkolemArguments => (
                 Severity::Error,
                 "InvalidNewtypeDeriveSkolemArguments",
                 "Cannot derive newtype instance where skolemised arguments do not appear trailing in the inner type."
                     .to_string(),
             ),
-            ErrorKind::RedundantPatterns { patterns } => {
+            ErrorKind1::RedundantPatterns { patterns } => {
                 let patterns = patterns.join(", ");
                 (
                     Severity::Warning,
@@ -333,7 +334,7 @@ impl ToDiagnostics for CheckError {
                     format!("Pattern match has redundant patterns: {patterns}"),
                 )
             }
-            ErrorKind::MissingPatterns { patterns } => {
+            ErrorKind1::MissingPatterns { patterns } => {
                 let patterns = patterns.join(", ");
                 (
                     Severity::Warning,
@@ -341,15 +342,15 @@ impl ToDiagnostics for CheckError {
                     format!("Pattern match is not exhaustive. Missing: {patterns}"),
                 )
             }
-            ErrorKind::CustomWarning { message_id } => {
+            ErrorKind1::CustomWarning { message_id } => {
                 let msg = lookup_message(*message_id);
                 (Severity::Warning, "CustomWarning", msg.to_string())
             }
-            ErrorKind::CustomFailure { message_id } => {
+            ErrorKind1::CustomFailure { message_id } => {
                 let msg = lookup_message(*message_id);
                 (Severity::Error, "CustomFailure", msg.to_string())
             }
-            ErrorKind::PropertyIsMissing { labels } => {
+            ErrorKind1::PropertyIsMissing { labels } => {
                 let labels_str = labels.join(", ");
                 (
                     Severity::Error,
@@ -357,7 +358,7 @@ impl ToDiagnostics for CheckError {
                     format!("Missing required properties: {labels_str}"),
                 )
             }
-            ErrorKind::AdditionalProperty { labels } => {
+            ErrorKind1::AdditionalProperty { labels } => {
                 let labels_str = labels.join(", ");
                 (
                     Severity::Error,
@@ -374,6 +375,231 @@ impl ToDiagnostics for CheckError {
             primary,
             related: vec![],
             source: "checking",
+        }]
+    }
+}
+
+impl ToDiagnostics for CheckError2 {
+    fn to_diagnostics(&self, context: &DiagnosticsContext<'_>) -> Vec<Diagnostic> {
+        let Some(primary) = context.primary_span_from_crumbs(&self.crumbs) else {
+            return vec![];
+        };
+
+        let Some(lookup_message) = context.checking2_lookup else {
+            return vec![];
+        };
+        let lookup_message = |id| lookup_message(id);
+
+        let (severity, code, message) = match &self.kind {
+            ErrorKind2::AmbiguousConstraint { constraint } => {
+                let msg = lookup_message(*constraint);
+                (Severity::Error, "AmbiguousConstraint", format!("Ambiguous constraint: {msg}"))
+            }
+            ErrorKind2::CannotDeriveClass { .. } => {
+                (Severity::Error, "CannotDeriveClass", "Cannot derive this class".to_string())
+            }
+            ErrorKind2::CannotDeriveForType { type_message } => {
+                let msg = lookup_message(*type_message);
+                (Severity::Error, "CannotDeriveForType", format!("Cannot derive for type: {msg}"))
+            }
+            ErrorKind2::ContravariantOccurrence { type_message } => {
+                let msg = lookup_message(*type_message);
+                (
+                    Severity::Error,
+                    "ContravariantOccurrence",
+                    format!("Type variable occurs in contravariant position: {msg}"),
+                )
+            }
+            ErrorKind2::CovariantOccurrence { type_message } => {
+                let msg = lookup_message(*type_message);
+                (
+                    Severity::Error,
+                    "CovariantOccurrence",
+                    format!("Type variable occurs in covariant position: {msg}"),
+                )
+            }
+            ErrorKind2::CannotUnify { t1, t2 } => {
+                let t1 = lookup_message(*t1);
+                let t2 = lookup_message(*t2);
+                (Severity::Error, "CannotUnify", format!("Cannot unify '{t1}' with '{t2}'"))
+            }
+            ErrorKind2::DeriveInvalidArity { expected, actual, .. } => (
+                Severity::Error,
+                "DeriveInvalidArity",
+                format!("Invalid arity for derive: expected {expected}, got {actual}"),
+            ),
+            ErrorKind2::DeriveNotSupportedYet { .. } => (
+                Severity::Error,
+                "DeriveNotSupportedYet",
+                "Deriving this class is not supported yet".to_string(),
+            ),
+            ErrorKind2::DeriveMissingFunctor => (
+                Severity::Error,
+                "DeriveMissingFunctor",
+                "Deriving Functor requires Data.Functor to be in scope".to_string(),
+            ),
+            ErrorKind2::EmptyAdoBlock => {
+                (Severity::Error, "EmptyAdoBlock", "Empty ado block".to_string())
+            }
+            ErrorKind2::EmptyDoBlock => {
+                (Severity::Error, "EmptyDoBlock", "Empty do block".to_string())
+            }
+            ErrorKind2::InvalidFinalBind => (
+                Severity::Warning,
+                "InvalidFinalBind",
+                "Invalid final bind statement in do expression".to_string(),
+            ),
+            ErrorKind2::InvalidFinalLet => (
+                Severity::Error,
+                "InvalidFinalLet",
+                "Invalid final let statement in do expression".to_string(),
+            ),
+            ErrorKind2::InstanceHeadMismatch { expected, actual, .. } => (
+                Severity::Error,
+                "InstanceHeadMismatch",
+                format!("Instance head mismatch: expected {expected} arguments, got {actual}"),
+            ),
+            ErrorKind2::InstanceHeadLabeledRow { position, type_message, .. } => {
+                let type_msg = lookup_message(*type_message);
+                (
+                    Severity::Error,
+                    "InstanceHeadLabeledRow",
+                    format!(
+                        "Instance argument at position {position} contains a labeled row, \
+                         but this position is not determined by any functional dependency. \
+                         Only the `( | r )` form is allowed. Got '{type_msg}' instead."
+                    ),
+                )
+            }
+            ErrorKind2::InstanceMemberTypeMismatch { expected, actual } => {
+                let expected = lookup_message(*expected);
+                let actual = lookup_message(*actual);
+                (
+                    Severity::Error,
+                    "InstanceMemberTypeMismatch",
+                    format!("Instance member type mismatch: expected '{expected}', got '{actual}'"),
+                )
+            }
+            ErrorKind2::InvalidTypeApplication { function_type, function_kind, argument_type } => {
+                let function_type = lookup_message(*function_type);
+                let function_kind = lookup_message(*function_kind);
+                let argument_type = lookup_message(*argument_type);
+                (
+                    Severity::Error,
+                    "InvalidTypeApplication",
+                    format!(
+                        "Cannot apply type '{function_type}' to '{argument_type}'. \
+                         '{function_type}' has kind '{function_kind}', which is not a function kind."
+                    ),
+                )
+            }
+            ErrorKind2::ExpectedNewtype { type_message } => {
+                let msg = lookup_message(*type_message);
+                (Severity::Error, "ExpectedNewtype", format!("Expected a newtype, got: {msg}"))
+            }
+            ErrorKind2::InvalidNewtypeDeriveSkolemArguments => (
+                Severity::Error,
+                "InvalidNewtypeDeriveSkolemArguments",
+                "Cannot derive newtype instance where skolemised arguments do not appear trailing in the inner type."
+                    .to_string(),
+            ),
+            ErrorKind2::NonLocalNewtype { type_message } => {
+                let msg = lookup_message(*type_message);
+                (Severity::Error, "NonLocalNewtype", format!("Expected a local newtype, got: {msg}"))
+            }
+            ErrorKind2::NoInstanceFound { constraint } => {
+                let msg = lookup_message(*constraint);
+                (Severity::Error, "NoInstanceFound", format!("No instance found for: {msg}"))
+            }
+            ErrorKind2::NoVisibleTypeVariable { function_type } => {
+                let msg = lookup_message(*function_type);
+                (
+                    Severity::Error,
+                    "NoVisibleTypeVariable",
+                    format!("No visible type variable for type application in: {msg}"),
+                )
+            }
+            ErrorKind2::PartialSynonymApplication { .. } => (
+                Severity::Error,
+                "PartialSynonymApplication",
+                "Partial type synonym application".to_string(),
+            ),
+            ErrorKind2::RecursiveSynonymExpansion { .. } => (
+                Severity::Error,
+                "RecursiveSynonymExpansion",
+                "Recursive type synonym expansion".to_string(),
+            ),
+            ErrorKind2::TooManyBinders { expected, actual, .. } => (
+                Severity::Error,
+                "TooManyBinders",
+                format!("Too many binders: expected {expected}, got {actual}"),
+            ),
+            ErrorKind2::TypeSignatureVariableMismatch { expected, actual, .. } => (
+                Severity::Error,
+                "TypeSignatureVariableMismatch",
+                format!(
+                    "Type signature variable mismatch: expected {expected} variables, got {actual}"
+                ),
+            ),
+            ErrorKind2::InvalidRoleDeclaration { declared, inferred, .. } => (
+                Severity::Error,
+                "InvalidRoleDeclaration",
+                format!("Invalid role declaration: declared {declared:?}, inferred {inferred:?}"),
+            ),
+            ErrorKind2::CoercibleConstructorNotInScope { .. } => (
+                Severity::Error,
+                "CoercibleConstructorNotInScope",
+                "Constructor not in scope for Coercible".to_string(),
+            ),
+            ErrorKind2::RedundantPatterns { patterns } => {
+                let patterns = patterns.join(", ");
+                (
+                    Severity::Warning,
+                    "RedundantPattern",
+                    format!("Pattern match has redundant patterns: {patterns}"),
+                )
+            }
+            ErrorKind2::MissingPatterns { patterns } => {
+                let patterns = patterns.iter().map(|pattern| lookup_message(*pattern)).join(", ");
+                (
+                    Severity::Warning,
+                    "MissingPatterns",
+                    format!("Pattern match is not exhaustive. Missing: {patterns}"),
+                )
+            }
+            ErrorKind2::CustomWarning { message_id } => {
+                let msg = lookup_message(*message_id);
+                (Severity::Warning, "CustomWarning", msg.to_string())
+            }
+            ErrorKind2::CustomFailure { message_id } => {
+                let msg = lookup_message(*message_id);
+                (Severity::Error, "CustomFailure", msg.to_string())
+            }
+            ErrorKind2::PropertyIsMissing { labels } => {
+                let labels_str = labels.join(", ");
+                (
+                    Severity::Error,
+                    "PropertyIsMissing",
+                    format!("Missing required properties: {labels_str}"),
+                )
+            }
+            ErrorKind2::AdditionalProperty { labels } => {
+                let labels_str = labels.join(", ");
+                (
+                    Severity::Error,
+                    "AdditionalProperty",
+                    format!("Additional properties not allowed: {labels_str}"),
+                )
+            }
+        };
+
+        vec![Diagnostic {
+            severity,
+            code: crate::DiagnosticCode::new(code),
+            message,
+            primary,
+            related: vec![],
+            source: "checking2",
         }]
     }
 }

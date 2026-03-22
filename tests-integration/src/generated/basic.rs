@@ -345,12 +345,7 @@ pub fn report_checked2(engine: &QueryEngine, id: FileId) -> String {
         writeln!(out, "{name} = [{}]", roles_str.join(", ")).unwrap();
     }
 
-    if !checked.errors.is_empty() {
-        writeln!(out, "\nErrors").unwrap();
-    }
-    for error in &checked.errors {
-        writeln!(out, "{error:#?}").unwrap();
-    }
+    write_checked2_diagnostics(&mut out, engine, id, &indexed, &checked);
 
     out
 }
@@ -541,6 +536,46 @@ fn write_checked_diagnostics(
     let resolved = engine.resolved(id).unwrap();
 
     let context = DiagnosticsContext::new(&content, &root, &stabilized, indexed, &lowered, checked);
+
+    let mut all_diagnostics = vec![];
+
+    for error in &lowered.errors {
+        all_diagnostics.extend(error.to_diagnostics(&context));
+    }
+
+    for error in &resolved.errors {
+        all_diagnostics.extend(error.to_diagnostics(&context));
+    }
+
+    for error in &checked.errors {
+        all_diagnostics.extend(error.to_diagnostics(&context));
+    }
+
+    if !all_diagnostics.is_empty() {
+        writeln!(out, "\nDiagnostics").unwrap();
+        out.push_str(&format_rustc(&all_diagnostics, &content));
+    }
+}
+
+fn write_checked2_diagnostics(
+    out: &mut String,
+    engine: &QueryEngine,
+    id: FileId,
+    indexed: &indexing::IndexedModule,
+    checked: &checking2::CheckedModule,
+) {
+    let content = engine.content(id);
+    let (parsed, _) = engine.parsed(id).unwrap();
+    let root = parsed.syntax_node();
+    let stabilized = engine.stabilized(id).unwrap();
+    let lowered = engine.lowered(id).unwrap();
+    let resolved = engine.resolved(id).unwrap();
+
+    let lookup_smol_str = |id| engine.lookup_smol_str(id);
+    let empty_checked = checking::CheckedModule::default();
+    let context =
+        DiagnosticsContext::new(&content, &root, &stabilized, indexed, &lowered, &empty_checked)
+            .with_checking2_lookup(&lookup_smol_str);
 
     let mut all_diagnostics = vec![];
 

@@ -22,34 +22,19 @@ Roles
 WrongFirst = [Representational, Representational]
 WrongSecond = [Representational, Representational]
 
-Errors
-CheckError {
-    kind: CovariantOccurrence {
-        type_message: Id<smol_str::SmolStr>(8),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(1),
-        ),
-    ],
-}
-CheckError {
-    kind: ContravariantOccurrence {
-        type_message: Id<smol_str::SmolStr>(9),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(3),
-        ),
-    ],
-}
-CheckError {
-    kind: CovariantOccurrence {
-        type_message: Id<smol_str::SmolStr>(10),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(3),
-        ),
-    ],
-}
+Diagnostics
+error[CovariantOccurrence]: Type variable occurs in covariant position: (t4 :: Type)
+  --> 6:1..6:38
+  |
+6 | derive instance Profunctor WrongFirst
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[ContravariantOccurrence]: Type variable occurs in contravariant position: (t7 :: Type)
+  --> 9:1..9:39
+  |
+9 | derive instance Profunctor WrongSecond
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[CovariantOccurrence]: Type variable occurs in covariant position: (t6 :: Type)
+  --> 9:1..9:39
+  |
+9 | derive instance Profunctor WrongSecond
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -32,12 +32,9 @@ Roles
 Vector = [Phantom, Representational]
 InvalidVector = [Representational, Phantom]
 
-Errors
-CheckError {
-    kind: InvalidNewtypeDeriveSkolemArguments,
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(5),
-        ),
-    ],
-}
+Diagnostics
+error[InvalidNewtypeDeriveSkolemArguments]: Cannot derive newtype instance where skolemised arguments do not appear trailing in the inner type.
+  --> 13:1..13:50
+   |
+13 | derive newtype instance Empty (InvalidVector Int)
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

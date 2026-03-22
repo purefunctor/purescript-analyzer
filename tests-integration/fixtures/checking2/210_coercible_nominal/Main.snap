@@ -12,11 +12,3 @@ Nominal :: Type -> Type
 
 Roles
 Nominal = [Nominal]
-
-Errors
-CheckError {
-    kind: NoInstanceFound {
-        constraint: Id<smol_str::SmolStr>(7),
-    },
-    crumbs: [],
-}

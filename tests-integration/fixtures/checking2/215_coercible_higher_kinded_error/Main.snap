@@ -19,11 +19,3 @@ Roles
 Maybe = [Representational]
 List = [Representational]
 Container = [Representational]
-
-Errors
-CheckError {
-    kind: NoInstanceFound {
-        constraint: Id<smol_str::SmolStr>(7),
-    },
-    crumbs: [],
-}

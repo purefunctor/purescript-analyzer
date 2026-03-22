@@ -15,15 +15,9 @@ derive forall (t0 :: Type). Generic Box (t0 :: Type)
 Roles
 Box = []
 
-Errors
-CheckError {
-    kind: CannotDeriveClass {
-        class_file: Idx::<File>(39),
-        class_id: Idx::<TypeItem>(0),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(1),
-        ),
-    ],
-}
+Diagnostics
+error[CannotDeriveClass]: Cannot derive this class
+  --> 7:1..7:30
+  |
+7 | derive instance Generic Box _
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~

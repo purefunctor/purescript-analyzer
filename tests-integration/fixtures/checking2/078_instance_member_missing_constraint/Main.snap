@@ -21,14 +21,9 @@ instance forall (t2 :: Type). Show (Box (t2 :: Type))
 Roles
 Box = [Representational]
 
-Errors
-CheckError {
-    kind: NoInstanceFound {
-        constraint: Id<smol_str::SmolStr>(7),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(2),
-        ),
-    ],
-}
+Diagnostics
+error[NoInstanceFound]: No instance found for: Show (t3 :: Type)
+  --> 9:1..11:24
+  |
+9 | instance Show (Box a) where
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~

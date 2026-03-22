@@ -20,53 +20,24 @@ Roles
 Unit = []
 YesNo = []
 
-Errors
-CheckError {
-    kind: RedundantPatterns {
-        patterns: [
-            "_",
-            "Unit",
-        ],
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(1),
-        ),
-    ],
-}
-CheckError {
-    kind: RedundantPatterns {
-        patterns: [
-            "Yes",
-        ],
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(4),
-        ),
-    ],
-}
-CheckError {
-    kind: RedundantPatterns {
-        patterns: [
-            "No",
-        ],
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(5),
-        ),
-    ],
-}
-CheckError {
-    kind: RedundantPatterns {
-        patterns: [
-            "_",
-        ],
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(6),
-        ),
-    ],
-}
+Diagnostics
+warning[RedundantPattern]: Pattern match has redundant patterns: _, Unit
+  --> 5:1..5:20
+  |
+5 | unit :: Unit -> Int
+  | ^~~~~~~~~~~~~~~~~~~
+warning[RedundantPattern]: Pattern match has redundant patterns: Yes
+  --> 12:1..12:20
+   |
+12 | yes :: YesNo -> Int
+   | ^~~~~~~~~~~~~~~~~~~
+warning[RedundantPattern]: Pattern match has redundant patterns: No
+  --> 17:1..17:19
+   |
+17 | no :: YesNo -> Int
+   | ^~~~~~~~~~~~~~~~~~
+warning[RedundantPattern]: Pattern match has redundant patterns: _
+  --> 22:1..22:22
+   |
+22 | yesNo :: YesNo -> Int
+   | ^~~~~~~~~~~~~~~~~~~~~

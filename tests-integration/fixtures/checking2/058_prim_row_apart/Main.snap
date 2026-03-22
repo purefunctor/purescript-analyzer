@@ -24,21 +24,9 @@ forceSolve ::
 
 Types
 
-Errors
-CheckError {
-    kind: CannotUnify {
-        t1: Id<smol_str::SmolStr>(18),
-        t2: Id<smol_str::SmolStr>(19),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(3),
-        ),
-    ],
-}
-CheckError {
-    kind: NoInstanceFound {
-        constraint: Id<smol_str::SmolStr>(20),
-    },
-    crumbs: [],
-}
+Diagnostics
+error[CannotUnify]: Cannot unify '( a :: Int, b :: String )' with '( missing :: Int | ?23 )'
+  --> 15:1..19:4
+   |
+15 | forceSolve =
+   | ^~~~~~~~~~~~

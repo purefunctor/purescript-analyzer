@@ -10,14 +10,9 @@ Types
 Derived
 derive Show Wrapper
 
-Errors
-CheckError {
-    kind: NonLocalNewtype {
-        type_message: Id<smol_str::SmolStr>(7),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(0),
-        ),
-    ],
-}
+Diagnostics
+error[NonLocalNewtype]: Expected a local newtype, got: Wrapper
+  --> 6:1..6:37
+  |
+6 | derive newtype instance Show Wrapper
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

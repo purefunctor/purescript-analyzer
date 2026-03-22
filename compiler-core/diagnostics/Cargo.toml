@@ -9,6 +9,7 @@ indexing = { version = "0.1.0", path = "../indexing" }
 lowering = { version = "0.1.0", path = "../lowering" }
 resolving = { version = "0.1.0", path = "../resolving" }
 checking = { version = "0.1.0", path = "../checking" }
+checking2 = { version = "0.1.0", path = "../checking2" }
 stabilizing = { version = "0.1.0", path = "../stabilizing" }
 syntax = { version = "0.1.0", path = "../syntax" }
 
@@ -16,3 +17,4 @@ rowan = "0.16.1"
 lsp-types = "0.95.1"
 line-index = "0.1.2"
 itertools = "0.14.0"
+smol_str = "0.3.2"

@@ -14,19 +14,9 @@ Maybe :: Type -> Type
 Roles
 Maybe = [Representational]
 
-Errors
-CheckError {
-    kind: MissingPatterns {
-        patterns: [
-            Id<smol_str::SmolStr>(7),
-        ],
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(2),
-        ),
-        InferringExpression(
-            AstId<syntax::cst::Expression>(13),
-        ),
-    ],
-}
+Diagnostics
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: Nothing
+  --> 6:3..9:6
+  |
+6 |   let
+  |   ^~~

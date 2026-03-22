@@ -27,24 +27,14 @@ derive forall (t5 :: Type -> Type) (t6 :: Type -> Type).
 Roles
 Compose = [Representational, Representational, Nominal]
 
-Errors
-CheckError {
-    kind: NoInstanceFound {
-        constraint: Id<smol_str::SmolStr>(11),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(1),
-        ),
-    ],
-}
-CheckError {
-    kind: NoInstanceFound {
-        constraint: Id<smol_str::SmolStr>(12),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(1),
-        ),
-    ],
-}
+Diagnostics
+error[NoInstanceFound]: No instance found for: Functor (Compose @Type @Type (t5 :: Type -> Type) (t6 :: Type -> Type))
+  --> 6:1..6:76
+  |
+6 | derive instance (Traversable f, Traversable g) => Traversable (Compose f g)
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[NoInstanceFound]: No instance found for: Foldable (Compose @Type @Type (t5 :: Type -> Type) (t6 :: Type -> Type))
+  --> 6:1..6:76
+  |
+6 | derive instance (Traversable f, Traversable g) => Traversable (Compose f g)
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

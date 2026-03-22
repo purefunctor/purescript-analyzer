@@ -21,50 +21,14 @@ Roles
 Maybe = [Representational]
 Id = []
 
-Errors
-CheckError {
-    kind: CannotUnify {
-        t1: Id<smol_str::SmolStr>(7),
-        t2: Id<smol_str::SmolStr>(8),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(4),
-        ),
-        CheckingExpression(
-            AstId<syntax::cst::Expression>(38),
-        ),
-        CheckingExpression(
-            AstId<syntax::cst::Expression>(48),
-        ),
-        CheckingExpression(
-            AstId<syntax::cst::Expression>(57),
-        ),
-        CheckingExpression(
-            AstId<syntax::cst::Expression>(60),
-        ),
-    ],
-}
-CheckError {
-    kind: CannotUnify {
-        t1: Id<smol_str::SmolStr>(7),
-        t2: Id<smol_str::SmolStr>(8),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(6),
-        ),
-        CheckingExpression(
-            AstId<syntax::cst::Expression>(100),
-        ),
-        CheckingExpression(
-            AstId<syntax::cst::Expression>(108),
-        ),
-        CheckingExpression(
-            AstId<syntax::cst::Expression>(117),
-        ),
-        CheckingExpression(
-            AstId<syntax::cst::Expression>(120),
-        ),
-    ],
-}
+Diagnostics
+error[CannotUnify]: Cannot unify 'Boolean' with 'Int'
+  --> 11:31..11:35
+   |
+11 |   Just f -> let _ = f 42 in f true
+   |                               ^~~~
+error[CannotUnify]: Cannot unify 'Boolean' with 'Int'
+  --> 20:24..20:28
+   |
+20 |   in let _ = f 42 in f true
+   |                        ^~~~

@@ -1,9 +1,11 @@
 use checking::CheckedModule;
 use checking::error::ErrorStep;
+use checking2::error::ErrorCrumb;
 use indexing::IndexedModule;
 use lowering::LoweredModule;
 use rowan::ast::{AstNode, AstPtr};
 use rowan::{NodeOrToken, TextRange};
+use smol_str::SmolStr;
 use stabilizing::StabilizedModule;
 use syntax::{SyntaxElement, SyntaxKind, SyntaxNode, SyntaxNodePtr};
 
@@ -83,6 +85,7 @@ pub struct DiagnosticsContext<'a> {
     pub indexed: &'a IndexedModule,
     pub lowered: &'a LoweredModule,
     pub checked: &'a CheckedModule,
+    pub checking2_lookup: Option<&'a dyn Fn(checking2::core::SmolStrId) -> SmolStr>,
 }
 
 impl<'a> DiagnosticsContext<'a> {
@@ -94,7 +97,23 @@ impl<'a> DiagnosticsContext<'a> {
         lowered: &'a LoweredModule,
         checked: &'a CheckedModule,
     ) -> DiagnosticsContext<'a> {
-        DiagnosticsContext { content, root, stabilized, indexed, lowered, checked }
+        DiagnosticsContext {
+            content,
+            root,
+            stabilized,
+            indexed,
+            lowered,
+            checked,
+            checking2_lookup: None,
+        }
+    }
+
+    pub fn with_checking2_lookup(
+        mut self,
+        lookup: &'a dyn Fn(checking2::core::SmolStrId) -> SmolStr,
+    ) -> DiagnosticsContext<'a> {
+        self.checking2_lookup = Some(lookup);
+        self
     }
 
     pub fn span_from_syntax_ptr(&self, ptr: &SyntaxNodePtr) -> Option<Span> {
@@ -166,5 +185,54 @@ impl<'a> DiagnosticsContext<'a> {
 
     pub fn primary_span_from_steps(&self, steps: &[ErrorStep]) -> Option<Span> {
         steps.last().and_then(|step| self.span_from_error_step(step))
+    }
+
+    pub fn span_from_error_crumb(&self, crumb: &ErrorCrumb) -> Option<Span> {
+        let ptr = match crumb {
+            ErrorCrumb::ConstructorArgument(id) => self.stabilized.syntax_ptr(*id)?,
+            ErrorCrumb::InferringKind(id) | ErrorCrumb::CheckingKind(id) => {
+                self.stabilized.syntax_ptr(*id)?
+            }
+            ErrorCrumb::InferringBinder(id) | ErrorCrumb::CheckingBinder(id) => {
+                self.stabilized.syntax_ptr(*id)?
+            }
+            ErrorCrumb::InferringExpression(id) | ErrorCrumb::CheckingExpression(id) => {
+                self.stabilized.syntax_ptr(*id)?
+            }
+            ErrorCrumb::TermDeclaration(id) => {
+                self.indexed.term_item_ptr(self.stabilized, *id).next()?
+            }
+            ErrorCrumb::TypeDeclaration(id) => {
+                self.indexed.type_item_ptr(self.stabilized, *id).next()?
+            }
+            ErrorCrumb::InferringDoBind(id)
+            | ErrorCrumb::InferringDoDiscard(id)
+            | ErrorCrumb::CheckingDoLet(id) => self.stabilized.syntax_ptr(*id)?,
+            ErrorCrumb::InferringAdoMap(id)
+            | ErrorCrumb::InferringAdoApply(id)
+            | ErrorCrumb::CheckingAdoLet(id) => self.stabilized.syntax_ptr(*id)?,
+            ErrorCrumb::CheckingLetName(id) => {
+                let group = self.lowered.info.get_let_binding_group(*id);
+
+                let signature = group
+                    .signature
+                    .as_slice()
+                    .iter()
+                    .filter_map(|signature| self.stabilized.syntax_ptr(*signature));
+
+                let equations = group
+                    .equations
+                    .as_ref()
+                    .iter()
+                    .filter_map(|equation| self.stabilized.syntax_ptr(*equation));
+
+                return pointers_span(self, signature.chain(equations));
+            }
+        };
+        self.span_from_syntax_ptr(&ptr)
+    }
+
+    pub fn primary_span_from_crumbs(&self, crumbs: &[ErrorCrumb]) -> Option<Span> {
+        crumbs.last().and_then(|crumb| self.span_from_error_crumb(crumb))
     }
 }

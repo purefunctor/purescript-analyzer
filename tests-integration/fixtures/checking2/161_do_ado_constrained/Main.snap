@@ -94,11 +94,3 @@ class forall (m :: Type -> Type). Bind (m :: Type -> Type) <= Monad (m :: Type -
 
 Roles
 Tuple = [Representational, Representational]
-
-Errors
-CheckError {
-    kind: NoInstanceFound {
-        constraint: Id<smol_str::SmolStr>(11),
-    },
-    crumbs: [],
-}

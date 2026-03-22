@@ -15,14 +15,9 @@ derive forall (t0 :: Type). Newtype @Type NotANewtype (t0 :: Type)
 Roles
 NotANewtype = []
 
-Errors
-CheckError {
-    kind: ExpectedNewtype {
-        type_message: Id<smol_str::SmolStr>(8),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(1),
-        ),
-    ],
-}
+Diagnostics
+error[ExpectedNewtype]: Expected a newtype, got: NotANewtype
+  --> 7:1..7:38
+  |
+7 | derive instance Newtype NotANewtype _
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

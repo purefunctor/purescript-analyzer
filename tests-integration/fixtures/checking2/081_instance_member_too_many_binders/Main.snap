@@ -16,16 +16,9 @@ class forall (a :: Type). Show (a :: Type)
 Instances
 instance Show Int
 
-Errors
-CheckError {
-    kind: TooManyBinders {
-        signature: None,
-        expected: 1,
-        actual: 2,
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(1),
-        ),
-    ],
-}
+Diagnostics
+error[TooManyBinders]: Too many binders: expected 1, got 2
+  --> 7:1..8:20
+  |
+7 | instance Show Int where
+  | ^~~~~~~~~~~~~~~~~~~~~~~

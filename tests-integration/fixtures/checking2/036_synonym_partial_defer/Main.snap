@@ -23,28 +23,14 @@ type Bad = ?[partial synonym application]
 Roles
 Identity = [Representational]
 
-Errors
-CheckError {
-    kind: PartialSynonymApplication {
-        id: AstId<syntax::cst::Type>(60),
-    },
-    crumbs: [
-        CheckingKind(
-            AstId<syntax::cst::Type>(60),
-        ),
-        InferringKind(
-            AstId<syntax::cst::Type>(60),
-        ),
-    ],
-}
-CheckError {
-    kind: CannotUnify {
-        t1: Id<smol_str::SmolStr>(10),
-        t2: Id<smol_str::SmolStr>(11),
-    },
-    crumbs: [
-        CheckingKind(
-            AstId<syntax::cst::Type>(60),
-        ),
-    ],
-}
+Diagnostics
+error[PartialSynonymApplication]: Partial type synonym application
+  --> 13:12..13:23
+   |
+13 | type Bad = ReaderT Int
+   |            ^~~~~~~~~~~
+error[CannotUnify]: Cannot unify 'Type' with '?[invalid kind]'
+  --> 13:12..13:23
+   |
+13 | type Bad = ReaderT Int
+   |            ^~~~~~~~~~~

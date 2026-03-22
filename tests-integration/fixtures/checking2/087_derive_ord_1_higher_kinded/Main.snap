@@ -35,24 +35,14 @@ Roles
 Wrap = [Representational, Nominal]
 WrapNoOrd1 = [Representational, Nominal]
 
-Errors
-CheckError {
-    kind: NoInstanceFound {
-        constraint: Id<smol_str::SmolStr>(8),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(5),
-        ),
-    ],
-}
-CheckError {
-    kind: NoInstanceFound {
-        constraint: Id<smol_str::SmolStr>(9),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(5),
-        ),
-    ],
-}
+Diagnostics
+error[NoInstanceFound]: No instance found for: Ord1 (t12 :: Type -> Type)
+  --> 14:1..14:46
+   |
+14 | derive instance Ord a => Ord (WrapNoOrd1 f a)
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[NoInstanceFound]: No instance found for: Eq1 (t12 :: Type -> Type)
+  --> 14:1..14:46
+   |
+14 | derive instance Ord a => Ord (WrapNoOrd1 f a)
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

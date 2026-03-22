@@ -15,16 +15,9 @@ List :: Type -> Type
 Roles
 List = [Representational]
 
-Errors
-CheckError {
-    kind: MissingPatterns {
-        patterns: [
-            Id<smol_str::SmolStr>(9),
-        ],
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(3),
-        ),
-    ],
-}
+Diagnostics
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: Nil
+  --> 7:1..7:30
+  |
+7 | head :: forall a. List a -> a
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -32,36 +32,9 @@ Roles
 Effect = [Nominal]
 Unit = []
 
-Errors
-CheckError {
-    kind: CannotUnify {
-        t1: Id<smol_str::SmolStr>(10),
-        t2: Id<smol_str::SmolStr>(11),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(9),
-        ),
-        CheckingExpression(
-            AstId<syntax::cst::Expression>(97),
-        ),
-        CheckingDoLet(
-            AstId<syntax::cst::DoStatement>(102),
-        ),
-        CheckingLetName(
-            Idx::<LetBindingNameGroup>(0),
-        ),
-        InferringExpression(
-            AstId<syntax::cst::Expression>(107),
-        ),
-        CheckingExpression(
-            AstId<syntax::cst::Expression>(111),
-        ),
-    ],
-}
-CheckError {
-    kind: NoInstanceFound {
-        constraint: Id<smol_str::SmolStr>(12),
-    },
-    crumbs: [],
-}
+Diagnostics
+error[CannotUnify]: Cannot unify 'Int' with 'String'
+  --> 27:15..27:18
+   |
+27 |   let f = a + 123
+   |               ^~~

@@ -10,14 +10,9 @@ Types
 Derived
 derive forall (t0 :: Type). Newtype @Type (Int -> Int) (t0 :: Type)
 
-Errors
-CheckError {
-    kind: CannotDeriveForType {
-        type_message: Id<smol_str::SmolStr>(8),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(0),
-        ),
-    ],
-}
+Diagnostics
+error[CannotDeriveForType]: Cannot derive for type: Int -> Int
+  --> 5:1..5:39
+  |
+5 | derive instance Newtype (Int -> Int) _
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

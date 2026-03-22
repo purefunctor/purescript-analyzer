@@ -14,19 +14,9 @@ Maybe :: Type -> Type
 Roles
 Maybe = [Representational]
 
-Errors
-CheckError {
-    kind: RedundantPatterns {
-        patterns: [
-            "Just _",
-        ],
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(2),
-        ),
-        InferringExpression(
-            AstId<syntax::cst::Expression>(13),
-        ),
-    ],
-}
+Diagnostics
+warning[RedundantPattern]: Pattern match has redundant patterns: Just _
+  --> 5:8..8:15
+  |
+5 | test = case _ of
+  |        ^~~~~~~~~

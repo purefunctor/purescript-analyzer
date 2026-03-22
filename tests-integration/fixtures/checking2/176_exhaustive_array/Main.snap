@@ -10,28 +10,14 @@ testExhaustive :: Array Int -> Int
 
 Types
 
-Errors
-CheckError {
-    kind: MissingPatterns {
-        patterns: [
-            Id<smol_str::SmolStr>(5),
-        ],
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(0),
-        ),
-    ],
-}
-CheckError {
-    kind: RedundantPatterns {
-        patterns: [
-            "[_]",
-        ],
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(1),
-        ),
-    ],
-}
+Diagnostics
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: _
+  --> 3:1..3:38
+  |
+3 | testNonExhaustive :: Array Int -> Int
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+warning[RedundantPattern]: Pattern match has redundant patterns: [_]
+  --> 7:1..7:34
+  |
+7 | testRedundant :: Array Int -> Int
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -10,14 +10,9 @@ Types
 Derived
 derive Show (Int -> Int)
 
-Errors
-CheckError {
-    kind: CannotDeriveForType {
-        type_message: Id<smol_str::SmolStr>(7),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(0),
-        ),
-    ],
-}
+Diagnostics
+error[CannotDeriveForType]: Cannot derive for type: Int -> Int
+  --> 5:1..5:42
+  |
+5 | derive newtype instance Show (Int -> Int)
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

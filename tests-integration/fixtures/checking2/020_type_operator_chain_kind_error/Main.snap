@@ -14,21 +14,9 @@ Synonyms
 type Add a b = (a :: Type)
 type Bad = Add Int "hello"
 
-Errors
-CheckError {
-    kind: CannotUnify {
-        t1: Id<smol_str::SmolStr>(7),
-        t2: Id<smol_str::SmolStr>(8),
-    },
-    crumbs: [
-        CheckingKind(
-            AstId<syntax::cst::Type>(17),
-        ),
-        InferringKind(
-            AstId<syntax::cst::Type>(17),
-        ),
-        CheckingKind(
-            AstId<syntax::cst::Type>(21),
-        ),
-    ],
-}
+Diagnostics
+error[CannotUnify]: Cannot unify 'Symbol' with 'Type'
+  --> 8:18..8:25
+  |
+8 | type Bad = Int + "hello"
+  |                  ^~~~~~~

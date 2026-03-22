@@ -15,22 +15,9 @@ Maybe :: Type -> Type
 Roles
 Maybe = [Representational]
 
-Errors
-CheckError {
-    kind: MissingPatterns {
-        patterns: [
-            Id<smol_str::SmolStr>(8),
-        ],
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(3),
-        ),
-        CheckingExpression(
-            AstId<syntax::cst::Expression>(35),
-        ),
-        CheckingLetName(
-            Idx::<LetBindingNameGroup>(1),
-        ),
-    ],
-}
+Diagnostics
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: Just _
+  --> 14:5..15:22
+   |
+14 |     loud :: Maybe a -> Int
+   |     ^~~~~~~~~~~~~~~~~~~~~~

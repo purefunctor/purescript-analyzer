@@ -18,40 +18,19 @@ Maybe :: Type -> Type
 Roles
 Maybe = [Representational]
 
-Errors
-CheckError {
-    kind: MissingPatterns {
-        patterns: [
-            Id<smol_str::SmolStr>(7),
-        ],
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(3),
-        ),
-    ],
-}
-CheckError {
-    kind: RedundantPatterns {
-        patterns: [
-            "_",
-        ],
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(4),
-        ),
-    ],
-}
-CheckError {
-    kind: MissingPatterns {
-        patterns: [
-            Id<smol_str::SmolStr>(8),
-        ],
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(5),
-        ),
-    ],
-}
+Diagnostics
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: { x: Nothing }
+  --> 8:1..8:35
+  |
+8 | test2 :: { x :: Maybe Int } -> Int
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+warning[RedundantPattern]: Pattern match has redundant patterns: _
+  --> 11:1..11:39
+   |
+11 | test3 :: { x :: Int, y :: Int } -> Int
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: { a: Nothing, b: _ }
+  --> 15:1..15:54
+   |
+15 | test4 :: { a :: Maybe Int, b :: Maybe String } -> Int
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

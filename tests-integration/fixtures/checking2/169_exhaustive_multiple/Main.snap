@@ -22,64 +22,24 @@ Maybe :: Type -> Type
 Roles
 Maybe = [Representational]
 
-Errors
-CheckError {
-    kind: MissingPatterns {
-        patterns: [
-            Id<smol_str::SmolStr>(7),
-        ],
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(3),
-        ),
-        InferringExpression(
-            AstId<syntax::cst::Expression>(53),
-        ),
-    ],
-}
-CheckError {
-    kind: MissingPatterns {
-        patterns: [
-            Id<smol_str::SmolStr>(8),
-        ],
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(4),
-        ),
-        InferringExpression(
-            AstId<syntax::cst::Expression>(84),
-        ),
-    ],
-}
-CheckError {
-    kind: MissingPatterns {
-        patterns: [
-            Id<smol_str::SmolStr>(9),
-        ],
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(5),
-        ),
-        InferringExpression(
-            AstId<syntax::cst::Expression>(116),
-        ),
-    ],
-}
-CheckError {
-    kind: MissingPatterns {
-        patterns: [
-            Id<smol_str::SmolStr>(10),
-        ],
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(6),
-        ),
-        InferringExpression(
-            AstId<syntax::cst::Expression>(148),
-        ),
-    ],
-}
+Diagnostics
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: Just _, Just _
+  --> 11:15..14:24
+   |
+11 | incomplete1 = case _, _ of
+   |               ^~~~~~~~~~~~
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: Just _, Nothing
+  --> 16:15..19:24
+   |
+16 | incomplete2 = case _, _ of
+   |               ^~~~~~~~~~~~
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: Nothing, Just _
+  --> 21:15..24:24
+   |
+21 | incomplete3 = case _, _ of
+   |               ^~~~~~~~~~~~
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: Nothing, Nothing
+  --> 26:15..29:23
+   |
+26 | incomplete4 = case _, _ of
+   |               ^~~~~~~~~~~~

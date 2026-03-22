@@ -624,6 +624,7 @@ name = "diagnostics"
 version = "0.1.0"
 dependencies = [
  "checking",
+ "checking2",
  "files",
  "indexing",
  "itertools 0.14.0",
@@ -632,6 +633,7 @@ dependencies = [
  "lsp-types",
  "resolving",
  "rowan",
+ "smol_str",
  "stabilizing",
  "syntax",
 ]

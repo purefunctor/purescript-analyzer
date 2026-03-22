@@ -55,17 +55,3 @@ forceSolve ::
     }
 
 Types
-
-Errors
-CheckError {
-    kind: AmbiguousConstraint {
-        constraint: Id<smol_str::SmolStr>(22),
-    },
-    crumbs: [],
-}
-CheckError {
-    kind: AmbiguousConstraint {
-        constraint: Id<smol_str::SmolStr>(23),
-    },
-    crumbs: [],
-}

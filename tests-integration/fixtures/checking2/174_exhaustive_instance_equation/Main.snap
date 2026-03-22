@@ -16,16 +16,9 @@ class forall (a :: Type). C (a :: Type)
 Instances
 instance C Boolean
 
-Errors
-CheckError {
-    kind: MissingPatterns {
-        patterns: [
-            Id<smol_str::SmolStr>(7),
-        ],
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(1),
-        ),
-    ],
-}
+Diagnostics
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: false
+  --> 6:1..7:13
+  |
+6 | instance cBool :: C Boolean where
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

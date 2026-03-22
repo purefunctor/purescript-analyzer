@@ -25,72 +25,24 @@ Roles
 Either = [Representational, Representational]
 FFIUtil = []
 
-Errors
-CheckError {
-    kind: CannotUnify {
-        t1: Id<smol_str::SmolStr>(8),
-        t2: Id<smol_str::SmolStr>(9),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(5),
-        ),
-        CheckingExpression(
-            AstId<syntax::cst::Expression>(112),
-        ),
-        CheckingExpression(
-            AstId<syntax::cst::Expression>(115),
-        ),
-    ],
-}
-CheckError {
-    kind: CannotUnify {
-        t1: Id<smol_str::SmolStr>(10),
-        t2: Id<smol_str::SmolStr>(11),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(5),
-        ),
-        CheckingExpression(
-            AstId<syntax::cst::Expression>(112),
-        ),
-        CheckingExpression(
-            AstId<syntax::cst::Expression>(115),
-        ),
-    ],
-}
-CheckError {
-    kind: CannotUnify {
-        t1: Id<smol_str::SmolStr>(12),
-        t2: Id<smol_str::SmolStr>(13),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(5),
-        ),
-        CheckingExpression(
-            AstId<syntax::cst::Expression>(112),
-        ),
-        CheckingExpression(
-            AstId<syntax::cst::Expression>(115),
-        ),
-    ],
-}
-CheckError {
-    kind: CannotUnify {
-        t1: Id<smol_str::SmolStr>(14),
-        t2: Id<smol_str::SmolStr>(15),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(5),
-        ),
-        CheckingExpression(
-            AstId<syntax::cst::Expression>(112),
-        ),
-        CheckingExpression(
-            AstId<syntax::cst::Expression>(115),
-        ),
-    ],
-}
+Diagnostics
+error[CannotUnify]: Cannot unify '?28' with '(t19 :: Type)'
+  --> 22:3..26:4
+   |
+22 |   { left: Left
+   |   ^~~~~~~~~~~~
+error[CannotUnify]: Cannot unify 'Either (t18 :: Type) (t19 :: Type)' with 'Either (t18 :: Type) ?28'
+  --> 22:3..26:4
+   |
+22 |   { left: Left
+   |   ^~~~~~~~~~~~
+error[CannotUnify]: Cannot unify '?30' with '(t21 :: Type)'
+  --> 22:3..26:4
+   |
+22 |   { left: Left
+   |   ^~~~~~~~~~~~
+error[CannotUnify]: Cannot unify 'Either (t20 :: Type) (t21 :: Type)' with 'Either (t20 :: Type) ?30'
+  --> 22:3..26:4
+   |
+22 |   { left: Left
+   |   ^~~~~~~~~~~~

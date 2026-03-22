@@ -8,22 +8,9 @@ test :: { outer :: { x :: Int } } -> Int
 
 Types
 
-Errors
-CheckError {
-    kind: AdditionalProperty {
-        labels: [
-            "y",
-        ],
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(0),
-        ),
-        CheckingBinder(
-            AstId<syntax::cst::Binder>(15),
-        ),
-        CheckingBinder(
-            AstId<syntax::cst::Binder>(17),
-        ),
-    ],
-}
+Diagnostics
+error[AdditionalProperty]: Additional properties not allowed: y
+  --> 4:15..4:23
+  |
+4 | test { outer: { x, y } } = x
+  |               ^~~~~~~~

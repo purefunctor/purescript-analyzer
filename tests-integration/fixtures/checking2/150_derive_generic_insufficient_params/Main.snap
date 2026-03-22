@@ -15,41 +15,19 @@ derive Generic Box
 Roles
 Box = []
 
-Errors
-CheckError {
-    kind: DeriveInvalidArity {
-        class_file: Idx::<File>(23),
-        class_id: Idx::<TypeItem>(0),
-        expected: 2,
-        actual: 1,
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(1),
-        ),
-    ],
-}
-CheckError {
-    kind: CannotUnify {
-        t1: Id<smol_str::SmolStr>(7),
-        t2: Id<smol_str::SmolStr>(8),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(1),
-        ),
-    ],
-}
-CheckError {
-    kind: DeriveInvalidArity {
-        class_file: Idx::<File>(23),
-        class_id: Idx::<TypeItem>(0),
-        expected: 2,
-        actual: 1,
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(1),
-        ),
-    ],
-}
+Diagnostics
+error[DeriveInvalidArity]: Invalid arity for derive: expected 2, got 1
+  --> 7:1..7:28
+  |
+7 | derive instance Generic Box
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[CannotUnify]: Cannot unify 'Type -> Constraint' with 'Constraint'
+  --> 7:1..7:28
+  |
+7 | derive instance Generic Box
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[DeriveInvalidArity]: Invalid arity for derive: expected 2, got 1
+  --> 7:1..7:28
+  |
+7 | derive instance Generic Box
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~

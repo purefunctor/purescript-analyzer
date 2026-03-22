@@ -26,14 +26,9 @@ Roles
 Wrap = [Representational, Nominal]
 WrapNoFunctor = [Representational, Nominal]
 
-Errors
-CheckError {
-    kind: NoInstanceFound {
-        constraint: Id<smol_str::SmolStr>(8),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(3),
-        ),
-    ],
-}
+Diagnostics
+error[NoInstanceFound]: No instance found for: Functor (t7 :: Type -> Type)
+  --> 9:1..9:42
+  |
+9 | derive instance Functor (WrapNoFunctor f)
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

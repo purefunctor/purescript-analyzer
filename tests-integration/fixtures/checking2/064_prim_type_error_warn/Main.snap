@@ -42,84 +42,45 @@ Proxy :: forall (k :: Type). (k :: Type) -> Type
 Roles
 Proxy = [Phantom]
 
-Errors
-CheckError {
-    kind: CustomWarning {
-        message_id: Id<smol_str::SmolStr>(12),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(2),
-        ),
-    ],
-}
-CheckError {
-    kind: CustomWarning {
-        message_id: Id<smol_str::SmolStr>(17),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(4),
-        ),
-    ],
-}
-CheckError {
-    kind: CustomWarning {
-        message_id: Id<smol_str::SmolStr>(20),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(6),
-        ),
-    ],
-}
-CheckError {
-    kind: CustomWarning {
-        message_id: Id<smol_str::SmolStr>(22),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(8),
-        ),
-    ],
-}
-CheckError {
-    kind: CustomWarning {
-        message_id: Id<smol_str::SmolStr>(25),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(10),
-        ),
-    ],
-}
-CheckError {
-    kind: CustomWarning {
-        message_id: Id<smol_str::SmolStr>(27),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(12),
-        ),
-    ],
-}
-CheckError {
-    kind: CustomWarning {
-        message_id: Id<smol_str::SmolStr>(29),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(14),
-        ),
-    ],
-}
-CheckError {
-    kind: CustomWarning {
-        message_id: Id<smol_str::SmolStr>(31),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(16),
-        ),
-    ],
-}
+Diagnostics
+warning[CustomWarning]: This function is deprecated
+  --> 11:1..11:20
+   |
+11 | useWarnBasic :: Int
+   | ^~~~~~~~~~~~~~~~~~~
+warning[CustomWarning]: Left Right
+  --> 17:1..17:21
+   |
+17 | useWarnBeside :: Int
+   | ^~~~~~~~~~~~~~~~~~~~
+warning[CustomWarning]: Line 1
+Line 2
+  --> 23:1..23:20
+   |
+23 | useWarnAbove :: Int
+   | ^~~~~~~~~~~~~~~~~~~
+warning[CustomWarning]: Got type: Int
+  --> 29:1..29:26
+   |
+29 | useWarnQuote :: Proxy Int
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~
+warning[CustomWarning]: Label: myField
+  --> 35:1..35:25
+   |
+35 | useWarnQuoteLabel :: Int
+   | ^~~~~~~~~~~~~~~~~~~~~~~~
+warning[CustomWarning]: Label: "h e l l o"
+  --> 41:1..41:31
+   |
+41 | useWarnQuoteLabelSpaces :: Int
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+warning[CustomWarning]: Label: "hel\"lo"
+  --> 47:1..47:30
+   |
+47 | useWarnQuoteLabelQuote :: Int
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+warning[CustomWarning]: Label: """raw\nstring"""
+  --> 53:1..53:28
+   |
+53 | useWarnQuoteLabelRaw :: Int
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -11,11 +11,3 @@ addContradiction :: forall (m :: Int). Add 1 2 4 => Add 1 4 (m :: Int) => Proxy 
 forceSolve :: { addChain :: Proxy @Int 4, addContradiction :: Proxy @Int 5 }
 
 Types
-
-Errors
-CheckError {
-    kind: NoInstanceFound {
-        constraint: Id<smol_str::SmolStr>(15),
-    },
-    crumbs: [],
-}

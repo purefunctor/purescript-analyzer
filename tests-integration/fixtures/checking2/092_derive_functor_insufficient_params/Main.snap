@@ -19,52 +19,24 @@ Roles
 Pair = [Representational, Representational]
 Unit = []
 
-Errors
-CheckError {
-    kind: CannotUnify {
-        t1: Id<smol_str::SmolStr>(8),
-        t2: Id<smol_str::SmolStr>(9),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(1),
-        ),
-        CheckingKind(
-            AstId<syntax::cst::Type>(19),
-        ),
-    ],
-}
-CheckError {
-    kind: CannotUnify {
-        t1: Id<smol_str::SmolStr>(8),
-        t2: Id<smol_str::SmolStr>(9),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(3),
-        ),
-        CheckingKind(
-            AstId<syntax::cst::Type>(28),
-        ),
-    ],
-}
-CheckError {
-    kind: CannotDeriveForType {
-        type_message: Id<smol_str::SmolStr>(10),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(1),
-        ),
-    ],
-}
-CheckError {
-    kind: CannotDeriveForType {
-        type_message: Id<smol_str::SmolStr>(11),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(3),
-        ),
-    ],
-}
+Diagnostics
+error[CannotUnify]: Cannot unify 'Type' with 'Type -> Type'
+  --> 6:25..6:42
+  |
+6 | derive instance Functor (Pair Int String)
+  |                         ^~~~~~~~~~~~~~~~~
+error[CannotUnify]: Cannot unify 'Type' with 'Type -> Type'
+  --> 9:25..9:29
+  |
+9 | derive instance Functor Unit
+  |                         ^~~~
+error[CannotDeriveForType]: Cannot derive for type: Pair Int String
+  --> 6:1..6:42
+  |
+6 | derive instance Functor (Pair Int String)
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[CannotDeriveForType]: Cannot derive for type: Unit
+  --> 9:1..9:29
+  |
+9 | derive instance Functor Unit
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~

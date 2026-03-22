@@ -17,11 +17,3 @@ Either :: Type -> Type -> Type
 Roles
 Maybe = [Representational]
 Either = [Representational, Representational]
-
-Errors
-CheckError {
-    kind: NoInstanceFound {
-        constraint: Id<smol_str::SmolStr>(7),
-    },
-    crumbs: [],
-}

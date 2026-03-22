@@ -73,34 +73,19 @@ Wrap = [Representational, Nominal]
 Compose = [Representational, Representational, Nominal]
 NoOrd = [Representational]
 
-Errors
-CheckError {
-    kind: NoInstanceFound {
-        constraint: Id<smol_str::SmolStr>(9),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(13),
-        ),
-    ],
-}
-CheckError {
-    kind: NoInstanceFound {
-        constraint: Id<smol_str::SmolStr>(10),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(14),
-        ),
-    ],
-}
-CheckError {
-    kind: NoInstanceFound {
-        constraint: Id<smol_str::SmolStr>(11),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(18),
-        ),
-    ],
-}
+Diagnostics
+error[NoInstanceFound]: No instance found for: Eq ((t27 :: Type -> Type) (t35 :: Type))
+  --> 25:1..25:43
+   |
+25 | derive instance Eq1 f => Eq1 (Compose f g)
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[NoInstanceFound]: No instance found for: Ord ((t29 :: Type -> Type) (t36 :: Type))
+  --> 26:1..26:45
+   |
+26 | derive instance Ord1 f => Ord1 (Compose f g)
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[NoInstanceFound]: No instance found for: Ord (NoOrd (t38 :: Type))
+  --> 32:1..32:27
+   |
+32 | derive instance Ord1 NoOrd
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~

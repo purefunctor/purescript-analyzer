@@ -15,34 +15,14 @@ Maybe :: Type -> Type
 Roles
 Maybe = [Representational]
 
-Errors
-CheckError {
-    kind: MissingPatterns {
-        patterns: [
-            Id<smol_str::SmolStr>(8),
-        ],
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(2),
-        ),
-        InferringExpression(
-            AstId<syntax::cst::Expression>(19),
-        ),
-    ],
-}
-CheckError {
-    kind: MissingPatterns {
-        patterns: [
-            Id<smol_str::SmolStr>(9),
-        ],
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(3),
-        ),
-        InferringExpression(
-            AstId<syntax::cst::Expression>(36),
-        ),
-    ],
-}
+Diagnostics
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: Nothing
+  --> 7:9..8:26
+  |
+7 | test1 = case _ of
+  |         ^~~~~~~~~
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: Just _
+  --> 10:9..11:22
+   |
+10 | test2 = case _ of
+   |         ^~~~~~~~~

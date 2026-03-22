@@ -22,14 +22,9 @@ Proxy = [Phantom]
 NoEq = []
 ContainsNoEq = []
 
-Errors
-CheckError {
-    kind: NoInstanceFound {
-        constraint: Id<smol_str::SmolStr>(8),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(4),
-        ),
-    ],
-}
+Diagnostics
+error[NoInstanceFound]: No instance found for: Eq NoEq
+  --> 13:1..13:32
+   |
+13 | derive instance Eq ContainsNoEq
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -10,14 +10,9 @@ Types
 Derived
 derive forall (t0 :: Type). Newtype @Type Wrapper (t0 :: Type)
 
-Errors
-CheckError {
-    kind: NonLocalNewtype {
-        type_message: Id<smol_str::SmolStr>(8),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(0),
-        ),
-    ],
-}
+Diagnostics
+error[NonLocalNewtype]: Expected a local newtype, got: Wrapper
+  --> 6:1..6:34
+  |
+6 | derive instance Newtype Wrapper _
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

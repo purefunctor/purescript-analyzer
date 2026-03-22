@@ -26,14 +26,9 @@ Roles
 Wrap = [Representational, Nominal]
 WrapNoFoldable = [Representational, Nominal]
 
-Errors
-CheckError {
-    kind: NoInstanceFound {
-        constraint: Id<smol_str::SmolStr>(6),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(3),
-        ),
-    ],
-}
+Diagnostics
+error[NoInstanceFound]: No instance found for: Foldable (t7 :: Type -> Type)
+  --> 9:1..9:44
+  |
+9 | derive instance Foldable (WrapNoFoldable f)
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -30,14 +30,9 @@ Pair = []
 NoOrd = []
 ContainsNoOrd = []
 
-Errors
-CheckError {
-    kind: NoInstanceFound {
-        constraint: Id<smol_str::SmolStr>(8),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(10),
-        ),
-    ],
-}
+Diagnostics
+error[NoInstanceFound]: No instance found for: Ord NoOrd
+  --> 23:1..23:34
+   |
+23 | derive instance Ord ContainsNoOrd
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

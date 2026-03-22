@@ -16,29 +16,3 @@ forceSolve ::
   }
 
 Types
-
-Errors
-CheckError {
-    kind: NoInstanceFound {
-        constraint: Id<smol_str::SmolStr>(21),
-    },
-    crumbs: [],
-}
-CheckError {
-    kind: NoInstanceFound {
-        constraint: Id<smol_str::SmolStr>(22),
-    },
-    crumbs: [],
-}
-CheckError {
-    kind: NoInstanceFound {
-        constraint: Id<smol_str::SmolStr>(23),
-    },
-    crumbs: [],
-}
-CheckError {
-    kind: NoInstanceFound {
-        constraint: Id<smol_str::SmolStr>(24),
-    },
-    crumbs: [],
-}

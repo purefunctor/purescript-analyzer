@@ -10,28 +10,14 @@ Types
 Derived
 derive Show
 
-Errors
-CheckError {
-    kind: DeriveInvalidArity {
-        class_file: Idx::<File>(30),
-        class_id: Idx::<TypeItem>(0),
-        expected: 1,
-        actual: 0,
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(0),
-        ),
-    ],
-}
-CheckError {
-    kind: CannotUnify {
-        t1: Id<smol_str::SmolStr>(7),
-        t2: Id<smol_str::SmolStr>(8),
-    },
-    crumbs: [
-        TermDeclaration(
-            Idx::<TermItem>(0),
-        ),
-    ],
-}
+Diagnostics
+error[DeriveInvalidArity]: Invalid arity for derive: expected 1, got 0
+  --> 5:1..5:29
+  |
+5 | derive newtype instance Show
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[CannotUnify]: Cannot unify 'Type -> Constraint' with 'Constraint'
+  --> 5:1..5:29
+  |
+5 | derive newtype instance Show
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
