@@ -142,12 +142,42 @@ where
 {
     safe_loop! {
         let expanded = expand_synonym(state, context, id)?;
+        let expanded = expand_row_tail(state, context, expanded)?;
         let normalised = normalise(state, context, expanded)?;
         if normalised == id {
             return Ok(id);
         }
         id = normalised;
     }
+}
+
+fn expand_row_tail<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    id: TypeId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let Type::Row(row_id) = context.lookup_type(id) else {
+        return Ok(id);
+    };
+
+    let row = context.lookup_row_type(row_id);
+    let Some(original_tail) = row.tail else {
+        return Ok(id);
+    };
+
+    let tail = expand(state, context, original_tail)?;
+    if tail == original_tail {
+        return Ok(id);
+    }
+
+    let fields = row.fields.iter().cloned();
+    let row = RowType::new(fields, Some(tail));
+
+    let row = context.queries.intern_row_type(row);
+    Ok(context.queries.intern_type(Type::Row(row)))
 }
 
 /// Expands synonym constructor applications with respect to oversaturation.

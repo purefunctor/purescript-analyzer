@@ -38,11 +38,3 @@ class forall (k :: Type) (a :: (k :: Type)) (b :: (k :: Type)). TypeEquals @(k :
 Instances
 instance forall (t10 :: Type) (t9 :: (t10 :: Type)).
   TypeEquals @(t10 :: Type) (t9 :: (t10 :: Type)) (t9 :: (t10 :: Type))
-
-Errors
-CheckError {
-    kind: NoInstanceFound {
-        constraint: Id<smol_str::SmolStr>(12),
-    },
-    crumbs: [],
-}
