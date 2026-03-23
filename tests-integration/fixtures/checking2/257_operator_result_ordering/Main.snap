@@ -50,11 +50,3 @@ instance Profunctor Function
 
 Roles
 Wrap = [Representational]
-
-Diagnostics
-error[CannotUnify]: Cannot unify 'Profunctor ?39 => Optic @Type ?39 (Wrap ?38) ?38' with '(p :: Type -> Type -> Type) (a :: Type) (a :: Type) ->
-(p :: Type -> Type -> Type) (Wrap (a :: Type)) (Wrap (a :: Type))'
-  --> 27:11..27:20
-   |
-27 | wrapped = lens Wrap $ case _ of Wrap a -> a
-   |           ^~~~~~~~~

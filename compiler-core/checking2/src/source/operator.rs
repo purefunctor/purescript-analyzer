@@ -160,13 +160,6 @@ where
 
     E::record_branch_types(state, operator_id, left_type, right_type, result_type);
 
-    if let OperatorKindMode::Check { expected_type } = mode {
-        // Peel constraints from the expected type as givens,
-        // so operator result constraints can be discharged.
-        let expected_type = toolkit::collect_givens(state, context, expected_type)?;
-        let _ = unification::subtype(state, context, result_type, expected_type)?;
-    }
-
     let check_left_right = |state: &mut CheckState| {
         let [left_tree, right_tree] = children;
 
@@ -192,6 +185,13 @@ where
     } else {
         check_left_right(state)?
     };
+
+    if let OperatorKindMode::Check { expected_type } = mode {
+        // Peel constraints from the expected type as givens,
+        // so operator result constraints can be discharged.
+        let expected_type = toolkit::collect_givens(state, context, expected_type)?;
+        let _ = unification::subtype(state, context, result_type, expected_type)?;
+    }
 
     E::build(state, context, operator, (left, right), (left_type, right_type), result_type)
 }
