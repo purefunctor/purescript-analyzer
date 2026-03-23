@@ -1,0 +1,16 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Nil :: forall (@a :: Type). List (a :: Type)
+Cons :: forall (@a :: Type). List (a :: Type) -> List (a :: Type)
+append :: forall (a :: Type). List (a :: Type) -> List Int -> List (a :: Type)
+<+> :: List (a :: Type) -> List Int -> List (a :: Type)
+
+Types
+List :: Type -> Type
+
+Roles
+List = [Representational]
