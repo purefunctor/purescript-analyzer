@@ -538,4 +538,6 @@ fn run_test(folder: &str, file: &str) {
 
 #[rustfmt::skip] #[test] fn test_256_record_field_polymorphic_main() { run_test("256_record_field_polymorphic", "Main"); }
 
+#[rustfmt::skip] #[test] fn test_257_operator_result_ordering_main() { run_test("257_operator_result_ordering", "Main"); }
+
 #[rustfmt::skip] #[test] fn test_258_self_recursive_through_operator_main() { run_test("258_self_recursive_through_operator", "Main"); }
