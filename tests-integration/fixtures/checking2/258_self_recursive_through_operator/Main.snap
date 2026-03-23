@@ -7,7 +7,7 @@ Terms
 Nil :: forall (@a :: Type). List (a :: Type)
 Cons :: forall (@a :: Type). List (a :: Type) -> List (a :: Type)
 append :: forall (a :: Type). List (a :: Type) -> List Int -> List (a :: Type)
-<+> :: List (a :: Type) -> List Int -> List (a :: Type)
+<+> :: forall (a :: Type). List (a :: Type) -> List Int -> List (a :: Type)
 
 Types
 List :: Type -> Type

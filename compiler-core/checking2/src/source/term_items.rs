@@ -519,8 +519,25 @@ where
         if state.checked.terms.contains_key(&item_id) {
             continue;
         }
-        let t = state.fresh_unification(context.queries, context.prim.t);
-        state.checked.terms.insert(item_id, t);
+
+        let item = context.lowered.info.get_term_item(item_id);
+
+        let resolution = item.and_then(|item| match item {
+            TermItemIr::Operator { resolution, .. } => *resolution,
+            _ => None,
+        });
+
+        let item_type = resolution.and_then(|(file_id, item_id)| {
+            if file_id == context.id { state.checked.lookup_term(item_id) } else { None }
+        });
+
+        let item_type = if let Some(item_type) = item_type {
+            item_type
+        } else {
+            state.fresh_unification(context.queries, context.prim.t)
+        };
+
+        state.checked.terms.insert(item_id, item_type);
     }
 }
 
