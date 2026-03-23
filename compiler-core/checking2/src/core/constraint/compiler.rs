@@ -9,13 +9,12 @@ pub mod prim_type_error;
 use building_types::QueryResult;
 use smol_str::SmolStr;
 
-use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::fold::{FoldAction, TypeFold, fold_type};
 use crate::core::unification::{CanUnify, can_unify};
 use crate::core::{RowType, Type, TypeId, normalise};
-use crate::safe_loop;
 use crate::state::CheckState;
+use crate::{ExternalQueries, safe_loop};
 
 use super::{ConstraintApplication, MatchInstance};
 

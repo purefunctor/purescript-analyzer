@@ -6,14 +6,13 @@ use indexing::TypeItemId;
 use itertools::Itertools;
 use rustc_hash::FxHashSet;
 
-use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::constraint::compiler;
 use crate::core::substitute::{NameToType, SubstituteName};
 use crate::core::walk::{TypeWalker, WalkAction, walk_type};
 use crate::core::{KindOrType, Name, Type, TypeId, normalise, toolkit};
-use crate::safe_loop;
 use crate::state::CheckState;
+use crate::{ExternalQueries, safe_loop};
 
 use super::{ConstraintApplication, MatchInstance};
 

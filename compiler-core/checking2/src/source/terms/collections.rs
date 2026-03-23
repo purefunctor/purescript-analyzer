@@ -20,14 +20,21 @@ where
         return Ok(id);
     };
 
-    match kind {
-        lowering::ExpressionKind::Constructor { .. }
-        | lowering::ExpressionKind::Variable { .. } => {
-            let id = toolkit::instantiate_unifications(state, context, id)?;
-            toolkit::collect_wanteds(state, context, id)
-        }
-        _ => Ok(id),
+    if should_instantiate_record_field(kind) {
+        let id = toolkit::instantiate_unifications(state, context, id)?;
+        toolkit::collect_wanteds(state, context, id)
+    } else {
+        Ok(id)
     }
+}
+
+fn should_instantiate_record_field(kind: &lowering::ExpressionKind) -> bool {
+    matches!(
+        kind,
+        lowering::ExpressionKind::Constructor { .. }
+            | lowering::ExpressionKind::Variable { .. }
+            | lowering::ExpressionKind::OperatorName { .. }
+    )
 }
 
 fn instantiate_variable<Q>(
@@ -183,13 +190,13 @@ where
                                 .find(|field| field.label == label)
                                 .map(|field| field.id);
 
-                            let id = instantiate_variable(state, context, *resolution)?;
-
                             let id = if let Some(expected_type) = expected_field_type {
+                                let id =
+                                    toolkit::lookup_term_variable(state, context, *resolution)?;
                                 unification::subtype(state, context, id, expected_type)?;
                                 expected_type
                             } else {
-                                id
+                                instantiate_variable(state, context, *resolution)?
                             };
 
                             fields.push(RowField { label, id });
