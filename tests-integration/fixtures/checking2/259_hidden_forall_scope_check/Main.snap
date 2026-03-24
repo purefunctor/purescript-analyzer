@@ -1,0 +1,74 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Unit :: Unit
+Respond ::
+  forall (@x' :: Type) (@x :: Type) (@a' :: Type) (@a :: Type) (@m :: Type -> Type) (@r :: Type).
+    (a :: Type) ->
+    ((a' :: Type) ->
+    Proxy (x' :: Type) (x :: Type) (a' :: Type) (a :: Type) (m :: Type -> Type) (r :: Type)) ->
+    Proxy (x' :: Type) (x :: Type) (a' :: Type) (a :: Type) (m :: Type -> Type) (r :: Type)
+Pure ::
+  forall (@x' :: Type) (@x :: Type) (@a' :: Type) (@a :: Type) (@m :: Type -> Type) (@r :: Type).
+    (r :: Type) ->
+    Proxy (x' :: Type) (x :: Type) (a' :: Type) (a :: Type) (m :: Type -> Type) (r :: Type)
+respond ::
+  forall (m :: Type -> Type) (a :: Type) (a' :: Type) (x :: Type) (x' :: Type).
+    Monad (m :: Type -> Type) =>
+    (a :: Type) ->
+    Proxy (x' :: Type) (x :: Type) (a' :: Type) (a :: Type) (m :: Type -> Type) (a' :: Type)
+yield ::
+  forall (m :: Type -> Type) (a :: Type).
+    Monad (m :: Type -> Type) => (a :: Type) -> Producer_ (a :: Type) (m :: Type -> Type) Unit
+
+Types
+Unit :: Type
+Monad :: (Type -> Type) -> Constraint
+Proxy :: Type -> Type -> Type -> Type -> (Type -> Type) -> Type -> Type
+Producer_ :: Type -> (Type -> Type) -> Type -> Type
+
+Synonyms
+type Producer_ b m r = forall (x' :: Type) (x :: Type).
+  Proxy (x' :: Type) (x :: Type) Unit (b :: Type) (m :: Type -> Type) (r :: Type)
+
+Classes
+class forall (m :: Type -> Type). Monad (m :: Type -> Type)
+
+Roles
+Unit = []
+Proxy = [Representational, Representational, Representational, Representational, Representational, Representational]
+
+Diagnostics
+error[CannotUnify]: Cannot unify '?22' with '(t20 :: Type)'
+  --> 18:9..18:16
+   |
+18 | yield = respond
+   |         ^~~~~~~
+error[CannotUnify]: Cannot unify 'Proxy (t19 :: Type) ?22' with 'Proxy (t19 :: Type) (t20 :: Type)'
+  --> 18:9..18:16
+   |
+18 | yield = respond
+   |         ^~~~~~~
+error[CannotUnify]: Cannot unify 'Proxy (t19 :: Type) ?22 ?21' with 'Proxy (t19 :: Type) (t20 :: Type) Unit'
+  --> 18:9..18:16
+   |
+18 | yield = respond
+   |         ^~~~~~~
+error[CannotUnify]: Cannot unify 'Proxy (t19 :: Type) ?22 ?21 (a :: Type)' with 'Proxy (t19 :: Type) (t20 :: Type) Unit (a :: Type)'
+  --> 18:9..18:16
+   |
+18 | yield = respond
+   |         ^~~~~~~
+error[CannotUnify]: Cannot unify 'Proxy (t19 :: Type) ?22 ?21 (a :: Type) ?19' with 'Proxy (t19 :: Type) (t20 :: Type) Unit (a :: Type) (m :: Type -> Type)'
+  --> 18:9..18:16
+   |
+18 | yield = respond
+   |         ^~~~~~~
+error[CannotUnify]: Cannot unify 'Proxy (t19 :: Type) ?22 ?21 (a :: Type) ?19 ?21' with 'Proxy (t19 :: Type) (t20 :: Type) Unit (a :: Type) (m :: Type -> Type) Unit'
+  --> 18:9..18:16
+   |
+18 | yield = respond
+   |         ^~~~~~~
