@@ -6,8 +6,8 @@ expression: report
 Terms
 Proxy :: forall (t1 :: Type) (@a :: (t1 :: Type)). Proxy @(t1 :: Type) (a :: (t1 :: Type))
 coerceProxy ::
-  forall (t5 :: Type) (t4 :: Type) (a :: (t5 :: Type)) (b :: (t4 :: Type)).
-    Proxy @(t5 :: Type) (a :: (t5 :: Type)) -> Proxy @(t4 :: Type) (b :: (t4 :: Type))
+  forall (t7 :: Type) (t6 :: Type) (a :: (t7 :: Type)) (b :: (t6 :: Type)).
+    Proxy @(t7 :: Type) (a :: (t7 :: Type)) -> Proxy @(t6 :: Type) (b :: (t6 :: Type))
 coerceProxyIntString :: Proxy @Type Int -> Proxy @Type String
 
 Types

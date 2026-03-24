@@ -18,10 +18,10 @@ extractTail ::
     Cons @Type "x" Int (tail :: Row Type) ( a :: String, x :: Int | (r :: Row Type) ) =>
     Proxy @(Row Type) (tail :: Row Type)
 forceSolve ::
-  forall (t10 :: Row Type) (t9 :: Row Type).
-    { consOpen :: Proxy @(Row Type) ( a :: String, x :: Int | (t10 :: Row Type) )
+  forall (t17 :: Row Type) (t16 :: Row Type).
+    { consOpen :: Proxy @(Row Type) ( a :: String, x :: Int | (t17 :: Row Type) )
     , decomposeOpen :: Proxy @Type Int
-    , extractTail :: Proxy @(Row Type) ( a :: String | (t9 :: Row Type) )
+    , extractTail :: Proxy @(Row Type) ( a :: String | (t16 :: Row Type) )
     }
 
 Types

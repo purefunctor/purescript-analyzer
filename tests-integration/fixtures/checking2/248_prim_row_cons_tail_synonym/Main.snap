@@ -10,7 +10,7 @@ mk ::
     Proxy @Symbol (s :: Symbol) -> (a :: Type) -> Proxy @(Row Type) (CombinedRow (r :: Row Type))
 test :: forall (r :: Row Type). Proxy @(Row Type) (CombinedRow (r :: Row Type))
 forceSolve ::
-  forall (t11 :: Row Type). { test :: Proxy @(Row Type) (CombinedRow (t11 :: Row Type)) }
+  forall (t16 :: Row Type). { test :: Proxy @(Row Type) (CombinedRow (t16 :: Row Type)) }
 
 Types
 RowApply ::

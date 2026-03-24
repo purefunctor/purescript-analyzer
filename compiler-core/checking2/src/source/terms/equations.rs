@@ -38,11 +38,15 @@ where
             let required =
                 equations.iter().map(|equation| equation.binders.len()).max().unwrap_or(0);
 
-            let signature::DecomposedSignature { arguments, result, .. } =
+            let signature::SkolemisedSignature { substitution, constraints: _, arguments, result } =
                 signature::expect_signature_patterns(state, context, expected_type, required)?;
 
             let function = context.intern_function_list(&arguments, result);
-            check_equations_core(state, context, origin, &arguments, result, function, equations)?;
+            state.with_implicit(context, &substitution, |state| {
+                check_equations_core(
+                    state, context, origin, &arguments, result, function, equations,
+                )
+            })?;
 
             Ok(EquationSet { arguments })
         }

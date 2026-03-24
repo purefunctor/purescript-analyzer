@@ -40,35 +40,3 @@ class forall (m :: Type -> Type). Monad (m :: Type -> Type)
 Roles
 Unit = []
 Proxy = [Representational, Representational, Representational, Representational, Representational, Representational]
-
-Diagnostics
-error[CannotUnify]: Cannot unify '?22' with '(t20 :: Type)'
-  --> 18:9..18:16
-   |
-18 | yield = respond
-   |         ^~~~~~~
-error[CannotUnify]: Cannot unify 'Proxy (t19 :: Type) ?22' with 'Proxy (t19 :: Type) (t20 :: Type)'
-  --> 18:9..18:16
-   |
-18 | yield = respond
-   |         ^~~~~~~
-error[CannotUnify]: Cannot unify 'Proxy (t19 :: Type) ?22 ?21' with 'Proxy (t19 :: Type) (t20 :: Type) Unit'
-  --> 18:9..18:16
-   |
-18 | yield = respond
-   |         ^~~~~~~
-error[CannotUnify]: Cannot unify 'Proxy (t19 :: Type) ?22 ?21 (a :: Type)' with 'Proxy (t19 :: Type) (t20 :: Type) Unit (a :: Type)'
-  --> 18:9..18:16
-   |
-18 | yield = respond
-   |         ^~~~~~~
-error[CannotUnify]: Cannot unify 'Proxy (t19 :: Type) ?22 ?21 (a :: Type) ?19' with 'Proxy (t19 :: Type) (t20 :: Type) Unit (a :: Type) (m :: Type -> Type)'
-  --> 18:9..18:16
-   |
-18 | yield = respond
-   |         ^~~~~~~
-error[CannotUnify]: Cannot unify 'Proxy (t19 :: Type) ?22 ?21 (a :: Type) ?19 ?21' with 'Proxy (t19 :: Type) (t20 :: Type) Unit (a :: Type) (m :: Type -> Type) Unit'
-  --> 18:9..18:16
-   |
-18 | yield = respond
-   |         ^~~~~~~

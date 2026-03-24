@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -21,9 +22,9 @@ unionEmptyRight ::
   forall (u :: Row Type).
     Union @Type ( a :: Int ) () (u :: Row Type) => Proxy @(Row Type) (u :: Row Type)
 unionBothEmpty ::
-  forall (t6 :: Type) (u :: Row (t6 :: Type)).
-    Union @(t6 :: Type) () () (u :: Row (t6 :: Type)) =>
-    Proxy @(Row (t6 :: Type)) (u :: Row (t6 :: Type))
+  forall (t12 :: Type) (u :: Row (t12 :: Type)).
+    Union @(t12 :: Type) () () (u :: Row (t12 :: Type)) =>
+    Proxy @(Row (t12 :: Type)) (u :: Row (t12 :: Type))
 unionMultiple ::
   forall (u :: Row Type).
     Union @Type ( a :: Int, b :: String ) ( c :: Boolean ) (u :: Row Type) =>
@@ -41,27 +42,27 @@ nestedCons ::
   forall (row :: Row Type).
     Cons @Type "a" Int ( b :: String ) (row :: Row Type) => Proxy @(Row Type) (row :: Row Type)
 lacksSimple ::
-  forall (t13 :: Type) (r :: (t13 :: Type)).
+  forall (t25 :: Type) (r :: (t25 :: Type)).
     Lacks @Type "missing" ( a :: Int, b :: String ) =>
-    Proxy @(t13 :: Type) (r :: (t13 :: Type)) -> Proxy @(t13 :: Type) (r :: (t13 :: Type))
+    Proxy @(t25 :: Type) (r :: (t25 :: Type)) -> Proxy @(t25 :: Type) (r :: (t25 :: Type))
 lacksEmpty ::
-  forall (t16 :: Type) (t15 :: Type) (r :: (t16 :: Type)).
-    Lacks @(t15 :: Type) "anything" () =>
-    Proxy @(t16 :: Type) (r :: (t16 :: Type)) -> Proxy @(t16 :: Type) (r :: (t16 :: Type))
+  forall (t29 :: Type) (t28 :: Type) (r :: (t29 :: Type)).
+    Lacks @(t28 :: Type) "anything" () =>
+    Proxy @(t29 :: Type) (r :: (t29 :: Type)) -> Proxy @(t29 :: Type) (r :: (t29 :: Type))
 nubNoDuplicates ::
   forall (nubbed :: Row Type).
     Nub @Type ( a :: Int, b :: String ) (nubbed :: Row Type) =>
     Proxy @(Row Type) (nubbed :: Row Type)
 nubEmpty ::
-  forall (t19 :: Type) (nubbed :: Row (t19 :: Type)).
-    Nub @(t19 :: Type) () (nubbed :: Row (t19 :: Type)) =>
-    Proxy @(Row (t19 :: Type)) (nubbed :: Row (t19 :: Type))
+  forall (t34 :: Type) (nubbed :: Row (t34 :: Type)).
+    Nub @(t34 :: Type) () (nubbed :: Row (t34 :: Type)) =>
+    Proxy @(Row (t34 :: Type)) (nubbed :: Row (t34 :: Type))
 solveUnion ::
-  forall (t20 :: Type).
+  forall (t35 :: Type).
     { deriveUnion :: Proxy @(Row Type) ( a :: Int, b :: String )
     , deriveUnionLeft :: Proxy @(Row Type) ( a :: Int )
     , deriveUnionRight :: Proxy @(Row Type) ( b :: String )
-    , unionBothEmpty :: Proxy @(Row (t20 :: Type)) ()
+    , unionBothEmpty :: Proxy @(Row (t35 :: Type)) ()
     , unionEmptyLeft :: Proxy @(Row Type) ( a :: Int )
     , unionEmptyRight :: Proxy @(Row Type) ( a :: Int )
     , unionMultiple :: Proxy @(Row Type) ( a :: Int, b :: String, c :: Boolean )
@@ -73,13 +74,13 @@ solveCons ::
   , nestedCons :: Proxy @(Row Type) ( a :: Int, b :: String )
   }
 solveLacks ::
-  forall (t24 :: Type) (t23 :: (t24 :: Type)) (t22 :: Type) (t21 :: (t22 :: Type)).
-    { lacksEmpty :: Proxy @(t24 :: Type) (t23 :: (t24 :: Type))
-    , lacksSimple :: Proxy @(t22 :: Type) (t21 :: (t22 :: Type))
+  forall (t39 :: Type) (t38 :: (t39 :: Type)) (t37 :: Type) (t36 :: (t37 :: Type)).
+    { lacksEmpty :: Proxy @(t39 :: Type) (t38 :: (t39 :: Type))
+    , lacksSimple :: Proxy @(t37 :: Type) (t36 :: (t37 :: Type))
     }
 solveNub ::
-  forall (t25 :: Type).
-    { nubEmpty :: Proxy @(Row (t25 :: Type)) ()
+  forall (t40 :: Type).
+    { nubEmpty :: Proxy @(Row (t40 :: Type)) ()
     , nubNoDuplicates :: Proxy @(Row Type) ( a :: Int, b :: String )
     }
 

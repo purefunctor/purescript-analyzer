@@ -18,7 +18,7 @@ apply ::
     (f :: Type -> Type) (b :: Type)
 pure :: forall (f :: Type -> Type) (a :: Type). (a :: Type) -> (f :: Type -> Type) (a :: Type)
 test :: forall (f :: Type -> Type). (f :: Type -> Type) (Tuple Int String)
-test' :: forall (t11 :: Type -> Type). (t11 :: Type -> Type) (Tuple Int String)
+test' :: forall (t12 :: Type -> Type). (t12 :: Type -> Type) (Tuple Int String)
 
 Types
 Tuple :: Type -> Type -> Type

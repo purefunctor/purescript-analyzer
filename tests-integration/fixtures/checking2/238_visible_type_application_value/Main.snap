@@ -7,6 +7,6 @@ Terms
 identity :: forall (@a :: Type). (a :: Type) -> (a :: Type)
 const :: forall (a :: Type) (@b :: Type). (a :: Type) -> (b :: Type) -> (a :: Type)
 testIdentity :: Int -> Int
-testConst :: forall (t3 :: Type). (t3 :: Type) -> String -> (t3 :: Type)
+testConst :: forall (t6 :: Type). (t6 :: Type) -> String -> (t6 :: Type)
 
 Types

@@ -15,11 +15,11 @@ consMissingLabel ::
 lacksPresent ::
   Lacks @Type "b" ( a :: Int, b :: String ) => Proxy @(Row Type) ( a :: Int, b :: String )
 forceSolve ::
-  forall (t3 :: Row Type) (t2 :: Row Type).
-    Union @Type (t3 :: Row Type) ( b :: String ) ( a :: Int, b :: Int ) =>
-    { consMissingLabel :: Proxy @(Row Type) (t2 :: Row Type)
+  forall (t5 :: Row Type) (t4 :: Row Type).
+    Union @Type (t5 :: Row Type) ( b :: String ) ( a :: Int, b :: Int ) =>
+    { consMissingLabel :: Proxy @(Row Type) (t4 :: Row Type)
     , lacksPresent :: Proxy @(Row Type) ( a :: Int, b :: String )
-    , unionTypeMismatch :: Proxy @(Row Type) (t3 :: Row Type)
+    , unionTypeMismatch :: Proxy @(Row Type) (t5 :: Row Type)
     }
 
 Types

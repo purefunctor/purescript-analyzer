@@ -17,18 +17,18 @@ under ::
     Newtype @Type (s :: Type) (b :: Type) =>
     ((a :: Type) -> (t :: Type)) -> ((t :: Type) -> (s :: Type)) -> (a :: Type) -> (b :: Type)
 alaF ::
-  forall (t14 :: Type) (f :: Type -> Type) (g :: (t14 :: Type) -> Type) (t :: Type) (a :: Type)
-    (s :: (t14 :: Type)) (b :: (t14 :: Type)).
+  forall (t28 :: Type) (f :: Type -> Type) (g :: (t28 :: Type) -> Type) (t :: Type) (a :: Type)
+    (s :: (t28 :: Type)) (b :: (t28 :: Type)).
     Coercible @Type ((f :: Type -> Type) (t :: Type)) ((f :: Type -> Type) (a :: Type)) =>
     Coercible @Type
-      ((g :: (t14 :: Type) -> Type) (s :: (t14 :: Type)))
-      ((g :: (t14 :: Type) -> Type) (b :: (t14 :: Type))) =>
+      ((g :: (t28 :: Type) -> Type) (s :: (t28 :: Type)))
+      ((g :: (t28 :: Type) -> Type) (b :: (t28 :: Type))) =>
     Newtype @Type (t :: Type) (a :: Type) =>
-    Newtype @(t14 :: Type) (s :: (t14 :: Type)) (b :: (t14 :: Type)) =>
+    Newtype @(t28 :: Type) (s :: (t28 :: Type)) (b :: (t28 :: Type)) =>
     ((a :: Type) -> (t :: Type)) ->
-    ((f :: Type -> Type) (t :: Type) -> (g :: (t14 :: Type) -> Type) (s :: (t14 :: Type))) ->
+    ((f :: Type -> Type) (t :: Type) -> (g :: (t28 :: Type) -> Type) (s :: (t28 :: Type))) ->
     (f :: Type -> Type) (a :: Type) ->
-    (g :: (t14 :: Type) -> Type) (b :: (t14 :: Type))
+    (g :: (t28 :: Type) -> Type) (b :: (t28 :: Type))
 
 Types
 Age :: Type

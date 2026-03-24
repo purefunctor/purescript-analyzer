@@ -2,6 +2,7 @@ use building_types::QueryResult;
 use lowering::TypeVariableBinding;
 
 use crate::context::CheckContext;
+use crate::core::substitute::{NameToType, SubstituteName};
 use crate::core::{ForallBinder, Type, TypeId, normalise};
 use crate::error::ErrorKind;
 use crate::state::CheckState;
@@ -9,6 +10,13 @@ use crate::{ExternalQueries, safe_loop};
 
 pub struct DecomposedSignature {
     pub binders: Vec<ForallBinder>,
+    pub constraints: Vec<TypeId>,
+    pub arguments: Vec<TypeId>,
+    pub result: TypeId,
+}
+
+pub struct SkolemisedSignature {
+    pub substitution: NameToType,
     pub constraints: Vec<TypeId>,
     pub arguments: Vec<TypeId>,
     pub result: TypeId,
@@ -127,20 +135,56 @@ pub fn expect_signature_patterns<Q>(
     context: &CheckContext<Q>,
     signature_type: TypeId,
     required: usize,
-) -> QueryResult<DecomposedSignature>
+) -> QueryResult<SkolemisedSignature>
 where
     Q: ExternalQueries,
 {
-    let signature = decompose_signature(
-        state,
-        context,
-        signature_type,
-        DecomposeSignatureMode::Patterns { required },
-    )?;
+    let signature =
+        decompose_signature(state, context, signature_type, DecomposeSignatureMode::Full)?;
 
-    for &constraint in &signature.constraints {
+    let SkolemisedSignature { substitution, constraints, arguments, result } =
+        skolemise_decomposed_signature(state, context, signature)?;
+
+    let mut remaining = arguments.into_iter();
+    let arguments = remaining.by_ref().take(required).collect();
+    let result = context.intern_function_iter(remaining, result);
+
+    for &constraint in &constraints {
         state.push_given(constraint);
     }
 
-    Ok(signature)
+    Ok(SkolemisedSignature { substitution, constraints, arguments, result })
+}
+
+fn skolemise_decomposed_signature<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    signature: DecomposedSignature,
+) -> QueryResult<SkolemisedSignature>
+where
+    Q: ExternalQueries,
+{
+    let mut substitution = NameToType::default();
+
+    for binder in &signature.binders {
+        let kind = SubstituteName::many(state, context, &substitution, binder.kind)?;
+        let rigid = state.fresh_rigid(context.queries, kind);
+        substitution.insert(binder.name, rigid);
+    }
+
+    let constraints = signature
+        .constraints
+        .iter()
+        .map(|&constraint| SubstituteName::many(state, context, &substitution, constraint))
+        .collect::<QueryResult<Vec<_>>>()?;
+
+    let arguments = signature
+        .arguments
+        .iter()
+        .map(|&argument| SubstituteName::many(state, context, &substitution, argument))
+        .collect::<QueryResult<Vec<_>>>()?;
+
+    let result = SubstituteName::many(state, context, &substitution, signature.result)?;
+
+    Ok(SkolemisedSignature { substitution, constraints, arguments, result })
 }

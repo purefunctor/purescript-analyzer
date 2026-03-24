@@ -9,10 +9,10 @@ failBasic ::
   forall (a :: Type). Fail (Text "This operation is not allowed") => (a :: Type) -> (a :: Type)
 useFailBasic :: Int
 failComplex ::
-  forall (t4 :: Type) (a :: (t4 :: Type)).
+  forall (t6 :: Type) (a :: (t6 :: Type)).
     Fail
-      (Above (Text "Error:") (Beside (Text "Type ") (Quote @(t4 :: Type) (a :: (t4 :: Type))))) =>
-    Proxy @(t4 :: Type) (a :: (t4 :: Type)) -> Proxy @(t4 :: Type) (a :: (t4 :: Type))
+      (Above (Text "Error:") (Beside (Text "Type ") (Quote @(t6 :: Type) (a :: (t6 :: Type))))) =>
+    Proxy @(t6 :: Type) (a :: (t6 :: Type)) -> Proxy @(t6 :: Type) (a :: (t6 :: Type))
 useFailComplex :: Proxy @Type String
 
 Types

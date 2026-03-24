@@ -10,52 +10,52 @@ map ::
 apply :: forall (a :: Type) (b :: Type). ((a :: Type) -> (b :: Type)) -> (a :: Type) -> (b :: Type)
 f :: ({ foo :: Int } -> Int) -> Int
 test1 ::
-  forall (t5 :: Type) (t4 :: Row Type). { prop :: (t5 :: Type) | (t4 :: Row Type) } -> (t5 :: Type)
+  forall (t9 :: Type) (t8 :: Row Type). { prop :: (t9 :: Type) | (t8 :: Row Type) } -> (t9 :: Type)
 test2 ::
-  forall (t9 :: Type) (t8 :: Row Type) (t7 :: Row Type) (t6 :: Row Type).
-    { a :: { b :: { c :: (t9 :: Type) | (t8 :: Row Type) } | (t7 :: Row Type) }
-    | (t6 :: Row Type)
+  forall (t13 :: Type) (t12 :: Row Type) (t11 :: Row Type) (t10 :: Row Type).
+    { a :: { b :: { c :: (t13 :: Type) | (t12 :: Row Type) } | (t11 :: Row Type) }
+    | (t10 :: Row Type)
     } ->
-    (t9 :: Type)
+    (t13 :: Type)
 test3 ::
-  forall (t11 :: Type) (t10 :: Row Type).
-    { poly :: (t11 :: Type) | (t10 :: Row Type) } -> (t11 :: Type)
+  forall (t15 :: Type) (t14 :: Row Type).
+    { poly :: (t15 :: Type) | (t14 :: Row Type) } -> (t15 :: Type)
 test4 ::
-  forall (t13 :: Type) (t12 :: Row Type).
-    Array { prop :: (t13 :: Type) | (t12 :: Row Type) } -> Array (t13 :: Type)
+  forall (t17 :: Type) (t16 :: Row Type).
+    Array { prop :: (t17 :: Type) | (t16 :: Row Type) } -> Array (t17 :: Type)
 test5 :: Int
 test6 ::
-  forall (t17 :: Type) (t16 :: Type) (t15 :: Row Type) (t14 :: Type).
-    (t17 :: Type) ->
-    (({ bar :: (t16 :: Type) | (t15 :: Row Type) } -> (t16 :: Type)) -> (t14 :: Type)) ->
-    (t14 :: Type)
+  forall (t21 :: Type) (t20 :: Type) (t19 :: Row Type) (t18 :: Type).
+    (t21 :: Type) ->
+    (({ bar :: (t20 :: Type) | (t19 :: Row Type) } -> (t20 :: Type)) -> (t18 :: Type)) ->
+    (t18 :: Type)
 test7 ::
-  forall (t19 :: Type) (t18 :: Row Type).
-    { nonexistent :: (t19 :: Type) | (t18 :: Row Type) } -> (t19 :: Type)
+  forall (t23 :: Type) (t22 :: Row Type).
+    { nonexistent :: (t23 :: Type) | (t22 :: Row Type) } -> (t23 :: Type)
 test8 ::
-  forall (t22 :: Type) (t21 :: Row Type) (t20 :: Type).
-    (({ foo :: (t22 :: Type) | (t21 :: Row Type) } -> (t22 :: Type)) -> (t20 :: Type)) ->
-    (t20 :: Type)
+  forall (t26 :: Type) (t25 :: Row Type) (t24 :: Type).
+    (({ foo :: (t26 :: Type) | (t25 :: Row Type) } -> (t26 :: Type)) -> (t24 :: Type)) ->
+    (t24 :: Type)
 test9 ::
-  forall (t25 :: Type) (t24 :: Row Type) (t23 :: Type).
-    Array (({ prop :: (t25 :: Type) | (t24 :: Row Type) } -> (t25 :: Type)) -> (t23 :: Type)) ->
-    Array (t23 :: Type)
+  forall (t29 :: Type) (t28 :: Row Type) (t27 :: Type).
+    Array (({ prop :: (t29 :: Type) | (t28 :: Row Type) } -> (t29 :: Type)) -> (t27 :: Type)) ->
+    Array (t27 :: Type)
 test10 ::
-  forall (t28 :: Type) (t27 :: Row Type) (t26 :: Row Type).
-    { a :: { b :: (t28 :: Type) | (t27 :: Row Type) } | (t26 :: Row Type) } -> (t28 :: Type)
+  forall (t32 :: Type) (t31 :: Row Type) (t30 :: Row Type).
+    { a :: { b :: (t32 :: Type) | (t31 :: Row Type) } | (t30 :: Row Type) } -> (t32 :: Type)
 test11 ::
-  forall (t31 :: Type) (t30 :: Type) (t29 :: Row Type).
-    (t31 :: Type) ->
-    { a :: (t31 :: Type), b :: { foo :: (t30 :: Type) | (t29 :: Row Type) } -> (t30 :: Type) }
+  forall (t35 :: Type) (t34 :: Type) (t33 :: Row Type).
+    (t35 :: Type) ->
+    { a :: (t35 :: Type), b :: { foo :: (t34 :: Type) | (t33 :: Row Type) } -> (t34 :: Type) }
 test12 ::
-  forall (t33 :: Type) (t32 :: Row Type).
-    ({ bar :: (t33 :: Type) | (t32 :: Row Type) } -> (t33 :: Type)) ->
-    Array ({ bar :: (t33 :: Type) | (t32 :: Row Type) } -> (t33 :: Type))
+  forall (t37 :: Type) (t36 :: Row Type).
+    ({ bar :: (t37 :: Type) | (t36 :: Row Type) } -> (t37 :: Type)) ->
+    Array ({ bar :: (t37 :: Type) | (t36 :: Row Type) } -> (t37 :: Type))
 test13 ::
-  forall (t36 :: Type) (t35 :: Type) (t34 :: Row Type).
-    (t36 :: Type) -> { prop :: (t35 :: Type) | (t34 :: Row Type) } -> (t35 :: Type)
+  forall (t40 :: Type) (t39 :: Type) (t38 :: Row Type).
+    (t40 :: Type) -> { prop :: (t39 :: Type) | (t38 :: Row Type) } -> (t39 :: Type)
 test14 ::
-  forall (t38 :: Type) (t37 :: Row Type).
-    Boolean -> { a :: (t38 :: Type), b :: (t38 :: Type) | (t37 :: Row Type) } -> (t38 :: Type)
+  forall (t42 :: Type) (t41 :: Row Type).
+    Boolean -> { a :: (t42 :: Type), b :: (t42 :: Type) | (t41 :: Row Type) } -> (t42 :: Type)
 
 Types

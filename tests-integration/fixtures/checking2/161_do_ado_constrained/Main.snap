@@ -36,17 +36,17 @@ bind ::
 testDo ::
   forall (m :: Type -> Type). Monad (m :: Type -> Type) => (m :: Type -> Type) (Tuple Int String)
 testDo' ::
-  forall (t18 :: Type -> Type).
-    Bind (t18 :: Type -> Type) => (t18 :: Type -> Type) (Tuple Int String)
+  forall (t19 :: Type -> Type).
+    Bind (t19 :: Type -> Type) => (t19 :: Type -> Type) (Tuple Int String)
 testAdo ::
   forall (f :: Type -> Type).
     Applicative (f :: Type -> Type) => (f :: Type -> Type) (Tuple Int String)
 testAdo' ::
-  forall (t20 :: Type -> Type).
-    Applicative (t20 :: Type -> Type) => (t20 :: Type -> Type) (Tuple Int String)
+  forall (t22 :: Type -> Type).
+    Applicative (t22 :: Type -> Type) => (t22 :: Type -> Type) (Tuple Int String)
 testDoDiscard :: forall (m :: Type -> Type). Monad (m :: Type -> Type) => (m :: Type -> Type) Int
 testDoDiscard' ::
-  forall (t22 :: Type -> Type). Discard (t22 :: Type -> Type) => (t22 :: Type -> Type) Int
+  forall (t25 :: Type -> Type). Discard (t25 :: Type -> Type) => (t25 :: Type -> Type) Int
 
 Types
 Tuple :: Type -> Type -> Type

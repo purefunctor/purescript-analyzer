@@ -29,28 +29,28 @@ polymorphicRecordUpdate ::
   forall (t16 :: Type) (t15 :: Row Type).
     { foo :: (t16 :: Type) | (t15 :: Row Type) } -> { foo :: Int | (t15 :: Row Type) }
 higherOrderContext ::
-  forall (t20 :: Type) (t19 :: Row Type).
-    Array { x :: (t20 :: Type) | (t19 :: Row Type) } -> Array { x :: Int | (t19 :: Row Type) }
+  forall (t22 :: Type) (t21 :: Row Type).
+    Array { x :: (t22 :: Type) | (t21 :: Row Type) } -> Array { x :: Int | (t21 :: Row Type) }
 multipleSectionsInteraction ::
-  forall (t25 :: Type) (t24 :: Type) (t23 :: Row Type) (t22 :: Type) (t21 :: Type).
-    { x :: (t25 :: Type), y :: (t24 :: Type) | (t23 :: Row Type) } ->
-    (t22 :: Type) ->
-    (t21 :: Type) ->
-    { x :: (t22 :: Type), y :: (t21 :: Type) | (t23 :: Row Type) }
+  forall (t27 :: Type) (t26 :: Type) (t25 :: Row Type) (t24 :: Type) (t23 :: Type).
+    { x :: (t27 :: Type), y :: (t26 :: Type) | (t25 :: Row Type) } ->
+    (t24 :: Type) ->
+    (t23 :: Type) ->
+    { x :: (t24 :: Type), y :: (t23 :: Type) | (t25 :: Row Type) }
 nestedSectionInteraction ::
-  forall (t29 :: Type) (t28 :: Row Type) (t27 :: Row Type) (t26 :: Type).
-    { a :: { b :: (t29 :: Type) | (t28 :: Row Type) } | (t27 :: Row Type) } ->
-    (t26 :: Type) ->
-    { a :: { b :: (t26 :: Type) | (t28 :: Row Type) } | (t27 :: Row Type) }
+  forall (t31 :: Type) (t30 :: Row Type) (t29 :: Row Type) (t28 :: Type).
+    { a :: { b :: (t31 :: Type) | (t30 :: Row Type) } | (t29 :: Row Type) } ->
+    (t28 :: Type) ->
+    { a :: { b :: (t28 :: Type) | (t30 :: Row Type) } | (t29 :: Row Type) }
 mixedSections ::
-  forall (t32 :: Type) (t31 :: Type) (t30 :: Row Type).
-    { a :: (t32 :: Type), b :: (t31 :: Type) | (t30 :: Row Type) } ->
-    { a :: Int -> Int, b :: Int | (t30 :: Row Type) }
+  forall (t34 :: Type) (t33 :: Type) (t32 :: Row Type).
+    { a :: (t34 :: Type), b :: (t33 :: Type) | (t32 :: Row Type) } ->
+    { a :: Int -> Int, b :: Int | (t32 :: Row Type) }
 recordAccessSectionUpdate ::
-  forall (t36 :: Type) (t35 :: Row Type) (t34 :: Type) (t33 :: Row Type).
-    { a :: (t36 :: Type) | (t35 :: Row Type) } ->
-    { a :: { b :: (t34 :: Type) | (t33 :: Row Type) } -> (t34 :: Type) | (t35 :: Row Type) }
-concreteRecordUpdateSection :: forall (t37 :: Type). (t37 :: Type) -> { a :: (t37 :: Type) }
+  forall (t38 :: Type) (t37 :: Row Type) (t36 :: Type) (t35 :: Row Type).
+    { a :: (t38 :: Type) | (t37 :: Row Type) } ->
+    { a :: { b :: (t36 :: Type) | (t35 :: Row Type) } -> (t36 :: Type) | (t37 :: Row Type) }
+concreteRecordUpdateSection :: forall (t39 :: Type). (t39 :: Type) -> { a :: (t39 :: Type) }
 map ::
   forall (a :: Type) (b :: Type).
     ((a :: Type) -> (b :: Type)) -> Array (a :: Type) -> Array (b :: Type)

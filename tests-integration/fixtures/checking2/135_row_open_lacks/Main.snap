@@ -12,7 +12,7 @@ lacksOpen ::
 lacksPresent ::
   forall (r :: Row Type).
     Lacks @Type "a" ( a :: Int | (r :: Row Type) ) => Proxy @(Row Type) (r :: Row Type) -> Int
-empty :: forall (t4 :: Type). Proxy @(Row (t4 :: Type)) ()
+empty :: forall (t6 :: Type). Proxy @(Row (t6 :: Type)) ()
 forceSolve :: { lacksOpen :: Int, lacksPresent :: Int }
 
 Types

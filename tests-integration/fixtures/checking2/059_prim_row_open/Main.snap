@@ -40,18 +40,18 @@ lacksPresent ::
   forall (r :: Row Type).
     Lacks @Type "a" ( a :: Int | (r :: Row Type) ) => Proxy @(Row Type) (r :: Row Type) -> Int
 forceSolve ::
-  forall (t23 :: Row Type) (t22 :: Row Type) (t21 :: Row Type) (t20 :: Row Type) (t19 :: Row Type)
-    (t18 :: Row Type) (t17 :: Row Type).
-    Union @Type (t23 :: Row Type) ( b :: String ) (t22 :: Row Type) =>
-    { backwardLeft :: Proxy @(Row Type) ( a :: Int | (t21 :: Row Type) )
-    , backwardRight :: Proxy @(Row Type) ( b :: String | (t20 :: Row Type) )
-    , consOpen :: Proxy @(Row Type) ( a :: String, x :: Int | (t19 :: Row Type) )
+  forall (t40 :: Row Type) (t39 :: Row Type) (t38 :: Row Type) (t37 :: Row Type) (t36 :: Row Type)
+    (t35 :: Row Type) (t34 :: Row Type).
+    Union @Type (t40 :: Row Type) ( b :: String ) (t39 :: Row Type) =>
+    { backwardLeft :: Proxy @(Row Type) ( a :: Int | (t38 :: Row Type) )
+    , backwardRight :: Proxy @(Row Type) ( b :: String | (t37 :: Row Type) )
+    , consOpen :: Proxy @(Row Type) ( a :: String, x :: Int | (t36 :: Row Type) )
     , decomposeOpen :: Proxy @Type Int
-    , extractTail :: Proxy @(Row Type) ( a :: String | (t18 :: Row Type) )
+    , extractTail :: Proxy @(Row Type) ( a :: String | (t35 :: Row Type) )
     , lacksOpen :: Int
     , lacksPresent :: Int
-    , openLeft :: Proxy @(Row Type) ( a :: Int | (t22 :: Row Type) )
-    , openRight :: Proxy @(Row Type) ( a :: Int, b :: String | (t17 :: Row Type) )
+    , openLeft :: Proxy @(Row Type) ( a :: Int | (t39 :: Row Type) )
+    , openRight :: Proxy @(Row Type) ( a :: Int, b :: String | (t34 :: Row Type) )
     }
 
 Types

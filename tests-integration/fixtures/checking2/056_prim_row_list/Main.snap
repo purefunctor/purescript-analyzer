@@ -13,9 +13,9 @@ rowToListMultiple ::
     RowToList @Type ( a :: Int, b :: String ) (list :: RowList Type) =>
     Proxy @(RowList Type) (list :: RowList Type)
 rowToListEmpty ::
-  forall (t3 :: Type) (list :: RowList (t3 :: Type)).
-    RowToList @(t3 :: Type) () (list :: RowList (t3 :: Type)) =>
-    Proxy @(RowList (t3 :: Type)) (list :: RowList (t3 :: Type))
+  forall (t6 :: Type) (list :: RowList (t6 :: Type)).
+    RowToList @(t6 :: Type) () (list :: RowList (t6 :: Type)) =>
+    Proxy @(RowList (t6 :: Type)) (list :: RowList (t6 :: Type))
 rowToListThree ::
   forall (list :: RowList Type).
     RowToList @Type ( a :: Int, b :: String, c :: Boolean ) (list :: RowList Type) =>
@@ -25,9 +25,9 @@ stuckOpenRow ::
     RowToList @Type ( a :: Int | (tail :: Row Type) ) (list :: RowList Type) =>
     Proxy @(Row Type) (tail :: Row Type) -> Proxy @(RowList Type) (list :: RowList Type)
 forceSolve ::
-  forall (t7 :: Type).
+  forall (t13 :: Type).
     { nowSolved :: Proxy @(RowList Type) (Cons @Type "a" Int (Nil @Type))
-    , rowToListEmpty :: Proxy @(RowList (t7 :: Type)) (Nil @(t7 :: Type))
+    , rowToListEmpty :: Proxy @(RowList (t13 :: Type)) (Nil @(t13 :: Type))
     , rowToListMultiple ::
         Proxy @(RowList Type) (Cons @Type "a" Int (Cons @Type "b" String (Nil @Type)))
     , rowToListSimple :: Proxy @(RowList Type) (Cons @Type "a" Int (Nil @Type))

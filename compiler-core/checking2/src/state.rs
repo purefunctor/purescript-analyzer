@@ -5,7 +5,6 @@ use std::sync::Arc;
 
 use building_types::QueryResult;
 use files::FileId;
-use rustc_hash::FxHashMap;
 
 use crate::context::CheckContext;
 use crate::core::exhaustive::{
@@ -85,8 +84,15 @@ impl Unifications {
 /// Tracks type variable bindings during kind inference.
 #[derive(Default)]
 pub struct Bindings {
-    forall: FxHashMap<lowering::TypeVariableBindingId, (Name, TypeId)>,
+    forall: Vec<ForallBinding>,
     implicit: Vec<ImplicitBinding>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct ForallBinding {
+    id: lowering::TypeVariableBindingId,
+    name: Name,
+    kind: TypeId,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -99,11 +105,15 @@ struct ImplicitBinding {
 
 impl Bindings {
     pub fn bind_forall(&mut self, id: lowering::TypeVariableBindingId, name: Name, kind: TypeId) {
-        self.forall.insert(id, (name, kind));
+        self.forall.push(ForallBinding { id, name, kind });
     }
 
     pub fn lookup_forall(&self, id: lowering::TypeVariableBindingId) -> Option<(Name, TypeId)> {
-        self.forall.get(&id).copied()
+        self.forall
+            .iter()
+            .rev()
+            .find(|binding| binding.id == id)
+            .map(|binding| (binding.name, binding.kind))
     }
 
     pub fn bind_implicit(
@@ -136,6 +146,31 @@ impl Bindings {
 
             let kind = SubstituteName::many(state, context, substitution, kind)?;
             state.bindings.implicit.push(ImplicitBinding { node, id, name, kind });
+        }
+
+        Ok(())
+    }
+
+    fn bind_forall_substitution<Q>(
+        state: &mut CheckState,
+        context: &CheckContext<Q>,
+        substitution: &NameToType,
+    ) -> QueryResult<()>
+    where
+        Q: ExternalQueries,
+    {
+        let scope = state.bindings.forall.len();
+
+        for binding in 0..scope {
+            let ForallBinding { id, name, kind } = state.bindings.forall[binding];
+            let Some(&replacement) = substitution.get(&name) else { continue };
+
+            let Type::Rigid(name, _, _) = context.lookup_type(replacement) else {
+                unreachable!("invariant violated: expected a rigid variable");
+            };
+
+            let kind = SubstituteName::many(state, context, substitution, kind)?;
+            state.bindings.forall.push(ForallBinding { id, name, kind });
         }
 
         Ok(())
@@ -252,10 +287,13 @@ impl CheckState {
     where
         Q: ExternalQueries,
     {
+        let forall_scope = self.bindings.forall.len();
+        Bindings::bind_forall_substitution(self, context, substitution)?;
         let scope = self.bindings.implicit.len();
         Bindings::bind_implicit_substitution(self, context, substitution)?;
         let result = f(self);
         self.bindings.implicit.truncate(scope);
+        self.bindings.forall.truncate(forall_scope);
 
         result
     }
