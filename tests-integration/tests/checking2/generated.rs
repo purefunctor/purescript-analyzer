@@ -543,3 +543,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_258_self_recursive_through_operator_main() { run_test("258_self_recursive_through_operator", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_259_hidden_forall_scope_check_main() { run_test("259_hidden_forall_scope_check", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_260_hidden_forall_compose_application_subtype_main() { run_test("260_hidden_forall_compose_application_subtype", "Main"); }

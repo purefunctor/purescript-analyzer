@@ -1,0 +1,72 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+compose ::
+  forall (k :: Type) (@f :: (k :: Type) -> (k :: Type) -> Type) (a :: (k :: Type))
+    (b :: (k :: Type)) (c :: (k :: Type)).
+    Semigroupoid @(k :: Type) (f :: (k :: Type) -> (k :: Type) -> Type) =>
+    (f :: (k :: Type) -> (k :: Type) -> Type) (b :: (k :: Type)) (c :: (k :: Type)) ->
+    (f :: (k :: Type) -> (k :: Type) -> Type) (a :: (k :: Type)) (b :: (k :: Type)) ->
+    (f :: (k :: Type) -> (k :: Type) -> Type) (a :: (k :: Type)) (c :: (k :: Type))
+Tagged :: forall (@n :: Int) (@a :: Type). (a :: Type) -> Tagged (n :: Int) (a :: Type)
+make :: forall (a :: Type). (a :: Type) -> HiddenTagged (a :: Type)
+ConcreteNewtype :: forall (@a :: Type). ConcreteTagged (a :: Type) -> ConcreteNewtype (a :: Type)
+test :: forall (a :: Type). (a :: Type) -> ConcreteNewtype (a :: Type)
+
+Types
+Semigroupoid :: forall (k :: Type). ((k :: Type) -> (k :: Type) -> Type) -> Constraint
+Tagged :: Int -> Type -> Type
+ConcreteTagged :: Type -> Type
+HiddenTagged :: Type -> Type
+ConcreteNewtype :: Type -> Type
+
+Synonyms
+type ConcreteTagged a = Tagged 42 (a :: Type)
+type HiddenTagged a = forall (n :: Int). Tagged (n :: Int) (a :: Type)
+
+Classes
+class forall (k :: Type) (f :: (k :: Type) -> (k :: Type) -> Type). Semigroupoid @(k :: Type) (f :: (k :: Type) -> (k :: Type) -> Type)
+  compose ::
+  forall (k :: Type) (@f :: (k :: Type) -> (k :: Type) -> Type) (a :: (k :: Type))
+    (b :: (k :: Type)) (c :: (k :: Type)).
+    Semigroupoid @(k :: Type) (f :: (k :: Type) -> (k :: Type) -> Type) =>
+    (f :: (k :: Type) -> (k :: Type) -> Type) (b :: (k :: Type)) (c :: (k :: Type)) ->
+    (f :: (k :: Type) -> (k :: Type) -> Type) (a :: (k :: Type)) (b :: (k :: Type)) ->
+    (f :: (k :: Type) -> (k :: Type) -> Type) (a :: (k :: Type)) (c :: (k :: Type))
+
+Instances
+instance Semigroupoid @Type Function
+
+Roles
+Tagged = [Phantom, Representational]
+ConcreteNewtype = [Representational]
+
+Diagnostics
+error[CannotUnify]: Cannot unify '(t16 :: Int)' with '42'
+  --> 25:32..25:36
+   |
+25 | test = compose ConcreteNewtype make
+   |                                ^~~~
+error[CannotUnify]: Cannot unify 'Tagged (t16 :: Int)' with 'Tagged 42'
+  --> 25:32..25:36
+   |
+25 | test = compose ConcreteNewtype make
+   |                                ^~~~
+error[CannotUnify]: Cannot unify 'Tagged (t16 :: Int) ?12' with 'Tagged 42 ?15'
+  --> 25:32..25:36
+   |
+25 | test = compose ConcreteNewtype make
+   |                                ^~~~
+error[CannotUnify]: Cannot unify 'forall (n :: Int). Tagged (n :: Int) ?12' with 'Tagged 42 ?15'
+  --> 25:32..25:36
+   |
+25 | test = compose ConcreteNewtype make
+   |                                ^~~~
+error[CannotUnify]: Cannot unify 'Function ?12 (HiddenTagged ?12)' with 'Function ?12 (Tagged 42 ?15)'
+  --> 25:32..25:36
+   |
+25 | test = compose ConcreteNewtype make
+   |                                ^~~~
