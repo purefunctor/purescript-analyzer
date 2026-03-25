@@ -9,7 +9,7 @@ use smol_str::SmolStr;
 use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::substitute::SubstituteName;
-use crate::core::{Depth, Name, RowField, RowType, RowTypeId, Type, TypeId, normalise};
+use crate::core::{Depth, Name, RowField, RowType, RowTypeId, Type, TypeId, normalise, toolkit};
 use crate::error::ErrorKind;
 use crate::source::types;
 use crate::state::{CheckState, UnificationEntry};
@@ -126,20 +126,40 @@ where
         // on both positions; it's impossible to generate any constraint
         // dictionaries at this position.
         (Type::Function(t1_argument, t1_result), Type::Function(t2_argument, t2_result)) => {
-            Ok(subtype_with::<NonElaborating, Q>(state, context, t2_argument, t1_argument)?
-                && subtype_with::<NonElaborating, Q>(state, context, t1_result, t2_result)?)
+            subtype_function::<Q>(
+                state,
+                context,
+                (t1_argument, t1_result),
+                (t2_argument, t2_result),
+            )
         }
 
-        // Normalise Type::Function into Type::Application before unification
-        // This is explained in intern_function_application, it simplifies the
-        // subtyping rule tremendously vs. pattern matching Type::Application
+        // Preserve function subtyping on the application representation.
         (Type::Application(_, _), Type::Function(t2_argument, t2_result)) => {
-            let t2 = context.intern_function_application(t2_argument, t2_result);
-            subtype_with::<P, Q>(state, context, t1, t2)
+            if let Some((t1_argument, t1_result)) = toolkit::decompose_function(state, context, t1)?
+            {
+                subtype_function::<Q>(
+                    state,
+                    context,
+                    (t1_argument, t1_result),
+                    (t2_argument, t2_result),
+                )
+            } else {
+                unify(state, context, t1, t2)
+            }
         }
         (Type::Function(t1_argument, t1_result), Type::Application(_, _)) => {
-            let t1 = context.intern_function_application(t1_argument, t1_result);
-            subtype_with::<P, Q>(state, context, t1, t2)
+            if let Some((t2_argument, t2_result)) = toolkit::decompose_function(state, context, t2)?
+            {
+                subtype_function::<Q>(
+                    state,
+                    context,
+                    (t1_argument, t1_result),
+                    (t2_argument, t2_result),
+                )
+            } else {
+                unify(state, context, t1, t2)
+            }
         }
 
         // Forall-R
@@ -223,6 +243,21 @@ where
 
         (_, _) => unify(state, context, t1, t2),
     }
+}
+
+fn subtype_function<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    t1: (TypeId, TypeId),
+    t2: (TypeId, TypeId),
+) -> QueryResult<bool>
+where
+    Q: ExternalQueries,
+{
+    let (t1_argument, t1_result) = t1;
+    let (t2_argument, t2_result) = t2;
+    Ok(subtype_with::<NonElaborating, Q>(state, context, t2_argument, t1_argument)?
+        && subtype_with::<NonElaborating, Q>(state, context, t1_result, t2_result)?)
 }
 
 pub fn unify<Q>(

@@ -43,30 +43,3 @@ instance Semigroupoid @Type Function
 Roles
 Tagged = [Phantom, Representational]
 ConcreteNewtype = [Representational]
-
-Diagnostics
-error[CannotUnify]: Cannot unify '(t16 :: Int)' with '42'
-  --> 25:32..25:36
-   |
-25 | test = compose ConcreteNewtype make
-   |                                ^~~~
-error[CannotUnify]: Cannot unify 'Tagged (t16 :: Int)' with 'Tagged 42'
-  --> 25:32..25:36
-   |
-25 | test = compose ConcreteNewtype make
-   |                                ^~~~
-error[CannotUnify]: Cannot unify 'Tagged (t16 :: Int) ?12' with 'Tagged 42 ?15'
-  --> 25:32..25:36
-   |
-25 | test = compose ConcreteNewtype make
-   |                                ^~~~
-error[CannotUnify]: Cannot unify 'forall (n :: Int). Tagged (n :: Int) ?12' with 'Tagged 42 ?15'
-  --> 25:32..25:36
-   |
-25 | test = compose ConcreteNewtype make
-   |                                ^~~~
-error[CannotUnify]: Cannot unify 'Function ?12 (HiddenTagged ?12)' with 'Function ?12 (Tagged 42 ?15)'
-  --> 25:32..25:36
-   |
-25 | test = compose ConcreteNewtype make
-   |                                ^~~~
