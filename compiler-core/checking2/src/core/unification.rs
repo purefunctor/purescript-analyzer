@@ -446,19 +446,33 @@ where
 
         (
             Type::Application(t1_function, t1_argument),
-            Type::Application(t2_function, a22t2_argument),
+            Type::Application(t2_function, t2_argument),
         ) => can_unify(state, context, t1_function, t2_function)?
-            .and_then(|| can_unify(state, context, t1_argument, a22t2_argument)),
+            .and_then(|| can_unify(state, context, t1_argument, t2_argument)),
 
         (Type::Function(t1_argument, t1_result), Type::Function(t2_argument, t2_result)) => {
             can_unify(state, context, t1_argument, t2_argument)?
                 .and_then(|| can_unify(state, context, t1_result, t2_result))
         }
 
-        // Function(a, b) and Application(Application(f, a), b) can
-        // unify when `f` resolves to the Function constructor.
-        (Type::Function(..), Type::Application(..))
-        | (Type::Application(..), Type::Function(..)) => Ok(CanUnify::Unify),
+        (Type::Application(t1_function, _), Type::Function(t2_argument, t2_result)) => {
+            let t1_function = normalise::expand(state, context, t1_function)?;
+            if matches!(context.lookup_type(t1_function), Type::Application(_, _)) {
+                let t2 = context.intern_function_application(t2_argument, t2_result);
+                can_unify(state, context, t1, t2)
+            } else {
+                Ok(CanUnify::Apart)
+            }
+        }
+        (Type::Function(t1_argument, t1_result), Type::Application(t2_function, _)) => {
+            let t2_function = normalise::expand(state, context, t2_function)?;
+            if matches!(context.lookup_type(t2_function), Type::Application(_, _)) {
+                let t1 = context.intern_function_application(t1_argument, t1_result);
+                can_unify(state, context, t1, t2)
+            } else {
+                Ok(CanUnify::Apart)
+            }
+        }
 
         (
             Type::KindApplication(t1_function, t1_argument),

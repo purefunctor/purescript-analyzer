@@ -30,15 +30,3 @@ instance forall (t5 :: Type -> Type). Convert ((t5 :: Type -> Type) Unit) (t5 ::
 Roles
 Unit = []
 Spec = [Phantom]
-
-Diagnostics
-error[NoInstanceFound]: No instance found for: Convert (?16 Unit) Aff
-  --> 21:1..21:17
-   |
-21 | test :: Spec Aff
-   | ^~~~~~~~~~~~~~~~
-error[NoInstanceFound]: No instance found for: Convert (?25 Unit) Aff
-  --> 27:1..27:18
-   |
-27 | test3 :: Spec Aff
-   | ^~~~~~~~~~~~~~~~~

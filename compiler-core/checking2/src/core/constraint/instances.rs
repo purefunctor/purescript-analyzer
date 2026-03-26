@@ -359,14 +359,24 @@ where
                 match_type(state, context, bindings, equalities, wanted_result, given_result)
             }),
 
-        (Type::Function(wanted_argument, wanted_result), Type::Application(_, _)) => {
-            let wanted = context.intern_function_application(wanted_argument, wanted_result);
-            match_type(state, context, bindings, equalities, wanted, given)
+        (Type::Function(wanted_argument, wanted_result), Type::Application(given_function, _)) => {
+            let given_function = normalise::expand(state, context, given_function)?;
+            if matches!(context.lookup_type(given_function), Type::Application(_, _)) {
+                let wanted = context.intern_function_application(wanted_argument, wanted_result);
+                match_type(state, context, bindings, equalities, wanted, given)
+            } else {
+                Ok(MatchType::Apart)
+            }
         }
 
-        (Type::Application(_, _), Type::Function(given_argument, given_result)) => {
-            let given = context.intern_function_application(given_argument, given_result);
-            match_type(state, context, bindings, equalities, wanted, given)
+        (Type::Application(wanted_function, _), Type::Function(given_argument, given_result)) => {
+            let wanted_function = normalise::expand(state, context, wanted_function)?;
+            if matches!(context.lookup_type(wanted_function), Type::Application(_, _)) {
+                let given = context.intern_function_application(given_argument, given_result);
+                match_type(state, context, bindings, equalities, wanted, given)
+            } else {
+                Ok(MatchType::Apart)
+            }
         }
 
         (
