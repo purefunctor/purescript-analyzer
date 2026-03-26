@@ -545,3 +545,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_259_hidden_forall_scope_check_main() { run_test("259_hidden_forall_scope_check", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_260_hidden_forall_compose_application_subtype_main() { run_test("260_hidden_forall_compose_application_subtype", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_261_instance_chain_stuck_matching_main() { run_test("261_instance_chain_stuck_matching", "Main"); }

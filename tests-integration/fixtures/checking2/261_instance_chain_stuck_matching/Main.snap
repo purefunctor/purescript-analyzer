@@ -1,0 +1,44 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Unit :: Unit
+Spec :: forall (@g :: Type -> Type). Spec (g :: Type -> Type)
+it ::
+  forall (t :: Type) (g :: Type -> Type).
+    Convert (t :: Type) (g :: Type -> Type) => String -> (t :: Type) -> Spec (g :: Type -> Type)
+action :: forall (m :: Type -> Type). (m :: Type -> Type) Unit
+test :: Spec Aff
+test2 :: Spec Aff
+test3 :: Spec Aff
+
+Types
+Unit :: Type
+Spec :: (Type -> Type) -> Type
+Convert :: Type -> (Type -> Type) -> Constraint
+
+Classes
+class forall (t :: Type) (m :: Type -> Type). Convert (t :: Type) (m :: Type -> Type)
+
+Instances
+instance forall (t3 :: Type) (t4 :: Type -> Type).
+  Convert ((t3 :: Type) -> (t4 :: Type -> Type) Unit) (t4 :: Type -> Type)
+instance forall (t5 :: Type -> Type). Convert ((t5 :: Type -> Type) Unit) (t5 :: Type -> Type)
+
+Roles
+Unit = []
+Spec = [Phantom]
+
+Diagnostics
+error[NoInstanceFound]: No instance found for: Convert (?16 Unit) Aff
+  --> 21:1..21:17
+   |
+21 | test :: Spec Aff
+   | ^~~~~~~~~~~~~~~~
+error[NoInstanceFound]: No instance found for: Convert (?25 Unit) Aff
+  --> 27:1..27:18
+   |
+27 | test3 :: Spec Aff
+   | ^~~~~~~~~~~~~~~~~
