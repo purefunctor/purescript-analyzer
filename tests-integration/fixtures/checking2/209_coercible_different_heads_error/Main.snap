@@ -20,7 +20,7 @@ Either = [Representational, Representational]
 
 Diagnostics
 error[NoInstanceFound]: No instance found for: Coercible @Type (Maybe Int) (Either Int String)
-  --> 1:1..9:25
+  --> 8:1..8:50
   |
-1 | module Main where
-  | ^~~~~~~~~~~~~~~~~
+8 | coerceDifferent :: Maybe Int -> Either Int String
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

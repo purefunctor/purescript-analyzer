@@ -15,7 +15,7 @@ Nominal = [Nominal]
 
 Diagnostics
 error[NoInstanceFound]: No instance found for: Coercible @Type (Nominal Int) (Nominal String)
-  --> 1:1..13:32
-  |
-1 | module Main where
-  | ^~~~~~~~~~~~~~~~~
+  --> 12:1..12:56
+   |
+12 | coerceNominalDifferent :: Nominal Int -> Nominal String
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

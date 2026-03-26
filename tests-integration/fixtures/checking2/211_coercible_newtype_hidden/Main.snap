@@ -16,17 +16,17 @@ error[CoercibleConstructorNotInScope]: Constructor not in scope for Coercible
 7 | coerceHidden :: Int -> HiddenAge
   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 error[NoInstanceFound]: No instance found for: Coercible @Type Int HiddenAge
-  --> 1:1..11:25
+  --> 7:1..7:33
   |
-1 | module Main where
-  | ^~~~~~~~~~~~~~~~~
+7 | coerceHidden :: Int -> HiddenAge
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 error[CoercibleConstructorNotInScope]: Constructor not in scope for Coercible
   --> 10:1..10:38
    |
 10 | coerceQualified :: Int -> L.HiddenAge
    | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 error[NoInstanceFound]: No instance found for: Coercible @Type Int HiddenAge
-  --> 1:1..11:25
-  |
-1 | module Main where
-  | ^~~~~~~~~~~~~~~~~
+  --> 10:1..10:38
+   |
+10 | coerceQualified :: Int -> L.HiddenAge
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

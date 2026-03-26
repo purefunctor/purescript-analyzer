@@ -15,7 +15,7 @@ error[CoercibleConstructorNotInScope]: Constructor not in scope for Coercible
 6 | coerceOpen :: Int -> HiddenAge
   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 error[NoInstanceFound]: No instance found for: Coercible @Type Int HiddenAge
-  --> 1:1..7:20
+  --> 6:1..6:31
   |
-1 | module Main where
-  | ^~~~~~~~~~~~~~~~~
+6 | coerceOpen :: Int -> HiddenAge
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

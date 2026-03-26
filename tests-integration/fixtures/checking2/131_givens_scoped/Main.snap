@@ -16,7 +16,7 @@ class forall (a :: Type). Given (a :: Type)
 
 Diagnostics
 error[NoInstanceFound]: No instance found for: Given Int
-  --> 1:1..13:17
+  --> 6:1..6:41
   |
-1 | module Main where
-  | ^~~~~~~~~~~~~~~~~
+6 | testGiven :: forall a. Given a => a -> a
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

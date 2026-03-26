@@ -23,7 +23,7 @@ Proxy = [Phantom]
 
 Diagnostics
 error[NoInstanceFound]: No instance found for: Lacks @Type "a" ( a :: Int )
-  --> 1:1..17:78
-  |
-1 | module Main where
-  | ^~~~~~~~~~~~~~~~~
+  --> 17:1..17:78
+   |
+17 | forceSolve = { lacksOpen: lacksOpen empty, lacksPresent: lacksPresent empty }
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

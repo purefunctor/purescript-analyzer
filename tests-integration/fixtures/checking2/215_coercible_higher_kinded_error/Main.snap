@@ -22,7 +22,7 @@ Container = [Representational]
 
 Diagnostics
 error[NoInstanceFound]: No instance found for: Coercible @Type (Maybe (t2 :: Type)) (List (t2 :: Type))
-  --> 1:1..12:34
-  |
-1 | module Main where
-  | ^~~~~~~~~~~~~~~~~
+  --> 11:1..11:62
+   |
+11 | coerceContainerDifferent :: Container Maybe -> Container List
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

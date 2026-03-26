@@ -750,12 +750,16 @@ where
         for constraint in errors.ambiguous {
             let constraint = zonk::zonk(state, context, constraint)?;
             let constraint = state.pretty_id(context, constraint)?;
-            state.insert_error(ErrorKind::AmbiguousConstraint { constraint });
+            state.with_error_crumb(ErrorCrumb::TermDeclaration(item_id), |state| {
+                state.insert_error(ErrorKind::AmbiguousConstraint { constraint });
+            });
         }
         for constraint in errors.unsatisfied {
             let constraint = zonk::zonk(state, context, constraint)?;
             let constraint = state.pretty_id(context, constraint)?;
-            state.insert_error(ErrorKind::NoInstanceFound { constraint });
+            state.with_error_crumb(ErrorCrumb::TermDeclaration(item_id), |state| {
+                state.insert_error(ErrorKind::NoInstanceFound { constraint });
+            });
         }
     }
 
