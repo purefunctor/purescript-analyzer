@@ -11,3 +11,10 @@ addContradiction :: forall (m :: Int). Add 1 2 4 => Add 1 4 (m :: Int) => Proxy 
 forceSolve :: { addChain :: Proxy @Int 4, addContradiction :: Proxy @Int 5 }
 
 Types
+
+Diagnostics
+error[NoInstanceFound]: No instance found for: Add 1 2 4
+  --> 1:1..15:4
+  |
+1 | module Main where
+  | ^~~~~~~~~~~~~~~~~

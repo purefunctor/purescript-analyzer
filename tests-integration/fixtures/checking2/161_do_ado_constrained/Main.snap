@@ -94,3 +94,10 @@ class forall (m :: Type -> Type). Bind (m :: Type -> Type) <= Monad (m :: Type -
 
 Roles
 Tuple = [Representational, Representational]
+
+Diagnostics
+error[NoInstanceFound]: No instance found for: Discard (t24 :: Type -> Type)
+  --> 1:1..51:10
+  |
+1 | module Main where
+  | ^~~~~~~~~~~~~~~~~

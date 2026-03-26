@@ -30,3 +30,8 @@ error[CannotUnify]: Cannot unify '( a :: Int, b :: String )' with '( missing :: 
    |
 15 | forceSolve =
    | ^~~~~~~~~~~~
+error[NoInstanceFound]: No instance found for: Lacks @Type "b" ( a :: Int, b :: String )
+  --> 1:1..19:4
+  |
+1 | module Main where
+  | ^~~~~~~~~~~~~~~~~

@@ -16,3 +16,25 @@ forceSolve ::
   }
 
 Types
+
+Diagnostics
+error[NoInstanceFound]: No instance found for: Add 2 3 10
+  --> 1:1..25:4
+  |
+1 | module Main where
+  | ^~~~~~~~~~~~~~~~~
+error[NoInstanceFound]: No instance found for: Compare 5 1 LT
+  --> 1:1..25:4
+  |
+1 | module Main where
+  | ^~~~~~~~~~~~~~~~~
+error[NoInstanceFound]: No instance found for: Append "hello" "world" "xyz"
+  --> 1:1..25:4
+  |
+1 | module Main where
+  | ^~~~~~~~~~~~~~~~~
+error[NoInstanceFound]: No instance found for: Cons "hello" "world" "helloworld"
+  --> 1:1..25:4
+  |
+1 | module Main where
+  | ^~~~~~~~~~~~~~~~~

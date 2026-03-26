@@ -187,6 +187,19 @@ impl<'a> DiagnosticsContext<'a> {
         steps.last().and_then(|step| self.span_from_error_step(step))
     }
 
+    pub fn module_span(&self) -> Span {
+        let range = if let Some(range) = significant_ranges(self.root) {
+            range
+        } else {
+            self.root.text_range()
+        };
+
+        let start = range.start().into();
+        let end = range.end().into();
+
+        Span::new(start, end)
+    }
+
     pub fn span_from_error_crumb(&self, crumb: &ErrorCrumb) -> Option<Span> {
         let ptr = match crumb {
             ErrorCrumb::ConstructorArgument(id) => self.stabilized.syntax_ptr(*id)?,
@@ -232,7 +245,8 @@ impl<'a> DiagnosticsContext<'a> {
         self.span_from_syntax_ptr(&ptr)
     }
 
-    pub fn primary_span_from_crumbs(&self, crumbs: &[ErrorCrumb]) -> Option<Span> {
-        crumbs.last().and_then(|crumb| self.span_from_error_crumb(crumb))
+    pub fn primary_span_from_crumbs(&self, crumbs: &[ErrorCrumb]) -> Span {
+        let primary = crumbs.iter().rev().find_map(|crumb| self.span_from_error_crumb(crumb));
+        if let Some(primary) = primary { primary } else { self.module_span() }
     }
 }

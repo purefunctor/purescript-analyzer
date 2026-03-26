@@ -17,3 +17,10 @@ Either :: Type -> Type -> Type
 Roles
 Maybe = [Representational]
 Either = [Representational, Representational]
+
+Diagnostics
+error[NoInstanceFound]: No instance found for: Coercible @Type (Maybe Int) (Either Int String)
+  --> 1:1..10:25
+  |
+1 | module Main where
+  | ^~~~~~~~~~~~~~~~~

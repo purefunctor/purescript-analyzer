@@ -381,14 +381,11 @@ impl ToDiagnostics for CheckError1 {
 
 impl ToDiagnostics for CheckError2 {
     fn to_diagnostics(&self, context: &DiagnosticsContext<'_>) -> Vec<Diagnostic> {
-        let Some(primary) = context.primary_span_from_crumbs(&self.crumbs) else {
-            return vec![];
-        };
+        let primary = context.primary_span_from_crumbs(&self.crumbs);
 
         let Some(lookup_message) = context.checking2_lookup else {
             return vec![];
         };
-        let lookup_message = |id| lookup_message(id);
 
         let (severity, code, message) = match &self.kind {
             ErrorKind2::AmbiguousConstraint { constraint } => {
@@ -593,13 +590,11 @@ impl ToDiagnostics for CheckError2 {
             }
         };
 
-        vec![Diagnostic {
-            severity,
-            code: crate::DiagnosticCode::new(code),
-            message,
-            primary,
-            related: vec![],
-            source: "checking2",
-        }]
+        let diagnostic = match severity {
+            Severity::Error => Diagnostic::error(code, message, primary, "checking2"),
+            Severity::Warning => Diagnostic::warning(code, message, primary, "checking2"),
+        };
+
+        vec![diagnostic]
     }
 }

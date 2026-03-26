@@ -20,3 +20,10 @@ Proxy :: forall (k :: Type). (k :: Type) -> Type
 
 Roles
 Proxy = [Phantom]
+
+Diagnostics
+error[NoInstanceFound]: No instance found for: Lacks @Type "a" ( a :: Int )
+  --> 1:1..17:78
+  |
+1 | module Main where
+  | ^~~~~~~~~~~~~~~~~

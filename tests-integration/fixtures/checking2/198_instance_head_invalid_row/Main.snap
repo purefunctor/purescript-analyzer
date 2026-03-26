@@ -21,3 +21,45 @@ instance T @Type (Proxy @Type { a :: Int })
 
 Roles
 Proxy = [Phantom]
+
+Diagnostics
+error[CannotUnify]: Cannot unify 'Type' with 'Constraint'
+  --> 1:1..12:32
+  |
+1 | module Main where
+  | ^~~~~~~~~~~~~~~~~
+error[InstanceHeadLabeledRow]: Instance argument at position 0 contains a labeled row, but this position is not determined by any functional dependency. Only the `( | r )` form is allowed. Got '( a :: Int )' instead.
+  --> 1:1..12:32
+  |
+1 | module Main where
+  | ^~~~~~~~~~~~~~~~~
+error[CannotUnify]: Cannot unify 'Type' with 'Constraint'
+  --> 1:1..12:32
+  |
+1 | module Main where
+  | ^~~~~~~~~~~~~~~~~
+error[InstanceHeadLabeledRow]: Instance argument at position 0 contains a labeled row, but this position is not determined by any functional dependency. Only the `( | r )` form is allowed. Got '{ a :: Int }' instead.
+  --> 1:1..12:32
+  |
+1 | module Main where
+  | ^~~~~~~~~~~~~~~~~
+error[CannotUnify]: Cannot unify 'Type' with 'Constraint'
+  --> 1:1..12:32
+  |
+1 | module Main where
+  | ^~~~~~~~~~~~~~~~~
+error[InstanceHeadLabeledRow]: Instance argument at position 0 contains a labeled row, but this position is not determined by any functional dependency. Only the `( | r )` form is allowed. Got 'Proxy @(Row Type) ( a :: Int )' instead.
+  --> 1:1..12:32
+  |
+1 | module Main where
+  | ^~~~~~~~~~~~~~~~~
+error[CannotUnify]: Cannot unify 'Type' with 'Constraint'
+  --> 1:1..12:32
+  |
+1 | module Main where
+  | ^~~~~~~~~~~~~~~~~
+error[InstanceHeadLabeledRow]: Instance argument at position 0 contains a labeled row, but this position is not determined by any functional dependency. Only the `( | r )` form is allowed. Got 'Proxy @Type { a :: Int }' instead.
+  --> 1:1..12:32
+  |
+1 | module Main where
+  | ^~~~~~~~~~~~~~~~~
