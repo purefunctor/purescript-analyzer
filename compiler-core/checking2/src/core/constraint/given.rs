@@ -7,6 +7,7 @@ use crate::context::CheckContext;
 use crate::core::{KindOrType, Type, TypeId, normalise};
 use crate::state::CheckState;
 
+use super::instances::can_determine_stuck;
 use super::{ConstraintApplication, MatchInstance, MatchType};
 
 /// Matches a wanted constraint to given constraints.
@@ -28,7 +29,11 @@ where
             continue;
         }
 
+        let mut equalities = vec![];
+        let mut type_match_results = vec![];
+
         let mut stuck_positions = vec![];
+        let mut stuck_type_positions = vec![];
 
         for (index, (&wanted_argument, &given_argument)) in
             iter::zip(wanted.arguments.iter(), given.arguments.iter()).enumerate()
@@ -48,21 +53,37 @@ where
             if matches!(match_result, MatchType::Stuck) {
                 stuck_positions.push(index);
             }
+
+            if matches!(wanted_argument, KindOrType::Type(_)) {
+                let type_index = type_match_results.len();
+                if matches!(match_result, MatchType::Stuck) {
+                    stuck_type_positions.push(type_index);
+                }
+                type_match_results.push(match_result);
+            }
         }
 
-        // Given constraints are valid by construction. When a unification
-        // variable makes a position stuck, it's safe to emit an equality
-        // rather than require functional dependencies to cover it.
-        let equalities = stuck_positions
-            .into_iter()
-            .map(|index| match (wanted.arguments[index], given.arguments[index]) {
-                (KindOrType::Kind(wanted_argument), KindOrType::Kind(given_argument))
-                | (KindOrType::Type(wanted_argument), KindOrType::Type(given_argument)) => {
-                    (wanted_argument, given_argument)
-                }
-                _ => unreachable!("kind/type mismatch after positional argument matching"),
-            })
-            .collect();
+        if !stuck_type_positions.is_empty()
+            && !can_determine_stuck(
+                context,
+                wanted.file_id,
+                wanted.item_id,
+                &type_match_results,
+                &stuck_type_positions,
+            )?
+        {
+            return Ok(Some(MatchInstance::Stuck));
+        }
+
+        for &index in &stuck_positions {
+            let wanted_argument = match wanted.arguments[index] {
+                KindOrType::Kind(argument) | KindOrType::Type(argument) => argument,
+            };
+            let given_argument = match given.arguments[index] {
+                KindOrType::Kind(argument) | KindOrType::Type(argument) => argument,
+            };
+            equalities.push((wanted_argument, given_argument));
+        }
 
         return Ok(Some(MatchInstance::Match { constraints: vec![], equalities }));
     }
@@ -179,6 +200,11 @@ where
             Type::KindApplication(given_function, given_argument),
         ) => match_given_type(state, context, wanted_function, given_function)?
             .and_then(|| match_given_type(state, context, wanted_argument, given_argument)),
+
+        (Type::Kinded(wanted_inner, wanted_kind), Type::Kinded(given_inner, given_kind)) => {
+            match_given_type(state, context, wanted_inner, given_inner)?
+                .and_then(|| match_given_type(state, context, wanted_kind, given_kind))
+        }
 
         _ => Ok(MatchType::Apart),
     }

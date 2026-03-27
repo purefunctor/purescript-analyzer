@@ -154,7 +154,7 @@ where
 }
 
 /// Determines if [`MatchType::Stuck`] arguments can be determined by functional dependencies.
-fn can_determine_stuck<Q>(
+pub fn can_determine_stuck<Q>(
     context: &CheckContext<Q>,
     file_id: FileId,
     item_id: TypeItemId,

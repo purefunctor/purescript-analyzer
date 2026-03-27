@@ -43,15 +43,3 @@ Roles
 A = []
 B = []
 C = []
-
-Diagnostics
-error[NoInstanceFound]: No instance found for: TypeEquals @Type (A -> String) (B -> String)
-  --> 33:1..33:42
-   |
-33 | test :: Show A => Show B => Show C => Int
-   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-error[NoInstanceFound]: No instance found for: TypeEquals @Type (A -> String) (C -> String)
-  --> 33:1..33:42
-   |
-33 | test :: Show A => Show B => Show C => Int
-   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

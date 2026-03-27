@@ -51,7 +51,7 @@ pub enum MatchInstance {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum MatchType {
+pub enum MatchType {
     Match,
     Apart,
     Stuck,
@@ -164,7 +164,7 @@ where
                     }
                     continue 'work;
                 }
-                Some(MatchInstance::Apart | MatchInstance::Stuck) | None => {}
+                Some(MatchInstance::Stuck | MatchInstance::Apart) | None => {}
             }
 
             match match_compiler_instances(state, context, &application, &given)? {
