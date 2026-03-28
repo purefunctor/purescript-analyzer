@@ -2,7 +2,7 @@ use building_types::QueryResult;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::{exhaustive, toolkit};
+use crate::core::{exhaustive, toolkit, unification};
 use crate::error::ErrorCrumb;
 use crate::source::terms::equations;
 use crate::source::{binder, types};
@@ -163,7 +163,7 @@ where
             && let Some(guarded) = &equation.guarded
         {
             let inferred_type = equations::infer_guarded_expression(state, context, guarded)?;
-            state.checked.nodes.lets.insert(id, inferred_type);
+            unification::subtype(state, context, inferred_type, name_type)?;
         } else {
             let equation_set = equations::analyse_equation_set(
                 state,
