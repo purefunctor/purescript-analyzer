@@ -1,0 +1,57 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+show :: forall (@a :: Type). Show (a :: Type) => (a :: Type) -> String
+use ::
+  forall (f :: Type) (g :: Type) (h :: Type).
+    Match3 @Type @Type @Type (f :: Type) (g :: Type) (h :: Type) =>
+    (f :: Type) -> (g :: Type) -> (h :: Type) -> Int
+test :: Show A => Show B => Show C => Int
+
+Types
+Show :: Type -> Constraint
+A :: Type
+B :: Type
+C :: Type
+TypeEquals :: forall (k :: Type). (k :: Type) -> (k :: Type) -> Constraint
+Match3 ::
+  forall (t9 :: Type) (t8 :: Type) (t7 :: Type).
+    (t9 :: Type) -> (t8 :: Type) -> (t7 :: Type) -> Constraint
+
+Classes
+class forall (a :: Type). Show (a :: Type)
+  show :: forall (@a :: Type). Show (a :: Type) => (a :: Type) -> String
+class forall (k :: Type) (a :: (k :: Type)) (b :: (k :: Type)). TypeEquals @(k :: Type) (a :: (k :: Type)) (b :: (k :: Type))
+class forall (t9 :: Type) (t8 :: Type) (t7 :: Type) (f :: (t9 :: Type)) (g :: (t8 :: Type)) (h :: (t7 :: Type)). Match3 @(t9 :: Type) @(t8 :: Type) @(t7 :: Type)
+  (f :: (t9 :: Type))
+  (g :: (t8 :: Type))
+  (h :: (t7 :: Type))
+
+Instances
+instance forall (t11 :: Type) (t10 :: (t11 :: Type)).
+  TypeEquals @(t11 :: Type) (t10 :: (t11 :: Type)) (t10 :: (t11 :: Type))
+instance forall (t12 :: Type) (t13 :: Type) (t14 :: Type).
+  TypeEquals @Type (t12 :: Type) (A -> String) =>
+  TypeEquals @Type (t13 :: Type) (B -> String) =>
+  TypeEquals @Type (t14 :: Type) (C -> String) =>
+  Match3 @Type @Type @Type (t12 :: Type) (t13 :: Type) (t14 :: Type)
+
+Roles
+A = []
+B = []
+C = []
+
+Diagnostics
+error[NoInstanceFound]: No instance found for: TypeEquals @Type (A -> String) (B -> String)
+  --> 33:1..33:42
+   |
+33 | test :: Show A => Show B => Show C => Int
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[NoInstanceFound]: No instance found for: TypeEquals @Type (A -> String) (C -> String)
+  --> 33:1..33:42
+   |
+33 | test :: Show A => Show B => Show C => Int
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
