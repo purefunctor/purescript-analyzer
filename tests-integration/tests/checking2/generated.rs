@@ -549,3 +549,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_261_instance_chain_stuck_matching_main() { run_test("261_instance_chain_stuck_matching", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_262_given_stuck_match_collapse_main() { run_test("262_given_stuck_match_collapse", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_263_let_binding_ambiguous_constraint_main() { run_test("263_let_binding_ambiguous_constraint", "Main"); }

@@ -1,0 +1,17 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+delay :: Int -> Effect Unit
+test :: Effect Unit
+
+Types
+
+Diagnostics
+error[NoInstanceFound]: No instance found for: Discard ?8
+  --> 9:1..9:20
+  |
+9 | test :: Effect Unit
+  | ^~~~~~~~~~~~~~~~~~~
