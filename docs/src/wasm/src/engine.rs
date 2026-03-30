@@ -4,7 +4,6 @@ use std::cell::RefCell;
 use std::sync::Arc;
 
 use building_types::{ModuleNameId, ModuleNameInterner, QueryProxy, QueryResult};
-use checking::{CheckedModule, Type, TypeId, TypeInterner};
 use files::{FileId, Files};
 use indexing::IndexedModule;
 use lowering::{GroupedModule, LoweredModule};
@@ -30,13 +29,13 @@ struct DerivedStorage {
     resolved: FxHashMap<FileId, Arc<ResolvedModule>>,
     bracketed: FxHashMap<FileId, Arc<sugar::Bracketed>>,
     sectioned: FxHashMap<FileId, Arc<sugar::Sectioned>>,
-    checked: FxHashMap<FileId, Arc<CheckedModule>>,
+    checked2: FxHashMap<FileId, Arc<checking2::CheckedModule>>,
 }
 
 #[derive(Default)]
 struct InternedStorage {
     module: ModuleNameInterner,
-    types: TypeInterner,
+    checking2: checking2::CoreInterners,
 }
 
 /// Single-threaded query engine for WASM
@@ -87,24 +86,17 @@ impl WasmQueryEngine {
     /// Register an external module source, parsing the module name from source.
     /// Returns the parsed module name on success, or None if parsing fails.
     pub fn register_external_source(&mut self, path: &str, source: &str) -> Option<String> {
-        // 1. Insert file into VFS → FileId
         let virtual_path = format!("pkg://registry/{path}");
         let id = self.files.borrow_mut().insert(virtual_path.as_str(), source);
 
-        // 2. Set content in input storage
         self.input.borrow_mut().content.insert(id, Arc::from(source));
 
-        // 3. Parse (using cached query infrastructure)
         let (parsed, _) = self.parsed(id).ok()?;
-
-        // 4. Extract module name
         let module_name = parsed.module_name()?;
 
-        // 5. Register module name → FileId mapping
         let name_id = self.interned.borrow_mut().module.intern(&module_name);
         self.input.borrow_mut().module.insert(name_id, id);
 
-        // Track for cleanup
         self.external_ids.push(id);
 
         Some(module_name.to_string())
@@ -124,10 +116,9 @@ impl WasmQueryEngine {
             derived.resolved.remove(&id);
             derived.bracketed.remove(&id);
             derived.sectioned.remove(&id);
-            derived.checked.remove(&id);
+            derived.checked2.remove(&id);
         }
 
-        // Also clear caches for user module since imports may have changed
         if let Some(user_id) = self.user_id {
             derived.parsed.remove(&user_id);
             derived.stabilized.remove(&user_id);
@@ -136,7 +127,7 @@ impl WasmQueryEngine {
             derived.resolved.remove(&user_id);
             derived.bracketed.remove(&user_id);
             derived.sectioned.remove(&user_id);
-            derived.checked.remove(&user_id);
+            derived.checked2.remove(&user_id);
         }
     }
 
@@ -144,7 +135,6 @@ impl WasmQueryEngine {
     /// Clears caches for the user file only.
     pub fn set_user_source(&mut self, source: &str) -> FileId {
         let id = if let Some(existing_id) = self.user_id {
-            // Clear caches for the user file
             let mut derived = self.derived.borrow_mut();
             derived.parsed.remove(&existing_id);
             derived.stabilized.remove(&existing_id);
@@ -154,13 +144,12 @@ impl WasmQueryEngine {
             derived.resolved.remove(&existing_id);
             derived.bracketed.remove(&existing_id);
             derived.sectioned.remove(&existing_id);
-            derived.checked.remove(&existing_id);
+            derived.checked2.remove(&existing_id);
             existing_id
         } else {
             let id = self.files.borrow_mut().insert("user://localhost/Main.purs", source);
             self.user_id = Some(id);
 
-            // Register as Main module
             let name_id = self.interned.borrow_mut().module.intern("Main");
             self.input.borrow_mut().module.insert(name_id, id);
 
@@ -169,6 +158,17 @@ impl WasmQueryEngine {
 
         self.input.borrow_mut().content.insert(id, Arc::from(source));
         id
+    }
+
+    pub fn checked2(&self, id: FileId) -> QueryResult<Arc<checking2::CheckedModule>> {
+        if let Some(cached) = self.derived.borrow().checked2.get(&id) {
+            return Ok(cached.clone());
+        }
+
+        let checked = Arc::new(checking2::check_module(self, id)?);
+
+        self.derived.borrow_mut().checked2.insert(id, checked.clone());
+        Ok(checked)
     }
 
     fn content(&self, id: FileId) -> Arc<str> {
@@ -190,7 +190,6 @@ impl QueryProxy for WasmQueryEngine {
     type Resolved = Arc<ResolvedModule>;
     type Bracketed = Arc<sugar::Bracketed>;
     type Sectioned = Arc<sugar::Sectioned>;
-    type Checked = Arc<CheckedModule>;
 
     fn parsed(&self, id: FileId) -> QueryResult<Self::Parsed> {
         if let Some(cached) = self.derived.borrow().parsed.get(&id) {
@@ -301,17 +300,6 @@ impl QueryProxy for WasmQueryEngine {
         Ok(sectioned)
     }
 
-    fn checked(&self, id: FileId) -> QueryResult<Self::Checked> {
-        if let Some(cached) = self.derived.borrow().checked.get(&id) {
-            return Ok(cached.clone());
-        }
-
-        let checked = Arc::new(checking::check_module(self, id)?);
-
-        self.derived.borrow_mut().checked.insert(id, checked.clone());
-        Ok(checked)
-    }
-
     fn prim_id(&self) -> FileId {
         self.prim_id
     }
@@ -323,13 +311,47 @@ impl QueryProxy for WasmQueryEngine {
     }
 }
 
-impl checking::ExternalQueries for WasmQueryEngine {
-    fn intern_type(&self, t: Type) -> TypeId {
-        self.interned.borrow_mut().types.intern(t)
+impl checking2::ExternalQueries for WasmQueryEngine {
+    fn checked2(&self, id: FileId) -> QueryResult<Arc<checking2::CheckedModule>> {
+        WasmQueryEngine::checked2(self, id)
     }
 
-    fn lookup_type(&self, id: TypeId) -> Type {
-        self.interned.borrow().types[id].clone()
+    fn intern_type(&self, t: checking2::core::Type) -> checking2::core::TypeId {
+        self.interned.borrow_mut().checking2.intern_type(t)
+    }
+
+    fn lookup_type(&self, id: checking2::core::TypeId) -> checking2::core::Type {
+        self.interned.borrow().checking2.lookup_type(id)
+    }
+
+    fn intern_forall_binder(
+        &self,
+        binder: checking2::core::ForallBinder,
+    ) -> checking2::core::ForallBinderId {
+        self.interned.borrow_mut().checking2.intern_forall_binder(binder)
+    }
+
+    fn lookup_forall_binder(
+        &self,
+        id: checking2::core::ForallBinderId,
+    ) -> checking2::core::ForallBinder {
+        self.interned.borrow().checking2.lookup_forall_binder(id)
+    }
+
+    fn intern_row_type(&self, row: checking2::core::RowType) -> checking2::core::RowTypeId {
+        self.interned.borrow_mut().checking2.intern_row_type(row)
+    }
+
+    fn lookup_row_type(&self, id: checking2::core::RowTypeId) -> checking2::core::RowType {
+        self.interned.borrow().checking2.lookup_row_type(id)
+    }
+
+    fn intern_smol_str(&self, s: smol_str::SmolStr) -> checking2::core::SmolStrId {
+        self.interned.borrow_mut().checking2.intern_smol_str(s)
+    }
+
+    fn lookup_smol_str(&self, id: checking2::core::SmolStrId) -> smol_str::SmolStr {
+        self.interned.borrow().checking2.lookup_smol_str(id)
     }
 }
 

@@ -5,7 +5,6 @@ use anyhow::bail;
 
 #[derive(Copy, Clone, Debug)]
 pub enum TestCategory {
-    Checking,
     Checking2,
     Lowering,
     Resolving,
@@ -15,7 +14,6 @@ pub enum TestCategory {
 impl TestCategory {
     pub fn as_str(&self) -> &'static str {
         match self {
-            TestCategory::Checking => "checking",
             TestCategory::Checking2 => "checking2",
             TestCategory::Lowering => "lowering",
             TestCategory::Resolving => "resolving",
@@ -40,8 +38,8 @@ impl TestCategory {
 
     pub fn trace_for_snapshot(&self, snap_path: &Path, trace_paths: &[PathBuf]) -> Option<PathBuf> {
         match self {
-            TestCategory::Checking | TestCategory::Checking2 => {
-                crate::test_runner::traces::match_checking_trace(snap_path, trace_paths)
+            TestCategory::Checking2 => {
+                crate::test_runner::traces::match_snapshot_trace(snap_path, trace_paths)
             }
             _ => None,
         }
@@ -53,13 +51,12 @@ impl FromStr for TestCategory {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
-            "checking" | "c" => Ok(TestCategory::Checking),
             "checking2" | "c2" => Ok(TestCategory::Checking2),
             "lowering" | "l" => Ok(TestCategory::Lowering),
             "resolving" | "r" => Ok(TestCategory::Resolving),
             "lsp" => Ok(TestCategory::Lsp),
             _ => bail!(
-                "unknown test category '{}', expected: checking (c), checking2 (c2), lowering (l), resolving (r), lsp",
+                "unknown test category '{}', expected: checking2 (c2), lowering (l), resolving (r), lsp",
                 s
             ),
         }

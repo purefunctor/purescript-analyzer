@@ -43,15 +43,13 @@ fn collect_diagnostics_core(
     let indexed = snapshot.engine.indexed(id)?;
     let resolved = snapshot.engine.resolved(id)?;
     let lowered = snapshot.engine.lowered(id)?;
-    let checked = snapshot.engine.checked(id)?;
 
     let uri = {
         let files = snapshot.files.read();
         common::file_uri(&snapshot.engine, &files, id)?
     };
 
-    let context =
-        DiagnosticsContext::new(&content, &root, &stabilized, &indexed, &lowered, &checked);
+    let context = DiagnosticsContext::new(&content, &root, &stabilized, &indexed, &lowered);
 
     let mut all_diagnostics = vec![];
 
@@ -60,10 +58,6 @@ fn collect_diagnostics_core(
     }
 
     for error in &resolved.errors {
-        all_diagnostics.extend(error.to_diagnostics(&context));
-    }
-
-    for error in &checked.errors {
         all_diagnostics.extend(error.to_diagnostics(&context));
     }
 

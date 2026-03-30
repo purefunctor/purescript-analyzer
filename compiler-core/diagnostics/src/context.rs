@@ -1,5 +1,3 @@
-use checking::CheckedModule;
-use checking::error::ErrorStep;
 use checking2::error::ErrorCrumb;
 use indexing::IndexedModule;
 use lowering::LoweredModule;
@@ -84,7 +82,6 @@ pub struct DiagnosticsContext<'a> {
     pub stabilized: &'a StabilizedModule,
     pub indexed: &'a IndexedModule,
     pub lowered: &'a LoweredModule,
-    pub checked: &'a CheckedModule,
     pub checking2_lookup: Option<&'a dyn Fn(checking2::core::SmolStrId) -> SmolStr>,
 }
 
@@ -95,17 +92,8 @@ impl<'a> DiagnosticsContext<'a> {
         stabilized: &'a StabilizedModule,
         indexed: &'a IndexedModule,
         lowered: &'a LoweredModule,
-        checked: &'a CheckedModule,
     ) -> DiagnosticsContext<'a> {
-        DiagnosticsContext {
-            content,
-            root,
-            stabilized,
-            indexed,
-            lowered,
-            checked,
-            checking2_lookup: None,
-        }
+        DiagnosticsContext { content, root, stabilized, indexed, lowered, checking2_lookup: None }
     }
 
     pub fn with_checking2_lookup(
@@ -136,55 +124,6 @@ impl<'a> DiagnosticsContext<'a> {
 
     pub fn text_of(&self, span: Span) -> &'a str {
         &self.content[span.start as usize..span.end as usize]
-    }
-
-    pub fn span_from_error_step(&self, step: &ErrorStep) -> Option<Span> {
-        let ptr = match step {
-            ErrorStep::ConstructorArgument(id) => self.stabilized.syntax_ptr(*id)?,
-            ErrorStep::InferringKind(id) | ErrorStep::CheckingKind(id) => {
-                self.stabilized.syntax_ptr(*id)?
-            }
-            ErrorStep::InferringBinder(id) | ErrorStep::CheckingBinder(id) => {
-                self.stabilized.syntax_ptr(*id)?
-            }
-            ErrorStep::InferringExpression(id) | ErrorStep::CheckingExpression(id) => {
-                self.stabilized.syntax_ptr(*id)?
-            }
-            ErrorStep::TermDeclaration(id) => {
-                self.indexed.term_item_ptr(self.stabilized, *id).next()?
-            }
-            ErrorStep::TypeDeclaration(id) => {
-                self.indexed.type_item_ptr(self.stabilized, *id).next()?
-            }
-            ErrorStep::InferringDoBind(id)
-            | ErrorStep::InferringDoDiscard(id)
-            | ErrorStep::CheckingDoLet(id) => self.stabilized.syntax_ptr(*id)?,
-            ErrorStep::InferringAdoMap(id)
-            | ErrorStep::InferringAdoApply(id)
-            | ErrorStep::CheckingAdoLet(id) => self.stabilized.syntax_ptr(*id)?,
-            ErrorStep::CheckingLetName(id) => {
-                let group = self.lowered.info.get_let_binding_group(*id);
-
-                let signature = group
-                    .signature
-                    .as_slice()
-                    .iter()
-                    .filter_map(|signature| self.stabilized.syntax_ptr(*signature));
-
-                let equations = group
-                    .equations
-                    .as_ref()
-                    .iter()
-                    .filter_map(|equation| self.stabilized.syntax_ptr(*equation));
-
-                return pointers_span(self, signature.chain(equations));
-            }
-        };
-        self.span_from_syntax_ptr(&ptr)
-    }
-
-    pub fn primary_span_from_steps(&self, steps: &[ErrorStep]) -> Option<Span> {
-        steps.last().and_then(|step| self.span_from_error_step(step))
     }
 
     pub fn module_span(&self) -> Span {

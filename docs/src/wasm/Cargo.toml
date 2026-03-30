@@ -21,7 +21,7 @@ serde-wasm-bindgen = "0.6"
 
 # Compiler core crates
 building-types = { version = "0.1.0", path = "../../../compiler-core/building-types" }
-checking = { version = "0.1.0", path = "../../../compiler-core/checking" }
+checking2 = { version = "0.1.0", path = "../../../compiler-core/checking2" }
 files = { version = "0.1.0", path = "../../../compiler-core/files" }
 indexing = { version = "0.1.0", path = "../../../compiler-core/indexing" }
 interner = { version = "0.1.0", path = "../../../compiler-core/interner" }
@@ -36,6 +36,7 @@ syntax = { version = "0.1.0", path = "../../../compiler-core/syntax" }
 
 # Data structures
 rustc-hash = "2"
+smol_str = "0.3.5"
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.56"

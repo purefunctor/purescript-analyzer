@@ -33,7 +33,6 @@ use std::sync::atomic::{AtomicBool, AtomicU32, AtomicUsize, Ordering};
 use building_types::{
     ModuleNameId, ModuleNameInterner, QueryError, QueryKey, QueryProxy, QueryResult,
 };
-use checking::{CheckedModule, TypeInterner};
 use checking2::CheckedModule as CheckedModule2;
 use files::FileId;
 use graph::SnapshotGraph;
@@ -99,14 +98,12 @@ struct DerivedStorage {
     resolved: FxHashMap<FileId, DerivedState<Arc<ResolvedModule>>>,
     bracketed: FxHashMap<FileId, DerivedState<Arc<sugar::Bracketed>>>,
     sectioned: FxHashMap<FileId, DerivedState<Arc<sugar::Sectioned>>>,
-    checked: FxHashMap<FileId, DerivedState<Arc<CheckedModule>>>,
     checked2: FxHashMap<FileId, DerivedState<Arc<CheckedModule2>>>,
 }
 
 #[derive(Default)]
 struct InternedStorage {
     module: ModuleNameInterner,
-    types: TypeInterner,
     checking2: checking2::CoreInterners,
 }
 
@@ -430,7 +427,6 @@ impl QueryEngine {
                 QueryKey::Resolved(k) => derived_changed!(resolved, k),
                 QueryKey::Bracketed(k) => derived_changed!(bracketed, k),
                 QueryKey::Sectioned(k) => derived_changed!(sectioned, k),
-                QueryKey::Checked(k) => derived_changed!(checked, k),
                 QueryKey::Checked2(k) => derived_changed!(checked2, k),
             }
         }
@@ -750,18 +746,6 @@ impl QueryEngine {
         )
     }
 
-    pub fn checked(&self, id: FileId) -> QueryResult<Arc<CheckedModule>> {
-        self.query(
-            QueryKey::Checked(id),
-            |storage| storage.derived.checked.get(&id),
-            |storage| storage.derived.checked.entry(id),
-            |this| {
-                let checked = checking::check_module(this, id)?;
-                Ok(Arc::new(checked))
-            },
-        )
-    }
-
     pub fn checked2(&self, id: FileId) -> QueryResult<Arc<CheckedModule2>> {
         self.query(
             QueryKey::Checked2(id),
@@ -798,8 +782,6 @@ impl QueryProxy for QueryEngine {
 
     type Sectioned = Arc<sugar::Sectioned>;
 
-    type Checked = Arc<CheckedModule>;
-
     fn parsed(&self, id: FileId) -> QueryResult<Self::Parsed> {
         QueryEngine::parsed(self, id)
     }
@@ -832,28 +814,12 @@ impl QueryProxy for QueryEngine {
         QueryEngine::sectioned(self, id)
     }
 
-    fn checked(&self, id: FileId) -> QueryResult<Self::Checked> {
-        QueryEngine::checked(self, id)
-    }
-
     fn prim_id(&self) -> FileId {
         QueryEngine::prim_id(self)
     }
 
     fn module_file(&self, name: &str) -> Option<FileId> {
         QueryEngine::module_file(self, name)
-    }
-}
-
-impl checking::ExternalQueries for QueryEngine {
-    fn intern_type(&self, t: checking::Type) -> checking::TypeId {
-        let mut storage = self.storage.write();
-        storage.interned.types.intern(t)
-    }
-
-    fn lookup_type(&self, id: checking::TypeId) -> checking::Type {
-        let storage = self.storage.read();
-        storage.interned.types[id].clone()
     }
 }
 

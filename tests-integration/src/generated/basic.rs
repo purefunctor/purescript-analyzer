@@ -1,7 +1,6 @@
 use std::fmt::Write;
 
 use analyzer::{QueryEngine, locate};
-use checking::core::pretty;
 use checking2::core::pretty as pretty2;
 use checking2::{ExternalQueries, core as core2};
 use diagnostics::{DiagnosticsContext, ToDiagnostics, format_rustc};
@@ -203,18 +202,6 @@ pub fn report_lowered(engine: &QueryEngine, id: FileId, name: &str) -> String {
     out
 }
 
-pub fn report_checked(engine: &QueryEngine, id: FileId) -> String {
-    let indexed = engine.indexed(id).unwrap();
-    let checked = engine.checked(id).unwrap();
-
-    let mut out = String::default();
-
-    write_checked_output(&mut out, engine, id, &indexed, &checked);
-    write_checked_diagnostics(&mut out, engine, id, &indexed, &checked);
-
-    out
-}
-
 pub fn report_checked2(engine: &QueryEngine, id: FileId) -> String {
     let indexed = engine.indexed(id).unwrap();
     let checked = engine.checked2(id).unwrap();
@@ -391,172 +378,6 @@ fn write_term_resolution(
     }
 }
 
-fn write_checked_output(
-    out: &mut String,
-    engine: &QueryEngine,
-    id: FileId,
-    indexed: &indexing::IndexedModule,
-    checked: &checking::CheckedModule,
-) {
-    writeln!(out, "Terms").unwrap();
-    for (id, TermItem { name, .. }) in indexed.items.iter_terms() {
-        let Some(n) = name else { continue };
-        let Some(t) = checked.lookup_term(id) else { continue };
-        let signature = pretty::print_signature_global(engine, n, t);
-        writeln!(out, "{signature}").unwrap();
-    }
-
-    writeln!(out, "\nTypes").unwrap();
-    for (id, TypeItem { name, .. }) in indexed.items.iter_types() {
-        let Some(n) = name else { continue };
-        let Some(t) = checked.lookup_type(id) else { continue };
-        let signature = pretty::print_signature_global(engine, n, t);
-        writeln!(out, "{signature}").unwrap();
-    }
-
-    if !checked.synonyms.is_empty() {
-        writeln!(out, "\nSynonyms").unwrap();
-    }
-    for (id, TypeItem { name, .. }) in indexed.items.iter_types() {
-        let Some(name) = name else { continue };
-        let Some(group) = checked.lookup_synonym(id) else { continue };
-        let synonym = pretty::print_global(engine, group.synonym_type);
-        writeln!(out, "{name} = {synonym}").unwrap();
-        writeln!(out, "  Quantified = {}", group.quantified_variables).unwrap();
-        writeln!(out, "  Kind = {}", group.kind_variables).unwrap();
-        writeln!(out, "  Type = {}", group.type_variables).unwrap();
-        writeln!(out).unwrap();
-    }
-
-    if !checked.data.is_empty() {
-        writeln!(out, "\nData").unwrap();
-    }
-    for (id, TypeItem { name, kind, .. }) in indexed.items.iter_types() {
-        let (TypeItemKind::Data { .. } | TypeItemKind::Newtype { .. }) = kind else {
-            continue;
-        };
-        let Some(name) = name else { continue };
-        let Some(data) = checked.lookup_data(id) else { continue };
-        writeln!(out, "{name}").unwrap();
-        writeln!(out, "  Quantified = {}", data.quantified_variables).unwrap();
-        writeln!(out, "  Kind = {}", data.kind_variables).unwrap();
-        writeln!(out).unwrap();
-    }
-
-    if !checked.roles.is_empty() {
-        writeln!(out, "\nRoles").unwrap();
-    }
-    for (id, TypeItem { name, kind, .. }) in indexed.items.iter_types() {
-        let (TypeItemKind::Data { .. }
-        | TypeItemKind::Newtype { .. }
-        | TypeItemKind::Foreign { .. }) = kind
-        else {
-            continue;
-        };
-        let Some(name) = name else { continue };
-        let Some(roles) = checked.lookup_roles(id) else { continue };
-        let roles_str: Vec<_> = roles.iter().map(|r| format!("{r:?}")).collect();
-        writeln!(out, "{name} = [{}]", roles_str.join(", ")).unwrap();
-    }
-
-    if !checked.classes.is_empty() {
-        writeln!(out, "\nClasses").unwrap();
-    }
-    for (type_id, TypeItem { name, kind, .. }) in indexed.items.iter_types() {
-        let TypeItemKind::Class { .. } = kind else { continue };
-        let Some(name) = name else { continue };
-        let Some(class) = checked.lookup_class(type_id) else { continue };
-
-        let mut class_line = String::new();
-
-        if !class.superclasses.is_empty() {
-            for (i, (superclass_type, _)) in class.superclasses.iter().enumerate() {
-                if i > 0 {
-                    class_line.push_str(", ");
-                }
-                let type_str = pretty::print_global(engine, *superclass_type);
-                class_line.push_str(&type_str);
-            }
-            class_line.push_str(" <= ");
-        }
-
-        class_line.push_str(name);
-
-        for (name, &kind) in class.type_variable_names.iter().zip(class.type_variable_kinds.iter())
-        {
-            let kind_str = pretty::print_global(engine, kind);
-            class_line.push_str(&format!(" ({} :: {kind_str})", name.text));
-        }
-
-        writeln!(out, "class {class_line}").unwrap();
-    }
-
-    if !checked.instances.is_empty() {
-        writeln!(out, "\nInstances").unwrap();
-    }
-    let mut instance_entries: Vec<_> = checked.instances.iter().collect();
-    instance_entries.sort_by_key(|(id, _)| *id);
-    for (_instance_id, instance) in instance_entries {
-        let class_name = resolve_class_name(engine, indexed, id, instance.resolution);
-        let head =
-            format_instance_head(engine, &class_name, &instance.constraints, &instance.arguments);
-        let forall_prefix = format_forall_prefix(engine, &instance.kind_variables);
-        writeln!(out, "instance {forall_prefix}{head}").unwrap();
-        if let checking::core::InstanceKind::Chain { position, .. } = instance.kind {
-            writeln!(out, "  chain: {}", position).unwrap();
-        }
-    }
-
-    if !checked.derived.is_empty() {
-        writeln!(out, "\nDerived").unwrap();
-    }
-    let mut derived_entries: Vec<_> = checked.derived.iter().collect();
-    derived_entries.sort_by_key(|(id, _)| *id);
-    for (_derive_id, instance) in derived_entries {
-        let class_name = resolve_class_name(engine, indexed, id, instance.resolution);
-        let head =
-            format_instance_head(engine, &class_name, &instance.constraints, &instance.arguments);
-        let forall_prefix = format_forall_prefix(engine, &instance.kind_variables);
-        writeln!(out, "derive {forall_prefix}{head}").unwrap();
-    }
-}
-
-fn write_checked_diagnostics(
-    out: &mut String,
-    engine: &QueryEngine,
-    id: FileId,
-    indexed: &indexing::IndexedModule,
-    checked: &checking::CheckedModule,
-) {
-    let content = engine.content(id);
-    let (parsed, _) = engine.parsed(id).unwrap();
-    let root = parsed.syntax_node();
-    let stabilized = engine.stabilized(id).unwrap();
-    let lowered = engine.lowered(id).unwrap();
-    let resolved = engine.resolved(id).unwrap();
-
-    let context = DiagnosticsContext::new(&content, &root, &stabilized, indexed, &lowered, checked);
-
-    let mut all_diagnostics = vec![];
-
-    for error in &lowered.errors {
-        all_diagnostics.extend(error.to_diagnostics(&context));
-    }
-
-    for error in &resolved.errors {
-        all_diagnostics.extend(error.to_diagnostics(&context));
-    }
-
-    for error in &checked.errors {
-        all_diagnostics.extend(error.to_diagnostics(&context));
-    }
-
-    if !all_diagnostics.is_empty() {
-        writeln!(out, "\nDiagnostics").unwrap();
-        out.push_str(&format_rustc(&all_diagnostics, &content));
-    }
-}
-
 fn write_checked2_diagnostics(
     out: &mut String,
     engine: &QueryEngine,
@@ -572,10 +393,8 @@ fn write_checked2_diagnostics(
     let resolved = engine.resolved(id).unwrap();
 
     let lookup_smol_str = |id| engine.lookup_smol_str(id);
-    let empty_checked = checking::CheckedModule::default();
-    let context =
-        DiagnosticsContext::new(&content, &root, &stabilized, indexed, &lowered, &empty_checked)
-            .with_checking2_lookup(&lookup_smol_str);
+    let context = DiagnosticsContext::new(&content, &root, &stabilized, indexed, &lowered)
+        .with_checking2_lookup(&lookup_smol_str);
 
     let mut all_diagnostics = vec![];
 
@@ -613,52 +432,4 @@ fn resolve_class_name(
             .and_then(|idx| idx.items[class_type_id].name.as_deref().map(str::to_string))
             .unwrap_or_else(|| "<imported>".to_string())
     }
-}
-
-fn format_instance_head(
-    engine: &QueryEngine,
-    class_name: &str,
-    constraints: &[(checking::core::TypeId, checking::core::TypeId)],
-    arguments: &[(checking::core::TypeId, checking::core::TypeId)],
-) -> String {
-    let mut head = String::new();
-
-    if !constraints.is_empty() {
-        let formatted: Vec<_> =
-            constraints.iter().map(|(t, _)| pretty::print_global(engine, *t)).collect();
-        if formatted.len() == 1 {
-            head.push_str(&formatted[0]);
-        } else {
-            head.push('(');
-            head.push_str(&formatted.join(", "));
-            head.push(')');
-        }
-        head.push_str(" => ");
-    }
-
-    head.push_str(class_name);
-    for (arg_type, arg_kind) in arguments {
-        let type_str = pretty::print_global(engine, *arg_type);
-        let kind_str = pretty::print_global(engine, *arg_kind);
-        head.push_str(&format!(" ({type_str} :: {kind_str})"));
-    }
-
-    head
-}
-
-fn format_forall_prefix(
-    engine: &QueryEngine,
-    kind_variables: &[(checking::core::Name, checking::core::TypeId)],
-) -> String {
-    if kind_variables.is_empty() {
-        return String::new();
-    }
-    let binders: Vec<_> = kind_variables
-        .iter()
-        .map(|(name, kind)| {
-            let kind_str = pretty::print_global(engine, *kind);
-            format!("({} :: {kind_str})", name.text)
-        })
-        .collect();
-    format!("forall {}. ", binders.join(" "))
 }
