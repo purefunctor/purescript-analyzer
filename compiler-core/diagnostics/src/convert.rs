@@ -1,4 +1,4 @@
-use checking2::error::{CheckError as CheckError2, ErrorKind as ErrorKind2};
+use checking::error::{CheckError, ErrorKind};
 use indexing::TypeItemKind;
 use itertools::Itertools;
 use lowering::LoweringError;
@@ -157,27 +157,27 @@ impl ToDiagnostics for ResolvingError {
     }
 }
 
-impl ToDiagnostics for CheckError2 {
+impl ToDiagnostics for CheckError {
     fn to_diagnostics(&self, context: &DiagnosticsContext<'_>) -> Vec<Diagnostic> {
         let primary = context.primary_span_from_crumbs(&self.crumbs);
 
-        let Some(lookup_message) = context.checking2_lookup else {
+        let Some(lookup_message) = context.checking_lookup else {
             return vec![];
         };
 
         let (severity, code, message) = match &self.kind {
-            ErrorKind2::AmbiguousConstraint { constraint } => {
+            ErrorKind::AmbiguousConstraint { constraint } => {
                 let msg = lookup_message(*constraint);
                 (Severity::Error, "AmbiguousConstraint", format!("Ambiguous constraint: {msg}"))
             }
-            ErrorKind2::CannotDeriveClass { .. } => {
+            ErrorKind::CannotDeriveClass { .. } => {
                 (Severity::Error, "CannotDeriveClass", "Cannot derive this class".to_string())
             }
-            ErrorKind2::CannotDeriveForType { type_message } => {
+            ErrorKind::CannotDeriveForType { type_message } => {
                 let msg = lookup_message(*type_message);
                 (Severity::Error, "CannotDeriveForType", format!("Cannot derive for type: {msg}"))
             }
-            ErrorKind2::ContravariantOccurrence { type_message } => {
+            ErrorKind::ContravariantOccurrence { type_message } => {
                 let msg = lookup_message(*type_message);
                 (
                     Severity::Error,
@@ -185,7 +185,7 @@ impl ToDiagnostics for CheckError2 {
                     format!("Type variable occurs in contravariant position: {msg}"),
                 )
             }
-            ErrorKind2::CovariantOccurrence { type_message } => {
+            ErrorKind::CovariantOccurrence { type_message } => {
                 let msg = lookup_message(*type_message);
                 (
                     Severity::Error,
@@ -193,48 +193,48 @@ impl ToDiagnostics for CheckError2 {
                     format!("Type variable occurs in covariant position: {msg}"),
                 )
             }
-            ErrorKind2::CannotUnify { t1, t2 } => {
+            ErrorKind::CannotUnify { t1, t2 } => {
                 let t1 = lookup_message(*t1);
                 let t2 = lookup_message(*t2);
                 (Severity::Error, "CannotUnify", format!("Cannot unify '{t1}' with '{t2}'"))
             }
-            ErrorKind2::DeriveInvalidArity { expected, actual, .. } => (
+            ErrorKind::DeriveInvalidArity { expected, actual, .. } => (
                 Severity::Error,
                 "DeriveInvalidArity",
                 format!("Invalid arity for derive: expected {expected}, got {actual}"),
             ),
-            ErrorKind2::DeriveNotSupportedYet { .. } => (
+            ErrorKind::DeriveNotSupportedYet { .. } => (
                 Severity::Error,
                 "DeriveNotSupportedYet",
                 "Deriving this class is not supported yet".to_string(),
             ),
-            ErrorKind2::DeriveMissingFunctor => (
+            ErrorKind::DeriveMissingFunctor => (
                 Severity::Error,
                 "DeriveMissingFunctor",
                 "Deriving Functor requires Data.Functor to be in scope".to_string(),
             ),
-            ErrorKind2::EmptyAdoBlock => {
+            ErrorKind::EmptyAdoBlock => {
                 (Severity::Error, "EmptyAdoBlock", "Empty ado block".to_string())
             }
-            ErrorKind2::EmptyDoBlock => {
+            ErrorKind::EmptyDoBlock => {
                 (Severity::Error, "EmptyDoBlock", "Empty do block".to_string())
             }
-            ErrorKind2::InvalidFinalBind => (
+            ErrorKind::InvalidFinalBind => (
                 Severity::Warning,
                 "InvalidFinalBind",
                 "Invalid final bind statement in do expression".to_string(),
             ),
-            ErrorKind2::InvalidFinalLet => (
+            ErrorKind::InvalidFinalLet => (
                 Severity::Error,
                 "InvalidFinalLet",
                 "Invalid final let statement in do expression".to_string(),
             ),
-            ErrorKind2::InstanceHeadMismatch { expected, actual, .. } => (
+            ErrorKind::InstanceHeadMismatch { expected, actual, .. } => (
                 Severity::Error,
                 "InstanceHeadMismatch",
                 format!("Instance head mismatch: expected {expected} arguments, got {actual}"),
             ),
-            ErrorKind2::InstanceHeadLabeledRow { position, type_message, .. } => {
+            ErrorKind::InstanceHeadLabeledRow { position, type_message, .. } => {
                 let type_msg = lookup_message(*type_message);
                 (
                     Severity::Error,
@@ -246,7 +246,7 @@ impl ToDiagnostics for CheckError2 {
                     ),
                 )
             }
-            ErrorKind2::InstanceMemberTypeMismatch { expected, actual } => {
+            ErrorKind::InstanceMemberTypeMismatch { expected, actual } => {
                 let expected = lookup_message(*expected);
                 let actual = lookup_message(*actual);
                 (
@@ -255,7 +255,7 @@ impl ToDiagnostics for CheckError2 {
                     format!("Instance member type mismatch: expected '{expected}', got '{actual}'"),
                 )
             }
-            ErrorKind2::InvalidTypeApplication { function_type, function_kind, argument_type } => {
+            ErrorKind::InvalidTypeApplication { function_type, function_kind, argument_type } => {
                 let function_type = lookup_message(*function_type);
                 let function_kind = lookup_message(*function_kind);
                 let argument_type = lookup_message(*argument_type);
@@ -268,25 +268,25 @@ impl ToDiagnostics for CheckError2 {
                     ),
                 )
             }
-            ErrorKind2::ExpectedNewtype { type_message } => {
+            ErrorKind::ExpectedNewtype { type_message } => {
                 let msg = lookup_message(*type_message);
                 (Severity::Error, "ExpectedNewtype", format!("Expected a newtype, got: {msg}"))
             }
-            ErrorKind2::InvalidNewtypeDeriveSkolemArguments => (
+            ErrorKind::InvalidNewtypeDeriveSkolemArguments => (
                 Severity::Error,
                 "InvalidNewtypeDeriveSkolemArguments",
                 "Cannot derive newtype instance where skolemised arguments do not appear trailing in the inner type."
                     .to_string(),
             ),
-            ErrorKind2::NonLocalNewtype { type_message } => {
+            ErrorKind::NonLocalNewtype { type_message } => {
                 let msg = lookup_message(*type_message);
                 (Severity::Error, "NonLocalNewtype", format!("Expected a local newtype, got: {msg}"))
             }
-            ErrorKind2::NoInstanceFound { constraint } => {
+            ErrorKind::NoInstanceFound { constraint } => {
                 let msg = lookup_message(*constraint);
                 (Severity::Error, "NoInstanceFound", format!("No instance found for: {msg}"))
             }
-            ErrorKind2::NoVisibleTypeVariable { function_type } => {
+            ErrorKind::NoVisibleTypeVariable { function_type } => {
                 let msg = lookup_message(*function_type);
                 (
                     Severity::Error,
@@ -294,39 +294,39 @@ impl ToDiagnostics for CheckError2 {
                     format!("No visible type variable for type application in: {msg}"),
                 )
             }
-            ErrorKind2::PartialSynonymApplication { .. } => (
+            ErrorKind::PartialSynonymApplication { .. } => (
                 Severity::Error,
                 "PartialSynonymApplication",
                 "Partial type synonym application".to_string(),
             ),
-            ErrorKind2::RecursiveSynonymExpansion { .. } => (
+            ErrorKind::RecursiveSynonymExpansion { .. } => (
                 Severity::Error,
                 "RecursiveSynonymExpansion",
                 "Recursive type synonym expansion".to_string(),
             ),
-            ErrorKind2::TooManyBinders { expected, actual, .. } => (
+            ErrorKind::TooManyBinders { expected, actual, .. } => (
                 Severity::Error,
                 "TooManyBinders",
                 format!("Too many binders: expected {expected}, got {actual}"),
             ),
-            ErrorKind2::TypeSignatureVariableMismatch { expected, actual, .. } => (
+            ErrorKind::TypeSignatureVariableMismatch { expected, actual, .. } => (
                 Severity::Error,
                 "TypeSignatureVariableMismatch",
                 format!(
                     "Type signature variable mismatch: expected {expected} variables, got {actual}"
                 ),
             ),
-            ErrorKind2::InvalidRoleDeclaration { declared, inferred, .. } => (
+            ErrorKind::InvalidRoleDeclaration { declared, inferred, .. } => (
                 Severity::Error,
                 "InvalidRoleDeclaration",
                 format!("Invalid role declaration: declared {declared:?}, inferred {inferred:?}"),
             ),
-            ErrorKind2::CoercibleConstructorNotInScope { .. } => (
+            ErrorKind::CoercibleConstructorNotInScope { .. } => (
                 Severity::Error,
                 "CoercibleConstructorNotInScope",
                 "Constructor not in scope for Coercible".to_string(),
             ),
-            ErrorKind2::RedundantPatterns { patterns } => {
+            ErrorKind::RedundantPatterns { patterns } => {
                 let patterns = patterns.join(", ");
                 (
                     Severity::Warning,
@@ -334,7 +334,7 @@ impl ToDiagnostics for CheckError2 {
                     format!("Pattern match has redundant patterns: {patterns}"),
                 )
             }
-            ErrorKind2::MissingPatterns { patterns } => {
+            ErrorKind::MissingPatterns { patterns } => {
                 let patterns = patterns.iter().map(|pattern| lookup_message(*pattern)).join(", ");
                 (
                     Severity::Warning,
@@ -342,15 +342,15 @@ impl ToDiagnostics for CheckError2 {
                     format!("Pattern match is not exhaustive. Missing: {patterns}"),
                 )
             }
-            ErrorKind2::CustomWarning { message_id } => {
+            ErrorKind::CustomWarning { message_id } => {
                 let msg = lookup_message(*message_id);
                 (Severity::Warning, "CustomWarning", msg.to_string())
             }
-            ErrorKind2::CustomFailure { message_id } => {
+            ErrorKind::CustomFailure { message_id } => {
                 let msg = lookup_message(*message_id);
                 (Severity::Error, "CustomFailure", msg.to_string())
             }
-            ErrorKind2::PropertyIsMissing { labels } => {
+            ErrorKind::PropertyIsMissing { labels } => {
                 let labels_str = labels.join(", ");
                 (
                     Severity::Error,
@@ -358,7 +358,7 @@ impl ToDiagnostics for CheckError2 {
                     format!("Missing required properties: {labels_str}"),
                 )
             }
-            ErrorKind2::AdditionalProperty { labels } => {
+            ErrorKind::AdditionalProperty { labels } => {
                 let labels_str = labels.join(", ");
                 (
                     Severity::Error,
@@ -369,8 +369,8 @@ impl ToDiagnostics for CheckError2 {
         };
 
         let diagnostic = match severity {
-            Severity::Error => Diagnostic::error(code, message, primary, "checking2"),
-            Severity::Warning => Diagnostic::warning(code, message, primary, "checking2"),
+            Severity::Error => Diagnostic::error(code, message, primary, "checking"),
+            Severity::Warning => Diagnostic::warning(code, message, primary, "checking"),
         };
 
         vec![diagnostic]

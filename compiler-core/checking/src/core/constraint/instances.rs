@@ -59,7 +59,7 @@ where
                 application.item_id,
             );
         } else {
-            let checked = context.queries.checked2(file_id)?;
+            let checked = context.queries.checked(file_id)?;
             let indexed = context.queries.indexed(file_id)?;
             collect_instances_from_checked(
                 &mut instances,

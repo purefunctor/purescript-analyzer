@@ -7,7 +7,7 @@ build = "build.rs"
 [dependencies]
 analyzer = { version = "0.1.0", path = "../compiler-lsp/analyzer" }
 async-lsp = "0.2.2"
-checking2 = { version = "0.1.0", path = "../compiler-core/checking2" }
+checking = { version = "0.1.0", path = "../compiler-core/checking" }
 diagnostics = { version = "0.1.0", path = "../compiler-core/diagnostics" }
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.22", features = ["env-filter", "json"] }

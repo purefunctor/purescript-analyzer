@@ -17,11 +17,11 @@ fn main() {
     println!("cargo::rerun-if-env-changed=LSP_FIXTURES_HASH");
     println!("cargo::rerun-if-env-changed=LOWERING_FIXTURES_HASH");
     println!("cargo::rerun-if-env-changed=RESOLVING_FIXTURES_HASH");
-    println!("cargo::rerun-if-env-changed=CHECKING2_FIXTURES_HASH");
+    println!("cargo::rerun-if-env-changed=CHECKING_FIXTURES_HASH");
     generate_lsp();
     generate_lowering();
     generate_resolving();
-    generate_checking2();
+    generate_checking();
 }
 
 fn generate_lsp() {
@@ -122,13 +122,13 @@ fn run_test(folder: &str, file: &str) {{
     }
 }
 
-fn generate_checking2() {
-    let mut buffer = fs::File::create("./tests/checking2/generated.rs").unwrap();
+fn generate_checking() {
+    let mut buffer = fs::File::create("./tests/checking/generated.rs").unwrap();
     writeln!(buffer, r#"// Do not edit! See build.rs
 
 #[rustfmt::skip]
 fn run_test(folder: &str, file: &str) {{
-    let path = std::path::Path::new("fixtures/checking2").join(folder);
+    let path = std::path::Path::new("fixtures/checking").join(folder);
     let (engine, _) = tests_integration::load_compiler(&path);
     let Some(id) = engine.module_file(file) else {{ return }};
 
@@ -143,18 +143,18 @@ fn run_test(folder: &str, file: &str) {{
         level,
         target_dir,
         &test_name,
-        || tests_integration::generated::basic::report_checked2(&engine, id)
+        || tests_integration::generated::basic::report_checked(&engine, id)
     );
 
     println!("trace: {{}}", trace_path.display());
 
     let mut settings = insta::Settings::clone_current();
-    settings.set_snapshot_path(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("fixtures/checking2").join(folder));
+    settings.set_snapshot_path(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("fixtures/checking").join(folder));
     settings.set_prepend_module_to_snapshot(false);
     settings.bind(|| insta::assert_snapshot!(file, report));
 }}"#).unwrap();
 
-    for folder in read_dir(Path::new("./fixtures/checking2")) {
+    for folder in read_dir(Path::new("./fixtures/checking")) {
         let Some(stem) = folder.file_stem() else { continue };
         let folder_name = stem.to_os_string().into_string().unwrap().to_snake_case();
         if folder_name == "prelude" {

@@ -39,7 +39,7 @@ pub fn collect_trace_paths(filters: &[String], debug: bool) -> Vec<PathBuf> {
 
 /// Finds a trace file that matches the given snapshot path.
 ///
-/// Snapshot paths look like: `.../fixtures/checking2/200_int_compare_transitive/Main.snap`
+/// Snapshot paths look like: `.../fixtures/checking/200_int_compare_transitive/Main.snap`
 /// Trace files look like: `200_int_compare_transitive_Main.jsonl`
 ///
 /// We extract the test identifier from the snapshot's parent directory and

@@ -18,7 +18,7 @@ pub enum QueryKey {
     Resolved(FileId),
     Bracketed(FileId),
     Sectioned(FileId),
-    Checked2(FileId),
+    Checked(FileId),
 }
 
 #[derive(Error, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]

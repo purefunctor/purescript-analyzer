@@ -1,4 +1,4 @@
-use checking2::error::ErrorCrumb;
+use checking::error::ErrorCrumb;
 use indexing::IndexedModule;
 use lowering::LoweredModule;
 use rowan::ast::{AstNode, AstPtr};
@@ -82,7 +82,7 @@ pub struct DiagnosticsContext<'a> {
     pub stabilized: &'a StabilizedModule,
     pub indexed: &'a IndexedModule,
     pub lowered: &'a LoweredModule,
-    pub checking2_lookup: Option<&'a dyn Fn(checking2::core::SmolStrId) -> SmolStr>,
+    pub checking_lookup: Option<&'a dyn Fn(checking::core::SmolStrId) -> SmolStr>,
 }
 
 impl<'a> DiagnosticsContext<'a> {
@@ -93,14 +93,14 @@ impl<'a> DiagnosticsContext<'a> {
         indexed: &'a IndexedModule,
         lowered: &'a LoweredModule,
     ) -> DiagnosticsContext<'a> {
-        DiagnosticsContext { content, root, stabilized, indexed, lowered, checking2_lookup: None }
+        DiagnosticsContext { content, root, stabilized, indexed, lowered, checking_lookup: None }
     }
 
-    pub fn with_checking2_lookup(
+    pub fn with_checking_lookup(
         mut self,
-        lookup: &'a dyn Fn(checking2::core::SmolStrId) -> SmolStr,
+        lookup: &'a dyn Fn(checking::core::SmolStrId) -> SmolStr,
     ) -> DiagnosticsContext<'a> {
-        self.checking2_lookup = Some(lookup);
+        self.checking_lookup = Some(lookup);
         self
     }
 

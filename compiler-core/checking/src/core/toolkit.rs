@@ -136,7 +136,7 @@ where
     let kind = if file_id == context.id {
         state.checked.lookup_type(type_id)
     } else {
-        let checked = context.queries.checked2(file_id)?;
+        let checked = context.queries.checked(file_id)?;
         checked.lookup_type(type_id)
     };
 
@@ -155,7 +155,7 @@ where
     let term = if file_id == context.id {
         state.checked.lookup_term(term_id)
     } else {
-        let checked = context.queries.checked2(file_id)?;
+        let checked = context.queries.checked(file_id)?;
         checked.lookup_term(term_id)
     };
 
@@ -204,7 +204,7 @@ where
     if file_id == context.id {
         Ok(state.checked.lookup_class(item_id))
     } else {
-        let checked = context.queries.checked2(file_id)?;
+        let checked = context.queries.checked(file_id)?;
         Ok(checked.lookup_class(item_id))
     }
 }
@@ -221,7 +221,7 @@ where
     if file_id == context.id {
         Ok(state.checked.lookup_synonym(type_id))
     } else {
-        let checked = context.queries.checked2(file_id)?;
+        let checked = context.queries.checked(file_id)?;
         Ok(checked.lookup_synonym(type_id))
     }
 }
@@ -238,7 +238,7 @@ where
     let operator_kind = if file_id == context.id {
         state.checked.lookup_type(type_id)
     } else {
-        let checked = context.queries.checked2(file_id)?;
+        let checked = context.queries.checked(file_id)?;
         checked.lookup_type(type_id)
     };
 
@@ -284,7 +284,7 @@ where
     let operator_type = if file_id == context.id {
         state.checked.lookup_term(term_id)
     } else {
-        let checked = context.queries.checked2(file_id)?;
+        let checked = context.queries.checked(file_id)?;
         checked.lookup_term(term_id)
     };
 
@@ -602,7 +602,7 @@ where
     if file_id == context.id {
         Ok(state.checked.lookup_roles(item_id))
     } else {
-        let checked = context.queries.checked2(file_id)?;
+        let checked = context.queries.checked(file_id)?;
         Ok(checked.lookup_roles(item_id))
     }
 }

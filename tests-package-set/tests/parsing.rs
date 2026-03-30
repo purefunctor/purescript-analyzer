@@ -186,7 +186,7 @@ fn test_parallel_parse_package_set() {
     let start = Instant::now();
     source.iter().for_each(|&id| {
         let engine = engine.snapshot();
-        let checked = engine.checked2(id);
+        let checked = engine.checked(id);
         assert!(checked.is_ok());
     });
     let checking = start.elapsed();

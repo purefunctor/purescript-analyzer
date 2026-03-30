@@ -29,13 +29,13 @@ struct DerivedStorage {
     resolved: FxHashMap<FileId, Arc<ResolvedModule>>,
     bracketed: FxHashMap<FileId, Arc<sugar::Bracketed>>,
     sectioned: FxHashMap<FileId, Arc<sugar::Sectioned>>,
-    checked2: FxHashMap<FileId, Arc<checking2::CheckedModule>>,
+    checked: FxHashMap<FileId, Arc<checking::CheckedModule>>,
 }
 
 #[derive(Default)]
 struct InternedStorage {
     module: ModuleNameInterner,
-    checking2: checking2::CoreInterners,
+    checking: checking::CoreInterners,
 }
 
 /// Single-threaded query engine for WASM
@@ -116,7 +116,7 @@ impl WasmQueryEngine {
             derived.resolved.remove(&id);
             derived.bracketed.remove(&id);
             derived.sectioned.remove(&id);
-            derived.checked2.remove(&id);
+            derived.checked.remove(&id);
         }
 
         if let Some(user_id) = self.user_id {
@@ -127,7 +127,7 @@ impl WasmQueryEngine {
             derived.resolved.remove(&user_id);
             derived.bracketed.remove(&user_id);
             derived.sectioned.remove(&user_id);
-            derived.checked2.remove(&user_id);
+            derived.checked.remove(&user_id);
         }
     }
 
@@ -144,7 +144,7 @@ impl WasmQueryEngine {
             derived.resolved.remove(&existing_id);
             derived.bracketed.remove(&existing_id);
             derived.sectioned.remove(&existing_id);
-            derived.checked2.remove(&existing_id);
+            derived.checked.remove(&existing_id);
             existing_id
         } else {
             let id = self.files.borrow_mut().insert("user://localhost/Main.purs", source);
@@ -160,14 +160,14 @@ impl WasmQueryEngine {
         id
     }
 
-    pub fn checked2(&self, id: FileId) -> QueryResult<Arc<checking2::CheckedModule>> {
-        if let Some(cached) = self.derived.borrow().checked2.get(&id) {
+    pub fn checked(&self, id: FileId) -> QueryResult<Arc<checking::CheckedModule>> {
+        if let Some(cached) = self.derived.borrow().checked.get(&id) {
             return Ok(cached.clone());
         }
 
-        let checked = Arc::new(checking2::check_module(self, id)?);
+        let checked = Arc::new(checking::check_module(self, id)?);
 
-        self.derived.borrow_mut().checked2.insert(id, checked.clone());
+        self.derived.borrow_mut().checked.insert(id, checked.clone());
         Ok(checked)
     }
 
@@ -311,47 +311,47 @@ impl QueryProxy for WasmQueryEngine {
     }
 }
 
-impl checking2::ExternalQueries for WasmQueryEngine {
-    fn checked2(&self, id: FileId) -> QueryResult<Arc<checking2::CheckedModule>> {
-        WasmQueryEngine::checked2(self, id)
+impl checking::ExternalQueries for WasmQueryEngine {
+    fn checked(&self, id: FileId) -> QueryResult<Arc<checking::CheckedModule>> {
+        WasmQueryEngine::checked(self, id)
     }
 
-    fn intern_type(&self, t: checking2::core::Type) -> checking2::core::TypeId {
-        self.interned.borrow_mut().checking2.intern_type(t)
+    fn intern_type(&self, t: checking::core::Type) -> checking::core::TypeId {
+        self.interned.borrow_mut().checking.intern_type(t)
     }
 
-    fn lookup_type(&self, id: checking2::core::TypeId) -> checking2::core::Type {
-        self.interned.borrow().checking2.lookup_type(id)
+    fn lookup_type(&self, id: checking::core::TypeId) -> checking::core::Type {
+        self.interned.borrow().checking.lookup_type(id)
     }
 
     fn intern_forall_binder(
         &self,
-        binder: checking2::core::ForallBinder,
-    ) -> checking2::core::ForallBinderId {
-        self.interned.borrow_mut().checking2.intern_forall_binder(binder)
+        binder: checking::core::ForallBinder,
+    ) -> checking::core::ForallBinderId {
+        self.interned.borrow_mut().checking.intern_forall_binder(binder)
     }
 
     fn lookup_forall_binder(
         &self,
-        id: checking2::core::ForallBinderId,
-    ) -> checking2::core::ForallBinder {
-        self.interned.borrow().checking2.lookup_forall_binder(id)
+        id: checking::core::ForallBinderId,
+    ) -> checking::core::ForallBinder {
+        self.interned.borrow().checking.lookup_forall_binder(id)
     }
 
-    fn intern_row_type(&self, row: checking2::core::RowType) -> checking2::core::RowTypeId {
-        self.interned.borrow_mut().checking2.intern_row_type(row)
+    fn intern_row_type(&self, row: checking::core::RowType) -> checking::core::RowTypeId {
+        self.interned.borrow_mut().checking.intern_row_type(row)
     }
 
-    fn lookup_row_type(&self, id: checking2::core::RowTypeId) -> checking2::core::RowType {
-        self.interned.borrow().checking2.lookup_row_type(id)
+    fn lookup_row_type(&self, id: checking::core::RowTypeId) -> checking::core::RowType {
+        self.interned.borrow().checking.lookup_row_type(id)
     }
 
-    fn intern_smol_str(&self, s: smol_str::SmolStr) -> checking2::core::SmolStrId {
-        self.interned.borrow_mut().checking2.intern_smol_str(s)
+    fn intern_smol_str(&self, s: smol_str::SmolStr) -> checking::core::SmolStrId {
+        self.interned.borrow_mut().checking.intern_smol_str(s)
     }
 
-    fn lookup_smol_str(&self, id: checking2::core::SmolStrId) -> smol_str::SmolStr {
-        self.interned.borrow().checking2.lookup_smol_str(id)
+    fn lookup_smol_str(&self, id: checking::core::SmolStrId) -> smol_str::SmolStr {
+        self.interned.borrow().checking.lookup_smol_str(id)
     }
 }
 

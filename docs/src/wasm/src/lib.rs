@@ -4,8 +4,8 @@ mod utils;
 use std::cell::RefCell;
 
 use building_types::QueryProxy;
-use checking2::core::pretty as pretty2;
-use checking2::{core as core2, ExternalQueries};
+use checking::core::pretty;
+use checking::{core, ExternalQueries};
 use engine::WasmQueryEngine;
 use indexing::{TermItem, TypeItem};
 use serde::Serialize;
@@ -209,7 +209,7 @@ pub fn check(source: &str) -> JsValue {
         let lower_time = performance.now() - start;
 
         let start = performance.now();
-        let checked = match engine.checked2(id) {
+        let checked = match engine.checked(id) {
             Ok(c) => c,
             Err(e) => {
                 return CheckResult {
@@ -237,17 +237,17 @@ pub fn check(source: &str) -> JsValue {
         };
         let check_time = performance.now() - start;
 
-        let name_text = |name: core2::Name| -> String {
+        let name_text = |name: core::Name| -> String {
             checked
                 .lookup_name(name)
                 .map(|id| engine.lookup_smol_str(id).to_string())
                 .unwrap_or_else(|| name.as_text().to_string())
         };
 
-        let pretty = |type_id| pretty2::Pretty::new(engine, &checked).render(type_id);
+        let pretty = |type_id| pretty::Pretty::new(engine, &checked).render(type_id);
 
         let pretty_signature = |name: &str, type_id| {
-            pretty2::Pretty::new(engine, &checked).signature(name).render(type_id)
+            pretty::Pretty::new(engine, &checked).signature(name).render(type_id)
         };
 
         // Extract results
@@ -289,13 +289,13 @@ pub fn check(source: &str) -> JsValue {
         for error in &checked.errors {
             let message = |id| engine.lookup_smol_str(id).to_string();
             let (kind, message) = match &error.kind {
-                checking2::error::ErrorKind::CannotUnify { t1, t2 } => {
+                checking::error::ErrorKind::CannotUnify { t1, t2 } => {
                     ("CannotUnify".to_string(), format!("{} ~ {}", message(*t1), message(*t2)))
                 }
-                checking2::error::ErrorKind::NoInstanceFound { constraint } => {
+                checking::error::ErrorKind::NoInstanceFound { constraint } => {
                     ("NoInstanceFound".to_string(), message(*constraint))
                 }
-                checking2::error::ErrorKind::AmbiguousConstraint { constraint } => {
+                checking::error::ErrorKind::AmbiguousConstraint { constraint } => {
                     ("AmbiguousConstraint".to_string(), message(*constraint))
                 }
                 _ => (format!("{:?}", error.kind), String::new()),

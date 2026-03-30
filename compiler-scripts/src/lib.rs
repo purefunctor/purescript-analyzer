@@ -55,7 +55,7 @@ pub mod fixtures {
             ("LSP_FIXTURES_HASH".into(), hash_fixtures(&base.join("lsp"))),
             ("LOWERING_FIXTURES_HASH".into(), hash_fixtures(&base.join("lowering"))),
             ("RESOLVING_FIXTURES_HASH".into(), hash_fixtures(&base.join("resolving"))),
-            ("CHECKING2_FIXTURES_HASH".into(), hash_fixtures(&base.join("checking2"))),
+            ("CHECKING_FIXTURES_HASH".into(), hash_fixtures(&base.join("checking"))),
         ])
     }
 }

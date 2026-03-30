@@ -197,7 +197,7 @@ name = "building"
 version = "0.1.0"
 dependencies = [
  "building-types",
- "checking2",
+ "checking",
  "files",
  "indexing",
  "interner",
@@ -275,7 +275,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "613afe47fcd5fac7ccf1db93babcb082c5994d996f20b8b159f2ad1658eb5724"
 
 [[package]]
-name = "checking2"
+name = "checking"
 version = "0.1.0"
 dependencies = [
  "building-types",
@@ -489,7 +489,7 @@ dependencies = [
 name = "diagnostics"
 version = "0.1.0"
 dependencies = [
- "checking2",
+ "checking",
  "files",
  "indexing",
  "itertools 0.14.0",
@@ -529,7 +529,7 @@ name = "docs-lib"
 version = "0.1.0"
 dependencies = [
  "building-types",
- "checking2",
+ "checking",
  "console_error_panic_hook",
  "files",
  "indexing",
@@ -1893,7 +1893,7 @@ version = "0.1.0"
 dependencies = [
  "analyzer",
  "async-lsp",
- "checking2",
+ "checking",
  "diagnostics",
  "files",
  "glob",

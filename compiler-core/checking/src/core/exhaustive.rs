@@ -967,7 +967,7 @@ where
     let constructor_type = if file_id == context.id {
         state.checked.lookup_term(term_id)
     } else {
-        let checked = context.queries.checked2(file_id)?;
+        let checked = context.queries.checked(file_id)?;
         checked.lookup_term(term_id)
     };
 

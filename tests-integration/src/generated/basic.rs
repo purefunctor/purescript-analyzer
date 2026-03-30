@@ -1,8 +1,8 @@
 use std::fmt::Write;
 
 use analyzer::{QueryEngine, locate};
-use checking2::core::pretty as pretty2;
-use checking2::{ExternalQueries, core as core2};
+use checking::core::pretty as pretty2;
+use checking::{ExternalQueries, core as core2};
 use diagnostics::{DiagnosticsContext, ToDiagnostics, format_rustc};
 use files::FileId;
 use indexing::{ImportKind, TermItem, TypeItem, TypeItemId, TypeItemKind};
@@ -202,9 +202,9 @@ pub fn report_lowered(engine: &QueryEngine, id: FileId, name: &str) -> String {
     out
 }
 
-pub fn report_checked2(engine: &QueryEngine, id: FileId) -> String {
+pub fn report_checked(engine: &QueryEngine, id: FileId) -> String {
     let indexed = engine.indexed(id).unwrap();
-    let checked = engine.checked2(id).unwrap();
+    let checked = engine.checked(id).unwrap();
 
     let name_text = |name: core2::Name| -> String {
         checked
@@ -332,7 +332,7 @@ pub fn report_checked2(engine: &QueryEngine, id: FileId) -> String {
         writeln!(out, "{name} = [{}]", roles_str.join(", ")).unwrap();
     }
 
-    write_checked2_diagnostics(&mut out, engine, id, &indexed, &checked);
+    write_checked_diagnostics(&mut out, engine, id, &indexed, &checked);
 
     out
 }
@@ -378,12 +378,12 @@ fn write_term_resolution(
     }
 }
 
-fn write_checked2_diagnostics(
+fn write_checked_diagnostics(
     out: &mut String,
     engine: &QueryEngine,
     id: FileId,
     indexed: &indexing::IndexedModule,
-    checked: &checking2::CheckedModule,
+    checked: &checking::CheckedModule,
 ) {
     let content = engine.content(id);
     let (parsed, _) = engine.parsed(id).unwrap();
@@ -394,7 +394,7 @@ fn write_checked2_diagnostics(
 
     let lookup_smol_str = |id| engine.lookup_smol_str(id);
     let context = DiagnosticsContext::new(&content, &root, &stabilized, indexed, &lowered)
-        .with_checking2_lookup(&lookup_smol_str);
+        .with_checking_lookup(&lookup_smol_str);
 
     let mut all_diagnostics = vec![];
 

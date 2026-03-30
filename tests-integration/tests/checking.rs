@@ -1,2 +1,2 @@
-#[path = "checking2/generated.rs"]
+#[path = "checking/generated.rs"]
 mod generated;

@@ -1,12 +1,12 @@
 ---
 name: type-checker-tests
-description: Add integration tests for type checker inference and checking2 functions
+description: Add integration tests for type checker inference and checking functions
 allowed-tools: Bash(mkdir:*)
 ---
 
 # Type Checker Integration Tests
 
-Use the command reference at `reference/compiler-scripts.md` for test runner syntax, snapshot workflows, filters, and trace debugging. The category is `checking2`.
+Use the command reference at `reference/compiler-scripts.md` for test runner syntax, snapshot workflows, filters, and trace debugging. The category is `checking`.
 
 **Language:** Fixtures use PureScript syntax, not Haskell.
 
@@ -15,7 +15,7 @@ Use the command reference at `reference/compiler-scripts.md` for test runner syn
 ### 1. Create fixture directory
 
 ```bash
-just t checking2 --create "descriptive name"
+just t checking --create "descriptive name"
 ```
 
 The CLI picks the next fixture number and creates the folder.
@@ -24,7 +24,7 @@ Tests are auto-discovered by `build.rs`.
 
 ### 2. Write Main.purs
 
-**Standard pattern** - pair typed (checking2) and untyped (inference) variants:
+**Standard pattern** - pair typed (checking) and untyped (inference) variants:
 
 ```purescript
 module Main where
@@ -45,16 +45,16 @@ test' [x] = x
 ### 3. Run and review
 
 ```bash
-just t checking2 NNN MMM
+just t checking NNN MMM
 ```
 
 ### 4. Accept or reject snapshots
 
 ```bash
-just t checking2 NNN --diff        # Inspect a fixture diff
-just t checking2 NNN --accept      # Accept a specific fixture
-just t checking2 NNN --reject      # Reject a specific fixture
-just t checking2 --accept --confirm # Accept all pending snapshots
+just t checking NNN --diff        # Inspect a fixture diff
+just t checking NNN --accept      # Accept a specific fixture
+just t checking NNN --reject      # Reject a specific fixture
+just t checking --accept --confirm # Accept all pending snapshots
 ```
 
 ## Multi-File Tests
@@ -62,7 +62,7 @@ just t checking2 --accept --confirm # Accept all pending snapshots
 For imports, re-exports, or cross-module behavior:
 
 ```
-tests-integration/fixtures/checking2/NNN_import_test/
+tests-integration/fixtures/checking/NNN_import_test/
 ├── Main.purs    # Test file (snapshot generated)
 ├── Lib.purs     # Supporting module
 └── Main.snap    # Generated snapshot

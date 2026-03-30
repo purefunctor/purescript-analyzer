@@ -2,7 +2,7 @@
 
 #[rustfmt::skip]
 fn run_test(folder: &str, file: &str) {
-    let path = std::path::Path::new("fixtures/checking2").join(folder);
+    let path = std::path::Path::new("fixtures/checking").join(folder);
     let (engine, _) = tests_integration::load_compiler(&path);
     let Some(id) = engine.module_file(file) else { return };
 
@@ -17,13 +17,13 @@ fn run_test(folder: &str, file: &str) {
         level,
         target_dir,
         &test_name,
-        || tests_integration::generated::basic::report_checked2(&engine, id)
+        || tests_integration::generated::basic::report_checked(&engine, id)
     );
 
     println!("trace: {}", trace_path.display());
 
     let mut settings = insta::Settings::clone_current();
-    settings.set_snapshot_path(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("fixtures/checking2").join(folder));
+    settings.set_snapshot_path(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("fixtures/checking").join(folder));
     settings.set_prepend_module_to_snapshot(false);
     settings.bind(|| insta::assert_snapshot!(file, report));
 }

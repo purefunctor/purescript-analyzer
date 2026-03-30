@@ -21,7 +21,7 @@ serde-wasm-bindgen = "0.6"
 
 # Compiler core crates
 building-types = { version = "0.1.0", path = "../../../compiler-core/building-types" }
-checking2 = { version = "0.1.0", path = "../../../compiler-core/checking2" }
+checking = { version = "0.1.0", path = "../../../compiler-core/checking" }
 files = { version = "0.1.0", path = "../../../compiler-core/files" }
 indexing = { version = "0.1.0", path = "../../../compiler-core/indexing" }
 interner = { version = "0.1.0", path = "../../../compiler-core/interner" }
