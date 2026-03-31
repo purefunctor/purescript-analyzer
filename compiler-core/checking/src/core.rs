@@ -1,6 +1,7 @@
 //! Implements core type structures.
 
 pub mod constraint;
+pub mod constraint2;
 pub mod exhaustive;
 pub mod fold;
 pub mod generalise;

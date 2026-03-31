@@ -7,6 +7,7 @@ use building_types::QueryResult;
 use files::FileId;
 
 use crate::context::CheckContext;
+use crate::core::constraint2::Canonicals;
 use crate::core::exhaustive::{
     ExhaustivenessReport, Pattern, PatternConstructor, PatternId, PatternInterner, PatternKind,
 };
@@ -199,6 +200,7 @@ pub struct CheckState {
 
     pub unifications: Unifications,
     pub implications: Implications,
+    pub canonicals: Canonicals,
 
     pub defer_expansion: bool,
     pub depth: Depth,
@@ -215,6 +217,7 @@ impl CheckState {
             patterns: Default::default(),
             unifications: Default::default(),
             implications: Default::default(),
+            canonicals: Default::default(),
             defer_expansion: Default::default(),
             depth: Depth(0),
             crumbs: Default::default(),
