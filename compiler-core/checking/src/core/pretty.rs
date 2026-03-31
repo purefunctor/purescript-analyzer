@@ -1,167 +1,55 @@
-//! Implements the pretty printer.
+//! Implements the pretty printer for core types.
 
 use itertools::Itertools;
 use lowering::StringKind;
 use pretty::{Arena, DocAllocator, DocBuilder};
 use rustc_hash::FxHashMap;
+use smol_str::{SmolStr, SmolStrBuilder};
 
-use crate::ExternalQueries;
-use crate::algorithm::state::{CheckContext, CheckState};
-use crate::core::{ForallBinder, RowField, RowType, Type, TypeId, Variable, debruijn};
+use crate::core::{
+    ForallBinder, ForallBinderId, Name, RowField, RowType, RowTypeId, SmolStrId, Type, TypeId,
+};
+use crate::{CheckedModule, ExternalQueries};
 
 type Doc<'a> = DocBuilder<'a, Arena<'a>, ()>;
 
-pub struct PrettyConfig {
-    pub width: usize,
+pub struct Pretty<'a, Q> {
+    queries: &'a Q,
+    width: usize,
+    signature: Option<&'a str>,
+    checked: &'a CheckedModule,
 }
 
-impl Default for PrettyConfig {
-    fn default() -> PrettyConfig {
-        PrettyConfig { width: 100 }
-    }
-}
-
-pub fn print_local<Q>(state: &mut CheckState, context: &CheckContext<Q>, id: TypeId) -> String
-where
-    Q: ExternalQueries,
-{
-    print_local_with_config(state, context, id, &PrettyConfig::default())
-}
-
-pub fn print_local_with_config<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    id: TypeId,
-    config: &PrettyConfig,
-) -> String
-where
-    Q: ExternalQueries,
-{
-    let queries = context.queries;
-
-    let arena = Arena::new();
-    let mut source = TraversalSource::Local { state, queries };
-    let mut context = TraversalContext::new();
-
-    let mut output = String::default();
-    let document = traverse_precedence(&arena, &mut source, &mut context, Precedence::Top, id);
-    document.render_fmt(config.width, &mut output).unwrap();
-    output
-}
-
-pub fn print_global<Q>(queries: &Q, id: TypeId) -> String
-where
-    Q: ExternalQueries,
-{
-    print_global_with_config(queries, id, &PrettyConfig::default())
-}
-
-pub fn print_global_with_config<Q>(queries: &Q, id: TypeId, config: &PrettyConfig) -> String
-where
-    Q: ExternalQueries,
-{
-    let arena = Arena::new();
-    let mut source = TraversalSource::Global { queries };
-    let mut context = TraversalContext::new();
-
-    let mut output = String::default();
-    let document = traverse_precedence(&arena, &mut source, &mut context, Precedence::Top, id);
-    document.render_fmt(config.width, &mut output).unwrap();
-    output
-}
-
-pub fn print_signature_local<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    name: &str,
-    id: TypeId,
-) -> String
-where
-    Q: ExternalQueries,
-{
-    print_signature_local_with_config(state, context, name, id, &PrettyConfig::default())
-}
-
-pub fn print_signature_local_with_config<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    name: &str,
-    id: TypeId,
-    config: &PrettyConfig,
-) -> String
-where
-    Q: ExternalQueries,
-{
-    let queries = context.queries;
-    let arena = Arena::new();
-    let mut source = TraversalSource::Local { state, queries };
-    let mut ctx = TraversalContext::new();
-    let type_doc = traverse_precedence(&arena, &mut source, &mut ctx, Precedence::Top, id);
-
-    let type_break = arena.line().append(type_doc).nest(2);
-    let doc = arena.text(name).append(arena.text(" ::")).append(type_break).group();
-
-    let mut output = String::new();
-    doc.render_fmt(config.width, &mut output).unwrap();
-    output
-}
-
-pub fn print_signature_global<Q>(queries: &Q, name: &str, id: TypeId) -> String
-where
-    Q: ExternalQueries,
-{
-    print_signature_global_with_config(queries, name, id, &PrettyConfig::default())
-}
-
-pub fn print_signature_global_with_config<Q>(
-    queries: &Q,
-    name: &str,
-    id: TypeId,
-    config: &PrettyConfig,
-) -> String
-where
-    Q: ExternalQueries,
-{
-    let arena = Arena::new();
-    let mut source = TraversalSource::Global { queries };
-    let mut ctx = TraversalContext::new();
-    let type_doc = traverse_precedence(&arena, &mut source, &mut ctx, Precedence::Top, id);
-
-    let type_break = arena.line().append(type_doc).nest(2);
-    let doc = arena.text(name).append(arena.text(" ::")).append(type_break).group();
-
-    let mut output = String::new();
-    doc.render_fmt(config.width, &mut output).unwrap();
-    output
-}
-
-enum TraversalSource<'a, Q>
-where
-    Q: ExternalQueries,
-{
-    Local { state: &'a mut CheckState, queries: &'a Q },
-    Global { queries: &'a Q },
-}
-
-impl<'a, Q> TraversalSource<'a, Q>
-where
-    Q: ExternalQueries,
-{
-    fn lookup(&mut self, id: TypeId) -> Type {
-        match self {
-            TraversalSource::Local { state, .. } => {
-                let id = state.normalize_type(id);
-                state.storage[id].clone()
-            }
-            TraversalSource::Global { queries } => queries.lookup_type(id),
-        }
+impl<'a, Q: ExternalQueries> Pretty<'a, Q> {
+    pub fn new(queries: &'a Q, checked: &'a CheckedModule) -> Self {
+        Pretty { queries, width: 100, signature: None, checked }
     }
 
-    fn queries(&self) -> &Q {
-        match self {
-            TraversalSource::Local { queries, .. } => queries,
-            TraversalSource::Global { queries } => queries,
-        }
+    pub fn width(mut self, width: usize) -> Self {
+        self.width = width;
+        self
+    }
+
+    pub fn signature(mut self, name: &'a str) -> Self {
+        self.signature = Some(name);
+        self
+    }
+
+    pub fn render(self, id: TypeId) -> SmolStr {
+        let arena = Arena::new();
+        let mut printer = Printer::new(&arena, self.queries, &self.checked.names);
+
+        let document = if let Some(name) = self.signature {
+            printer.signature(name, id)
+        } else {
+            printer.traverse(Precedence::Top, id)
+        };
+
+        let mut output = SmolStrBuilder::new();
+        document
+            .render_fmt(self.width, &mut output)
+            .expect("critical failure: failed to render type");
+        output.finish()
     }
 }
 
@@ -174,438 +62,413 @@ enum Precedence {
     Atom,
 }
 
-struct TraversalContext {
-    names: FxHashMap<u32, String>,
-    depth: debruijn::Size,
-}
-
-impl TraversalContext {
-    fn new() -> TraversalContext {
-        TraversalContext { names: FxHashMap::default(), depth: debruijn::Size(0) }
-    }
-}
-
-fn parens_if<'a>(arena: &'a Arena<'a>, condition: bool, doc: Doc<'a>) -> Doc<'a> {
-    if condition { arena.text("(").append(doc).append(arena.text(")")) } else { doc }
-}
-
-fn lookup_type_name<Q>(
-    source: &TraversalSource<Q>,
-    file_id: files::FileId,
-    type_id: indexing::TypeItemId,
-) -> Option<String>
+struct Printer<'a, Q>
 where
     Q: ExternalQueries,
 {
-    let indexed = source.queries().indexed(file_id).ok()?;
-    indexed.items[type_id].name.as_ref().map(|name| name.to_string())
-}
-
-fn traverse_precedence<'a, Q>(
     arena: &'a Arena<'a>,
-    source: &mut TraversalSource<'_, Q>,
-    context: &mut TraversalContext,
-    precedence: Precedence,
-    id: TypeId,
-) -> Doc<'a>
+    queries: &'a Q,
+    names: &'a FxHashMap<Name, SmolStrId>,
+}
+
+impl<'a, Q> Printer<'a, Q>
 where
     Q: ExternalQueries,
 {
-    match source.lookup(id) {
-        Type::Application(mut function, argument) => {
-            if is_record_constructor(source, function) {
-                return match source.lookup(argument) {
-                    Type::Row(RowType { fields, tail }) => {
-                        format_record(arena, source, context, &fields, tail)
-                    }
-                    _ => {
-                        let inner =
-                            traverse_precedence(arena, source, context, Precedence::Top, argument);
-                        arena.text("{| ").append(inner).append(arena.text(" }"))
-                    }
+    fn new(
+        arena: &'a Arena<'a>,
+        queries: &'a Q,
+        names: &'a FxHashMap<Name, SmolStrId>,
+    ) -> Printer<'a, Q> {
+        Printer { arena, queries, names }
+    }
+
+    fn lookup_type(&self, id: TypeId) -> Type {
+        self.queries.lookup_type(id)
+    }
+
+    fn lookup_forall_binder(&self, id: ForallBinderId) -> ForallBinder {
+        self.queries.lookup_forall_binder(id)
+    }
+
+    fn lookup_row_type(&self, id: RowTypeId) -> RowType {
+        self.queries.lookup_row_type(id)
+    }
+
+    fn lookup_smol_str(&self, id: SmolStrId) -> smol_str::SmolStr {
+        self.queries.lookup_smol_str(id)
+    }
+
+    fn lookup_type_name(
+        &self,
+        file_id: files::FileId,
+        type_id: indexing::TypeItemId,
+    ) -> Option<String> {
+        let indexed = self.queries.indexed(file_id).ok()?;
+        indexed.items[type_id].name.as_ref().map(|name| name.to_string())
+    }
+
+    fn is_record_constructor(&self, id: TypeId) -> bool {
+        if let Type::Constructor(file_id, type_id) = self.lookup_type(id)
+            && file_id == self.queries.prim_id()
+            && let Some(name) = self.lookup_type_name(file_id, type_id)
+        {
+            return name == "Record";
+        }
+        false
+    }
+
+    fn parens_if(&self, condition: bool, doc: Doc<'a>) -> Doc<'a> {
+        if condition { self.arena.text("(").append(doc).append(self.arena.text(")")) } else { doc }
+    }
+
+    fn signature(&mut self, name: &str, id: TypeId) -> Doc<'a> {
+        let signature = self.traverse(Precedence::Top, id);
+        let signature = self.arena.line().append(signature).nest(2);
+        self.arena.text(format!("{name} ::")).append(signature).group()
+    }
+
+    fn traverse(&mut self, precedence: Precedence, id: TypeId) -> Doc<'a> {
+        match self.lookup_type(id) {
+            Type::Application(function, argument) => {
+                self.traverse_application(precedence, function, argument)
+            }
+
+            Type::KindApplication(function, argument) => {
+                self.traverse_kind_application(precedence, function, argument)
+            }
+
+            Type::Forall(binder_id, inner) => self.traverse_forall(precedence, binder_id, inner),
+
+            Type::Constrained(constraint, inner) => {
+                self.traverse_constrained(precedence, constraint, inner)
+            }
+
+            Type::Function(argument, result) => {
+                self.traverse_function(precedence, argument, result)
+            }
+
+            Type::Kinded(inner, kind) => {
+                let inner = self.traverse(Precedence::Application, inner);
+                let kind = self.traverse(Precedence::Top, kind);
+                let kinded = inner.append(self.arena.text(" :: ")).append(kind);
+                self.parens_if(precedence > Precedence::Atom, kinded)
+            }
+
+            Type::Constructor(file_id, type_id) => {
+                let name = self
+                    .lookup_type_name(file_id, type_id)
+                    .unwrap_or_else(|| "<InvalidName>".to_string());
+                self.arena.text(name)
+            }
+
+            Type::Integer(integer) => {
+                let negative = integer.is_negative();
+                let integer = self.arena.text(format!("{integer}"));
+                self.parens_if(negative, integer)
+            }
+
+            Type::String(kind, string_id) => {
+                let string = self.lookup_smol_str(string_id);
+                match kind {
+                    StringKind::String => self.arena.text(format!("\"{string}\"")),
+                    StringKind::RawString => self.arena.text(format!("\"\"\"{string}\"\"\"")),
+                }
+            }
+
+            Type::Row(row_id) => {
+                let row = self.lookup_row_type(row_id);
+                if row.fields.is_empty() && row.tail.is_none() {
+                    return self.arena.text("()");
+                }
+                self.format_row(&row.fields, row.tail)
+            }
+
+            Type::Rigid(name, _, kind) => {
+                let text = match self.names.get(&name) {
+                    Some(&id) => self.lookup_smol_str(id),
+                    None => name.as_text(),
                 };
+                let kind = self.traverse(Precedence::Top, kind);
+                self.arena.text(format!("({text} :: ")).append(kind).append(self.arena.text(")"))
             }
 
-            let mut arguments = vec![argument];
+            Type::Unification(unification_id) => self.arena.text(format!("?{unification_id}")),
 
-            while let Type::Application(inner_function, argument) = source.lookup(function) {
-                function = inner_function;
-                arguments.push(argument);
+            Type::Free(name_id) => {
+                let name = self.lookup_smol_str(name_id);
+                self.arena.text(format!("{name}"))
             }
 
-            let func_doc =
-                traverse_precedence(arena, source, context, Precedence::Application, function);
-
-            let arg_docs = arguments
-                .iter()
-                .rev()
-                .map(|&arg| traverse_precedence(arena, source, context, Precedence::Atom, arg))
-                .collect_vec();
-
-            let args_doc = arg_docs
-                .into_iter()
-                .fold(arena.nil(), |acc, arg| acc.append(arena.line()).append(arg));
-
-            let doc = func_doc.append(args_doc.nest(2)).group();
-            parens_if(arena, precedence > Precedence::Application, doc)
-        }
-
-        Type::Constrained(constraint, mut inner) => {
-            let mut constraints = vec![constraint];
-
-            while let Type::Constrained(constraint, inner_inner) = source.lookup(inner) {
-                constraints.push(constraint);
-                inner = inner_inner;
+            Type::Unknown(name_id) => {
+                let name = self.lookup_smol_str(name_id);
+                self.arena.text(format!("?[{name}]"))
             }
-
-            let constraint_docs = constraints
-                .iter()
-                .map(|&c| traverse_precedence(arena, source, context, Precedence::Application, c))
-                .collect_vec();
-
-            let inner_doc =
-                traverse_precedence(arena, source, context, Precedence::Constraint, inner);
-
-            let trailing_fat_arrow = arena.text(" =>").append(arena.line());
-            let constraints_doc = constraint_docs
-                .into_iter()
-                .fold(arena.nil(), |acc, c| acc.append(c).append(trailing_fat_arrow.clone()));
-
-            let doc = constraints_doc.append(inner_doc).group();
-            parens_if(arena, precedence > Precedence::Constraint, doc)
         }
-
-        Type::Constructor(file_id, type_id) => {
-            let name = lookup_type_name(source, file_id, type_id)
-                .unwrap_or_else(|| "<InvalidName>".to_string());
-            arena.text(name)
-        }
-
-        Type::Forall(ref binder, mut inner) => {
-            let binder = binder.clone();
-            let mut binders = vec![binder];
-
-            while let Type::Forall(ref binder, inner_inner) = source.lookup(inner) {
-                let binder = binder.clone();
-                binders.push(binder);
-                inner = inner_inner;
-            }
-
-            let previous_depth = context.depth;
-
-            let binder_docs = binders
-                .iter()
-                .map(|ForallBinder { name, kind, .. }| {
-                    let kind_doc =
-                        traverse_precedence(arena, source, context, Precedence::Top, *kind);
-                    context.names.insert(context.depth.0, name.to_string());
-                    context.depth = debruijn::Size(context.depth.0 + 1);
-
-                    // Group each binder so it stays together as an atomic unit
-                    arena
-                        .text("(")
-                        .append(arena.text(name.to_string()))
-                        .append(arena.text(" :: "))
-                        .append(kind_doc)
-                        .append(arena.text(")"))
-                        .group()
-                })
-                .collect_vec();
-
-            // Build binders with fill behavior: each binder independently decides
-            // whether it fits on the current line or needs to break.
-            // Structure: binder1 + group(line + binder2) + group(line + binder3) + ...
-            let mut iter = binder_docs.into_iter();
-            let binders_doc = if let Some(first) = iter.next() {
-                iter.fold(first, |acc, binder| {
-                    acc.append(arena.line().append(binder).nest(2).group())
-                })
-            } else {
-                arena.nil()
-            };
-
-            let forall_header = arena.text("forall ").append(binders_doc).append(arena.text("."));
-
-            let inner_doc = traverse_precedence(arena, source, context, Precedence::Top, inner);
-            context.depth = previous_depth;
-
-            let body_break = arena.line().append(inner_doc).nest(2);
-            let doc = forall_header.append(body_break).group();
-
-            parens_if(arena, precedence > Precedence::Top, doc)
-        }
-
-        Type::Function(argument, mut result) => {
-            let mut arguments = vec![argument];
-
-            while let Type::Function(argument, inner_result) = source.lookup(result) {
-                result = inner_result;
-                arguments.push(argument);
-            }
-
-            let arg_docs = arguments
-                .iter()
-                .map(|&arg| {
-                    traverse_precedence(arena, source, context, Precedence::Application, arg)
-                })
-                .collect_vec();
-
-            let result_doc =
-                traverse_precedence(arena, source, context, Precedence::Function, result);
-
-            let trailing_arrow = arena.text(" ->").append(arena.line());
-            let args_doc = arg_docs
-                .into_iter()
-                .fold(arena.nil(), |acc, arg| acc.append(arg).append(trailing_arrow.clone()));
-
-            let doc = args_doc.append(result_doc).group();
-            parens_if(arena, precedence > Precedence::Function, doc)
-        }
-
-        Type::Integer(integer) => {
-            let doc = arena.text(integer.to_string());
-            parens_if(arena, integer.is_negative(), doc)
-        }
-
-        Type::KindApplication(mut function, argument) => {
-            let mut arguments = vec![argument];
-
-            while let Type::KindApplication(inner_function, argument) = source.lookup(function) {
-                function = inner_function;
-                arguments.push(argument);
-            }
-
-            let func_doc =
-                traverse_precedence(arena, source, context, Precedence::Application, function);
-
-            let arg_docs = arguments
-                .iter()
-                .rev()
-                .map(|&arg| traverse_precedence(arena, source, context, Precedence::Atom, arg))
-                .collect_vec();
-
-            let args_doc = arg_docs.into_iter().fold(arena.nil(), |acc, arg| {
-                acc.append(arena.line()).append(arena.text("@")).append(arg)
-            });
-
-            let doc = func_doc.append(args_doc.nest(2)).group();
-            parens_if(arena, precedence > Precedence::Application, doc)
-        }
-
-        Type::Kinded(inner, kind) => {
-            let inner_doc =
-                traverse_precedence(arena, source, context, Precedence::Application, inner);
-            let kind_doc = traverse_precedence(arena, source, context, Precedence::Top, kind);
-            let doc = inner_doc.append(arena.text(" :: ")).append(kind_doc);
-            parens_if(arena, precedence > Precedence::Atom, doc)
-        }
-
-        Type::Operator(file_id, type_id) => {
-            let name = lookup_type_name(source, file_id, type_id)
-                .unwrap_or_else(|| "<InvalidName>".to_string());
-            arena.text(name)
-        }
-
-        Type::OperatorApplication(file_id, type_id, left, right) => {
-            let operator = lookup_type_name(source, file_id, type_id)
-                .unwrap_or_else(|| "<InvalidName>".to_string());
-
-            let left_doc =
-                traverse_precedence(arena, source, context, Precedence::Application, left);
-            let right_doc =
-                traverse_precedence(arena, source, context, Precedence::Application, right);
-
-            let doc = left_doc
-                .append(arena.text(" "))
-                .append(arena.text(operator))
-                .append(arena.text(" "))
-                .append(right_doc);
-            parens_if(arena, precedence > Precedence::Application, doc)
-        }
-
-        Type::String(kind, string) => match kind {
-            StringKind::String => arena.text(format!("\"{}\"", string)),
-            StringKind::RawString => arena.text(format!("\"\"\"{}\"\"\"", string)),
-        },
-
-        Type::SynonymApplication(_, file_id, type_id, ref arguments) => {
-            let function = lookup_type_name(source, file_id, type_id)
-                .unwrap_or_else(|| "<InvalidName>".to_string());
-
-            if arguments.is_empty() {
-                return arena.text(function);
-            }
-
-            let func_doc = arena.text(function);
-
-            let arg_docs = arguments
-                .iter()
-                .map(|&arg| traverse_precedence(arena, source, context, Precedence::Atom, arg))
-                .collect_vec();
-
-            let args_doc = arg_docs
-                .into_iter()
-                .fold(arena.nil(), |acc, arg| acc.append(arena.line()).append(arg));
-
-            let doc = func_doc.append(args_doc.nest(2)).group();
-            parens_if(arena, precedence > Precedence::Application, doc)
-        }
-
-        Type::Unification(unification_id) => match source {
-            TraversalSource::Local { state, .. } => {
-                let unification = state.unification.get(unification_id);
-                arena.text(format!("?{}[{}]", unification_id, unification.domain))
-            }
-            TraversalSource::Global { .. } => arena.text(format!("?{}[<Global>]", unification_id)),
-        },
-
-        Type::Row(RowType { fields, tail }) => {
-            if fields.is_empty() && tail.is_none() {
-                return arena.text("()");
-            }
-            format_row(arena, source, context, &fields, tail)
-        }
-
-        Type::Variable(ref variable) => render_variable(arena, source, context, variable),
-
-        Type::Unknown => arena.text("???"),
     }
 }
 
-fn render_variable<'a, Q>(
-    arena: &'a Arena<'a>,
-    source: &mut TraversalSource<'_, Q>,
-    context: &mut TraversalContext,
-    variable: &Variable,
-) -> Doc<'a>
+impl<'a, Q> Printer<'a, Q>
 where
     Q: ExternalQueries,
 {
-    match variable {
-        Variable::Skolem(level, kind) => {
-            let kind_doc = traverse_precedence(arena, source, context, Precedence::Top, *kind);
-            arena
-                .text("(")
-                .append(arena.text(format!("~{}", level)))
-                .append(arena.text(" :: "))
-                .append(kind_doc)
-                .append(arena.text(")"))
+    fn traverse_application(
+        &mut self,
+        precedence: Precedence,
+        mut function: TypeId,
+        argument: TypeId,
+    ) -> Doc<'a> {
+        if self.is_record_constructor(function) {
+            return self.format_record_application(argument);
         }
-        Variable::Bound(level, kind) => {
-            let name = context.names.get(&level.0).cloned();
-            let name_doc = arena.text(name.unwrap_or_else(|| format!("{}", level)));
-            let kind_doc = traverse_precedence(arena, source, context, Precedence::Top, *kind);
-            arena
-                .text("(")
-                .append(name_doc)
-                .append(arena.text(" :: "))
-                .append(kind_doc)
-                .append(arena.text(")"))
+
+        let mut arguments = vec![argument];
+
+        while let Type::Application(inner_function, argument) = self.lookup_type(function) {
+            function = inner_function;
+            arguments.push(argument);
         }
-        Variable::Free(name) => arena.text(format!("{}", name)),
+
+        let function = self.traverse(Precedence::Application, function);
+
+        let arguments = arguments
+            .iter()
+            .rev()
+            .map(|&argument| self.traverse(Precedence::Atom, argument))
+            .collect_vec();
+
+        let arguments = arguments.into_iter().fold(self.arena.nil(), |builder, argument| {
+            builder.append(self.arena.line()).append(argument)
+        });
+
+        let application = function.append(arguments.nest(2)).group();
+        self.parens_if(precedence > Precedence::Application, application)
+    }
+
+    fn format_record_application(&mut self, argument: TypeId) -> Doc<'a> {
+        match self.lookup_type(argument) {
+            Type::Row(row_id) => {
+                let row = self.lookup_row_type(row_id);
+                self.format_record(&row.fields, row.tail)
+            }
+            _ => {
+                let inner = self.traverse(Precedence::Top, argument);
+                self.arena.text("{| ").append(inner).append(self.arena.text(" }"))
+            }
+        }
+    }
+
+    fn traverse_kind_application(
+        &mut self,
+        precedence: Precedence,
+        mut function: TypeId,
+        argument: TypeId,
+    ) -> Doc<'a> {
+        let mut arguments = vec![argument];
+
+        while let Type::KindApplication(inner_function, argument) = self.lookup_type(function) {
+            function = inner_function;
+            arguments.push(argument);
+        }
+
+        let function = self.traverse(Precedence::Application, function);
+
+        let arguments = arguments
+            .iter()
+            .rev()
+            .map(|&argument| self.traverse(Precedence::Atom, argument))
+            .collect_vec();
+
+        let arguments = arguments.into_iter().fold(self.arena.nil(), |builder, argument| {
+            builder.append(self.arena.line()).append(self.arena.text("@")).append(argument)
+        });
+
+        let application = function.append(arguments.nest(2)).group();
+        self.parens_if(precedence > Precedence::Application, application)
     }
 }
 
-fn format_record<'a, Q>(
-    arena: &'a Arena<'a>,
-    source: &mut TraversalSource<'_, Q>,
-    context: &mut TraversalContext,
-    fields: &[RowField],
-    tail: Option<TypeId>,
-) -> Doc<'a>
+impl<'a, Q> Printer<'a, Q>
 where
     Q: ExternalQueries,
 {
-    if fields.is_empty() && tail.is_none() {
-        return arena.text("{}");
-    }
+    fn traverse_forall(
+        &mut self,
+        precedence: Precedence,
+        binder_id: ForallBinderId,
+        mut inner: TypeId,
+    ) -> Doc<'a> {
+        let binder = self.lookup_forall_binder(binder_id);
+        let mut binders = vec![binder];
 
-    let body = format_row_body(arena, source, context, fields, tail);
+        while let Type::Forall(next_binder_id, next_inner) = self.lookup_type(inner) {
+            binders.push(self.lookup_forall_binder(next_binder_id));
+            inner = next_inner;
+        }
 
-    arena.text("{ ").append(body).append(arena.line()).append(arena.text("}")).group()
-}
+        let binders = binders
+            .iter()
+            .map(|binder| {
+                let name = match self.names.get(&binder.name) {
+                    Some(&id) => self.lookup_smol_str(id),
+                    None => binder.name.as_text(),
+                };
+                let text = if binder.visible { format!("@{name}") } else { name.to_string() };
+                let kind = self.traverse(Precedence::Top, binder.kind);
+                self.arena
+                    .text(format!("({} :: ", text))
+                    .append(kind)
+                    .append(self.arena.text(")"))
+                    .group()
+            })
+            .collect_vec();
 
-fn format_row<'a, Q>(
-    arena: &'a Arena<'a>,
-    source: &mut TraversalSource<'_, Q>,
-    context: &mut TraversalContext,
-    fields: &[RowField],
-    tail: Option<TypeId>,
-) -> Doc<'a>
-where
-    Q: ExternalQueries,
-{
-    let body = format_row_body(arena, source, context, fields, tail);
-
-    arena.text("( ").append(body).append(arena.line()).append(arena.text(")")).group()
-}
-
-fn format_row_body<'a, Q>(
-    arena: &'a Arena<'a>,
-    source: &mut TraversalSource<'_, Q>,
-    context: &mut TraversalContext,
-    fields: &[RowField],
-    tail: Option<TypeId>,
-) -> Doc<'a>
-where
-    Q: ExternalQueries,
-{
-    if fields.is_empty() {
-        return if let Some(tail) = tail {
-            let tail_doc = traverse_precedence(arena, source, context, Precedence::Top, tail);
-            arena.text("| ").append(tail_doc)
+        let mut binders = binders.into_iter();
+        let binders = if let Some(first) = binders.next() {
+            binders.fold(first, |builder, binder| {
+                builder.append(self.arena.line().append(binder).nest(2).group())
+            })
         } else {
-            arena.nil()
+            self.arena.nil()
         };
+
+        let header = self.arena.text("forall ").append(binders).append(self.arena.text("."));
+        let inner = self.traverse(Precedence::Top, inner);
+        let inner = self.arena.line().append(inner).nest(2);
+        let forall = header.append(inner).group();
+
+        self.parens_if(precedence > Precedence::Top, forall)
     }
 
-    let field_docs = fields
-        .iter()
-        .map(|field| {
-            let field_type = traverse_precedence(arena, source, context, Precedence::Top, field.id);
-            (field.label.to_string(), field_type)
-        })
-        .collect_vec();
+    fn traverse_constrained(
+        &mut self,
+        precedence: Precedence,
+        constraint: TypeId,
+        mut inner: TypeId,
+    ) -> Doc<'a> {
+        let mut constraints = vec![constraint];
 
-    let format_field = |arena: &'a Arena<'a>, label: String, ty: Doc<'a>| {
-        let type_continuation = arena.line().append(ty).nest(2).group();
-        arena.text(label).append(arena.text(" ::")).append(type_continuation).align()
-    };
+        while let Type::Constrained(constraint, next_inner) = self.lookup_type(inner) {
+            constraints.push(constraint);
+            inner = next_inner;
+        }
 
-    let mut iter = field_docs.into_iter();
-    let (first_label, first_type) = iter.next().unwrap();
-    let first_field = format_field(arena, first_label, first_type);
+        let constraints = constraints
+            .iter()
+            .map(|&constraint| self.traverse(Precedence::Application, constraint))
+            .collect_vec();
 
-    let leading_comma = arena.hardline().append(arena.text(", "));
-    let leading_comma = leading_comma.flat_alt(arena.text(", "));
+        let inner = self.traverse(Precedence::Constraint, inner);
 
-    let rest_fields = iter.fold(arena.nil(), |acc, (label, ty)| {
-        acc.append(leading_comma.clone()).append(format_field(arena, label, ty))
-    });
+        let arrow = self.arena.text(" =>").append(self.arena.line());
+        let constraints = constraints.into_iter().fold(self.arena.nil(), |builder, constraint| {
+            builder.append(constraint).append(arrow.clone())
+        });
 
-    let fields_doc = first_field.append(rest_fields);
+        let constraints = constraints.append(inner).group();
+        self.parens_if(precedence > Precedence::Constraint, constraints)
+    }
 
-    if let Some(tail) = tail {
-        let tail_doc = traverse_precedence(arena, source, context, Precedence::Top, tail);
+    fn traverse_function(
+        &mut self,
+        precedence: Precedence,
+        argument: TypeId,
+        mut result: TypeId,
+    ) -> Doc<'a> {
+        let mut arguments = vec![argument];
 
-        let leading_pipe = arena.hardline().append(arena.text("| "));
-        let leading_pipe = leading_pipe.flat_alt(arena.text(" | "));
+        while let Type::Function(argument, next_result) = self.lookup_type(result) {
+            result = next_result;
+            arguments.push(argument);
+        }
 
-        fields_doc.append(leading_pipe).append(tail_doc)
-    } else {
-        fields_doc
+        let arguments = arguments
+            .iter()
+            .map(|&argument| self.traverse(Precedence::Application, argument))
+            .collect_vec();
+
+        let result = self.traverse(Precedence::Function, result);
+
+        let arrow = self.arena.text(" ->").append(self.arena.line());
+        let arguments = arguments.into_iter().fold(self.arena.nil(), |builder, argument| {
+            builder.append(argument).append(arrow.clone())
+        });
+
+        let function = arguments.append(result).group();
+        self.parens_if(precedence > Precedence::Function, function)
     }
 }
 
-fn is_record_constructor<Q>(source: &mut TraversalSource<Q>, id: TypeId) -> bool
+impl<'a, Q> Printer<'a, Q>
 where
     Q: ExternalQueries,
 {
-    if let Type::Constructor(file_id, type_id) = source.lookup(id)
-        && file_id == source.queries().prim_id()
-        && let Some(name) = lookup_type_name(source, file_id, type_id)
-    {
-        return name == "Record";
+    fn format_record(&mut self, fields: &[RowField], tail: Option<TypeId>) -> Doc<'a> {
+        if fields.is_empty() && tail.is_none() {
+            return self.arena.text("{}");
+        }
+        let body = self.format_row_body(fields, tail);
+        self.arena
+            .text("{ ")
+            .append(body)
+            .append(self.arena.line())
+            .append(self.arena.text("}"))
+            .group()
     }
-    false
+
+    fn format_row(&mut self, fields: &[RowField], tail: Option<TypeId>) -> Doc<'a> {
+        let body = self.format_row_body(fields, tail);
+        self.arena
+            .text("( ")
+            .append(body)
+            .append(self.arena.line())
+            .append(self.arena.text(")"))
+            .group()
+    }
+
+    fn format_row_body(&mut self, fields: &[RowField], tail: Option<TypeId>) -> Doc<'a> {
+        if fields.is_empty() {
+            return if let Some(tail) = tail {
+                let tail = self.traverse(Precedence::Top, tail);
+                self.arena.text("| ").append(tail)
+            } else {
+                self.arena.nil()
+            };
+        }
+
+        let fields = fields
+            .iter()
+            .map(|field| {
+                let field_type = self.traverse(Precedence::Top, field.id);
+                (field.label.to_string(), field_type)
+            })
+            .collect_vec();
+
+        let format_field = |arena: &'a Arena<'a>, label: String, field_type: Doc<'a>| {
+            let field_type = arena.line().append(field_type).nest(2).group();
+            arena.text(format!("{label} ::")).append(field_type).align()
+        };
+
+        let mut fields = fields.into_iter();
+        let (first_label, first_type) = fields.next().unwrap();
+        let first = format_field(self.arena, first_label, first_type);
+
+        let leading_comma = self.arena.hardline().append(self.arena.text(", "));
+        let leading_comma = leading_comma.flat_alt(self.arena.text(", "));
+
+        let fields = fields.fold(first, |builder, (label, field_type)| {
+            builder
+                .append(leading_comma.clone())
+                .append(format_field(self.arena, label, field_type))
+        });
+
+        if let Some(tail) = tail {
+            let tail = self.traverse(Precedence::Top, tail);
+            let leading_pipe = self.arena.hardline().append(self.arena.text("| "));
+            let leading_pipe = leading_pipe.flat_alt(self.arena.text(" | "));
+            fields.append(leading_pipe).append(tail)
+        } else {
+            fields
+        }
+    }
 }

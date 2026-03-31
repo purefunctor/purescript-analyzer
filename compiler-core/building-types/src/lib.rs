@@ -40,7 +40,6 @@ pub trait QueryProxy {
     type Resolved;
     type Bracketed;
     type Sectioned;
-    type Checked;
 
     fn parsed(&self, id: FileId) -> QueryResult<Self::Parsed>;
 
@@ -57,8 +56,6 @@ pub trait QueryProxy {
     fn bracketed(&self, id: FileId) -> QueryResult<Self::Bracketed>;
 
     fn sectioned(&self, id: FileId) -> QueryResult<Self::Sectioned>;
-
-    fn checked(&self, id: FileId) -> QueryResult<Self::Checked>;
 
     fn prim_id(&self) -> FileId;
 

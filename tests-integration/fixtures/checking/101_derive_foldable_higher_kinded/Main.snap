@@ -1,0 +1,34 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Wrap ::
+  forall (t2 :: Type) (@f :: (t2 :: Type) -> Type) (@a :: (t2 :: Type)).
+    (f :: (t2 :: Type) -> Type) (a :: (t2 :: Type)) ->
+    Wrap @(t2 :: Type) (f :: (t2 :: Type) -> Type) (a :: (t2 :: Type))
+WrapNoFoldable ::
+  forall (t5 :: Type) (@f :: (t5 :: Type) -> Type) (@a :: (t5 :: Type)).
+    (f :: (t5 :: Type) -> Type) (a :: (t5 :: Type)) ->
+    WrapNoFoldable @(t5 :: Type) (f :: (t5 :: Type) -> Type) (a :: (t5 :: Type))
+
+Types
+Wrap :: forall (t2 :: Type). ((t2 :: Type) -> Type) -> (t2 :: Type) -> Type
+WrapNoFoldable :: forall (t5 :: Type). ((t5 :: Type) -> Type) -> (t5 :: Type) -> Type
+
+Derived
+derive forall (t6 :: Type -> Type).
+  Foldable (t6 :: Type -> Type) => Foldable (Wrap @Type (t6 :: Type -> Type))
+derive forall (t7 :: Type -> Type). Foldable (WrapNoFoldable @Type (t7 :: Type -> Type))
+
+Roles
+Wrap = [Representational, Nominal]
+WrapNoFoldable = [Representational, Nominal]
+
+Diagnostics
+error[NoInstanceFound]: No instance found for: Foldable (t7 :: Type -> Type)
+  --> 9:1..9:44
+  |
+9 | derive instance Foldable (WrapNoFoldable f)
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -1,140 +1,176 @@
-//! Implements the core structures used in the type checker.
+//! Implements core type structures.
 
-pub mod debruijn;
+pub mod constraint;
+pub mod exhaustive;
+pub mod fold;
+pub mod generalise;
+pub mod normalise;
 pub mod pretty;
+pub mod signature;
+pub mod substitute;
+pub mod toolkit;
+pub mod unification;
+pub mod walk;
+pub mod zonk;
 
 use std::sync::Arc;
 
 use files::FileId;
-use indexing::{InstanceChainId, TypeItemId};
-use smol_str::SmolStr;
+use indexing::{TermItemId, TypeItemId};
+use itertools::Itertools;
+use smol_str::{SmolStr, SmolStrBuilder};
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+/// A globally unique identity for a rigid type variable.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Name {
+    pub file: FileId,
+    pub unique: u32,
+}
+
+impl Name {
+    /// Renders this name as a stable textual variable like `t42`.
+    pub fn as_text(self) -> SmolStr {
+        let mut text = SmolStrBuilder::new();
+        text.push('t');
+        text.push_str(&self.unique.to_string());
+        text.finish()
+    }
+}
+
+/// A marker used to represent binding levels of variables.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Depth(pub u32);
+
+impl Depth {
+    pub fn increment(self) -> Depth {
+        Depth(self.0 + 1)
+    }
+}
+
+/// Carries information about a type variable under a forall.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ForallBinder {
+    /// Whether this binder is visible to type applications.
     pub visible: bool,
-    pub name: SmolStr,
-    pub level: debruijn::Level,
+    /// The unique identity attached to the type variable.
+    pub name: Name,
+    /// The kind of the type variable.
     pub kind: TypeId,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum Variable {
-    Skolem(debruijn::Level, TypeId),
-    Bound(debruijn::Level, TypeId),
-    Free(SmolStr),
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct RowField {
-    pub label: SmolStr,
-    pub id: TypeId,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+/// Represents a row type.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct RowType {
     /// A stable-sorted list representing `Map<Label, NonEmptyList<Type>>`.
     pub fields: Arc<[RowField]>,
     /// Closed row if [`None`]; Open row if [`Some`].
-    ///
-    /// The [`TypeId`] is typically a [`Type::Variable`].
     pub tail: Option<TypeId>,
 }
 
 impl RowType {
-    pub fn from_unsorted(mut fields: Vec<RowField>, tail: Option<TypeId>) -> RowType {
+    pub fn new(fields: impl IntoIterator<Item = RowField>, tail: Option<TypeId>) -> RowType {
+        let mut fields = fields.into_iter().collect_vec();
         fields.sort_by(|a, b| a.label.cmp(&b.label));
         RowType { fields: Arc::from(fields), tail }
     }
+}
 
-    pub fn closed(fields: Vec<RowField>) -> RowType {
-        RowType::from_unsorted(fields, None)
-    }
-
-    pub fn empty() -> RowType {
-        RowType { fields: Arc::from([]), tail: None }
-    }
+/// A field in a row type.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct RowField {
+    /// The label of the row field.
+    pub label: SmolStr,
+    /// The [`Type`] of the row field.
+    pub id: TypeId,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum Saturation {
-    Full,
-    Partial,
+pub enum KindOrType {
+    Kind(TypeId),
+    Type(TypeId),
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CheckedSynonym {
+    pub kind: TypeId,
+    pub parameters: Vec<ForallBinder>,
+    pub synonym: TypeId,
+}
+
+/// Represents a checked class declaration.
+///
+/// Member types are stored in [`CheckedModule::terms`] quantified and
+/// constrained with [`Type::Forall`] and [`Type::Constrained`]:
+///
+/// ```purescript
+/// eq :: forall a. Eq a => a -> a -> Boolean
+/// ```
+///
+/// [`CheckedModule::terms`]: crate::CheckedModule::terms
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CheckedClass {
+    /// Post-generalisation kind variable binders.
+    pub kind_binders: Vec<ForallBinderId>,
+    /// Post-generalisation type parameter binders.
+    pub type_parameters: Vec<ForallBinderId>,
+    /// Canonical class head, e.g. `Eq a` or `Foo @k a`.
+    pub canonical: TypeId,
+    /// Superclass constraints expressed in terms of the class head's rigids.
+    pub superclasses: Vec<TypeId>,
+    /// Functional dependencies, carried from lowering.
+    pub functional_dependencies: Arc<[lowering::FunctionalDependency]>,
+    /// Class member term item IDs.
+    pub members: Vec<TermItemId>,
+}
+
+/// Represents a checked instance declaration head.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CheckedInstance {
+    /// Type class reference.
+    pub resolution: (FileId, TypeItemId),
+    /// Canonical instance type, e.g. `forall a. Eq a => Eq (Array a)`.
+    pub canonical: TypeId,
+}
+
+/// The core type representation used by the checker after name resolution.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Type {
+    /// Type application, `Array Int`.
     Application(TypeId, TypeId),
-    Constrained(TypeId, TypeId),
-    Constructor(FileId, TypeItemId),
-    Forall(ForallBinder, TypeId),
-    Function(TypeId, TypeId),
-    Integer(i32),
+    /// Kind application, `Proxy @Int`.
     KindApplication(TypeId, TypeId),
+
+    /// A universally quantified type, `forall a. a -> a`.
+    Forall(ForallBinderId, TypeId),
+    /// A constrained type, `Constraint => Constrained`.
+    Constrained(TypeId, TypeId),
+    /// A function type, `a -> b`.
+    Function(TypeId, TypeId),
+    /// A type with an explicit kind, `T :: K`.
     Kinded(TypeId, TypeId),
-    Operator(FileId, TypeItemId),
-    OperatorApplication(FileId, TypeItemId, TypeId, TypeId),
-    Row(RowType),
-    String(lowering::StringKind, SmolStr),
-    SynonymApplication(Saturation, FileId, TypeItemId, Arc<[TypeId]>),
+
+    /// A resolved type constructor reference.
+    Constructor(FileId, TypeItemId),
+
+    /// A type-level integer literal, `42`.
+    Integer(i32),
+    /// A type-level string literal, `"life"`.
+    String(lowering::StringKind, SmolStrId),
+    /// A row type, see [`RowType`].
+    Row(RowTypeId),
+
+    /// A bound skolem variable that can only unify with itself.
+    Rigid(Name, Depth, TypeId),
+    /// A unification variable that can be solved to another [`Type`].
     Unification(u32),
-    Variable(Variable),
-    Unknown,
+
+    /// A type variable that did not resolve to a binder.
+    Free(SmolStrId),
+    /// Recovery marker for exceptional type checker paths.
+    Unknown(SmolStrId),
 }
 
-pub type TypeId = interner::Id<Type>;
-
-pub type TypeInterner = interner::Interner<Type>;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct Operator {
-    pub associativity: lowering::Associativity,
-    pub precedence: u8,
-    pub file_id: FileId,
-    pub type_id: TypeItemId,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct Synonym {
-    pub quantified_variables: debruijn::Size,
-    pub kind_variables: debruijn::Size,
-    pub type_variables: debruijn::Size,
-    pub synonym_type: TypeId,
-}
-
-impl Synonym {
-    pub fn has_arguments(&self) -> bool {
-        self.type_variables != debruijn::Size(0)
-    }
-
-    pub fn with_synonym_type(mut self, synonym_type: TypeId) -> Synonym {
-        self.synonym_type = synonym_type;
-        self
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum InstanceKind {
-    Chain { id: InstanceChainId, position: u32 },
-    Derive,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Instance {
-    pub arguments: Vec<(TypeId, TypeId)>,
-    pub constraints: Vec<(TypeId, TypeId)>,
-    pub resolution: (FileId, TypeItemId),
-    pub kind: InstanceKind,
-    pub kind_variables: Vec<TypeId>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Class {
-    pub superclasses: Arc<[(TypeId, TypeId)]>,
-    pub type_variable_kinds: Vec<TypeId>,
-    pub quantified_variables: debruijn::Size,
-    pub kind_variables: debruijn::Size,
-}
-
+/// The role of a type parameter for safe coercions.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Role {
     Phantom,
@@ -142,19 +178,7 @@ pub enum Role {
     Nominal,
 }
 
-impl From<lowering::Role> for Role {
-    fn from(role: lowering::Role) -> Self {
-        match role {
-            lowering::Role::Phantom => Role::Phantom,
-            lowering::Role::Representational => Role::Representational,
-            lowering::Role::Nominal => Role::Nominal,
-            lowering::Role::Unknown => Role::Phantom,
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct DataLike {
-    pub quantified_variables: debruijn::Size,
-    pub kind_variables: debruijn::Size,
-}
+pub type ForallBinderId = interner::Id<ForallBinder>;
+pub type RowTypeId = interner::Id<RowType>;
+pub type SmolStrId = interner::Id<SmolStr>;
+pub type TypeId = interner::Id<Type>;

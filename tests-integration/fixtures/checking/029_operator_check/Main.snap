@@ -1,0 +1,12 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+<: :: forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type) -> (a :: Type)
+const :: forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type) -> (a :: Type)
++ :: Int -> Int -> Int
+add :: Int -> Int -> Int
+
+Types

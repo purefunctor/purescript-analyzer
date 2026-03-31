@@ -1,0 +1,20 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+addChain ::
+  forall (n :: Int) (m :: Int).
+    Add 1 2 (n :: Int) => Add 1 (n :: Int) (m :: Int) => Proxy @Int (m :: Int)
+addContradiction :: forall (m :: Int). Add 1 2 4 => Add 1 4 (m :: Int) => Proxy @Int (m :: Int)
+forceSolve :: { addChain :: Proxy @Int 4, addContradiction :: Proxy @Int 5 }
+
+Types
+
+Diagnostics
+error[NoInstanceFound]: No instance found for: Add 1 2 4
+  --> 12:1..15:4
+   |
+12 | forceSolve =
+   | ^~~~~~~~~~~~

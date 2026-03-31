@@ -1,0 +1,23 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Cons :: forall (@a :: Type). (a :: Type) -> List (a :: Type) -> List (a :: Type)
+Nil :: forall (@a :: Type). List (a :: Type)
+: :: forall (@a :: Type). (a :: Type) -> List (a :: Type) -> List (a :: Type)
+head :: forall (a :: Type). List (a :: Type) -> (a :: Type)
+
+Types
+List :: Type -> Type
+
+Roles
+List = [Representational]
+
+Diagnostics
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: Nil
+  --> 7:1..7:30
+  |
+7 | head :: forall a. List a -> a
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~

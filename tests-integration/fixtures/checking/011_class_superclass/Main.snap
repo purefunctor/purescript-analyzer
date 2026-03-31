@@ -1,0 +1,18 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+eq :: forall (@a :: Type). Eq (a :: Type) => (a :: Type) -> (a :: Type) -> Boolean
+compare :: forall (@a :: Type). Ord (a :: Type) => (a :: Type) -> (a :: Type) -> Int
+
+Types
+Eq :: Type -> Constraint
+Ord :: Type -> Constraint
+
+Classes
+class forall (a :: Type). Eq (a :: Type)
+  eq :: forall (@a :: Type). Eq (a :: Type) => (a :: Type) -> (a :: Type) -> Boolean
+class forall (a :: Type). Eq (a :: Type) <= Ord (a :: Type)
+  compare :: forall (@a :: Type). Ord (a :: Type) => (a :: Type) -> (a :: Type) -> Int

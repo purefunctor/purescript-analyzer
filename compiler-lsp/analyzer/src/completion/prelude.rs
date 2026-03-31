@@ -75,6 +75,7 @@ impl Context<'_, '_> {
 
     pub fn has_type_import(&self, qualifier: Option<&str>, name: &str) -> bool {
         self.resolved.lookup_type(self.prim_resolved, qualifier, name).is_some()
+            || self.resolved.lookup_class(self.prim_resolved, qualifier, name).is_some()
     }
 }
 

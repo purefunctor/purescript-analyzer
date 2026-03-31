@@ -36,6 +36,7 @@ syntax = { version = "0.1.0", path = "../../../compiler-core/syntax" }
 
 # Data structures
 rustc-hash = "2"
+smol_str = "0.3.5"
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.56"

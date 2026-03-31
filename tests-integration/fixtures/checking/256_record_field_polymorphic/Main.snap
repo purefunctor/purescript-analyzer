@@ -1,0 +1,26 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Left :: forall (@a :: Type) (@b :: Type). (a :: Type) -> Either (a :: Type) (b :: Type)
+Right :: forall (@a :: Type) (@b :: Type). (b :: Type) -> Either (a :: Type) (b :: Type)
+FFIUtil ::
+  { isLeft :: forall (a :: Type) (b :: Type). Either (a :: Type) (b :: Type) -> Boolean
+  , isRight :: forall (a :: Type) (b :: Type). Either (a :: Type) (b :: Type) -> Boolean
+  , left :: forall (a :: Type) (b :: Type). (a :: Type) -> Either (a :: Type) (b :: Type)
+  , right :: forall (a :: Type) (b :: Type). (b :: Type) -> Either (a :: Type) (b :: Type)
+  } ->
+  FFIUtil
+isLeft :: forall (a :: Type) (b :: Type). Either (a :: Type) (b :: Type) -> Boolean
+isRight :: forall (a :: Type) (b :: Type). Either (a :: Type) (b :: Type) -> Boolean
+test :: FFIUtil
+
+Types
+Either :: Type -> Type -> Type
+FFIUtil :: Type
+
+Roles
+Either = [Representational, Representational]
+FFIUtil = []

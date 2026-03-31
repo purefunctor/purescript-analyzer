@@ -1,9 +1,12 @@
 use std::fmt::Write;
 
 use analyzer::{QueryEngine, locate};
-use checking::core::pretty;
+use checking::core::pretty as pretty2;
+use checking::{ExternalQueries, core as core2};
+use diagnostics::{DiagnosticsContext, ToDiagnostics, format_rustc};
 use files::FileId;
 use indexing::{ImportKind, TermItem, TypeItem, TypeItemId, TypeItemKind};
+use itertools::Itertools;
 use lowering::{
     ExpressionKind, GraphNode, ImplicitTypeVariable, TermVariableResolution, TypeKind,
     TypeVariableResolution,
@@ -11,98 +14,101 @@ use lowering::{
 use rowan::ast::AstNode;
 use syntax::cst;
 
+macro_rules! pos {
+    ($content:expr, $stabilized:expr, $id:expr) => {{
+        let cst = $stabilized.ast_ptr($id).unwrap();
+        let range = cst.syntax_node_ptr().text_range();
+        let p = locate::offset_to_position($content, range.start()).unwrap();
+        format!("{}:{}", p.line, p.character)
+    }};
+}
+
+fn heading(out: &mut String, title: &str) {
+    writeln!(out).unwrap();
+    writeln!(out, "{title}").unwrap();
+}
+
+macro_rules! write_import_items {
+    ($out:expr, $title:expr, $iter:expr) => {{
+        writeln!($out).unwrap();
+        writeln!($out, "{}:", $title).unwrap();
+        for (item_name, _, _, kind) in $iter {
+            if matches!(kind, ImportKind::Hidden) {
+                continue;
+            }
+            writeln!($out, "  - {item_name} is {kind:?}").unwrap();
+        }
+    }};
+}
+
 pub fn report_resolved(engine: &QueryEngine, id: FileId, name: &str) -> String {
     let resolved = engine.resolved(id).unwrap();
 
-    let mut buffer = String::default();
-    writeln!(buffer, "module {name}").unwrap();
+    let mut out = String::default();
+    writeln!(out, "module {name}").unwrap();
 
-    writeln!(buffer).unwrap();
-    writeln!(buffer, "Unqualified Imports:").unwrap();
+    heading(&mut out, "Unqualified Imports:");
     for import in resolved.unqualified.values().flatten() {
-        writeln!(buffer).unwrap();
-        writeln!(buffer, "Terms:").unwrap();
-        for (name, _, _, kind) in import.iter_terms() {
-            if matches!(kind, ImportKind::Hidden) {
-                continue;
-            }
-            writeln!(buffer, "  - {name} is {kind:?}").unwrap();
-        }
+        write_import_items!(out, "Terms", import.iter_terms());
+        write_import_items!(out, "Types", import.iter_types());
+        write_import_items!(out, "Classes", import.iter_classes());
+    }
 
-        writeln!(buffer).unwrap();
-        writeln!(buffer, "Types:").unwrap();
-        for (name, _, _, kind) in import.iter_types() {
-            if matches!(kind, ImportKind::Hidden) {
-                continue;
-            }
-            writeln!(buffer, "  - {name} is {kind:?}").unwrap();
+    heading(&mut out, "Qualified Imports:");
+    for (qualifier, imports) in &resolved.qualified {
+        for import in imports {
+            write_import_items!(out, format!("{qualifier} Terms"), import.iter_terms());
+            write_import_items!(out, format!("{qualifier} Types"), import.iter_types());
+            write_import_items!(out, format!("{qualifier} Classes"), import.iter_classes());
         }
     }
 
-    writeln!(buffer).unwrap();
-    writeln!(buffer, "Qualified Imports:").unwrap();
-    for (name, import) in &resolved.qualified {
-        writeln!(buffer).unwrap();
-        writeln!(buffer, "{name} Terms:").unwrap();
-        for (name, _, _, kind) in import.iter_terms() {
-            if matches!(kind, ImportKind::Hidden) {
-                continue;
-            }
-            writeln!(buffer, "  - {name} is {kind:?}").unwrap();
-        }
-
-        writeln!(buffer).unwrap();
-        writeln!(buffer, "{name} Types:").unwrap();
-        for (name, _, _, kind) in import.iter_types() {
-            if matches!(kind, ImportKind::Hidden) {
-                continue;
-            }
-            writeln!(buffer, "  - {name} is {kind:?}").unwrap();
-        }
-    }
-
-    writeln!(buffer).unwrap();
-    writeln!(buffer, "Exported Terms:").unwrap();
+    heading(&mut out, "Exported Terms:");
     for (name, _, _) in resolved.exports.iter_terms() {
-        writeln!(buffer, "  - {name}").unwrap();
+        writeln!(out, "  - {name}").unwrap();
     }
 
-    writeln!(buffer).unwrap();
-    writeln!(buffer, "Exported Types:").unwrap();
+    heading(&mut out, "Exported Types:");
     for (name, _, _) in resolved.exports.iter_types() {
-        writeln!(buffer, "  - {name}").unwrap();
+        writeln!(out, "  - {name}").unwrap();
     }
 
-    writeln!(buffer).unwrap();
-    writeln!(buffer, "Local Terms:").unwrap();
+    heading(&mut out, "Exported Classes:");
+    for (name, _, _) in resolved.exports.iter_classes() {
+        writeln!(out, "  - {name}").unwrap();
+    }
+
+    heading(&mut out, "Local Terms:");
     for (name, _, _) in resolved.locals.iter_terms() {
-        writeln!(buffer, "  - {name}").unwrap();
+        writeln!(out, "  - {name}").unwrap();
     }
 
-    writeln!(buffer).unwrap();
-    writeln!(buffer, "Local Types:").unwrap();
+    heading(&mut out, "Local Types:");
     for (name, _, _) in resolved.locals.iter_types() {
-        writeln!(buffer, "  - {name}").unwrap();
+        writeln!(out, "  - {name}").unwrap();
     }
 
-    writeln!(buffer).unwrap();
-    writeln!(buffer, "Class Members:").unwrap();
+    heading(&mut out, "Local Classes:");
+    for (name, _, _) in resolved.locals.iter_classes() {
+        writeln!(out, "  - {name}").unwrap();
+    }
+
+    heading(&mut out, "Class Members:");
     let indexed = engine.indexed(id).unwrap();
     let mut class_member_entries: Vec<_> = resolved.class.iter().collect();
     class_member_entries.sort_by_key(|(class_id, name, _, _)| (class_id.into_raw(), name.as_str()));
     for (class_id, member_name, member_file, _) in class_member_entries {
         let class_name = resolve_class_name(engine, &indexed, id, (member_file, class_id));
         let locality = if member_file == id { "" } else { " (imported)" };
-        writeln!(buffer, "  - {class_name}.{member_name}{locality}").unwrap();
+        writeln!(out, "  - {class_name}.{member_name}{locality}").unwrap();
     }
 
-    writeln!(buffer).unwrap();
-    writeln!(buffer, "Errors:").unwrap();
+    heading(&mut out, "Errors:");
     for error in &resolved.errors {
-        writeln!(buffer, "  - {error:?}").unwrap();
+        writeln!(out, "  - {error:?}").unwrap();
     }
 
-    buffer
+    out
 }
 
 pub fn report_lowered(engine: &QueryEngine, id: FileId, name: &str) -> String {
@@ -116,35 +122,35 @@ pub fn report_lowered(engine: &QueryEngine, id: FileId, name: &str) -> String {
     let info = &lowered.info;
     let graph = &lowered.graph;
 
-    let mut buffer = String::default();
-    writeln!(buffer, "module {name}").unwrap();
+    let mut out = String::default();
+    writeln!(out, "module {name}").unwrap();
 
-    writeln!(buffer).unwrap();
-    writeln!(buffer, "Expressions:").unwrap();
-    writeln!(buffer).unwrap();
+    writeln!(out).unwrap();
+    writeln!(out, "Expressions:").unwrap();
+    writeln!(out).unwrap();
     for (expression_id, _) in info.iter_expression() {
         let Some(kind) = info.get_expression_kind(expression_id) else {
             continue;
         };
         if let ExpressionKind::Variable { resolution, .. } = kind {
-            report_on_term(
+            write_term_resolution(
                 &content,
                 &stabilized,
                 &module,
                 info,
-                &mut buffer,
+                &mut out,
                 expression_id,
                 resolution,
             );
         } else if let ExpressionKind::Record { record } = kind {
             for field in record.iter() {
                 if let lowering::ExpressionRecordItem::RecordPun { resolution, .. } = field {
-                    report_on_term(
+                    write_term_resolution(
                         &content,
                         &stabilized,
                         &module,
                         info,
-                        &mut buffer,
+                        &mut out,
                         expression_id,
                         resolution,
                     );
@@ -155,14 +161,7 @@ pub fn report_lowered(engine: &QueryEngine, id: FileId, name: &str) -> String {
         }
     }
 
-    writeln!(buffer, "\nTypes:\n").unwrap();
-
-    macro_rules! pos {
-        ($id:expr) => {{
-            let cst = stabilized.ast_ptr($id).unwrap();
-            locate::offset_to_position(&content, cst.syntax_node_ptr().text_range().start())
-        }};
-    }
+    writeln!(out, "\nTypes:\n").unwrap();
 
     for (type_id, _) in info.iter_type() {
         let Some(TypeKind::Variable { resolution, .. }) = info.get_type_kind(type_id) else {
@@ -173,137 +172,152 @@ pub fn report_lowered(engine: &QueryEngine, id: FileId, name: &str) -> String {
         let node = cst.syntax_node_ptr().to_node(module.syntax());
         let text = node.text().to_string();
 
-        writeln!(buffer, "{}@{:?}", text.trim(), pos!(type_id)).unwrap();
+        writeln!(out, "{}@{}", text.trim(), pos!(&content, &stabilized, type_id)).unwrap();
         match resolution {
             Some(TypeVariableResolution::Forall(id)) => {
-                writeln!(buffer, "  resolves to forall {:?}", pos!(*id)).unwrap();
+                writeln!(out, "  -> forall@{}", pos!(&content, &stabilized, *id)).unwrap();
             }
             Some(TypeVariableResolution::Implicit(ImplicitTypeVariable { binding, node, id })) => {
                 let GraphNode::Implicit { bindings, .. } = &graph[*node] else {
-                    writeln!(buffer, "  did not resolve to constraint variable!").unwrap();
+                    writeln!(out, "  did not resolve to constraint variable!").unwrap();
                     continue;
                 };
                 let (name, type_ids) =
                     bindings.get_index(*id).expect("invariant violated: invalid index");
                 if *binding {
-                    writeln!(buffer, "  introduces a constraint variable {name:?}").unwrap();
+                    writeln!(out, "  introduces a constraint variable {name:?}").unwrap();
                 } else {
-                    writeln!(buffer, "  resolves to a constraint variable {name:?}").unwrap();
+                    writeln!(out, "  -> constraint variable {name:?}").unwrap();
                     for &tid in type_ids {
-                        writeln!(buffer, "    {:?}", pos!(tid)).unwrap();
+                        writeln!(out, "    {}", pos!(&content, &stabilized, tid)).unwrap();
                     }
                 }
             }
             None => {
-                writeln!(buffer, "  resolves to nothing").unwrap();
+                writeln!(out, "  -> nothing").unwrap();
             }
         }
     }
 
-    buffer
-}
-
-fn report_on_term(
-    content: &str,
-    stabilized: &stabilizing::StabilizedModule,
-    module: &cst::Module,
-    info: &lowering::LoweringInfo,
-    buffer: &mut String,
-    expression_id: lowering::ExpressionId,
-    resolution: &Option<TermVariableResolution>,
-) {
-    let cst = stabilized.ast_ptr(expression_id).unwrap();
-    let node = cst.syntax_node_ptr().to_node(module.syntax());
-    let text = node.text().to_string();
-    let position = locate::offset_to_position(content, node.text_range().start());
-
-    writeln!(buffer, "{}@{:?}", text.trim(), position).unwrap();
-
-    macro_rules! pos {
-        ($id:expr) => {{
-            let cst = stabilized.ast_ptr($id).unwrap();
-            locate::offset_to_position(content, cst.syntax_node_ptr().text_range().start())
-        }};
-    }
-
-    match resolution {
-        Some(TermVariableResolution::Binder(id)) => {
-            writeln!(buffer, "  resolves to binder {:?}", pos!(*id)).unwrap();
-        }
-        Some(TermVariableResolution::Let(let_binding_id)) => {
-            let let_binding = info.get_let_binding_group(*let_binding_id);
-            if let Some(sig) = let_binding.signature {
-                writeln!(buffer, "  resolves to signature {:?}", pos!(sig)).unwrap();
-            }
-            for eq in let_binding.equations.iter() {
-                writeln!(buffer, "  resolves to equation {:?}", pos!(*eq)).unwrap();
-            }
-        }
-        Some(TermVariableResolution::RecordPun(id)) => {
-            writeln!(buffer, "  resolves to record pun {:?}", pos!(*id)).unwrap();
-        }
-        Some(TermVariableResolution::Reference(..)) => {
-            writeln!(buffer, "  resolves to top-level name").unwrap();
-        }
-        None => {
-            writeln!(buffer, "  resolves to nothing").unwrap();
-        }
-    }
+    out
 }
 
 pub fn report_checked(engine: &QueryEngine, id: FileId) -> String {
     let indexed = engine.indexed(id).unwrap();
     let checked = engine.checked(id).unwrap();
 
-    let mut snapshot = String::default();
+    let name_text = |name: core2::Name| -> String {
+        checked
+            .lookup_name(name)
+            .map(|id| engine.lookup_smol_str(id).to_string())
+            .unwrap_or_else(|| name.as_text().to_string())
+    };
 
-    writeln!(snapshot, "Terms").unwrap();
+    let pretty = |type_id| pretty2::Pretty::new(engine, &checked).render(type_id);
+
+    let pretty_signature = |name: &str, type_id| {
+        pretty2::Pretty::new(engine, &checked).signature(name).render(type_id)
+    };
+
+    let mut out = String::default();
+
+    writeln!(out, "Terms").unwrap();
     for (id, TermItem { name, .. }) in indexed.items.iter_terms() {
-        let Some(n) = name else { continue };
-        let Some(t) = checked.lookup_term(id) else { continue };
-        let signature = pretty::print_signature_global(engine, n, t);
-        writeln!(snapshot, "{signature}").unwrap();
+        let Some(name) = name else { continue };
+        let Some(kind) = checked.lookup_term(id) else { continue };
+        let signature = pretty_signature(name, kind);
+        writeln!(out, "{signature}").unwrap();
     }
 
-    writeln!(snapshot, "\nTypes").unwrap();
+    writeln!(out, "\nTypes").unwrap();
     for (id, TypeItem { name, .. }) in indexed.items.iter_types() {
-        let Some(n) = name else { continue };
-        let Some(t) = checked.lookup_type(id) else { continue };
-        let signature = pretty::print_signature_global(engine, n, t);
-        writeln!(snapshot, "{signature}").unwrap();
+        let Some(name) = name else { continue };
+        let Some(kind) = checked.lookup_type(id) else { continue };
+        let signature = pretty_signature(name, kind);
+        writeln!(out, "{signature}").unwrap();
     }
 
     if !checked.synonyms.is_empty() {
-        writeln!(snapshot, "\nSynonyms").unwrap();
+        writeln!(out, "\nSynonyms").unwrap();
     }
     for (id, TypeItem { name, .. }) in indexed.items.iter_types() {
         let Some(name) = name else { continue };
-        let Some(group) = checked.lookup_synonym(id) else { continue };
-        let synonym = pretty::print_global(engine, group.synonym_type);
-        writeln!(snapshot, "{name} = {synonym}").unwrap();
-        writeln!(snapshot, "  Quantified = {}", group.quantified_variables).unwrap();
-        writeln!(snapshot, "  Kind = {}", group.kind_variables).unwrap();
-        writeln!(snapshot, "  Type = {}", group.type_variables).unwrap();
-        writeln!(snapshot).unwrap();
+        let Some(definition) = checked.lookup_synonym(id) else { continue };
+        let replacement = pretty(definition.synonym);
+        let binders = definition.parameters.iter().map(|b| name_text(b.name)).collect_vec();
+        let binders_formatted =
+            if binders.is_empty() { String::new() } else { format!(" {}", binders.join(" ")) };
+        writeln!(out, "type {name}{binders_formatted} = {replacement}").unwrap();
     }
 
-    if !checked.data.is_empty() {
-        writeln!(snapshot, "\nData").unwrap();
+    if !checked.classes.is_empty() {
+        writeln!(out, "\nClasses").unwrap();
     }
-    for (id, TypeItem { name, kind, .. }) in indexed.items.iter_types() {
-        let (TypeItemKind::Data { .. } | TypeItemKind::Newtype { .. }) = kind else {
-            continue;
+    for (id, TypeItem { .. }) in indexed.items.iter_types() {
+        let Some(class) = checked.lookup_class(id) else { continue };
+
+        let class_binders =
+            class.kind_binders.iter().chain(class.type_parameters.iter()).copied().collect_vec();
+
+        let mut class_head = class.canonical;
+        while let core2::Type::Forall(_, inner) = engine.lookup_type(class_head) {
+            class_head = inner;
+        }
+
+        let canonical = pretty(class_head);
+        let forall_prefix = if class_binders.is_empty() {
+            String::new()
+        } else {
+            let binders = class_binders
+                .iter()
+                .map(|&binder_id| {
+                    let binder = engine.lookup_forall_binder(binder_id);
+                    let text = name_text(binder.name);
+                    let kind = pretty(binder.kind);
+                    format!("({text} :: {kind})")
+                })
+                .join(" ");
+            format!("forall {binders}. ")
         };
-        let Some(name) = name else { continue };
-        let Some(data) = checked.lookup_data(id) else { continue };
-        writeln!(snapshot, "{name}").unwrap();
-        writeln!(snapshot, "  Quantified = {}", data.quantified_variables).unwrap();
-        writeln!(snapshot, "  Kind = {}", data.kind_variables).unwrap();
-        writeln!(snapshot).unwrap();
+
+        if class.superclasses.is_empty() {
+            writeln!(out, "class {forall_prefix}{canonical}").unwrap();
+        } else {
+            let superclasses =
+                class.superclasses.iter().map(|&superclass| pretty(superclass)).join(", ");
+            writeln!(out, "class {forall_prefix}{superclasses} <= {canonical}").unwrap();
+        }
+
+        for &mid in &class.members {
+            let Some(member_name) = indexed.items[mid].name.as_deref() else { continue };
+            let Some(member_type) = checked.lookup_term(mid) else { continue };
+            let signature = pretty_signature(member_name, member_type);
+            writeln!(out, "  {signature}").unwrap();
+        }
+    }
+
+    if !checked.instances.is_empty() {
+        writeln!(out, "\nInstances").unwrap();
+    }
+    let mut instance_entries: Vec<_> = checked.instances.iter().collect();
+    instance_entries.sort_by_key(|(id, _)| *id);
+    for (_instance_id, instance) in instance_entries {
+        let canonical = pretty(instance.canonical);
+        writeln!(out, "instance {canonical}").unwrap();
+    }
+
+    if !checked.derived.is_empty() {
+        writeln!(out, "\nDerived").unwrap();
+    }
+    let mut derived_entries: Vec<_> = checked.derived.iter().collect();
+    derived_entries.sort_by_key(|(id, _)| *id);
+    for (_derive_id, instance) in derived_entries {
+        let canonical = pretty(instance.canonical);
+        writeln!(out, "derive {canonical}").unwrap();
     }
 
     if !checked.roles.is_empty() {
-        writeln!(snapshot, "\nRoles").unwrap();
+        writeln!(out, "\nRoles").unwrap();
     }
     for (id, TypeItem { name, kind, .. }) in indexed.items.iter_types() {
         let (TypeItemKind::Data { .. }
@@ -315,121 +329,91 @@ pub fn report_checked(engine: &QueryEngine, id: FileId) -> String {
         let Some(name) = name else { continue };
         let Some(roles) = checked.lookup_roles(id) else { continue };
         let roles_str: Vec<_> = roles.iter().map(|r| format!("{r:?}")).collect();
-        writeln!(snapshot, "{name} = [{}]", roles_str.join(", ")).unwrap();
+        writeln!(out, "{name} = [{}]", roles_str.join(", ")).unwrap();
     }
 
-    if !checked.classes.is_empty() {
-        writeln!(snapshot, "\nClasses").unwrap();
-    }
-    for (type_id, TypeItem { name, kind, .. }) in indexed.items.iter_types() {
-        let TypeItemKind::Class { .. } = kind else { continue };
-        let Some(name) = name else { continue };
-        let Some(class) = checked.lookup_class(type_id) else { continue };
+    write_checked_diagnostics(&mut out, engine, id, &indexed, &checked);
 
-        let mut class_line = String::new();
+    out
+}
 
-        // Print superclasses first (before <=)
-        if !class.superclasses.is_empty() {
-            for (i, (superclass_type, _)) in class.superclasses.iter().enumerate() {
-                if i > 0 {
-                    class_line.push_str(", ");
-                }
-                let type_str = pretty::print_global(engine, *superclass_type);
-                class_line.push_str(&type_str);
+fn write_term_resolution(
+    content: &str,
+    stabilized: &stabilizing::StabilizedModule,
+    module: &cst::Module,
+    info: &lowering::LoweringInfo,
+    out: &mut String,
+    expression_id: lowering::ExpressionId,
+    resolution: &Option<TermVariableResolution>,
+) {
+    let cst = stabilized.ast_ptr(expression_id).unwrap();
+    let node = cst.syntax_node_ptr().to_node(module.syntax());
+    let text = node.text().to_string();
+    let position = locate::offset_to_position(content, node.text_range().start()).unwrap();
+
+    writeln!(out, "{}@{}:{}", text.trim(), position.line, position.character).unwrap();
+
+    match resolution {
+        Some(TermVariableResolution::Binder(id)) => {
+            writeln!(out, "  -> binder@{}", pos!(content, stabilized, *id)).unwrap();
+        }
+        Some(TermVariableResolution::Let(let_binding_id)) => {
+            let let_binding = info.get_let_binding_group(*let_binding_id);
+            if let Some(sig) = let_binding.signature {
+                writeln!(out, "  -> signature@{}", pos!(content, stabilized, sig)).unwrap();
             }
-            class_line.push_str(" <= ");
+            for eq in let_binding.equations.iter() {
+                writeln!(out, "  -> equation@{}", pos!(content, stabilized, *eq)).unwrap();
+            }
         }
-
-        class_line.push_str(name);
-
-        // Print class type variables with their kinds
-        // level = quantified_variables + kind_variables + index (matches localize_class)
-        for (index, &kind) in class.type_variable_kinds.iter().enumerate() {
-            let level = class.quantified_variables.0 + class.kind_variables.0 + index as u32;
-            let kind_str = pretty::print_global(engine, kind);
-            class_line.push_str(&format!(" (&{level} :: {kind_str})"));
+        Some(TermVariableResolution::RecordPun(id)) => {
+            writeln!(out, "  -> record pun@{}", pos!(content, stabilized, *id)).unwrap();
         }
-
-        writeln!(snapshot, "class {class_line}").unwrap();
-    }
-
-    if !checked.instances.is_empty() {
-        writeln!(snapshot, "\nInstances").unwrap();
-    }
-    let mut instance_entries: Vec<_> = checked.instances.iter().collect();
-    instance_entries.sort_by_key(|(id, _)| format!("{:?}", id));
-    for (_instance_id, instance) in instance_entries {
-        let class_name = resolve_class_name(engine, &indexed, id, instance.resolution);
-        let head =
-            format_instance_head(engine, &class_name, &instance.constraints, &instance.arguments);
-        let forall_prefix = format_forall_prefix(engine, &instance.kind_variables);
-        writeln!(snapshot, "instance {forall_prefix}{head}").unwrap();
-        if let checking::core::InstanceKind::Chain { position, .. } = instance.kind {
-            writeln!(snapshot, "  chain: {}", position).unwrap();
+        Some(TermVariableResolution::Reference(..)) => {
+            writeln!(out, "  -> top-level").unwrap();
+        }
+        None => {
+            writeln!(out, "  -> nothing").unwrap();
         }
     }
+}
 
-    if !checked.derived.is_empty() {
-        writeln!(snapshot, "\nDerived").unwrap();
-    }
-    let mut derived_entries: Vec<_> = checked.derived.iter().collect();
-    derived_entries.sort_by_key(|(id, _)| format!("{:?}", id));
-    for (_derive_id, instance) in derived_entries {
-        let class_name = resolve_class_name(engine, &indexed, id, instance.resolution);
-        let head =
-            format_instance_head(engine, &class_name, &instance.constraints, &instance.arguments);
-        let forall_prefix = format_forall_prefix(engine, &instance.kind_variables);
-        writeln!(snapshot, "derive {forall_prefix}{head}").unwrap();
+fn write_checked_diagnostics(
+    out: &mut String,
+    engine: &QueryEngine,
+    id: FileId,
+    indexed: &indexing::IndexedModule,
+    checked: &checking::CheckedModule,
+) {
+    let content = engine.content(id);
+    let (parsed, _) = engine.parsed(id).unwrap();
+    let root = parsed.syntax_node();
+    let stabilized = engine.stabilized(id).unwrap();
+    let lowered = engine.lowered(id).unwrap();
+    let resolved = engine.resolved(id).unwrap();
+
+    let lookup_smol_str = |id| engine.lookup_smol_str(id);
+    let context = DiagnosticsContext::new(&content, &root, &stabilized, indexed, &lowered)
+        .with_checking_lookup(&lookup_smol_str);
+
+    let mut all_diagnostics = vec![];
+
+    for error in &lowered.errors {
+        all_diagnostics.extend(error.to_diagnostics(&context));
     }
 
-    if !checked.errors.is_empty() {
-        writeln!(snapshot, "\nErrors").unwrap();
+    for error in &resolved.errors {
+        all_diagnostics.extend(error.to_diagnostics(&context));
     }
+
     for error in &checked.errors {
-        use checking::error::ErrorKind::*;
-        let pp = |t| pretty::print_global(engine, t);
-        let step = &error.step;
-        match error.kind {
-            CannotUnify { t1, t2 } => {
-                writeln!(snapshot, "CannotUnify {{ {}, {} }} at {step:?}", pp(t1), pp(t2)).unwrap();
-            }
-            NoInstanceFound { constraint } => {
-                writeln!(snapshot, "NoInstanceFound {{ {} }} at {step:?}", pp(constraint)).unwrap();
-            }
-            AmbiguousConstraint { constraint } => {
-                writeln!(snapshot, "AmbiguousConstraint {{ {} }} at {step:?}", pp(constraint))
-                    .unwrap();
-            }
-            InstanceMemberTypeMismatch { expected, actual } => {
-                writeln!(
-                    snapshot,
-                    "InstanceMemberTypeMismatch {{ expected: {}, actual: {} }} at {step:?}",
-                    pp(expected),
-                    pp(actual)
-                )
-                .unwrap();
-            }
-            CustomWarning { message_id } => {
-                let message = &checked.custom_messages[message_id as usize];
-                writeln!(snapshot, "CustomWarning {{ .. }} at {step:?}").unwrap();
-                for line in message.lines() {
-                    writeln!(snapshot, "  {line}").unwrap();
-                }
-            }
-            CustomFailure { message_id } => {
-                let message = &checked.custom_messages[message_id as usize];
-                writeln!(snapshot, "CustomFailure {{ .. }} at {step:?}").unwrap();
-                for line in message.lines() {
-                    writeln!(snapshot, "  {line}").unwrap();
-                }
-            }
-            _ => {
-                writeln!(snapshot, "{:?} at {step:?}", error.kind).unwrap();
-            }
-        }
+        all_diagnostics.extend(error.to_diagnostics(&context));
     }
 
-    snapshot
+    if !all_diagnostics.is_empty() {
+        writeln!(out, "\nDiagnostics").unwrap();
+        out.push_str(&format_rustc(&all_diagnostics, &content));
+    }
 }
 
 fn resolve_class_name(
@@ -448,50 +432,4 @@ fn resolve_class_name(
             .and_then(|idx| idx.items[class_type_id].name.as_deref().map(str::to_string))
             .unwrap_or_else(|| "<imported>".to_string())
     }
-}
-
-fn format_instance_head(
-    engine: &QueryEngine,
-    class_name: &str,
-    constraints: &[(checking::core::TypeId, checking::core::TypeId)],
-    arguments: &[(checking::core::TypeId, checking::core::TypeId)],
-) -> String {
-    let mut head = String::new();
-
-    if !constraints.is_empty() {
-        let formatted: Vec<_> =
-            constraints.iter().map(|(t, _)| pretty::print_global(engine, *t)).collect();
-        if formatted.len() == 1 {
-            head.push_str(&formatted[0]);
-        } else {
-            head.push('(');
-            head.push_str(&formatted.join(", "));
-            head.push(')');
-        }
-        head.push_str(" => ");
-    }
-
-    head.push_str(class_name);
-    for (arg_type, arg_kind) in arguments {
-        let type_str = pretty::print_global(engine, *arg_type);
-        let kind_str = pretty::print_global(engine, *arg_kind);
-        head.push_str(&format!(" ({type_str} :: {kind_str})"));
-    }
-
-    head
-}
-
-fn format_forall_prefix(engine: &QueryEngine, kind_variables: &[checking::core::TypeId]) -> String {
-    if kind_variables.is_empty() {
-        return String::new();
-    }
-    let binders: Vec<_> = kind_variables
-        .iter()
-        .enumerate()
-        .map(|(i, kind)| {
-            let kind_str = pretty::print_global(engine, *kind);
-            format!("(&{i} :: {kind_str})")
-        })
-        .collect();
-    format!("forall {}. ", binders.join(" "))
 }

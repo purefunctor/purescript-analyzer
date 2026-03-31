@@ -1,0 +1,69 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+openLeft ::
+  forall (r :: Row Type) (u :: Row Type).
+    Union @Type ( a :: Int | (r :: Row Type) ) ( b :: String ) (u :: Row Type) =>
+    Proxy @(Row Type) (u :: Row Type)
+openRight ::
+  forall (r :: Row Type) (u :: Row Type).
+    Union @Type ( a :: Int ) ( b :: String | (r :: Row Type) ) (u :: Row Type) =>
+    Proxy @(Row Type) (u :: Row Type)
+backwardLeft ::
+  forall (l :: Row Type) (r :: Row Type).
+    Union @Type (l :: Row Type) ( b :: String ) ( a :: Int, b :: String | (r :: Row Type) ) =>
+    Proxy @(Row Type) (l :: Row Type)
+backwardRight ::
+  forall (r :: Row Type) (u :: Row Type).
+    Union @Type ( a :: Int ) (r :: Row Type) ( a :: Int, b :: String | (u :: Row Type) ) =>
+    Proxy @(Row Type) (r :: Row Type)
+consOpen ::
+  forall (r :: Row Type) (row :: Row Type).
+    Cons @Type "x" Int ( a :: String | (r :: Row Type) ) (row :: Row Type) =>
+    Proxy @(Row Type) (row :: Row Type)
+decomposeOpen ::
+  forall (t :: Type) (tail :: Row Type) (r :: Row Type).
+    Cons @Type "x" (t :: Type) (tail :: Row Type) ( a :: String, x :: Int | (r :: Row Type) ) =>
+    Proxy @Type (t :: Type)
+extractTail ::
+  forall (tail :: Row Type) (r :: Row Type).
+    Cons @Type "x" Int (tail :: Row Type) ( a :: String, x :: Int | (r :: Row Type) ) =>
+    Proxy @(Row Type) (tail :: Row Type)
+lacksOpen ::
+  forall (r :: Row Type).
+    Lacks @Type "missing" ( a :: Int, b :: String | (r :: Row Type) ) =>
+    Proxy @(Row Type) (r :: Row Type) -> Int
+lacksPresent ::
+  forall (r :: Row Type).
+    Lacks @Type "a" ( a :: Int | (r :: Row Type) ) => Proxy @(Row Type) (r :: Row Type) -> Int
+forceSolve ::
+  forall (t40 :: Row Type) (t39 :: Row Type) (t38 :: Row Type) (t37 :: Row Type) (t36 :: Row Type)
+    (t35 :: Row Type) (t34 :: Row Type).
+    Union @Type (t40 :: Row Type) ( b :: String ) (t39 :: Row Type) =>
+    { backwardLeft :: Proxy @(Row Type) ( a :: Int | (t38 :: Row Type) )
+    , backwardRight :: Proxy @(Row Type) ( b :: String | (t37 :: Row Type) )
+    , consOpen :: Proxy @(Row Type) ( a :: String, x :: Int | (t36 :: Row Type) )
+    , decomposeOpen :: Proxy @Type Int
+    , extractTail :: Proxy @(Row Type) ( a :: String | (t35 :: Row Type) )
+    , lacksOpen :: Int
+    , lacksPresent :: Int
+    , openLeft :: Proxy @(Row Type) ( a :: Int | (t39 :: Row Type) )
+    , openRight :: Proxy @(Row Type) ( a :: Int, b :: String | (t34 :: Row Type) )
+    }
+
+Types
+
+Diagnostics
+error[AmbiguousConstraint]: Ambiguous constraint: Lacks @Type "a" ( a :: Int | ?86 )
+  --> 33:1..43:4
+   |
+33 | forceSolve =
+   | ^~~~~~~~~~~~
+error[AmbiguousConstraint]: Ambiguous constraint: Lacks @Type "missing" ?83
+  --> 33:1..43:4
+   |
+33 | forceSolve =
+   | ^~~~~~~~~~~~

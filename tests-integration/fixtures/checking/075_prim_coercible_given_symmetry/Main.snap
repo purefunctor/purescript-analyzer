@@ -1,0 +1,14 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+test ::
+  forall (a :: Type) (b :: Type).
+    Coercible @Type (b :: Type) (a :: Type) => (a :: Type) -> (b :: Type)
+test' ::
+  forall (a :: Type) (b :: Type).
+    Coercible @Type (b :: Type) (a :: Type) => (a :: Type) -> (b :: Type)
+
+Types

@@ -1,0 +1,21 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Test :: State -> Test
+
+Types
+State :: Type
+Test :: Type
+
+Instances
+instance Eq State
+
+Derived
+derive Eq Test
+
+Roles
+State = []
+Test = []

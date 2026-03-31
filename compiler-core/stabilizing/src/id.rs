@@ -38,6 +38,18 @@ impl<N: AstNode<Language = PureScript>> PartialEq for AstId<N> {
 
 impl<N: AstNode<Language = PureScript>> Eq for AstId<N> {}
 
+impl<N: AstNode<Language = PureScript>> PartialOrd for AstId<N> {
+    fn partial_cmp(&self, other: &AstId<N>) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl<N: AstNode<Language = PureScript>> Ord for AstId<N> {
+    fn cmp(&self, other: &AstId<N>) -> std::cmp::Ordering {
+        self.id.cmp(&other.id)
+    }
+}
+
 impl<N: AstNode<Language = PureScript>> hash::Hash for AstId<N> {
     fn hash<H: hash::Hasher>(&self, state: &mut H) {
         self.id.hash(state);

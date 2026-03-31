@@ -1,0 +1,22 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Hours :: DurationComponent
+Minutes :: DurationComponent
+Seconds :: DurationComponent
+Duration :: DurationComponent -> Int -> Duration
+
+Types
+DurationComponent :: Type
+Duration :: Type
+
+Derived
+derive Eq Duration
+derive Eq DurationComponent
+
+Roles
+DurationComponent = []
+Duration = []

@@ -1,0 +1,25 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Unit :: Unit
+pure :: forall (a :: Type). (a :: Type) -> Effect (a :: Type)
+bind ::
+  forall (a :: Type) (b :: Type).
+    Effect (a :: Type) -> ((a :: Type) -> Effect (b :: Type)) -> Effect (b :: Type)
+discard ::
+  forall (a :: Type) (b :: Type).
+    Effect (a :: Type) -> ((a :: Type) -> Effect (b :: Type)) -> Effect (b :: Type)
+unit :: Unit
+test :: Effect Unit
+test' :: Effect Unit
+
+Types
+Effect :: Type -> Type
+Unit :: Type
+
+Roles
+Effect = [Nominal]
+Unit = []

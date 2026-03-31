@@ -1,0 +1,40 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Compose ::
+  forall (t4 :: Type) (t3 :: Type) (@f :: (t4 :: Type) -> Type) (@g :: (t3 :: Type) -> (t4 :: Type))
+    (@a :: (t3 :: Type)).
+    (f :: (t4 :: Type) -> Type) ((g :: (t3 :: Type) -> (t4 :: Type)) (a :: (t3 :: Type))) ->
+    Compose @(t4 :: Type) @(t3 :: Type)
+      (f :: (t4 :: Type) -> Type)
+      (g :: (t3 :: Type) -> (t4 :: Type))
+      (a :: (t3 :: Type))
+
+Types
+Compose ::
+  forall (t4 :: Type) (t3 :: Type).
+    ((t4 :: Type) -> Type) -> ((t3 :: Type) -> (t4 :: Type)) -> (t3 :: Type) -> Type
+
+Derived
+derive forall (t5 :: Type -> Type) (t6 :: Type -> Type).
+  Traversable (t5 :: Type -> Type) =>
+  Traversable (t6 :: Type -> Type) =>
+  Traversable (Compose @Type @Type (t5 :: Type -> Type) (t6 :: Type -> Type))
+
+Roles
+Compose = [Representational, Representational, Nominal]
+
+Diagnostics
+error[NoInstanceFound]: No instance found for: Functor (Compose @Type @Type (t5 :: Type -> Type) (t6 :: Type -> Type))
+  --> 6:1..6:76
+  |
+6 | derive instance (Traversable f, Traversable g) => Traversable (Compose f g)
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[NoInstanceFound]: No instance found for: Foldable (Compose @Type @Type (t5 :: Type -> Type) (t6 :: Type -> Type))
+  --> 6:1..6:76
+  |
+6 | derive instance (Traversable f, Traversable g) => Traversable (Compose f g)
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

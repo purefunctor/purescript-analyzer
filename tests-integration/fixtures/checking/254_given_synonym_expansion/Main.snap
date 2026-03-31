@@ -1,0 +1,40 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+unsafeCoerce :: forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type)
+coerceRecord ::
+  forall (a :: Row Type) (b :: Row Type).
+    TypeEquals @(Row Type) (a :: Row Type) (b :: Row Type) =>
+    {| (a :: Row Type) } -> {| (b :: Row Type) }
+transform ::
+  forall (a :: Row Type).
+    TypeEquals @(Row Type) (a :: Row Type) Include =>
+    {| (a :: Row Type) } -> { x :: Int, y :: String, z :: Boolean }
+test :: { x :: Int, y :: String, z :: Boolean }
+
+Types
+RowApply ::
+  forall (k :: Type). (Row (k :: Type) -> Row (k :: Type)) -> Row (k :: Type) -> Row (k :: Type)
++ :: forall (k :: Type). (Row (k :: Type) -> Row (k :: Type)) -> Row (k :: Type) -> Row (k :: Type)
+IncludeX :: Row Type -> Row Type
+IncludeY :: Row Type -> Row Type
+IncludeZ :: Row Type -> Row Type
+Include :: Row Type
+TypeEquals :: forall (k :: Type). (k :: Type) -> (k :: Type) -> Constraint
+
+Synonyms
+type RowApply f a = (f :: Row (k :: Type) -> Row (k :: Type)) (a :: Row (k :: Type))
+type IncludeX r = ( x :: Int | (r :: Row Type) )
+type IncludeY r = ( y :: String | (r :: Row Type) )
+type IncludeZ r = ( z :: Boolean | (r :: Row Type) )
+type Include = RowApply @Type IncludeX (RowApply @Type IncludeY (RowApply @Type IncludeZ ()))
+
+Classes
+class forall (k :: Type) (a :: (k :: Type)) (b :: (k :: Type)). TypeEquals @(k :: Type) (a :: (k :: Type)) (b :: (k :: Type))
+
+Instances
+instance forall (t10 :: Type) (t9 :: (t10 :: Type)).
+  TypeEquals @(t10 :: Type) (t9 :: (t10 :: Type)) (t9 :: (t10 :: Type))

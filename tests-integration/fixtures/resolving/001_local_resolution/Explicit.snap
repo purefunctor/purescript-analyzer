@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/resolving/generated.rs
+assertion_line: 12
 expression: report
 ---
 module Explicit
@@ -18,9 +19,11 @@ Exported Terms:
 Exported Types:
   - HiddenConstructor
   - Id
-  - Eq
   - Synonym
   - Maybe
+
+Exported Classes:
+  - Eq
 
 Local Terms:
   - value
@@ -37,9 +40,11 @@ Local Types:
   - HiddenConstructor
   - HiddenType
   - Id
-  - Eq
   - Synonym
   - Maybe
+
+Local Classes:
+  - Eq
 
 Class Members:
   - Eq.eq

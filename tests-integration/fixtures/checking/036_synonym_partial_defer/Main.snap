@@ -1,0 +1,36 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Identity :: forall (@a :: Type). (a :: Type) -> Identity (a :: Type)
+
+Types
+Identity :: Type -> Type
+ReaderT :: Type -> (Type -> Type) -> Type -> Type
+Apply ::
+  forall (k1 :: Type) (k2 :: Type). ((k1 :: Type) -> (k2 :: Type)) -> (k1 :: Type) -> (k2 :: Type)
+Good :: Type
+Bad :: ?[partial synonym application]
+
+Synonyms
+type ReaderT r m a = (r :: Type) -> (m :: Type -> Type) (a :: Type)
+type Apply f a = (f :: (k1 :: Type) -> (k2 :: Type)) (a :: (k1 :: Type))
+type Good = Apply @Type @Type (Apply @(Type -> Type) @(Type -> Type) (ReaderT Int) Identity) String
+type Bad = ?[partial synonym application]
+
+Roles
+Identity = [Representational]
+
+Diagnostics
+error[PartialSynonymApplication]: Partial type synonym application
+  --> 13:12..13:23
+   |
+13 | type Bad = ReaderT Int
+   |            ^~~~~~~~~~~
+error[CannotUnify]: Cannot unify 'Type' with '?[invalid kind]'
+  --> 13:12..13:23
+   |
+13 | type Bad = ReaderT Int
+   |            ^~~~~~~~~~~

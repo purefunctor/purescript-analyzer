@@ -1,0 +1,18 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+
+Types
+RowBox :: Row Type -> Type
+Apply :: forall (k :: Type). ((k :: Type) -> Type) -> (k :: Type) -> Type
+RowDesugared :: Type
+
+Synonyms
+type Apply f a = (f :: (k :: Type) -> Type) (a :: (k :: Type))
+type RowDesugared = Apply @(Row Type) RowBox ()
+
+Roles
+RowBox = [Phantom]

@@ -1,0 +1,24 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+UserId :: Int -> UserId
+wrapUserId :: Int -> UserId
+unwrapUserId :: UserId -> Int
+Wrapper :: forall (@a :: Type). (a :: Type) -> Wrapper (a :: Type)
+wrapWrapper :: forall (a :: Type). (a :: Type) -> Wrapper (a :: Type)
+unwrapWrapper :: forall (a :: Type). Wrapper (a :: Type) -> (a :: Type)
+
+Types
+UserId :: Type
+Wrapper :: Type -> Type
+
+Derived
+derive Newtype @Type UserId Int
+derive forall (t1 :: Type). Newtype @Type (Wrapper (t1 :: Type)) (t1 :: Type)
+
+Roles
+UserId = []
+Wrapper = [Representational]

@@ -1,0 +1,26 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+MkNoEq :: NoEq
+MkBox :: NoEq -> Box
+
+Types
+NoEq :: Type
+Box :: Type
+
+Derived
+derive Eq Box
+
+Roles
+NoEq = []
+Box = []
+
+Diagnostics
+error[NoInstanceFound]: No instance found for: Eq NoEq
+  --> 9:1..9:23
+  |
+9 | derive instance Eq Box
+  | ^~~~~~~~~~~~~~~~~~~~~~

@@ -9,18 +9,18 @@ Expressions:
 
 Types:
 
-n@Some(Position { line: 6, character: 22 })
-  resolves to a constraint variable "n"
-    Some(Position { line: 6, character: 48 })
-n@Some(Position { line: 6, character: 48 })
+n@6:22
+  -> constraint variable "n"
+    6:48
+n@6:48
   introduces a constraint variable "n"
-o@Some(Position { line: 6, character: 36 })
-  resolves to a constraint variable "o"
-    Some(Position { line: 6, character: 50 })
-m@Some(Position { line: 6, character: 24 })
+o@6:36
+  -> constraint variable "o"
+    6:50
+m@6:24
   introduces a constraint variable "m"
-o@Some(Position { line: 6, character: 50 })
+o@6:50
   introduces a constraint variable "o"
-m@Some(Position { line: 6, character: 34 })
-  resolves to a constraint variable "m"
-    Some(Position { line: 6, character: 24 })
+m@6:34
+  -> constraint variable "m"
+    6:24

@@ -1,0 +1,65 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+T ::
+  forall (t2 :: Type) (@f :: (t2 :: Type) -> Type) (@g :: Type -> (t2 :: Type)).
+    (f :: (t2 :: Type) -> Type) ((g :: Type -> (t2 :: Type)) Int) ->
+    T @(t2 :: Type) (f :: (t2 :: Type) -> Type) (g :: Type -> (t2 :: Type))
+Nothing :: forall (@a :: Type). Maybe (a :: Type)
+Just :: forall (@a :: Type). (a :: Type) -> Maybe (a :: Type)
+U :: forall (@f :: Type -> Type). (f :: Type -> Type) (Maybe Int) -> U (f :: Type -> Type)
+V ::
+  forall (t7 :: Type) (@f :: (t7 :: Type) -> Type) (@g :: Int -> (t7 :: Type)).
+    (f :: (t7 :: Type) -> Type) ((g :: Int -> (t7 :: Type)) 42) ->
+    V @(t7 :: Type) (f :: (t7 :: Type) -> Type) (g :: Int -> (t7 :: Type))
+
+Types
+T :: forall (t2 :: Type). ((t2 :: Type) -> Type) -> (Type -> (t2 :: Type)) -> Type
+Maybe :: Type -> Type
+U :: (Type -> Type) -> Type
+V :: forall (t7 :: Type). ((t7 :: Type) -> Type) -> (Int -> (t7 :: Type)) -> Type
+
+Derived
+derive forall (t8 :: Type -> Type) (t9 :: Type -> Type).
+  Eq1 (t8 :: Type -> Type) => Eq (T @Type (t8 :: Type -> Type) (t9 :: Type -> Type))
+derive forall (t10 :: Type -> Type) (t11 :: Type -> Type).
+  Ord1 (t10 :: Type -> Type) => Ord (T @Type (t10 :: Type -> Type) (t11 :: Type -> Type))
+derive forall (t12 :: Type). Eq (t12 :: Type) => Eq (Maybe (t12 :: Type))
+derive forall (t13 :: Type). Ord (t13 :: Type) => Ord (Maybe (t13 :: Type))
+derive forall (t14 :: Type -> Type). Eq1 (t14 :: Type -> Type) => Eq (U (t14 :: Type -> Type))
+derive forall (t15 :: Type -> Type). Ord1 (t15 :: Type -> Type) => Ord (U (t15 :: Type -> Type))
+derive forall (t16 :: Type -> Type) (t17 :: Int -> Type).
+  Eq1 (t16 :: Type -> Type) => Eq (V @Type (t16 :: Type -> Type) (t17 :: Int -> Type))
+derive forall (t18 :: Type -> Type) (t19 :: Int -> Type).
+  Ord1 (t18 :: Type -> Type) => Ord (V @Type (t18 :: Type -> Type) (t19 :: Int -> Type))
+
+Roles
+T = [Representational, Representational]
+Maybe = [Representational]
+U = [Representational]
+V = [Representational, Representational]
+
+Diagnostics
+error[NoInstanceFound]: No instance found for: Eq ((t9 :: Type -> Type) Int)
+  --> 8:1..8:36
+  |
+8 | derive instance Eq1 f => Eq (T f g)
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[NoInstanceFound]: No instance found for: Ord ((t11 :: Type -> Type) Int)
+  --> 9:1..9:38
+  |
+9 | derive instance Ord1 f => Ord (T f g)
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[NoInstanceFound]: No instance found for: Eq ((t17 :: Int -> Type) 42)
+  --> 23:1..23:36
+   |
+23 | derive instance Eq1 f => Eq (V f g)
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[NoInstanceFound]: No instance found for: Ord ((t19 :: Int -> Type) 42)
+  --> 24:1..24:38
+   |
+24 | derive instance Ord1 f => Ord (V f g)
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

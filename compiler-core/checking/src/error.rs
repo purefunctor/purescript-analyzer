@@ -2,10 +2,12 @@
 
 use std::sync::Arc;
 
-use crate::TypeId;
+use smol_str::SmolStr;
+
+use crate::core::SmolStrId;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ErrorStep {
+pub enum ErrorCrumb {
     TermDeclaration(indexing::TermItemId),
     TypeDeclaration(indexing::TypeItemId),
     ConstructorArgument(lowering::TypeId),
@@ -18,29 +20,39 @@ pub enum ErrorStep {
 
     InferringExpression(lowering::ExpressionId),
     CheckingExpression(lowering::ExpressionId),
+
+    InferringDoBind(lowering::DoStatementId),
+    InferringDoDiscard(lowering::DoStatementId),
+    CheckingDoLet(lowering::DoStatementId),
+
+    InferringAdoMap(lowering::DoStatementId),
+    InferringAdoApply(lowering::DoStatementId),
+    CheckingAdoLet(lowering::DoStatementId),
+
+    CheckingLetName(lowering::LetBindingNameGroupId),
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ErrorKind {
     AmbiguousConstraint {
-        constraint: TypeId,
+        constraint: SmolStrId,
     },
     CannotDeriveClass {
         class_file: files::FileId,
         class_id: indexing::TypeItemId,
     },
     CannotDeriveForType {
-        type_id: TypeId,
+        type_message: SmolStrId,
     },
     ContravariantOccurrence {
-        type_id: TypeId,
+        type_message: SmolStrId,
     },
     CovariantOccurrence {
-        type_id: TypeId,
+        type_message: SmolStrId,
     },
     CannotUnify {
-        t1: TypeId,
-        t2: TypeId,
+        t1: SmolStrId,
+        t2: SmolStrId,
     },
     DeriveInvalidArity {
         class_file: files::FileId,
@@ -48,37 +60,58 @@ pub enum ErrorKind {
         expected: usize,
         actual: usize,
     },
+    DeriveNotSupportedYet {
+        class_file: files::FileId,
+        class_id: indexing::TypeItemId,
+    },
     DeriveMissingFunctor,
     EmptyAdoBlock,
     EmptyDoBlock,
+    InvalidFinalBind,
+    InvalidFinalLet,
     InstanceHeadMismatch {
         class_file: files::FileId,
         class_item: indexing::TypeItemId,
         expected: usize,
         actual: usize,
     },
-    InstanceMemberTypeMismatch {
-        expected: TypeId,
-        actual: TypeId,
+    InstanceHeadLabeledRow {
+        class_file: files::FileId,
+        class_item: indexing::TypeItemId,
+        position: usize,
+        type_message: SmolStrId,
     },
-    InvalidTypeOperator {
-        id: TypeId,
+    InstanceMemberTypeMismatch {
+        expected: SmolStrId,
+        actual: SmolStrId,
+    },
+    InvalidTypeApplication {
+        function_type: SmolStrId,
+        function_kind: SmolStrId,
+        argument_type: SmolStrId,
     },
     ExpectedNewtype {
-        type_id: TypeId,
+        type_message: SmolStrId,
+    },
+    InvalidNewtypeDeriveSkolemArguments,
+    NonLocalNewtype {
+        type_message: SmolStrId,
     },
     NoInstanceFound {
-        constraint: TypeId,
+        constraint: SmolStrId,
+    },
+    NoVisibleTypeVariable {
+        function_type: SmolStrId,
     },
     PartialSynonymApplication {
         id: lowering::TypeId,
     },
     RecursiveSynonymExpansion {
         file_id: files::FileId,
-        item_id: indexing::TypeItemId,
+        type_id: indexing::TypeItemId,
     },
     TooManyBinders {
-        signature: lowering::TypeId,
+        signature: Option<lowering::TypeId>,
         expected: u32,
         actual: u32,
     },
@@ -88,8 +121,7 @@ pub enum ErrorKind {
         actual: u32,
     },
     InvalidRoleDeclaration {
-        type_id: indexing::TypeItemId,
-        parameter_index: usize,
+        index: usize,
         declared: crate::core::Role,
         inferred: crate::core::Role,
     },
@@ -98,15 +130,27 @@ pub enum ErrorKind {
         item_id: indexing::TypeItemId,
     },
     CustomWarning {
-        message_id: u32,
+        message_id: SmolStrId,
+    },
+    RedundantPatterns {
+        patterns: Arc<[SmolStr]>,
+    },
+    MissingPatterns {
+        patterns: Arc<[SmolStrId]>,
     },
     CustomFailure {
-        message_id: u32,
+        message_id: SmolStrId,
+    },
+    PropertyIsMissing {
+        labels: Arc<[SmolStr]>,
+    },
+    AdditionalProperty {
+        labels: Arc<[SmolStr]>,
     },
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct CheckError {
     pub kind: ErrorKind,
-    pub step: Arc<[ErrorStep]>,
+    pub crumbs: Arc<[ErrorCrumb]>,
 }

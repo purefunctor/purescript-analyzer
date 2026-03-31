@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/resolving/generated.rs
+assertion_line: 12
 expression: report
 ---
 module ClassLibrary
@@ -15,6 +16,8 @@ Exported Terms:
   - eq
 
 Exported Types:
+
+Exported Classes:
   - Show
   - Ord
   - Eq
@@ -26,6 +29,8 @@ Local Terms:
   - eq
 
 Local Types:
+
+Local Classes:
   - Show
   - Ord
   - Eq

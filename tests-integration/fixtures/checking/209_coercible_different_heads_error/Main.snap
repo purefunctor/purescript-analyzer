@@ -1,0 +1,26 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Nothing :: forall (@a :: Type). Maybe (a :: Type)
+Just :: forall (@a :: Type). (a :: Type) -> Maybe (a :: Type)
+Left :: forall (@a :: Type) (@b :: Type). (a :: Type) -> Either (a :: Type) (b :: Type)
+Right :: forall (@a :: Type) (@b :: Type). (b :: Type) -> Either (a :: Type) (b :: Type)
+coerceDifferent :: Maybe Int -> Either Int String
+
+Types
+Maybe :: Type -> Type
+Either :: Type -> Type -> Type
+
+Roles
+Maybe = [Representational]
+Either = [Representational, Representational]
+
+Diagnostics
+error[NoInstanceFound]: No instance found for: Coercible @Type (Maybe Int) (Either Int String)
+  --> 8:1..8:50
+  |
+8 | coerceDifferent :: Maybe Int -> Either Int String
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

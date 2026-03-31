@@ -1,0 +1,30 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Proxy :: forall (t1 :: Type) (@a :: (t1 :: Type)). Proxy @(t1 :: Type) (a :: (t1 :: Type))
+MkNoEq :: NoEq
+MkContainsNoEq :: NoEq -> ContainsNoEq
+
+Types
+Proxy :: forall (t1 :: Type). (t1 :: Type) -> Type
+NoEq :: Type
+ContainsNoEq :: Type
+
+Derived
+derive forall (t3 :: Type) (t2 :: (t3 :: Type)). Eq (Proxy @(t3 :: Type) (t2 :: (t3 :: Type)))
+derive Eq ContainsNoEq
+
+Roles
+Proxy = [Phantom]
+NoEq = []
+ContainsNoEq = []
+
+Diagnostics
+error[NoInstanceFound]: No instance found for: Eq NoEq
+  --> 13:1..13:32
+   |
+13 | derive instance Eq ContainsNoEq
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

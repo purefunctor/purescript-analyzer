@@ -5,6 +5,7 @@ use std::cell::RefCell;
 
 use building_types::QueryProxy;
 use checking::core::pretty;
+use checking::{core, ExternalQueries};
 use engine::WasmQueryEngine;
 use indexing::{TermItem, TypeItem};
 use serde::Serialize;
@@ -208,7 +209,7 @@ pub fn check(source: &str) -> JsValue {
         let lower_time = performance.now() - start;
 
         let start = performance.now();
-        let checked: std::sync::Arc<checking::CheckedModule> = match engine.checked(id) {
+        let checked = match engine.checked(id) {
             Ok(c) => c,
             Err(e) => {
                 return CheckResult {
@@ -236,57 +237,73 @@ pub fn check(source: &str) -> JsValue {
         };
         let check_time = performance.now() - start;
 
+        let name_text = |name: core::Name| -> String {
+            checked
+                .lookup_name(name)
+                .map(|id| engine.lookup_smol_str(id).to_string())
+                .unwrap_or_else(|| name.as_text().to_string())
+        };
+
+        let pretty = |type_id| pretty::Pretty::new(engine, &checked).render(type_id);
+
+        let pretty_signature = |name: &str, type_id| {
+            pretty::Pretty::new(engine, &checked).signature(name).render(type_id)
+        };
+
         // Extract results
         let mut terms = Vec::new();
         for (term_id, TermItem { name, .. }) in indexed.items.iter_terms() {
             let Some(n) = name else { continue };
             let Some(t) = checked.lookup_term(term_id) else { continue };
-            terms.push(pretty::print_signature_global(engine, n.as_str(), t));
+            terms.push(pretty_signature(n.as_str(), t).to_string());
         }
 
         let mut types = Vec::new();
         for (type_id, TypeItem { name, .. }) in indexed.items.iter_types() {
             let Some(n) = name else { continue };
             let Some(t) = checked.lookup_type(type_id) else { continue };
-            types.push(pretty::print_signature_global(engine, n.as_str(), t));
+            types.push(pretty_signature(n.as_str(), t).to_string());
         }
 
         let mut synonyms = Vec::new();
         for (type_id, TypeItem { name, .. }) in indexed.items.iter_types() {
             let Some(n) = name else { continue };
             let Some(group) = checked.lookup_synonym(type_id) else { continue };
-            let expansion = pretty::print_global(engine, group.synonym_type);
+            let expansion = pretty(group.synonym);
+            let parameters =
+                group.parameters.iter().map(|binder| name_text(binder.name)).collect::<Vec<_>>();
             synonyms.push(SynonymExpansion {
                 name: n.to_string(),
-                expansion,
-                quantified_variables: group.quantified_variables.0,
-                kind_variables: group.kind_variables.0,
-                type_variables: group.type_variables.0,
+                expansion: if parameters.is_empty() {
+                    expansion.to_string()
+                } else {
+                    format!("forall {}. {expansion}", parameters.join(" "))
+                },
+                quantified_variables: group.parameters.len() as u32,
+                kind_variables: 0,
+                type_variables: group.parameters.len() as u32,
             });
         }
 
         let mut errors = Vec::new();
         for error in &checked.errors {
+            let message = |id| engine.lookup_smol_str(id).to_string();
             let (kind, message) = match &error.kind {
                 checking::error::ErrorKind::CannotUnify { t1, t2 } => {
-                    let t1_pretty = pretty::print_global(engine, *t1);
-                    let t2_pretty = pretty::print_global(engine, *t2);
-                    ("CannotUnify".to_string(), format!("{t1_pretty} ~ {t2_pretty}"))
+                    ("CannotUnify".to_string(), format!("{} ~ {}", message(*t1), message(*t2)))
                 }
                 checking::error::ErrorKind::NoInstanceFound { constraint } => {
-                    let c_pretty = pretty::print_global(engine, *constraint);
-                    ("NoInstanceFound".to_string(), c_pretty)
+                    ("NoInstanceFound".to_string(), message(*constraint))
                 }
                 checking::error::ErrorKind::AmbiguousConstraint { constraint } => {
-                    let c_pretty = pretty::print_global(engine, *constraint);
-                    ("AmbiguousConstraint".to_string(), c_pretty)
+                    ("AmbiguousConstraint".to_string(), message(*constraint))
                 }
                 _ => (format!("{:?}", error.kind), String::new()),
             };
             errors.push(CheckErrorInfo {
                 kind,
                 message,
-                location: Some(format!("{:?}", error.step)),
+                location: Some(format!("{:?}", error.crumbs)),
             });
         }
 

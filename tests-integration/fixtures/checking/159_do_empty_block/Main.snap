@@ -1,0 +1,32 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+pure :: forall (a :: Type). (a :: Type) -> Effect (a :: Type)
+bind ::
+  forall (a :: Type) (b :: Type).
+    Effect (a :: Type) -> ((a :: Type) -> Effect (b :: Type)) -> Effect (b :: Type)
+discard ::
+  forall (a :: Type) (b :: Type).
+    Effect (a :: Type) -> ((a :: Type) -> Effect (b :: Type)) -> Effect (b :: Type)
+test :: ?[empty do block]
+
+Types
+Effect :: Type -> Type
+
+Roles
+Effect = [Nominal]
+
+Diagnostics
+error[EmptyDoBlock]: Empty do block
+  --> 9:8..9:10
+  |
+9 | test = do
+  |        ^~
+error[CannotUnify]: Cannot unify 'Type' with '?[invalid kind]'
+  --> 9:1..9:10
+  |
+9 | test = do
+  | ^~~~~~~~~

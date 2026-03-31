@@ -1,7 +1,7 @@
 use std::mem;
 use std::sync::Arc;
 
-use itertools::Itertools;
+use itertools::{Itertools, Position};
 use petgraph::algo::tarjan_scc;
 use rowan::ast::AstNode;
 use rustc_hash::FxHashMap;
@@ -12,6 +12,15 @@ use syntax::{SyntaxToken, cst};
 use crate::*;
 
 use super::{Context, State};
+
+fn string_text(token: SyntaxToken) -> SmolStr {
+    let original = token.text();
+    let text = original
+        .strip_prefix("\"\"\"")
+        .and_then(|t| t.strip_suffix("\"\"\""))
+        .or_else(|| original.strip_prefix('"').and_then(|t| t.strip_suffix('"')));
+    SmolStr::from(text.unwrap_or(original))
+}
 
 pub(crate) fn lower_binder(state: &mut State, context: &Context, cst: &cst::Binder) -> BinderId {
     let id = context.stabilized.lookup_cst(cst).expect_id();
@@ -45,8 +54,25 @@ fn lower_binder_kind(
                 .collect();
             BinderKind::OperatorChain { head, tail }
         }
-        cst::Binder::BinderInteger(_) => BinderKind::Integer,
-        cst::Binder::BinderNumber(_) => BinderKind::Number,
+        cst::Binder::BinderInteger(cst) => {
+            let value = cst.integer_token().and_then(|token| {
+                let text = token.text();
+                let integer = if let Some(hex) = text.strip_prefix("0x") {
+                    let clean = hex.replace_smolstr("_", "");
+                    i32::from_str_radix(&clean, 16).ok()?
+                } else {
+                    let clean = text.replace_smolstr("_", "");
+                    clean.parse().ok()?
+                };
+                if cst.minus_token().is_some() { Some(-integer) } else { Some(integer) }
+            });
+            BinderKind::Integer { value }
+        }
+        cst::Binder::BinderNumber(cst) => {
+            let negative = cst.minus_token().is_some();
+            let value = cst.number_token().map(|token| SmolStr::from(token.text()));
+            BinderKind::Number { negative, value }
+        }
         cst::Binder::BinderConstructor(cst) => {
             let resolution = cst.name().and_then(|cst| {
                 let (qualifier, name) = lower_qualified_name(&cst, cst::QualifiedName::upper)?;
@@ -77,8 +103,40 @@ fn lower_binder_kind(
             BinderKind::Named { named, binder }
         }
         cst::Binder::BinderWildcard(_) => BinderKind::Wildcard,
-        cst::Binder::BinderString(_) => BinderKind::String,
-        cst::Binder::BinderChar(_) => BinderKind::Char,
+        cst::Binder::BinderString(cst) => {
+            let (kind, value) = if let Some(token) = cst.string() {
+                (StringKind::String, Some(string_text(token)))
+            } else if let Some(token) = cst.raw_string() {
+                (StringKind::RawString, Some(string_text(token)))
+            } else {
+                (StringKind::String, None)
+            };
+            BinderKind::String { kind, value }
+        }
+        cst::Binder::BinderChar(cst) => {
+            let value = cst.char_token().and_then(|token| {
+                let text = token.text();
+                let inner = text.strip_prefix('\'')?.strip_suffix('\'')?;
+                if let Some(escaped) = inner.strip_prefix('\\') {
+                    match escaped.chars().next()? {
+                        'n' => Some('\n'),
+                        'r' => Some('\r'),
+                        't' => Some('\t'),
+                        '\\' => Some('\\'),
+                        '\'' => Some('\''),
+                        '0' => Some('\0'),
+                        'x' if escaped.len() >= 3 => {
+                            let hex = &escaped[1..3];
+                            u8::from_str_radix(hex, 16).ok().map(|b| b as char)
+                        }
+                        _ => None,
+                    }
+                } else {
+                    inner.chars().next()
+                }
+            });
+            BinderKind::Char { value }
+        }
         cst::Binder::BinderTrue(_) => BinderKind::Boolean { boolean: true },
         cst::Binder::BinderFalse(_) => BinderKind::Boolean { boolean: false },
         cst::Binder::BinderArray(cst) => {
@@ -90,8 +148,7 @@ fn lower_binder_kind(
                 cst::RecordItem::RecordField(cst) => {
                     let name = cst.name().and_then(|cst| {
                         let token = cst.text()?;
-                        let text = token.text();
-                        Some(SmolStr::from(text))
+                        Some(string_text(token))
                     });
                     let value = cst.binder().map(|cst| lower_binder(state, context, &cst));
                     BinderRecordItem::RecordField { name, value }
@@ -102,8 +159,7 @@ fn lower_binder_kind(
 
                     let name = cst.name().and_then(|cst| {
                         let token = cst.text()?;
-                        let text = token.text();
-                        Some(SmolStr::from(text))
+                        Some(string_text(token))
                     });
 
                     if let Some(name) = &name {
@@ -274,26 +330,44 @@ fn lower_expression_kind(
         cst::Expression::ExpressionDo(cst) => state.with_scope(|state| {
             let qualifier = cst.qualifier().and_then(|cst| {
                 let token = cst.text()?;
-                let text = token.text();
+                let text = token.text().trim_end_matches('.');
                 Some(SmolStr::from(text))
             });
 
-            let bind = state.resolve_term_full(context, qualifier.as_deref(), "bind");
-            let discard = state.resolve_term_full(context, qualifier.as_deref(), "discard");
+            // Scan statements to determine which rebindable functions are needed:
+            // - `bind` is needed if there's at least one `<-` statement
+            // - `discard` is needed if there's a non-final discard statement
+            let (has_bind, has_discard) = cst.statements().map_or((false, false), |statements| {
+                let mut has_bind = false;
+                let mut has_discard = false;
 
-            if bind.is_none() {
-                let id = context.stabilized.lookup_cst(cst).expect_id();
-                state
-                    .errors
-                    .push(LoweringError::NotInScope(NotInScope::DoFn { kind: DoFn::Bind, id }));
-            }
+                for (position, statement) in statements.children().with_position() {
+                    let is_final = matches!(position, Position::Last | Position::Only);
+                    match statement {
+                        cst::DoStatement::DoStatementBind(_) => has_bind = true,
+                        cst::DoStatement::DoStatementDiscard(_) if !is_final => has_discard = true,
+                        _ => {}
+                    }
+                }
 
-            if discard.is_none() {
-                let id = context.stabilized.lookup_cst(cst).expect_id();
-                state
-                    .errors
-                    .push(LoweringError::NotInScope(NotInScope::DoFn { kind: DoFn::Discard, id }));
-            }
+                (has_bind, has_discard)
+            });
+
+            let mut resolve_do_fn = |kind: DoFn| {
+                let name = match kind {
+                    DoFn::Bind => "bind",
+                    DoFn::Discard => "discard",
+                };
+                let resolution = state.resolve_term_full(context, qualifier.as_deref(), name);
+                if resolution.is_none() {
+                    let id = context.stabilized.lookup_cst(cst).expect_id();
+                    state.errors.push(LoweringError::NotInScope(NotInScope::DoFn { kind, id }));
+                }
+                resolution
+            };
+
+            let bind = if has_bind { resolve_do_fn(DoFn::Bind) } else { None };
+            let discard = if has_discard { resolve_do_fn(DoFn::Discard) } else { None };
 
             let statements = recover! {
                 cst.statements()?
@@ -307,34 +381,51 @@ fn lower_expression_kind(
         cst::Expression::ExpressionAdo(cst) => state.with_scope(|state| {
             let qualifier = cst.qualifier().and_then(|cst| {
                 let token = cst.text()?;
-                let text = token.text();
+                let text = token.text().trim_end_matches('.');
                 Some(SmolStr::from(text))
             });
 
-            let map = state.resolve_term_full(context, qualifier.as_deref(), "map");
-            let apply = state.resolve_term_full(context, qualifier.as_deref(), "apply");
-            let pure = state.resolve_term_full(context, qualifier.as_deref(), "pure");
+            // Count action statements (Bind/Discard, ignoring Let) to determine
+            // which rebindable functions are needed:
+            // - 0 actions: only `pure` needed
+            // - 1 action: only `map` needed
+            // - 2+ actions: `map` and `apply` needed
+            let action_count = cst.statements().map_or(0, |statements| {
+                statements
+                    .children()
+                    .filter(|s| {
+                        matches!(
+                            s,
+                            cst::DoStatement::DoStatementBind(_)
+                                | cst::DoStatement::DoStatementDiscard(_)
+                        )
+                    })
+                    .count()
+            });
 
-            if map.is_none() {
-                let id = context.stabilized.lookup_cst(cst).expect_id();
-                state
-                    .errors
-                    .push(LoweringError::NotInScope(NotInScope::AdoFn { kind: AdoFn::Map, id }));
-            }
+            let (needs_pure, needs_map, needs_apply) = match action_count {
+                0 => (true, false, false),
+                1 => (false, true, false),
+                _ => (false, true, true),
+            };
 
-            if apply.is_none() {
-                let id = context.stabilized.lookup_cst(cst).expect_id();
-                state
-                    .errors
-                    .push(LoweringError::NotInScope(NotInScope::AdoFn { kind: AdoFn::Apply, id }));
-            }
+            let mut resolve_ado_fn = |kind: AdoFn| {
+                let name = match kind {
+                    AdoFn::Map => "map",
+                    AdoFn::Apply => "apply",
+                    AdoFn::Pure => "pure",
+                };
+                let resolution = state.resolve_term_full(context, qualifier.as_deref(), name);
+                if resolution.is_none() {
+                    let id = context.stabilized.lookup_cst(cst).expect_id();
+                    state.errors.push(LoweringError::NotInScope(NotInScope::AdoFn { kind, id }));
+                }
+                resolution
+            };
 
-            if pure.is_none() {
-                let id = context.stabilized.lookup_cst(cst).expect_id();
-                state
-                    .errors
-                    .push(LoweringError::NotInScope(NotInScope::AdoFn { kind: AdoFn::Pure, id }));
-            }
+            let map = if needs_map { resolve_ado_fn(AdoFn::Map) } else { None };
+            let apply = if needs_apply { resolve_ado_fn(AdoFn::Apply) } else { None };
+            let pure = if needs_pure { resolve_ado_fn(AdoFn::Pure) } else { None };
 
             let statements = recover! {
                 cst.statements()?
@@ -397,8 +488,7 @@ fn lower_expression_kind(
                 cst::RecordItem::RecordField(cst) => {
                     let name = cst.name().and_then(|cst| {
                         let token = cst.text()?;
-                        let text = token.text();
-                        Some(SmolStr::from(text))
+                        Some(string_text(token))
                     });
                     let value = cst.expression().map(|cst| lower_expression(state, context, &cst));
                     ExpressionRecordItem::RecordField { name, value }
@@ -406,8 +496,7 @@ fn lower_expression_kind(
                 cst::RecordItem::RecordPun(cst) => {
                     let name = cst.name().and_then(|cst| {
                         let token = cst.text()?;
-                        let text = token.text();
-                        Some(SmolStr::from(text))
+                        Some(string_text(token))
                     });
                     let resolution = name.as_ref().and_then(|name| {
                         let qualifier: Option<&str> = None;
@@ -429,8 +518,7 @@ fn lower_expression_kind(
                 .children()
                 .map(|cst| {
                     let token = cst.text()?;
-                    let text = token.text();
-                    Some(SmolStr::from(text))
+                    Some(string_text(token))
                 })
                 .collect();
             ExpressionKind::RecordAccess { record, labels }
@@ -725,8 +813,13 @@ pub(crate) fn lower_equation_like<T: AstNode>(
     })
 }
 
-fn lower_do_statement(state: &mut State, context: &Context, cst: &cst::DoStatement) -> DoStatement {
-    match cst {
+fn lower_do_statement(
+    state: &mut State,
+    context: &Context,
+    cst: &cst::DoStatement,
+) -> DoStatementId {
+    let id = context.stabilized.lookup_cst(cst).expect_id();
+    let statement = match cst {
         cst::DoStatement::DoStatementBind(cst) => {
             let expression = cst.expression().map(|cst| lower_expression(state, context, &cst));
             state.push_binder_scope();
@@ -741,7 +834,9 @@ fn lower_do_statement(state: &mut State, context: &Context, cst: &cst::DoStateme
             let expression = cst.expression().map(|cst| lower_expression(state, context, &cst));
             DoStatement::Discard { expression }
         }
-    }
+    };
+    state.associate_do_statement(id, statement);
+    id
 }
 
 fn lower_record_updates(
@@ -754,8 +849,7 @@ fn lower_record_updates(
             cst::RecordUpdate::RecordUpdateLeaf(cst) => {
                 let name = cst.name().and_then(|cst| {
                     let token = cst.text()?;
-                    let text = token.text();
-                    Some(SmolStr::from(text))
+                    Some(string_text(token))
                 });
                 let expression = cst.expression().map(|cst| lower_expression(state, context, &cst));
                 RecordUpdate::Leaf { name, expression }
@@ -763,8 +857,7 @@ fn lower_record_updates(
             cst::RecordUpdate::RecordUpdateBranch(cst) => {
                 let name = cst.name().and_then(|cst| {
                     let token = cst.text()?;
-                    let text = token.text();
-                    Some(SmolStr::from(text))
+                    Some(string_text(token))
                 });
                 let updates =
                     recover! { lower_record_updates(state, context, &cst.record_updates()?) };
@@ -789,9 +882,11 @@ fn lower_type_kind(
 ) -> TypeKind {
     match cst {
         cst::Type::TypeApplicationChain(cst) => {
-            let mut children = cst.children().map(|cst| lower_type(state, context, &cst));
-            let function = children.next();
-            let arguments = children.collect();
+            let mut children = cst.children();
+            let function = children.next().map(|cst| lower_type(state, context, &cst));
+            let in_constraint = mem::replace(&mut state.in_constraint, false);
+            let arguments = children.map(|cst| lower_type(state, context, &cst)).collect();
+            state.in_constraint = in_constraint;
             TypeKind::ApplicationChain { function, arguments }
         }
         cst::Type::TypeArrow(cst) => {
@@ -801,15 +896,23 @@ fn lower_type_kind(
             TypeKind::Arrow { argument, result }
         }
         cst::Type::TypeConstrained(cst) => {
-            let mut children = cst.children().map(|cst| lower_type(state, context, &cst));
-            let constraint = children.next();
-            let constrained = children.next();
+            let mut children = cst.children();
+            let in_constraint = mem::replace(&mut state.in_constraint, true);
+            let constraint = children.next().map(|cst| lower_type(state, context, &cst));
+            state.in_constraint = in_constraint;
+            let constrained = children.next().map(|cst| lower_type(state, context, &cst));
             TypeKind::Constrained { constraint, constrained }
         }
         cst::Type::TypeConstructor(cst) => {
             let resolution = cst.name().and_then(|cst| {
                 let (qualifier, name) = lower_qualified_name(&cst, cst::QualifiedName::upper)?;
-                state.resolve_type_reference(context, qualifier.as_deref(), &name)
+                if state.in_constraint {
+                    state.resolve_class_reference(context, qualifier.as_deref(), &name).or_else(
+                        || state.resolve_type_reference(context, qualifier.as_deref(), &name),
+                    )
+                } else {
+                    state.resolve_type_reference(context, qualifier.as_deref(), &name)
+                }
             });
             if resolution.is_none() {
                 let id = context.stabilized.lookup_cst(cst).expect_id();
@@ -820,8 +923,10 @@ fn lower_type_kind(
         // Rank-N Types must be scoped. See `lower_forall`.
         cst::Type::TypeForall(cst) => state.with_scope(|s| {
             s.push_forall_scope();
-            let bindings =
-                cst.children().map(|cst| lower_type_variable_binding(s, context, &cst)).collect();
+            let bindings = cst
+                .children()
+                .map(|cst| lower_type_variable_binding(s, context, &cst, false))
+                .collect();
             let inner = cst.type_().map(|cst| lower_type(s, context, &cst));
             TypeKind::Forall { bindings, inner }
         }),
@@ -901,19 +1006,9 @@ fn lower_type_kind(
         }
         cst::Type::TypeString(cst) => {
             let (kind, value) = if let Some(token) = cst.string() {
-                let text = token.text();
-                let value = text
-                    .strip_prefix('"')
-                    .and_then(|text| text.strip_suffix('"'))
-                    .map(SmolStr::from);
-                (StringKind::String, value)
+                (StringKind::String, Some(string_text(token)))
             } else if let Some(token) = cst.raw_string() {
-                let text = token.text();
-                let value = text
-                    .strip_prefix("\"\"\"")
-                    .and_then(|text| text.strip_suffix("\"\"\""))
-                    .map(SmolStr::from);
-                (StringKind::RawString, value)
+                (StringKind::RawString, Some(string_text(token)))
             } else {
                 (StringKind::String, None)
             };
@@ -966,8 +1061,10 @@ pub(crate) fn lower_forall(state: &mut State, context: &Context, cst: &cst::Type
     if let cst::Type::TypeForall(f) = cst {
         let id = context.stabilized.lookup_cst(cst).expect_id();
         state.push_forall_scope();
-        let bindings =
-            f.children().map(|cst| lower_type_variable_binding(state, context, &cst)).collect();
+        let bindings = f
+            .children()
+            .map(|cst| lower_type_variable_binding(state, context, &cst, false))
+            .collect();
         let inner = f.type_().map(|cst| lower_forall(state, context, &cst));
         let kind = TypeKind::Forall { bindings, inner };
         state.associate_type_info(id, kind);
@@ -1054,9 +1151,10 @@ pub(crate) fn lower_type_variable_binding(
     state: &mut State,
     context: &Context,
     cst: &cst::TypeVariableBinding,
+    default_visible: bool,
 ) -> TypeVariableBinding {
     let id = context.stabilized.lookup_cst(cst).expect_id();
-    let visible = cst.at().is_some();
+    let visible = cst.at().is_some() || default_visible;
     let name = cst.name().map(|cst| {
         let text = cst.text();
         SmolStr::from(text)
@@ -1071,8 +1169,7 @@ pub(crate) fn lower_type_variable_binding(
 fn lower_row_item(state: &mut State, context: &Context, cst: &cst::TypeRowItem) -> TypeRowItem {
     let name = cst.name().and_then(|cst| {
         let token = cst.text()?;
-        let text = token.text();
-        Some(SmolStr::from(text))
+        Some(string_text(token))
     });
     let type_ = cst.type_().map(|t| lower_type(state, context, &t));
     TypeRowItem { name, type_ }

@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/resolving/generated.rs
+assertion_line: 12
 expression: report
 ---
 module Internal
@@ -14,11 +15,15 @@ Exported Terms:
 Exported Types:
   - Internal
 
+Exported Classes:
+
 Local Terms:
   - Internal
 
 Local Types:
   - Internal
+
+Local Classes:
 
 Class Members:
 

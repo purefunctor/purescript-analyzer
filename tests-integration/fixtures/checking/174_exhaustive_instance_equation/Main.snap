@@ -1,0 +1,24 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+c :: forall (@a :: Type). C (a :: Type) => (a :: Type) -> Int
+
+Types
+C :: Type -> Constraint
+
+Classes
+class forall (a :: Type). C (a :: Type)
+  c :: forall (@a :: Type). C (a :: Type) => (a :: Type) -> Int
+
+Instances
+instance C Boolean
+
+Diagnostics
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: false
+  --> 6:1..7:13
+  |
+6 | instance cBool :: C Boolean where
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

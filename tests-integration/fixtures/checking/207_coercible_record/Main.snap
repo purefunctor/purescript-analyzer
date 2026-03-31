@@ -1,0 +1,19 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Age :: Int -> Age
+coerceRecord :: { age :: Age, name :: String } -> { age :: Int, name :: String }
+coerceRecordReverse :: { age :: Int, name :: String } -> { age :: Age, name :: String }
+UserId :: Int -> UserId
+coerceMultiple :: { age :: Age, id :: UserId } -> { age :: Int, id :: Int }
+
+Types
+Age :: Type
+UserId :: Type
+
+Roles
+Age = []
+UserId = []

@@ -1,0 +1,19 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+eq :: forall (@a :: Type). Eq (a :: Type) => (a :: Type) -> (a :: Type) -> Boolean
+test :: Boolean
+
+Types
+Eq :: Type -> Constraint
+
+Classes
+class forall (a :: Type). Eq (a :: Type)
+  eq :: forall (@a :: Type). Eq (a :: Type) => (a :: Type) -> (a :: Type) -> Boolean
+
+Instances
+instance Eq Int
+instance forall (t1 :: Type). Eq (t1 :: Type) => Eq (Array (t1 :: Type))

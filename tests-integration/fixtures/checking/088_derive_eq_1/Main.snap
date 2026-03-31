@@ -1,0 +1,87 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Id :: forall (@a :: Type). (a :: Type) -> Id (a :: Type)
+Pair :: forall (@a :: Type). (a :: Type) -> (a :: Type) -> Pair (a :: Type)
+Mixed :: forall (@a :: Type). Int -> (a :: Type) -> Boolean -> Mixed (a :: Type)
+Rec :: forall (@a :: Type). { count :: Int, value :: (a :: Type) } -> Rec (a :: Type)
+Wrap ::
+  forall (t6 :: Type) (@f :: (t6 :: Type) -> Type) (@a :: (t6 :: Type)).
+    (f :: (t6 :: Type) -> Type) (a :: (t6 :: Type)) ->
+    Wrap @(t6 :: Type) (f :: (t6 :: Type) -> Type) (a :: (t6 :: Type))
+Compose ::
+  forall (t11 :: Type) (t10 :: Type) (@f :: (t11 :: Type) -> Type)
+    (@g :: (t10 :: Type) -> (t11 :: Type)) (@a :: (t10 :: Type)).
+    (f :: (t11 :: Type) -> Type) ((g :: (t10 :: Type) -> (t11 :: Type)) (a :: (t10 :: Type))) ->
+    Compose @(t11 :: Type) @(t10 :: Type)
+      (f :: (t11 :: Type) -> Type)
+      (g :: (t10 :: Type) -> (t11 :: Type))
+      (a :: (t10 :: Type))
+Left' :: forall (@a :: Type). (a :: Type) -> Either' (a :: Type)
+Right' :: forall (@a :: Type). (a :: Type) -> Either' (a :: Type)
+NoEq :: forall (@a :: Type). (a :: Type) -> NoEq (a :: Type)
+
+Types
+Id :: Type -> Type
+Pair :: Type -> Type
+Mixed :: Type -> Type
+Rec :: Type -> Type
+Wrap :: forall (t6 :: Type). ((t6 :: Type) -> Type) -> (t6 :: Type) -> Type
+Compose ::
+  forall (t11 :: Type) (t10 :: Type).
+    ((t11 :: Type) -> Type) -> ((t10 :: Type) -> (t11 :: Type)) -> (t10 :: Type) -> Type
+Either' :: Type -> Type
+NoEq :: Type -> Type
+
+Derived
+derive forall (t14 :: Type). Eq (t14 :: Type) => Eq (Id (t14 :: Type))
+derive Eq1 Id
+derive forall (t15 :: Type). Eq (t15 :: Type) => Eq (Pair (t15 :: Type))
+derive Eq1 Pair
+derive forall (t16 :: Type). Eq (t16 :: Type) => Eq (Mixed (t16 :: Type))
+derive Eq1 Mixed
+derive forall (t17 :: Type). Eq (t17 :: Type) => Eq (Rec (t17 :: Type))
+derive Eq1 Rec
+derive forall (t18 :: Type -> Type) (t19 :: Type).
+  Eq1 (t18 :: Type -> Type) =>
+  Eq (t19 :: Type) =>
+  Eq (Wrap @Type (t18 :: Type -> Type) (t19 :: Type))
+derive forall (t20 :: Type -> Type). Eq1 (t20 :: Type -> Type) => Eq1 (Wrap @Type (t20 :: Type -> Type))
+derive forall (t21 :: Type -> Type) (t24 :: Type) (t22 :: (t24 :: Type) -> Type) (t23 :: (t24 :: Type)).
+  Eq1 (t21 :: Type -> Type) =>
+  Eq ((t22 :: (t24 :: Type) -> Type) (t23 :: (t24 :: Type))) =>
+  Eq
+    (Compose @Type @(t24 :: Type)
+      (t21 :: Type -> Type)
+      (t22 :: (t24 :: Type) -> Type)
+      (t23 :: (t24 :: Type)))
+derive forall (t25 :: Type -> Type) (t26 :: Type -> Type).
+  Eq1 (t25 :: Type -> Type) => Eq1 (Compose @Type @Type (t25 :: Type -> Type) (t26 :: Type -> Type))
+derive forall (t27 :: Type). Eq (t27 :: Type) => Eq (Either' (t27 :: Type))
+derive Eq1 Either'
+derive Eq1 NoEq
+
+Roles
+Id = [Representational]
+Pair = [Representational]
+Mixed = [Representational]
+Rec = [Representational]
+Wrap = [Representational, Nominal]
+Compose = [Representational, Representational, Nominal]
+Either' = [Representational]
+NoEq = [Representational]
+
+Diagnostics
+error[NoInstanceFound]: No instance found for: Eq ((t26 :: Type -> Type) (t33 :: Type))
+  --> 34:1..34:43
+   |
+34 | derive instance Eq1 f => Eq1 (Compose f g)
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[NoInstanceFound]: No instance found for: Eq (NoEq (t35 :: Type))
+  --> 43:1..43:25
+   |
+43 | derive instance Eq1 NoEq
+   | ^~~~~~~~~~~~~~~~~~~~~~~~

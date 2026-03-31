@@ -19,6 +19,7 @@ resolving = { version = "0.1.0", path = "../resolving" }
 rustc-hash = "2.1.1"
 stabilizing = { version = "0.1.0", path = "../stabilizing" }
 sugar = { version = "0.1.0", path = "../sugar" }
+smol_str = "0.3.2"
 tempfile = "3.24.0"
 thread_local = "1.1.9"
 url = "2.5.7"

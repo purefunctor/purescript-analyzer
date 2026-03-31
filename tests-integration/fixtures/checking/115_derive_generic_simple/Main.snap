@@ -1,0 +1,79 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+MyUnit :: MyUnit
+Identity :: forall (@a :: Type). (a :: Type) -> Identity (a :: Type)
+Left :: forall (@a :: Type) (@b :: Type). (a :: Type) -> Either (a :: Type) (b :: Type)
+Right :: forall (@a :: Type) (@b :: Type). (b :: Type) -> Either (a :: Type) (b :: Type)
+Tuple ::
+  forall (@a :: Type) (@b :: Type). (a :: Type) -> (b :: Type) -> Tuple (a :: Type) (b :: Type)
+Wrapper :: forall (@a :: Type). (a :: Type) -> Wrapper (a :: Type)
+Proxy :: forall (t7 :: Type) (@a :: (t7 :: Type)). Proxy @(t7 :: Type) (a :: (t7 :: Type))
+getVoid :: forall (rep :: Type). Generic Void (rep :: Type) => Proxy @Type (rep :: Type)
+getMyUnit :: forall (rep :: Type). Generic MyUnit (rep :: Type) => Proxy @Type (rep :: Type)
+getIdentity ::
+  forall (a :: Type) (rep :: Type).
+    Generic (Identity (a :: Type)) (rep :: Type) => Proxy @Type (rep :: Type)
+getEither ::
+  forall (a :: Type) (b :: Type) (rep :: Type).
+    Generic (Either (a :: Type) (b :: Type)) (rep :: Type) => Proxy @Type (rep :: Type)
+getTuple ::
+  forall (a :: Type) (b :: Type) (rep :: Type).
+    Generic (Tuple (a :: Type) (b :: Type)) (rep :: Type) => Proxy @Type (rep :: Type)
+getWrapper ::
+  forall (a :: Type) (rep :: Type).
+    Generic (Wrapper (a :: Type)) (rep :: Type) => Proxy @Type (rep :: Type)
+forceSolve ::
+  forall (t43 :: Type) (t42 :: Type) (t41 :: Type) (t40 :: Type) (t39 :: Type) (t38 :: Type).
+    { getEither ::
+        Proxy @Type
+          (Sum
+            (Constructor "Left" (Argument (t43 :: Type)))
+            (Constructor "Right" (Argument (t42 :: Type))))
+    , getIdentity :: Proxy @Type (Constructor "Identity" (Argument (t41 :: Type)))
+    , getMyUnit :: Proxy @Type (Constructor "MyUnit" NoArguments)
+    , getTuple ::
+        Proxy @Type
+          (Constructor "Tuple" (Product (Argument (t40 :: Type)) (Argument (t39 :: Type))))
+    , getVoid :: Proxy @Type NoConstructors
+    , getWrapper :: Proxy @Type (Constructor "Wrapper" (Argument (t38 :: Type)))
+    }
+
+Types
+Void :: Type
+MyUnit :: Type
+Identity :: Type -> Type
+Either :: Type -> Type -> Type
+Tuple :: Type -> Type -> Type
+Wrapper :: Type -> Type
+Proxy :: forall (t7 :: Type). (t7 :: Type) -> Type
+
+Derived
+derive Generic Void NoConstructors
+derive Generic MyUnit (Constructor "MyUnit" NoArguments)
+derive forall (t8 :: Type).
+  Generic (Identity (t8 :: Type)) (Constructor "Identity" (Argument (t8 :: Type)))
+derive forall (t9 :: Type) (t10 :: Type).
+  Generic
+    (Either (t9 :: Type) (t10 :: Type))
+    (Sum
+      (Constructor "Left" (Argument (t9 :: Type)))
+      (Constructor "Right" (Argument (t10 :: Type))))
+derive forall (t11 :: Type) (t12 :: Type).
+  Generic
+    (Tuple (t11 :: Type) (t12 :: Type))
+    (Constructor "Tuple" (Product (Argument (t11 :: Type)) (Argument (t12 :: Type))))
+derive forall (t13 :: Type).
+  Generic (Wrapper (t13 :: Type)) (Constructor "Wrapper" (Argument (t13 :: Type)))
+
+Roles
+Void = []
+MyUnit = []
+Identity = [Representational]
+Either = [Representational, Representational]
+Tuple = [Representational, Representational]
+Wrapper = [Representational]
+Proxy = [Phantom]

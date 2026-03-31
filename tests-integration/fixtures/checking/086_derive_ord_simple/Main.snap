@@ -1,0 +1,38 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+MkBox :: Int -> Box
+MkPair :: Int -> Boolean -> Pair
+MkNoOrd :: NoOrd
+MkContainsNoOrd :: NoOrd -> ContainsNoOrd
+
+Types
+Box :: Type
+Pair :: Type
+NoOrd :: Type
+ContainsNoOrd :: Type
+
+Derived
+derive Eq Box
+derive Ord Box
+derive Eq Pair
+derive Ord Pair
+derive Eq NoOrd
+derive Eq ContainsNoOrd
+derive Ord ContainsNoOrd
+
+Roles
+Box = []
+Pair = []
+NoOrd = []
+ContainsNoOrd = []
+
+Diagnostics
+error[NoInstanceFound]: No instance found for: Ord NoOrd
+  --> 23:1..23:34
+   |
+23 | derive instance Ord ContainsNoOrd
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

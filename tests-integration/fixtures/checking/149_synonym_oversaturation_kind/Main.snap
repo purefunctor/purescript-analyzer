@@ -1,0 +1,26 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Proxy :: forall (k :: Type) (@a :: (k :: Type)). Proxy @(k :: Type) (a :: (k :: Type))
+test0 :: Test0 @Int 42
+test1 :: Test1 @Type @Int Int 42
+test2 :: Test2 @Type @Type @Int Int String 42
+
+Types
+Proxy :: forall (k :: Type). (k :: Type) -> Type
+Test0 :: forall (t2 :: Type). (t2 :: Type) -> Type
+Test1 :: forall (t5 :: Type) (t4 :: Type). (t5 :: Type) -> (t4 :: Type) -> Type
+Test2 ::
+  forall (t10 :: Type) (t9 :: Type) (t8 :: Type).
+    (t10 :: Type) -> (t9 :: Type) -> (t8 :: Type) -> Type
+
+Synonyms
+type Test0 = Proxy @(t2 :: Type)
+type Test1 a = Proxy @(t4 :: Type)
+type Test2 a b = Proxy @(t8 :: Type)
+
+Roles
+Proxy = [Phantom]

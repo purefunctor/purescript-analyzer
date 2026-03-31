@@ -1,0 +1,36 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Just :: forall (@a :: Type). (a :: Type) -> Maybe (a :: Type)
+Nothing :: forall (@a :: Type). Maybe (a :: Type)
+test1 :: { x :: Int, y :: Int } -> Int
+test2 :: { x :: Maybe Int } -> Int
+test3 :: { x :: Int, y :: Int } -> Int
+test4 :: { a :: Maybe Int, b :: Maybe String } -> Int
+test5 :: { inner :: { x :: Int } } -> Int
+
+Types
+Maybe :: Type -> Type
+
+Roles
+Maybe = [Representational]
+
+Diagnostics
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: { x: Nothing }
+  --> 8:1..8:35
+  |
+8 | test2 :: { x :: Maybe Int } -> Int
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+warning[RedundantPattern]: Pattern match has redundant patterns: _
+  --> 11:1..11:39
+   |
+11 | test3 :: { x :: Int, y :: Int } -> Int
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: { a: Nothing, b: _ }
+  --> 15:1..15:54
+   |
+15 | test4 :: { a :: Maybe Int, b :: Maybe String } -> Int
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

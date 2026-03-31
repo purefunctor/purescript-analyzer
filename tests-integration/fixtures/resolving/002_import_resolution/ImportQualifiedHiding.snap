@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/resolving/generated.rs
+assertion_line: 12
 expression: report
 ---
 module ImportQualifiedHiding
@@ -9,28 +10,34 @@ Unqualified Imports:
 Qualified Imports:
 
 L Terms:
-  - MkLibTy is Implicit
-  - Ctor3 is Implicit
   - libFn is Implicit
+  - MkLibTy is Implicit
   - Ctor1 is Implicit
+  - Ctor3 is Implicit
 
 L Types:
   - LibTy is Implicit
   - TypeOnly is Implicit
 
+L Classes:
+
 Exported Terms:
+  - Ctor1
   - libFn
   - MkLibTy
-  - Ctor1
   - Ctor3
 
 Exported Types:
   - LibTy
   - TypeOnly
 
+Exported Classes:
+
 Local Terms:
 
 Local Types:
+
+Local Classes:
 
 Class Members:
 

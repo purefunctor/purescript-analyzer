@@ -1,0 +1,40 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+invalidAdd :: Add 2 3 10 => Proxy @Int 10
+invalidCompare :: Compare 5 1 LT => Proxy @Ordering LT
+invalidAppend :: Append "hello" "world" "xyz" => Proxy @Symbol "xyz"
+invalidCons :: Cons "hello" "world" "helloworld" => Proxy @Symbol "world"
+forceSolve ::
+  { invalidAdd :: Proxy @Int 10
+  , invalidAppend :: Proxy @Symbol "xyz"
+  , invalidCompare :: Proxy @Ordering LT
+  , invalidCons :: Proxy @Symbol "world"
+  }
+
+Types
+
+Diagnostics
+error[NoInstanceFound]: No instance found for: Add 2 3 10
+  --> 20:1..25:4
+   |
+20 | forceSolve =
+   | ^~~~~~~~~~~~
+error[NoInstanceFound]: No instance found for: Compare 5 1 LT
+  --> 20:1..25:4
+   |
+20 | forceSolve =
+   | ^~~~~~~~~~~~
+error[NoInstanceFound]: No instance found for: Append "hello" "world" "xyz"
+  --> 20:1..25:4
+   |
+20 | forceSolve =
+   | ^~~~~~~~~~~~
+error[NoInstanceFound]: No instance found for: Cons "hello" "world" "helloworld"
+  --> 20:1..25:4
+   |
+20 | forceSolve =
+   | ^~~~~~~~~~~~

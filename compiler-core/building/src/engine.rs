@@ -33,7 +33,7 @@ use std::sync::atomic::{AtomicBool, AtomicU32, AtomicUsize, Ordering};
 use building_types::{
     ModuleNameId, ModuleNameInterner, QueryError, QueryKey, QueryProxy, QueryResult,
 };
-use checking::{CheckedModule, TypeInterner};
+use checking::CheckedModule;
 use files::FileId;
 use graph::SnapshotGraph;
 use indexing::IndexedModule;
@@ -104,7 +104,7 @@ struct DerivedStorage {
 #[derive(Default)]
 struct InternedStorage {
     module: ModuleNameInterner,
-    types: TypeInterner,
+    checking: checking::CoreInterners,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -782,8 +782,6 @@ impl QueryProxy for QueryEngine {
 
     type Sectioned = Arc<sugar::Sectioned>;
 
-    type Checked = Arc<CheckedModule>;
-
     fn parsed(&self, id: FileId) -> QueryResult<Self::Parsed> {
         QueryEngine::parsed(self, id)
     }
@@ -816,10 +814,6 @@ impl QueryProxy for QueryEngine {
         QueryEngine::sectioned(self, id)
     }
 
-    fn checked(&self, id: FileId) -> QueryResult<Self::Checked> {
-        QueryEngine::checked(self, id)
-    }
-
     fn prim_id(&self) -> FileId {
         QueryEngine::prim_id(self)
     }
@@ -830,14 +824,54 @@ impl QueryProxy for QueryEngine {
 }
 
 impl checking::ExternalQueries for QueryEngine {
-    fn intern_type(&self, t: checking::Type) -> checking::TypeId {
-        let mut storage = self.storage.write();
-        storage.interned.types.intern(t)
+    fn checked(&self, id: FileId) -> QueryResult<Arc<checking::CheckedModule>> {
+        QueryEngine::checked(self, id)
     }
 
-    fn lookup_type(&self, id: checking::TypeId) -> checking::Type {
+    fn intern_type(&self, t: checking::core::Type) -> checking::core::TypeId {
+        let mut storage = self.storage.write();
+        storage.interned.checking.intern_type(t)
+    }
+
+    fn lookup_type(&self, id: checking::core::TypeId) -> checking::core::Type {
         let storage = self.storage.read();
-        storage.interned.types[id].clone()
+        storage.interned.checking.lookup_type(id)
+    }
+
+    fn intern_forall_binder(
+        &self,
+        binder: checking::core::ForallBinder,
+    ) -> checking::core::ForallBinderId {
+        let mut storage = self.storage.write();
+        storage.interned.checking.intern_forall_binder(binder)
+    }
+
+    fn lookup_forall_binder(
+        &self,
+        id: checking::core::ForallBinderId,
+    ) -> checking::core::ForallBinder {
+        let storage = self.storage.read();
+        storage.interned.checking.lookup_forall_binder(id)
+    }
+
+    fn intern_row_type(&self, row: checking::core::RowType) -> checking::core::RowTypeId {
+        let mut storage = self.storage.write();
+        storage.interned.checking.intern_row_type(row)
+    }
+
+    fn lookup_row_type(&self, id: checking::core::RowTypeId) -> checking::core::RowType {
+        let storage = self.storage.read();
+        storage.interned.checking.lookup_row_type(id)
+    }
+
+    fn intern_smol_str(&self, s: smol_str::SmolStr) -> checking::core::SmolStrId {
+        let mut storage = self.storage.write();
+        storage.interned.checking.intern_smol_str(s)
+    }
+
+    fn lookup_smol_str(&self, id: checking::core::SmolStrId) -> smol_str::SmolStr {
+        let storage = self.storage.read();
+        storage.interned.checking.lookup_smol_str(id)
     }
 }
 

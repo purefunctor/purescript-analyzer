@@ -1,0 +1,17 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Nothing :: forall (@a :: Type). Maybe (a :: Type)
+Just :: forall (@a :: Type). (a :: Type) -> Maybe (a :: Type)
+
+Types
+Maybe :: Type -> Type
+
+Derived
+derive forall (t1 :: Type). Eq (t1 :: Type) => Eq (Maybe (t1 :: Type))
+
+Roles
+Maybe = [Representational]

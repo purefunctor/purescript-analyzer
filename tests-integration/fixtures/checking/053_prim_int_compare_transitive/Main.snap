@@ -1,0 +1,37 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+assertLesser ::
+  forall (l :: Int) (r :: Int).
+    Compare (l :: Int) (r :: Int) LT => Proxy @(Row Int) ( left :: (l :: Int), right :: (r :: Int) )
+assertGreater ::
+  forall (l :: Int) (r :: Int).
+    Compare (l :: Int) (r :: Int) GT => Proxy @(Row Int) ( left :: (l :: Int), right :: (r :: Int) )
+assertEqual ::
+  forall (l :: Int) (r :: Int).
+    Compare (l :: Int) (r :: Int) EQ => Proxy @(Row Int) ( left :: (l :: Int), right :: (r :: Int) )
+transLt ::
+  forall (m :: Int) (n :: Int) (p :: Int).
+    Compare (m :: Int) (n :: Int) LT =>
+    Compare (n :: Int) (p :: Int) LT =>
+    Proxy @Int (n :: Int) -> Proxy @(Row Int) ( left :: (m :: Int), right :: (p :: Int) )
+transLtEq ::
+  forall (m :: Int) (n :: Int) (p :: Int).
+    Compare (m :: Int) (n :: Int) LT =>
+    Compare (n :: Int) (p :: Int) EQ =>
+    Proxy @Int (n :: Int) -> Proxy @(Row Int) ( left :: (m :: Int), right :: (p :: Int) )
+transEqGt ::
+  forall (m :: Int) (n :: Int) (p :: Int).
+    Compare (m :: Int) (n :: Int) EQ =>
+    Compare (n :: Int) (p :: Int) GT =>
+    Proxy @Int (n :: Int) -> Proxy @(Row Int) ( left :: (m :: Int), right :: (p :: Int) )
+transSymmEq ::
+  forall (m :: Int) (n :: Int) (p :: Int).
+    Compare (n :: Int) (m :: Int) EQ =>
+    Compare (n :: Int) (p :: Int) EQ =>
+    Proxy @Int (n :: Int) -> Proxy @(Row Int) ( left :: (m :: Int), right :: (p :: Int) )
+
+Types

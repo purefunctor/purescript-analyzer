@@ -1,0 +1,44 @@
+---
+source: tests-integration/tests/resolving/generated.rs
+assertion_line: 12
+expression: report
+---
+module Main
+
+Unqualified Imports:
+
+Terms:
+  - lift is Explicit
+
+Types:
+  - Thing is Explicit
+
+Classes:
+
+Qualified Imports:
+
+Exports Terms:
+  - lift is Explicit
+
+Exports Types:
+  - Thing is Explicit
+
+Exports Classes:
+
+Exported Terms:
+  - lift
+
+Exported Types:
+  - Thing
+
+Exported Classes:
+
+Local Terms:
+
+Local Types:
+
+Local Classes:
+
+Class Members:
+
+Errors:

@@ -1,0 +1,25 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+force :: forall (a :: Type). Lazy (a :: Type) -> (a :: Type)
+Tuple ::
+  forall (@a :: Type) (@b :: Type). (a :: Type) -> (b :: Type) -> Tuple (a :: Type) (b :: Type)
+Node ::
+  forall (t4 :: Type) (@s :: (t4 :: Type)) (@a :: Type).
+    Lazy (a :: Type) ->
+    Lazy (Supply @(t4 :: Type) (s :: (t4 :: Type)) (a :: Type)) ->
+    Lazy (Supply @(t4 :: Type) (s :: (t4 :: Type)) (a :: Type)) ->
+    Supply @(t4 :: Type) (s :: (t4 :: Type)) (a :: Type)
+
+Types
+Lazy :: Type -> Type
+Tuple :: Type -> Type -> Type
+Supply :: forall (t4 :: Type). (t4 :: Type) -> Type -> Type
+
+Roles
+Lazy = [Nominal]
+Tuple = [Representational, Representational]
+Supply = [Representational, Representational]

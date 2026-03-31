@@ -1,0 +1,25 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Age :: Int -> Age
+Proxy :: forall (t1 :: Type) (@a :: (t1 :: Type)). Proxy @(t1 :: Type) (a :: (t1 :: Type))
+coerceProxy :: Proxy @Type Int -> Proxy @Type String
+Nothing :: forall (@a :: Type). Maybe (a :: Type)
+Just :: forall (@a :: Type). (a :: Type) -> Maybe (a :: Type)
+coerceMaybe :: Maybe Age -> Maybe Int
+coerceMaybeReverse :: Maybe Int -> Maybe Age
+coerceRecord :: { age :: Age, name :: String } -> { age :: Int, name :: String }
+coerceFunction :: (Int -> Age) -> Int -> Int
+
+Types
+Age :: Type
+Proxy :: forall (t1 :: Type). (t1 :: Type) -> Type
+Maybe :: Type -> Type
+
+Roles
+Age = []
+Proxy = [Phantom]
+Maybe = [Representational]

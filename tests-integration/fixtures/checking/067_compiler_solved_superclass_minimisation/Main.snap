@@ -1,0 +1,25 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+unsafeCoerce :: forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type)
+useMerge ::
+  forall (r1 :: Row Type) (r2 :: Row Type) (r3 :: Row Type).
+    Merge @Type (r1 :: Row Type) (r2 :: Row Type) (r3 :: Row Type) =>
+    Proxy @(Row Type) (r3 :: Row Type) -> {| (r1 :: Row Type) } -> {| (r2 :: Row Type) } -> Int
+useUnion ::
+  forall (r1 :: Row Type) (r2 :: Row Type) (r3 :: Row Type).
+    Union @Type (r1 :: Row Type) (r2 :: Row Type) (r3 :: Row Type) =>
+    Proxy @(Row Type) (r3 :: Row Type) -> {| (r1 :: Row Type) } -> {| (r2 :: Row Type) } -> Int
+testMin ::
+  forall (t20 :: Row Type) (t19 :: Row Type) (t18 :: Row Type).
+    Merge @Type (t20 :: Row Type) (t19 :: Row Type) (t18 :: Row Type) =>
+    Proxy @(Row Type) (t18 :: Row Type) -> {| (t20 :: Row Type) } -> {| (t19 :: Row Type) } -> Int
+
+Types
+Merge :: forall (t3 :: Type). Row (t3 :: Type) -> Row (t3 :: Type) -> Row (t3 :: Type) -> Constraint
+
+Classes
+class forall (t3 :: Type) (r1 :: Row (t3 :: Type)) (r2 :: Row (t3 :: Type)) (r3 :: Row (t3 :: Type)). Union @(t3 :: Type) (r1 :: Row (t3 :: Type)) (r2 :: Row (t3 :: Type)) (r3 :: Row (t3 :: Type)) <= Merge @(t3 :: Type) (r1 :: Row (t3 :: Type)) (r2 :: Row (t3 :: Type)) (r3 :: Row (t3 :: Type))

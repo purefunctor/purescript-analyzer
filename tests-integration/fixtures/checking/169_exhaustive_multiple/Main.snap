@@ -1,0 +1,45 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Just :: forall (@a :: Type). (a :: Type) -> Maybe (a :: Type)
+Nothing :: forall (@a :: Type). Maybe (a :: Type)
+complete :: forall (t2 :: Type) (t1 :: Type). Maybe (t2 :: Type) -> Maybe (t1 :: Type) -> Int
+incomplete1 ::
+  forall (t4 :: Type) (t3 :: Type). Partial => Maybe (t4 :: Type) -> Maybe (t3 :: Type) -> Int
+incomplete2 ::
+  forall (t6 :: Type) (t5 :: Type). Partial => Maybe (t6 :: Type) -> Maybe (t5 :: Type) -> Int
+incomplete3 ::
+  forall (t8 :: Type) (t7 :: Type). Partial => Maybe (t8 :: Type) -> Maybe (t7 :: Type) -> Int
+incomplete4 ::
+  forall (t10 :: Type) (t9 :: Type). Partial => Maybe (t10 :: Type) -> Maybe (t9 :: Type) -> Int
+
+Types
+Maybe :: Type -> Type
+
+Roles
+Maybe = [Representational]
+
+Diagnostics
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: Just _, Just _
+  --> 11:15..14:24
+   |
+11 | incomplete1 = case _, _ of
+   |               ^~~~~~~~~~~~
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: Just _, Nothing
+  --> 16:15..19:24
+   |
+16 | incomplete2 = case _, _ of
+   |               ^~~~~~~~~~~~
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: Nothing, Just _
+  --> 21:15..24:24
+   |
+21 | incomplete3 = case _, _ of
+   |               ^~~~~~~~~~~~
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: Nothing, Nothing
+  --> 26:15..29:23
+   |
+26 | incomplete4 = case _, _ of
+   |               ^~~~~~~~~~~~

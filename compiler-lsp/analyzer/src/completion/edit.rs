@@ -125,6 +125,7 @@ pub(super) fn type_import_item(
         |import| {
             import
                 .lookup_type(type_name)
+                .or_else(|| import.lookup_class(type_name))
                 .and_then(|(f, t, k)| if (f, t) == (file_id, type_id) { Some(k) } else { None })
         },
         |import_indexed| type_import_name(import_indexed, type_name, type_id),

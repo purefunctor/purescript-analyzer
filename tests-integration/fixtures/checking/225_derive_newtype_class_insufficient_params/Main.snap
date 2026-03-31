@@ -1,0 +1,28 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Wrapper :: Int -> Wrapper
+
+Types
+Wrapper :: Type
+
+Derived
+derive Newtype @Type Wrapper
+
+Roles
+Wrapper = []
+
+Diagnostics
+error[DeriveInvalidArity]: Invalid arity for derive: expected 2, got 1
+  --> 7:1..7:32
+  |
+7 | derive instance Newtype Wrapper
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[CannotUnify]: Cannot unify 'Type -> Constraint' with 'Constraint'
+  --> 7:1..7:32
+  |
+7 | derive instance Newtype Wrapper
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

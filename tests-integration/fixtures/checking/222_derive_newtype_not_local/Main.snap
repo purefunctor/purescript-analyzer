@@ -1,0 +1,18 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+
+Types
+
+Derived
+derive Show Wrapper
+
+Diagnostics
+error[NonLocalNewtype]: Expected a local newtype, got: Wrapper
+  --> 6:1..6:37
+  |
+6 | derive newtype instance Show Wrapper
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

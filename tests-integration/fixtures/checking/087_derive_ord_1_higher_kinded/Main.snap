@@ -1,0 +1,48 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+MkWrap ::
+  forall (t2 :: Type) (@f :: (t2 :: Type) -> Type) (@a :: (t2 :: Type)).
+    (f :: (t2 :: Type) -> Type) (a :: (t2 :: Type)) ->
+    Wrap @(t2 :: Type) (f :: (t2 :: Type) -> Type) (a :: (t2 :: Type))
+MkWrapNoOrd1 ::
+  forall (t5 :: Type) (@f :: (t5 :: Type) -> Type) (@a :: (t5 :: Type)).
+    (f :: (t5 :: Type) -> Type) (a :: (t5 :: Type)) ->
+    WrapNoOrd1 @(t5 :: Type) (f :: (t5 :: Type) -> Type) (a :: (t5 :: Type))
+
+Types
+Wrap :: forall (t2 :: Type). ((t2 :: Type) -> Type) -> (t2 :: Type) -> Type
+WrapNoOrd1 :: forall (t5 :: Type). ((t5 :: Type) -> Type) -> (t5 :: Type) -> Type
+
+Derived
+derive forall (t6 :: Type -> Type) (t7 :: Type).
+  Eq1 (t6 :: Type -> Type) => Eq (t7 :: Type) => Eq (Wrap @Type (t6 :: Type -> Type) (t7 :: Type))
+derive forall (t8 :: Type -> Type) (t9 :: Type).
+  Ord1 (t8 :: Type -> Type) =>
+  Ord (t9 :: Type) =>
+  Ord (Wrap @Type (t8 :: Type -> Type) (t9 :: Type))
+derive forall (t10 :: Type -> Type) (t11 :: Type).
+  Eq1 (t10 :: Type -> Type) =>
+  Eq (t11 :: Type) =>
+  Eq (WrapNoOrd1 @Type (t10 :: Type -> Type) (t11 :: Type))
+derive forall (t13 :: Type) (t12 :: Type -> Type).
+  Ord (t13 :: Type) => Ord (WrapNoOrd1 @Type (t12 :: Type -> Type) (t13 :: Type))
+
+Roles
+Wrap = [Representational, Nominal]
+WrapNoOrd1 = [Representational, Nominal]
+
+Diagnostics
+error[NoInstanceFound]: No instance found for: Ord1 (t12 :: Type -> Type)
+  --> 14:1..14:46
+   |
+14 | derive instance Ord a => Ord (WrapNoOrd1 f a)
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[NoInstanceFound]: No instance found for: Eq1 (t12 :: Type -> Type)
+  --> 14:1..14:46
+   |
+14 | derive instance Ord a => Ord (WrapNoOrd1 f a)
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

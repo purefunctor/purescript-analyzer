@@ -1,0 +1,30 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+App ::
+  forall (k :: Type) (@f :: (k :: Type) -> Type) (@a :: (k :: Type)).
+    (f :: (k :: Type) -> Type) (a :: (k :: Type)) ->
+    App @(k :: Type) (f :: (k :: Type) -> Type) (a :: (k :: Type))
+
+Types
+App :: forall (k :: Type). ((k :: Type) -> Type) -> (k :: Type) -> Type
+
+Derived
+derive forall (t5 :: Type) (t3 :: (t5 :: Type) -> Type) (t4 :: (t5 :: Type)).
+  Newtype @Type
+    (App @(t5 :: Type) (t3 :: (t5 :: Type) -> Type) (t4 :: (t5 :: Type)))
+    ((t3 :: (t5 :: Type) -> Type) (t4 :: (t5 :: Type)))
+derive forall (t6 :: Type -> Type) (t7 :: Type).
+  Eq1 (t6 :: Type -> Type) => Eq (t7 :: Type) => Eq (App @Type (t6 :: Type -> Type) (t7 :: Type))
+derive forall (t8 :: Type -> Type). Eq1 (t8 :: Type -> Type) => Eq1 (App @Type (t8 :: Type -> Type))
+derive forall (t9 :: Type -> Type) (t10 :: Type).
+  Ord1 (t9 :: Type -> Type) =>
+  Ord (t10 :: Type) =>
+  Ord (App @Type (t9 :: Type -> Type) (t10 :: Type))
+derive forall (t11 :: Type -> Type). Ord1 (t11 :: Type -> Type) => Ord1 (App @Type (t11 :: Type -> Type))
+
+Roles
+App = [Representational, Nominal]

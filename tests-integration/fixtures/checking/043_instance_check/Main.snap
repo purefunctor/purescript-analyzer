@@ -1,0 +1,19 @@
+---
+source: tests-integration/tests/checking2/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+
+Types
+Eq :: Type -> Constraint
+TypeEq :: forall (k :: Type). (k :: Type) -> (k :: Type) -> Constraint
+
+Classes
+class forall (a :: Type). Eq (a :: Type)
+class forall (k :: Type) (a :: (k :: Type)) (b :: (k :: Type)). TypeEq @(k :: Type) (a :: (k :: Type)) (b :: (k :: Type))
+
+Instances
+instance forall (t4 :: Type). Eq (t4 :: Type) => Eq (Array (t4 :: Type))
+instance forall (t6 :: Type) (t5 :: (t6 :: Type)).
+  TypeEq @(t6 :: Type) (t5 :: (t6 :: Type)) (t5 :: (t6 :: Type))
