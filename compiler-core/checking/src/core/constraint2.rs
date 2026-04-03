@@ -8,6 +8,8 @@
 //! [`Implication`]: crate::implication::Implication
 
 pub mod canonical;
+pub mod elaborate;
+
 pub use canonical::{CanonicalConstraint, CanonicalConstraintId, Canonicals};
 
 use std::collections::VecDeque;
@@ -93,10 +95,12 @@ where
         .filter_map(|id| canonical::canonicalise(state, context, *id).transpose())
         .collect::<QueryResult<VecDeque<_>>>()?;
 
-    let _given = given
+    let given = given
         .iter()
         .filter_map(|id| canonical::canonicalise(state, context, *id).transpose())
         .collect::<QueryResult<Vec<_>>>()?;
+
+    let _given = elaborate::elaborate_given(state, context, &given)?;
 
     Ok(vec![])
 }
