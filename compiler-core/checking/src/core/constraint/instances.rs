@@ -1,4 +1,3 @@
-use std::collections::HashSet;
 use std::iter;
 
 use building_types::QueryResult;
@@ -169,7 +168,7 @@ where
     }
 
     let functional_dependencies = get_functional_dependencies(context, file_id, item_id)?;
-    let initial: HashSet<_> = match_results
+    let initial: FxHashSet<_> = match_results
         .iter()
         .enumerate()
         .filter_map(|(index, result)| matches!(result, MatchType::Match).then_some(index))
