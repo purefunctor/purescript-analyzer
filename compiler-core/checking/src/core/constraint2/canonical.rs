@@ -15,7 +15,7 @@ use crate::state::CheckState;
 use crate::{ExternalQueries, safe_loop};
 
 /// The canonical structure of a constraint.
-#[derive(PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 pub struct CanonicalConstraint {
     pub file_id: FileId,
     pub type_id: TypeItemId,
