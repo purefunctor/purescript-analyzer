@@ -9,12 +9,13 @@
 
 pub mod canonical;
 pub mod elaborate;
+pub mod instances;
 pub mod matching;
 
 pub use crate::core::constraint::fd;
-use crate::core::constraint2::matching::{InstanceMatch, MatchInstance, match_given_instance};
-
 pub use canonical::{CanonicalConstraint, CanonicalConstraintId, Canonicals};
+
+use matching::{InstanceMatch, MatchInstance, match_given_instance};
 
 use std::collections::VecDeque;
 use std::{iter, mem};

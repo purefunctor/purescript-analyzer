@@ -12,9 +12,11 @@ use rustc_hash::{FxHashMap, FxHashSet};
 use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::constraint2::fd::{Fd, compute_closure};
-use crate::core::constraint2::{CanonicalConstraintId, WorkItem};
+use crate::core::constraint2::instances::InstanceCandidate;
+use crate::core::constraint2::{CanonicalConstraintId, WorkItem, canonical};
+use crate::core::substitute::SubstituteName;
 use crate::core::unification::{CanUnify, can_unify};
-use crate::core::{KindOrType, Name, RowField, RowType, Type, TypeId, normalise};
+use crate::core::{KindOrType, Name, RowField, RowType, Type, TypeId, normalise, toolkit};
 use crate::state::CheckState;
 
 /// The result of matching a wanted type against a given type.
@@ -212,6 +214,104 @@ where
             };
         match_core(state, context, &mut recurse, wanted, given, wanted_core, given_core)
     }
+}
+
+/// Matches a wanted constraint against an instance chain.
+pub fn match_instance_chain<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    wanted: CanonicalConstraintId,
+    chain: &[InstanceCandidate],
+) -> QueryResult<MatchInstance>
+where
+    Q: ExternalQueries,
+{
+    let wanted = state.canonicals[wanted].clone();
+
+    'chain: for given in chain {
+        let Some(given) = toolkit::decompose_instance(state, context, &given.instance)? else {
+            continue 'chain;
+        };
+
+        let mut results = vec![];
+        let mut stuck = vec![];
+
+        let mut bindings = FxHashMap::default();
+        let mut goals = vec![];
+
+        for (&wanted_argument, &given_argument) in
+            iter::zip(wanted.arguments.iter(), given.arguments.iter())
+        {
+            let match_result =
+                if let (KindOrType::Kind(wanted_argument), KindOrType::Kind(given_argument))
+                | (KindOrType::Type(wanted_argument), KindOrType::Type(given_argument)) =
+                    (wanted_argument, given_argument)
+                {
+                    match_instance_type(
+                        state,
+                        context,
+                        &mut bindings,
+                        &mut goals,
+                        wanted_argument,
+                        given_argument,
+                    )?
+                } else {
+                    continue 'chain;
+                };
+
+            if matches!(match_result, MatchType::Apart) {
+                continue 'chain;
+            }
+
+            if let MatchType::Stuck(Some(id)) = match_result {
+                stuck.push(id);
+            }
+
+            if matches!(wanted_argument, KindOrType::Type(_)) {
+                results.push(match_result);
+            }
+        }
+
+        if !can_determine_stuck(context, wanted.file_id, wanted.type_id, &results)? {
+            return Ok(MatchInstance::Stuck(stuck));
+        }
+
+        for (index, result) in results.iter().enumerate() {
+            let MatchType::Stuck(Some(_)) = result else { continue };
+
+            let wanted = match wanted.arguments[index] {
+                KindOrType::Kind(id) => id,
+                KindOrType::Type(id) => id,
+            };
+            let given = match given.arguments[index] {
+                KindOrType::Kind(id) => id,
+                KindOrType::Type(id) => id,
+            };
+
+            goals.push(WorkItem::Unify(wanted, given));
+        }
+
+        for binder in given.binders {
+            if bindings.contains_key(&binder.name) {
+                continue;
+            }
+
+            let binder_kind = SubstituteName::many(state, context, &bindings, binder.kind)?;
+            let binder_type = state.fresh_unification(context.queries, binder_kind);
+            bindings.insert(binder.name, binder_type);
+        }
+
+        for constraint in given.constraints {
+            let constraint = SubstituteName::many(state, context, &bindings, constraint)?;
+            if let Some(constraint) = canonical::canonicalise(state, context, constraint)? {
+                goals.push(WorkItem::Constraint(constraint));
+            };
+        }
+
+        return Ok(MatchInstance::Match(InstanceMatch { goals }));
+    }
+
+    Ok(MatchInstance::Apart)
 }
 
 fn match_core<Q, R>(
