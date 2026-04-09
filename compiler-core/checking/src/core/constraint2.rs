@@ -21,14 +21,14 @@ use std::{iter, mem};
 
 use building_types::QueryResult;
 use itertools::Itertools;
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::TypeId;
+use crate::core::{TypeId, unification};
 use crate::error::ErrorKind;
 use crate::implication::{ImplicationId, Patterns};
-use crate::state::CheckState;
+use crate::state::{CheckState, UnificationState};
 
 pub fn solve_implication<Q>(
     state: &mut CheckState,
@@ -137,7 +137,23 @@ where
                     MatchInstance::Apart => (),
                 }
             }
-            WorkItem::Unify(_, _) => (),
+            WorkItem::Unify(t1, t2) => {
+                if unification::unify(state, context, t1, t2)? {
+                    let mut awake = FxHashSet::default();
+                    stuck.retain(|&id, constraints| {
+                        if let UnificationState::Solved(_) = state.unifications.get(id).state {
+                            let constraints = constraints.iter().copied();
+                            awake.extend(constraints);
+                            false
+                        } else {
+                            true
+                        }
+                    });
+                    for constraint in awake {
+                        work.push_back(WorkItem::Constraint(constraint));
+                    }
+                }
+            }
         }
     }
 
