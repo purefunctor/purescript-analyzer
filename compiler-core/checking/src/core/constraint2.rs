@@ -15,7 +15,7 @@ pub mod matching;
 pub use crate::core::constraint::fd;
 pub use canonical::{CanonicalConstraint, CanonicalConstraintId, Canonicals};
 
-use matching::{InstanceMatch, MatchInstance, match_given_instance};
+use matching::{InstanceMatch, MatchInstance, match_given_instance, match_instance_chain};
 
 use std::collections::VecDeque;
 use std::{iter, mem};
@@ -120,6 +120,7 @@ where
     let given = elaborate::elaborate_given(state, context, &given)?;
 
     let mut stuck = Stuck::default();
+    let mut residuals = vec![];
 
     'work: while let Some(item) = work.pop_back() {
         match item {
@@ -137,6 +138,27 @@ where
                     }
                     MatchInstance::Apart => (),
                 }
+
+                let chains = instances::collect_instance_chains(state, context, wanted)?;
+                'chain: for chain in chains {
+                    match match_instance_chain(state, context, wanted, &chain)? {
+                        MatchInstance::Match(InstanceMatch { goals }) => {
+                            work.extend(goals);
+                            continue 'work;
+                        }
+                        MatchInstance::Stuck(id) => {
+                            for id in id {
+                                stuck.entry(id).or_default().push(wanted);
+                            }
+                            continue 'work;
+                        }
+                        MatchInstance::Apart => {
+                            continue 'chain;
+                        }
+                    }
+                }
+
+                residuals.push(wanted);
             }
             WorkItem::Unify(t1, t2) => {
                 if unification::unify(state, context, t1, t2)? {
@@ -158,5 +180,6 @@ where
         }
     }
 
+    // TODO: Use CanonicalConstraint for residuals
     Ok(vec![])
 }
