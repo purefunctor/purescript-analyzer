@@ -23,10 +23,10 @@ backwardRight ::
     Proxy @(Row Type) (r :: Row Type)
 forceSolve ::
   forall (t21 :: Row Type) (t20 :: Row Type) (t19 :: Row Type) (t18 :: Row Type).
-    { backwardLeft :: Proxy @(Row Type) (t21 :: Row Type)
-    , backwardRight :: Proxy @(Row Type) (t20 :: Row Type)
-    , openLeft :: Proxy @(Row Type) (t19 :: Row Type)
-    , openRight :: Proxy @(Row Type) (t18 :: Row Type)
+    { backwardLeft :: Proxy @(Row Type) ( a :: Int | (t21 :: Row Type) )
+    , backwardRight :: Proxy @(Row Type) ( b :: String | (t20 :: Row Type) )
+    , openLeft :: Proxy @(Row Type) ( a :: Int | (t19 :: Row Type) )
+    , openRight :: Proxy @(Row Type) ( a :: Int, b :: String | (t18 :: Row Type) )
     }
 
 Types

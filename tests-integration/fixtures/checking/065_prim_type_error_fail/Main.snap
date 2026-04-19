@@ -20,3 +20,16 @@ Proxy :: forall (k :: Type). (k :: Type) -> Type
 
 Roles
 Proxy = [Phantom]
+
+Diagnostics
+error[CustomFailure]: This operation is not allowed
+  --> 11:1..11:20
+   |
+11 | useFailBasic :: Int
+   | ^~~~~~~~~~~~~~~~~~~
+error[CustomFailure]: Error:
+Type String
+  --> 17:1..17:31
+   |
+17 | useFailComplex :: Proxy String
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

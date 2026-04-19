@@ -5,18 +5,18 @@ expression: report
 ---
 Terms
 testSymbol :: String
-testSymbol' :: forall (t0 :: Type). (t0 :: Type)
+testSymbol' :: String
 testInt :: Int
-testInt' :: forall (t1 :: Type). (t1 :: Type)
+testInt' :: Int
 testTrue :: Boolean
-testTrue' :: forall (t2 :: Type). (t2 :: Type)
+testTrue' :: Boolean
 testFalse :: Boolean
-testFalse' :: forall (t3 :: Type). (t3 :: Type)
+testFalse' :: Boolean
 testLT :: Ordering
-testLT' :: forall (t4 :: Type). (t4 :: Type)
+testLT' :: Ordering
 testEQ :: Ordering
-testEQ' :: forall (t5 :: Type). (t5 :: Type)
+testEQ' :: Ordering
 testGT :: Ordering
-testGT' :: forall (t6 :: Type). (t6 :: Type)
+testGT' :: Ordering
 
 Types

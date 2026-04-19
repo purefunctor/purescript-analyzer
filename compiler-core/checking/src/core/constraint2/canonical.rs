@@ -7,6 +7,7 @@ use building_types::QueryResult;
 use files::FileId;
 use indexing::TypeItemId;
 use interner::{Id, Interner};
+use itertools::Itertools;
 use rustc_hash::FxHashMap;
 
 use crate::context::CheckContext;
@@ -20,6 +21,18 @@ pub struct CanonicalConstraint {
     pub file_id: FileId,
     pub type_id: TypeItemId,
     pub arguments: Arc<[KindOrType]>,
+}
+
+impl CanonicalConstraint {
+    pub fn expect_type_arguments<const N: usize>(&self) -> Option<[TypeId; N]> {
+        self.arguments
+            .iter()
+            .filter_map(|argument| match argument {
+                KindOrType::Type(argument) => Some(*argument),
+                KindOrType::Kind(_) => None,
+            })
+            .collect_array()
+    }
 }
 
 /// Stable identifier for a [`CanonicalConstraint`].

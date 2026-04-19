@@ -8,6 +8,7 @@
 //! [`Implication`]: crate::implication::Implication
 
 pub mod canonical;
+pub mod compiler;
 pub mod elaborate;
 pub mod instances;
 pub mod matching;
@@ -137,6 +138,20 @@ where
                         continue 'work;
                     }
                     MatchInstance::Apart => (),
+                }
+
+                match compiler::match_compiler_instance(state, context, wanted)? {
+                    Some(MatchInstance::Match(InstanceMatch { goals })) => {
+                        work.extend(goals);
+                        continue 'work;
+                    }
+                    Some(MatchInstance::Stuck(ids)) => {
+                        for id in ids {
+                            stuck.entry(id).or_default().push(wanted);
+                        }
+                        continue 'work;
+                    }
+                    Some(MatchInstance::Apart) | None => (),
                 }
 
                 let chains = instances::collect_instance_chains(state, context, wanted)?;

@@ -7,3 +7,10 @@ Terms
 coerceHidden :: Int -> HiddenAge
 
 Types
+
+Diagnostics
+error[CoercibleConstructorNotInScope]: Constructor not in scope for Coercible
+  --> 6:1..6:33
+  |
+6 | coerceHidden :: Int -> HiddenAge
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

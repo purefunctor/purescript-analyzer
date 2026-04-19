@@ -8,8 +8,6 @@ addChain ::
   forall (n :: Int) (m :: Int).
     Add 1 2 (n :: Int) => Add 1 (n :: Int) (m :: Int) => Proxy @Int (m :: Int)
 addContradiction :: forall (m :: Int). Add 1 2 4 => Add 1 4 (m :: Int) => Proxy @Int (m :: Int)
-forceSolve ::
-  forall (t7 :: Int) (t6 :: Int).
-    { addChain :: Proxy @Int (t7 :: Int), addContradiction :: Proxy @Int (t6 :: Int) }
+forceSolve :: { addChain :: Proxy @Int 4, addContradiction :: Proxy @Int 5 }
 
 Types
