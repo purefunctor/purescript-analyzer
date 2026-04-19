@@ -11,3 +11,10 @@ nonHeadGivenImprovement ::
 forceSolve :: { nonHeadGivenImprovement :: Proxy @Int 2 }
 
 Types
+
+Diagnostics
+error[NoInstanceFound]: No instance found for: Add 1 (t3 :: Int) 3
+  --> 10:1..13:13
+   |
+10 | nonHeadGivenImprovement
+   | ^~~~~~~~~~~~~~~~~~~~~~~

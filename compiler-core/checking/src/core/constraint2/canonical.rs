@@ -10,10 +10,10 @@ use interner::{Id, Interner};
 use itertools::Itertools;
 use rustc_hash::FxHashMap;
 
+use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::{KindOrType, Type, TypeId, normalise, toolkit};
+use crate::core::{KindOrType, Type, TypeId, normalise, toolkit, zonk};
 use crate::state::CheckState;
-use crate::{ExternalQueries, safe_loop};
 
 /// The canonical structure of a constraint.
 #[derive(Clone, PartialEq, Eq, Hash)]
@@ -48,6 +48,23 @@ pub struct Canonicals {
 impl Canonicals {
     pub fn intern(&mut self, canonical: CanonicalConstraint) -> Id<CanonicalConstraint> {
         self.interner.intern(canonical)
+    }
+
+    pub fn type_id<Q>(&self, context: &CheckContext<Q>, id: CanonicalConstraintId) -> TypeId
+    where
+        Q: ExternalQueries,
+    {
+        let CanonicalConstraint { file_id, type_id, arguments } = &self[id];
+        let mut constraint = context.queries.intern_type(Type::Constructor(*file_id, *type_id));
+
+        for &argument in arguments.iter() {
+            constraint = match argument {
+                KindOrType::Kind(argument) => context.intern_kind_application(constraint, argument),
+                KindOrType::Type(argument) => context.intern_application(constraint, argument),
+            };
+        }
+
+        constraint
     }
 
     pub fn associate(
@@ -95,4 +112,22 @@ where
     let canonical_id = state.canonicals.associate(id, canonical);
 
     Ok(Some(canonical_id))
+}
+
+pub fn zonk_canonical<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    id: CanonicalConstraintId,
+) -> QueryResult<CanonicalConstraintId>
+where
+    Q: ExternalQueries,
+{
+    let canonical = state.canonicals[id].clone();
+    let arguments = canonical.arguments.iter().map(|&argument| match argument {
+        KindOrType::Kind(argument) => zonk::zonk(state, context, argument).map(KindOrType::Kind),
+        KindOrType::Type(argument) => zonk::zonk(state, context, argument).map(KindOrType::Type),
+    });
+
+    let arguments = arguments.collect::<QueryResult<Arc<[_]>>>()?;
+    Ok(state.canonicals.intern(CanonicalConstraint { arguments, ..canonical }))
 }

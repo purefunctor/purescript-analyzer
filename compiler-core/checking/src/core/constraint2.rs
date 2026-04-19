@@ -35,7 +35,7 @@ use crate::state::{CheckState, UnificationState};
 pub fn solve_implication<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-) -> QueryResult<Vec<TypeId>>
+) -> QueryResult<Vec<CanonicalConstraintId>>
 where
     Q: ExternalQueries,
 {
@@ -48,11 +48,11 @@ pub fn solve_implication_id<Q>(
     context: &CheckContext<Q>,
     implication: ImplicationId,
     inherited: &[TypeId],
-) -> QueryResult<Vec<TypeId>>
+) -> QueryResult<Vec<CanonicalConstraintId>>
 where
     Q: ExternalQueries,
 {
-    let (mut wanted, given, patterns, children) = {
+    let (wanted, given, patterns, children) = {
         let node = &mut state.implications[implication];
         (
             mem::take(&mut node.wanted),
@@ -67,6 +67,11 @@ where
         let given = given.iter();
         iter::chain(inherited, given).copied().collect_vec()
     };
+
+    let mut wanted = wanted
+        .iter()
+        .filter_map(|id| canonical::canonicalise(state, context, *id).transpose())
+        .collect::<QueryResult<VecDeque<_>>>()?;
 
     for child in &children {
         let residual = solve_implication_id(state, context, *child, &inherited_given)?;
@@ -101,17 +106,13 @@ type Stuck = FxHashMap<u32, Vec<CanonicalConstraintId>>;
 pub fn solve_constraints<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    wanted: VecDeque<TypeId>,
+    wanted: VecDeque<CanonicalConstraintId>,
     given: &[TypeId],
-) -> QueryResult<Vec<TypeId>>
+) -> QueryResult<Vec<CanonicalConstraintId>>
 where
     Q: ExternalQueries,
 {
-    let mut work = wanted
-        .iter()
-        .filter_map(|id| canonical::canonicalise(state, context, *id).transpose())
-        .map(|id| id.map(WorkItem::Constraint))
-        .collect::<QueryResult<VecDeque<_>>>()?;
+    let mut work = wanted.into_iter().map(WorkItem::Constraint).collect::<VecDeque<_>>();
 
     let given = given
         .iter()
@@ -195,6 +196,9 @@ where
         }
     }
 
-    // TODO: Use CanonicalConstraint for residuals
-    Ok(vec![])
+    for (_, constraints) in stuck {
+        residuals.extend(constraints);
+    }
+
+    Ok(residuals)
 }

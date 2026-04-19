@@ -16,15 +16,21 @@ lacksPresent ::
   Lacks @Type "b" ( a :: Int, b :: String ) => Proxy @(Row Type) ( a :: Int, b :: String )
 forceSolve ::
   forall (t5 :: Row Type) (t4 :: Row Type).
-    { consMissingLabel :: Proxy @(Row Type) (t5 :: Row Type)
+    Union @Type (t5 :: Row Type) ( b :: String ) ( a :: Int, b :: Int ) =>
+    { consMissingLabel :: Proxy @(Row Type) (t4 :: Row Type)
     , lacksPresent :: Proxy @(Row Type) ( a :: Int, b :: String )
-    , unionTypeMismatch :: Proxy @(Row Type) (t4 :: Row Type)
+    , unionTypeMismatch :: Proxy @(Row Type) (t5 :: Row Type)
     }
 
 Types
 
 Diagnostics
 error[CannotUnify]: Cannot unify '( a :: Int, b :: String )' with '( missing :: Int | ?23 )'
+  --> 15:1..19:4
+   |
+15 | forceSolve =
+   | ^~~~~~~~~~~~
+error[NoInstanceFound]: No instance found for: Lacks @Type "b" ( a :: Int, b :: String )
   --> 15:1..19:4
    |
 15 | forceSolve =

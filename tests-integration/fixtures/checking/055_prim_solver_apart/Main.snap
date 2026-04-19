@@ -16,3 +16,25 @@ forceSolve ::
   }
 
 Types
+
+Diagnostics
+error[NoInstanceFound]: No instance found for: Cons "hello" "world" "helloworld"
+  --> 20:1..25:4
+   |
+20 | forceSolve =
+   | ^~~~~~~~~~~~
+error[NoInstanceFound]: No instance found for: Append "hello" "world" "xyz"
+  --> 20:1..25:4
+   |
+20 | forceSolve =
+   | ^~~~~~~~~~~~
+error[NoInstanceFound]: No instance found for: Compare 5 1 LT
+  --> 20:1..25:4
+   |
+20 | forceSolve =
+   | ^~~~~~~~~~~~
+error[NoInstanceFound]: No instance found for: Add 2 3 10
+  --> 20:1..25:4
+   |
+20 | forceSolve =
+   | ^~~~~~~~~~~~

@@ -21,3 +21,10 @@ Roles
 Proxy = [Phantom]
 NoEq = []
 ContainsNoEq = []
+
+Diagnostics
+error[NoInstanceFound]: No instance found for: Eq NoEq
+  --> 13:1..13:32
+   |
+13 | derive instance Eq ContainsNoEq
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

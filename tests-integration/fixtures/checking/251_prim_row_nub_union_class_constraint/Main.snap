@@ -1,5 +1,5 @@
 ---
-source: tests-integration/tests/checking2/generated.rs
+source: tests-integration/tests/checking/generated.rs
 assertion_line: 28
 expression: report
 ---
@@ -39,3 +39,20 @@ class forall (a :: Type). Collect (a :: Type)
 
 Instances
 instance Collect (Array String)
+
+Diagnostics
+error[NoInstanceFound]: No instance found for: Nub @Type ?28 (t20 :: Row Type)
+  --> 30:1..38:12
+   |
+30 | combine
+   | ^~~~~~~
+error[NoInstanceFound]: No instance found for: Union @Type ( key :: String ) ?37 Required
+  --> 44:1..44:59
+   |
+44 | combine' :: forall items. Collect items => items -> String
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[NoInstanceFound]: No instance found for: Union @Type ( key :: String ) ?45 Required
+  --> 47:1..47:16
+   |
+47 | repro :: String
+   | ^~~~~~~~~~~~~~~

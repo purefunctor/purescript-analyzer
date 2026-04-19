@@ -10,18 +10,27 @@ merge ::
     Union @Type (r1 :: Row Type) (r2 :: Row Type) (r3 :: Row Type) =>
     Nub @Type (r3 :: Row Type) (r4 :: Row Type) =>
     {| (r1 :: Row Type) } -> {| (r2 :: Row Type) } -> {| (r4 :: Row Type) }
-a :: forall (t11 :: Row Type) (t10 :: Row Type). {| (t11 :: Row Type) } -> {| (t10 :: Row Type) }
-b :: forall (t12 :: Row Type). {| (t12 :: Row Type) }
+a ::
+  forall (t11 :: Row Type) (t10 :: Row Type).
+    Nub @Type ( a :: Int | (t11 :: Row Type) ) (t10 :: Row Type) =>
+    {| (t11 :: Row Type) } -> {| (t10 :: Row Type) }
+b :: { a :: Int, b :: Int }
 fromUnion ::
   forall (r1 :: Row Type) (r2 :: Row Type) (r3 :: Row Type).
     Union @Type (r1 :: Row Type) (r2 :: Row Type) (r3 :: Row Type) => {| (r3 :: Row Type) } -> Int
-test :: forall (t19 :: Row Type). {| (t19 :: Row Type) } -> Int
+test ::
+  forall (t20 :: Row Type) (t19 :: Row Type) (t18 :: Row Type).
+    Union @Type (t20 :: Row Type) (t19 :: Row Type) (t18 :: Row Type) =>
+    {| (t18 :: Row Type) } -> Int
 chainedUnion ::
   forall (r1 :: Row Type) (r2 :: Row Type) (r3 :: Row Type) (r4 :: Row Type) (r5 :: Row Type).
     Union @Type (r1 :: Row Type) (r2 :: Row Type) (r3 :: Row Type) =>
     Union @Type (r3 :: Row Type) (r4 :: Row Type) (r5 :: Row Type) =>
     {| (r1 :: Row Type) } -> {| (r5 :: Row Type) }
-testChained :: forall (t30 :: Row Type). {| (t30 :: Row Type) }
+testChained ::
+  forall (t33 :: Row Type) (t32 :: Row Type) (t31 :: Row Type).
+    Union @Type ( x :: Int | (t33 :: Row Type) ) (t32 :: Row Type) (t31 :: Row Type) =>
+    {| (t31 :: Row Type) }
 multiMerge ::
   forall (r1 :: Row Type) (r2 :: Row Type) (r3 :: Row Type) (r4 :: Row Type) (r5 :: Row Type)
     (r6 :: Row Type).
@@ -30,7 +39,14 @@ multiMerge ::
     Union @Type (r4 :: Row Type) (r5 :: Row Type) (r6 :: Row Type) =>
     {| (r1 :: Row Type) } -> {| (r5 :: Row Type) } -> {| (r6 :: Row Type) }
 testMulti1 ::
-  forall (t44 :: Row Type) (t43 :: Row Type). {| (t44 :: Row Type) } -> {| (t43 :: Row Type) }
-testMulti2 :: forall (t45 :: Row Type). {| (t45 :: Row Type) }
+  forall (t49 :: Row Type) (t48 :: Row Type) (t47 :: Row Type) (t46 :: Row Type).
+    Union @Type (t49 :: Row Type) (t48 :: Row Type) (t47 :: Row Type) =>
+    Nub @Type ( a :: Int | (t46 :: Row Type) ) (t49 :: Row Type) =>
+    {| (t48 :: Row Type) } -> {| (t47 :: Row Type) }
+testMulti2 ::
+  forall (t52 :: Row Type) (t51 :: Row Type) (t50 :: Row Type).
+    Union @Type (t52 :: Row Type) ( b :: Int ) (t51 :: Row Type) =>
+    Nub @Type ( a :: Int | (t50 :: Row Type) ) (t52 :: Row Type) =>
+    {| (t51 :: Row Type) }
 
 Types

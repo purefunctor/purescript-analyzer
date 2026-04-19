@@ -14,3 +14,10 @@ derive Show (Identity String)
 
 Roles
 Identity = [Representational]
+
+Diagnostics
+error[NoInstanceFound]: No instance found for: Show String
+  --> 7:1..7:47
+  |
+7 | derive newtype instance Show (Identity String)
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

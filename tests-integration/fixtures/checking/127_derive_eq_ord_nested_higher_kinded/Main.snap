@@ -41,3 +41,25 @@ T = [Representational, Representational]
 Maybe = [Representational]
 U = [Representational]
 V = [Representational, Representational]
+
+Diagnostics
+error[NoInstanceFound]: No instance found for: Eq ((t9 :: Type -> Type) Int)
+  --> 8:1..8:36
+  |
+8 | derive instance Eq1 f => Eq (T f g)
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[NoInstanceFound]: No instance found for: Ord ((t11 :: Type -> Type) Int)
+  --> 9:1..9:38
+  |
+9 | derive instance Ord1 f => Ord (T f g)
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[NoInstanceFound]: No instance found for: Eq ((t17 :: Int -> Type) 42)
+  --> 23:1..23:36
+   |
+23 | derive instance Eq1 f => Eq (V f g)
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[NoInstanceFound]: No instance found for: Ord ((t19 :: Int -> Type) 42)
+  --> 24:1..24:38
+   |
+24 | derive instance Ord1 f => Ord (V f g)
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

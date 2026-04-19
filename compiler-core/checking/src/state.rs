@@ -301,7 +301,10 @@ impl CheckState {
         result
     }
 
-    pub fn solve_constraints<Q>(&mut self, context: &CheckContext<Q>) -> QueryResult<Vec<TypeId>>
+    pub fn solve_constraints<Q>(
+        &mut self,
+        context: &CheckContext<Q>,
+    ) -> QueryResult<Vec<constraint2::CanonicalConstraintId>>
     where
         Q: ExternalQueries,
     {
@@ -315,6 +318,18 @@ impl CheckState {
         let id = zonk::zonk(self, context, id)?;
         let pretty = pretty::Pretty::new(context.queries, &self.checked).render(id);
         Ok(context.queries.intern_smol_str(pretty))
+    }
+
+    pub fn pretty_constraint_id<Q>(
+        &mut self,
+        context: &CheckContext<Q>,
+        id: constraint2::CanonicalConstraintId,
+    ) -> QueryResult<SmolStrId>
+    where
+        Q: ExternalQueries,
+    {
+        let id = self.canonicals.type_id(context, id);
+        self.pretty_id(context, id)
     }
 
     pub fn report_exhaustiveness<Q>(

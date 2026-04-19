@@ -6,13 +6,13 @@ use building_types::QueryResult;
 use itertools::Itertools;
 use rustc_hash::FxHashSet;
 
+use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::constraint2::canonical::CanonicalConstraint;
 use crate::core::constraint2::{CanonicalConstraintId, canonical};
 use crate::core::substitute::{NameToType, SubstituteName};
 use crate::core::{CheckedClass, KindOrType, toolkit};
 use crate::state::CheckState;
-use crate::{ExternalQueries, safe_loop};
 
 /// Entrypoint for elaborating given [`CanonicalConstraint`].
 pub fn elaborate_given<Q>(

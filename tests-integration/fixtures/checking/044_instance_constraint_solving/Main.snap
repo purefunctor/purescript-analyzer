@@ -7,7 +7,7 @@ Terms
 eq :: forall (@a :: Type). Eq (a :: Type) => (a :: Type) -> (a :: Type) -> Boolean
 test :: Boolean
 test2 :: Boolean
-test3 :: forall (t2 :: Type). (t2 :: Type) -> (t2 :: Type) -> Boolean
+test3 :: forall (t2 :: Type). Eq (t2 :: Type) => (t2 :: Type) -> (t2 :: Type) -> Boolean
 
 Types
 Eq :: Type -> Constraint

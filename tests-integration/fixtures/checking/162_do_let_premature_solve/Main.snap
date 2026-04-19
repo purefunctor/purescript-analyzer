@@ -38,3 +38,8 @@ error[CannotUnify]: Cannot unify 'Int' with 'String'
    |
 27 |   let f = a + 123
    |               ^~~
+error[NoInstanceFound]: No instance found for: Semiring String
+  --> 24:1..24:20
+   |
+24 | test :: Effect Unit
+   | ^~~~~~~~~~~~~~~~~~~

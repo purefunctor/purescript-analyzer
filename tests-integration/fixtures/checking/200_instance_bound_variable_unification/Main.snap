@@ -1,5 +1,5 @@
 ---
-source: tests-integration/tests/checking2/generated.rs
+source: tests-integration/tests/checking/generated.rs
 assertion_line: 28
 expression: report
 ---
@@ -25,3 +25,10 @@ class forall (row :: Row Type) (subrow :: Row Type). BuildRecord (row :: Row Typ
 
 Instances
 instance forall (t2 :: Row Type) (t3 :: Row Type). BuildRecord (t2 :: Row Type) (t3 :: Row Type)
+
+Diagnostics
+error[NoInstanceFound]: No instance found for: BuildRecord ?7 (t10 :: Row Type)
+  --> 15:1..15:48
+   |
+15 | test :: forall r s. BuildRecord r s => Record s
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

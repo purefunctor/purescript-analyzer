@@ -12,3 +12,10 @@ Nominal :: Type -> Type
 
 Roles
 Nominal = [Nominal]
+
+Diagnostics
+error[NoInstanceFound]: No instance found for: Coercible @Type (Nominal Int) (Nominal String)
+  --> 12:1..12:56
+   |
+12 | coerceNominalDifferent :: Nominal Int -> Nominal String
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

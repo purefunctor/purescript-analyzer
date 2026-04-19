@@ -6,8 +6,8 @@ expression: report
 Terms
 Just :: forall (@a :: Type). (a :: Type) -> Maybe (a :: Type)
 Nothing :: forall (@a :: Type). Maybe (a :: Type)
-test1 :: forall (t1 :: Type). Maybe (t1 :: Type) -> Int
-test2 :: forall (t2 :: Type). Maybe (t2 :: Type) -> Int
+test1 :: forall (t1 :: Type). Partial => Maybe (t1 :: Type) -> Int
+test2 :: forall (t2 :: Type). Partial => Maybe (t2 :: Type) -> Int
 
 Types
 Maybe :: Type -> Type

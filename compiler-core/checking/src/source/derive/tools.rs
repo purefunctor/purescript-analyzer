@@ -81,7 +81,7 @@ where
 {
     let residual = state.solve_constraints(context)?;
     for constraint in residual {
-        let constraint = state.pretty_id(context, constraint)?;
+        let constraint = state.pretty_constraint_id(context, constraint)?;
         state.insert_error(ErrorKind::NoInstanceFound { constraint });
     }
     Ok(())

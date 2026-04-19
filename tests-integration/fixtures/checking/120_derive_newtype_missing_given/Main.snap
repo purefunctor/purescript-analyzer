@@ -14,3 +14,10 @@ derive forall (t1 :: Type). Show (Identity (t1 :: Type))
 
 Roles
 Identity = [Representational]
+
+Diagnostics
+error[NoInstanceFound]: No instance found for: Show (t1 :: Type)
+  --> 7:1..7:42
+  |
+7 | derive newtype instance Show (Identity a)
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

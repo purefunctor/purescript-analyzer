@@ -29,3 +29,10 @@ Box = []
 Pair = []
 NoOrd = []
 ContainsNoOrd = []
+
+Diagnostics
+error[NoInstanceFound]: No instance found for: Ord NoOrd
+  --> 23:1..23:34
+   |
+23 | derive instance Ord ContainsNoOrd
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

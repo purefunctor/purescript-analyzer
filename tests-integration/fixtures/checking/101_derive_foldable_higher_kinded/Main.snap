@@ -25,3 +25,10 @@ derive forall (t7 :: Type -> Type). Foldable (WrapNoFoldable @Type (t7 :: Type -
 Roles
 Wrap = [Representational, Nominal]
 WrapNoFoldable = [Representational, Nominal]
+
+Diagnostics
+error[NoInstanceFound]: No instance found for: Foldable (t7 :: Type -> Type)
+  --> 9:1..9:44
+  |
+9 | derive instance Foldable (WrapNoFoldable f)
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

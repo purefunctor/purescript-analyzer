@@ -35,13 +35,18 @@ bind ::
     (m :: Type -> Type) (b :: Type)
 testDo ::
   forall (m :: Type -> Type). Monad (m :: Type -> Type) => (m :: Type -> Type) (Tuple Int String)
-testDo' :: forall (t19 :: Type -> Type). (t19 :: Type -> Type) (Tuple Int String)
+testDo' ::
+  forall (t19 :: Type -> Type).
+    Bind (t19 :: Type -> Type) => (t19 :: Type -> Type) (Tuple Int String)
 testAdo ::
   forall (f :: Type -> Type).
     Applicative (f :: Type -> Type) => (f :: Type -> Type) (Tuple Int String)
-testAdo' :: forall (t22 :: Type -> Type). (t22 :: Type -> Type) (Tuple Int String)
+testAdo' ::
+  forall (t22 :: Type -> Type).
+    Applicative (t22 :: Type -> Type) => (t22 :: Type -> Type) (Tuple Int String)
 testDoDiscard :: forall (m :: Type -> Type). Monad (m :: Type -> Type) => (m :: Type -> Type) Int
-testDoDiscard' :: forall (t25 :: Type -> Type). (t25 :: Type -> Type) Int
+testDoDiscard' ::
+  forall (t25 :: Type -> Type). Discard (t25 :: Type -> Type) => (t25 :: Type -> Type) Int
 
 Types
 Tuple :: Type -> Type -> Type
@@ -89,3 +94,10 @@ class forall (m :: Type -> Type). Bind (m :: Type -> Type) <= Monad (m :: Type -
 
 Roles
 Tuple = [Representational, Representational]
+
+Diagnostics
+error[NoInstanceFound]: No instance found for: Discard (t24 :: Type -> Type)
+  --> 44:1..44:44
+   |
+44 | testDoDiscard :: forall m. Monad m => m Int
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

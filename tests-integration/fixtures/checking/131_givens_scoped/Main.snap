@@ -13,3 +13,10 @@ Given :: Type -> Constraint
 Classes
 class forall (a :: Type). Given (a :: Type)
   consume :: forall (@a :: Type). Given (a :: Type) => (a :: Type) -> (a :: Type)
+
+Diagnostics
+error[NoInstanceFound]: No instance found for: Given Int
+  --> 6:1..6:41
+  |
+6 | testGiven :: forall a. Given a => a -> a
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

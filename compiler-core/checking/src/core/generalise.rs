@@ -25,8 +25,9 @@ use petgraph::prelude::DiGraphMap;
 use rustc_hash::FxHashSet;
 
 use crate::context::CheckContext;
+use crate::core::constraint2::{CanonicalConstraintId, canonical, elaborate};
 use crate::core::walk::{TypeWalker, WalkAction, walk_type};
-use crate::core::{ForallBinder, Name, Type, TypeId, constraint, normalise, zonk};
+use crate::core::{ForallBinder, Name, Type, TypeId, normalise, zonk};
 use crate::state::{CheckState, UnificationEntry, UnificationState};
 use crate::{ExternalQueries, safe_loop};
 
@@ -242,15 +243,15 @@ where
 
 #[derive(Default)]
 pub struct ConstraintErrors {
-    pub ambiguous: Vec<TypeId>,
-    pub unsatisfied: Vec<TypeId>,
+    pub ambiguous: Vec<CanonicalConstraintId>,
+    pub unsatisfied: Vec<CanonicalConstraintId>,
 }
 
 pub fn insert_inferred_residuals<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     type_id: TypeId,
-    residuals: Vec<TypeId>,
+    residuals: Vec<CanonicalConstraintId>,
     errors: &mut ConstraintErrors,
 ) -> QueryResult<TypeId>
 where
@@ -264,15 +265,16 @@ where
     let mut latent = vec![];
 
     for residual in residuals {
-        let residual = zonk::zonk(state, context, residual)?;
+        let residual = canonical::zonk_canonical(state, context, residual)?;
 
-        if residual == context.prim.partial {
+        if is_partial_constraint(state, context, residual) {
             latent.push(residual);
             continue;
         }
 
-        let unification: FxHashSet<u32> =
-            collect_unification(state, context, residual)?.nodes().collect();
+        let residual_type = state.canonicals.type_id(context, residual);
+        let unification: FxHashSet<_> =
+            collect_unification(state, context, residual_type)?.nodes().collect();
 
         if unification.is_empty() {
             errors.unsatisfied.push(residual);
@@ -287,18 +289,36 @@ where
     let generalised = latent.into_iter().chain(generalised).sorted().collect_vec();
     let generalised = minimize_by_superclasses(state, context, generalised)?;
 
-    let constrained = generalised
-        .into_iter()
-        .rfold(type_id, |inner, constraint| context.intern_constrained(constraint, inner));
+    let constrained = generalised.into_iter().rfold(type_id, |inner, constraint| {
+        let constraint = state.canonicals.type_id(context, constraint);
+        context.intern_constrained(constraint, inner)
+    });
 
     Ok(constrained)
+}
+
+fn is_partial_constraint<Q>(
+    state: &CheckState,
+    context: &CheckContext<Q>,
+    constraint: CanonicalConstraintId,
+) -> bool
+where
+    Q: ExternalQueries,
+{
+    let Type::Constructor(file_id, type_id) = context.lookup_type(context.prim.partial) else {
+        return false;
+    };
+    let constraint = &state.canonicals[constraint];
+    constraint.file_id == file_id
+        && constraint.type_id == type_id
+        && constraint.arguments.is_empty()
 }
 
 fn minimize_by_superclasses<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    constraints: Vec<TypeId>,
-) -> QueryResult<Vec<TypeId>>
+    constraints: Vec<CanonicalConstraintId>,
+) -> QueryResult<Vec<CanonicalConstraintId>>
 where
     Q: ExternalQueries,
 {
@@ -308,43 +328,21 @@ where
 
     let mut superclasses = FxHashSet::default();
     for &constraint in &constraints {
-        for application in superclass_applications(state, context, constraint)? {
-            superclasses.insert(application);
+        for superclass in elaborate::elaborate_superclasses(state, context, &[constraint])? {
+            if superclass != constraint {
+                superclasses.insert(superclass);
+            }
         }
     }
 
-    Ok(constraints
-        .into_iter()
-        .filter(|&constraint| {
-            let application =
-                constraint::constraint_application(state, context, constraint).ok().flatten();
-            application.is_none_or(|constraint| !superclasses.contains(&constraint))
-        })
-        .collect())
-}
-
-fn superclass_applications<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    constraint: TypeId,
-) -> QueryResult<Vec<constraint::ConstraintApplication>>
-where
-    Q: ExternalQueries,
-{
-    let mut superclasses = vec![];
-    constraint::elaborate::elaborate_superclasses(state, context, constraint, &mut superclasses)?;
-    superclasses
-        .into_iter()
-        .map(|constraint| constraint::constraint_application(state, context, constraint))
-        .filter_map_ok(|constraint| constraint)
-        .collect()
+    Ok(constraints.into_iter().filter(|constraint| !superclasses.contains(constraint)).collect())
 }
 
 fn classify_constraints(
-    pending: Vec<(TypeId, FxHashSet<u32>)>,
+    pending: Vec<(CanonicalConstraintId, FxHashSet<u32>)>,
     unifications: FxHashSet<u32>,
     errors: &mut ConstraintErrors,
-) -> FxHashSet<TypeId> {
+) -> FxHashSet<CanonicalConstraintId> {
     let mut reachable = unifications;
     let mut valid = FxHashSet::default();
     let mut remaining = pending;

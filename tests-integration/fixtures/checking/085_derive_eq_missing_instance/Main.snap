@@ -17,3 +17,10 @@ derive Eq Box
 Roles
 NoEq = []
 Box = []
+
+Diagnostics
+error[NoInstanceFound]: No instance found for: Eq NoEq
+  --> 9:1..9:23
+  |
+9 | derive instance Eq Box
+  | ^~~~~~~~~~~~~~~~~~~~~~

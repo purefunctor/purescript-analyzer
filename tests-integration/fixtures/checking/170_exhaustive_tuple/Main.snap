@@ -10,13 +10,17 @@ Just :: forall (@a :: Type). (a :: Type) -> Maybe (a :: Type)
 Nothing :: forall (@a :: Type). Maybe (a :: Type)
 complete :: forall (t4 :: Type) (t3 :: Type). Tuple (Maybe (t4 :: Type)) (Maybe (t3 :: Type)) -> Int
 incomplete1 ::
-  forall (t6 :: Type) (t5 :: Type). Tuple (Maybe (t6 :: Type)) (Maybe (t5 :: Type)) -> Int
+  forall (t6 :: Type) (t5 :: Type).
+    Partial => Tuple (Maybe (t6 :: Type)) (Maybe (t5 :: Type)) -> Int
 incomplete2 ::
-  forall (t8 :: Type) (t7 :: Type). Tuple (Maybe (t8 :: Type)) (Maybe (t7 :: Type)) -> Int
+  forall (t8 :: Type) (t7 :: Type).
+    Partial => Tuple (Maybe (t8 :: Type)) (Maybe (t7 :: Type)) -> Int
 incomplete3 ::
-  forall (t10 :: Type) (t9 :: Type). Tuple (Maybe (t10 :: Type)) (Maybe (t9 :: Type)) -> Int
+  forall (t10 :: Type) (t9 :: Type).
+    Partial => Tuple (Maybe (t10 :: Type)) (Maybe (t9 :: Type)) -> Int
 incomplete4 ::
-  forall (t12 :: Type) (t11 :: Type). Tuple (Maybe (t12 :: Type)) (Maybe (t11 :: Type)) -> Int
+  forall (t12 :: Type) (t11 :: Type).
+    Partial => Tuple (Maybe (t12 :: Type)) (Maybe (t11 :: Type)) -> Int
 
 Types
 Tuple :: Type -> Type -> Type
