@@ -1,5 +1,5 @@
 ---
-source: tests-integration/tests/checking2/generated.rs
+source: tests-integration/tests/checking/generated.rs
 assertion_line: 28
 expression: report
 ---
@@ -7,14 +7,10 @@ Terms
 Just :: forall (@a :: Type). (a :: Type) -> Maybe (a :: Type)
 Nothing :: forall (@a :: Type). Maybe (a :: Type)
 complete :: forall (t2 :: Type) (t1 :: Type). Maybe (t2 :: Type) -> Maybe (t1 :: Type) -> Int
-incomplete1 ::
-  forall (t4 :: Type) (t3 :: Type). Partial => Maybe (t4 :: Type) -> Maybe (t3 :: Type) -> Int
-incomplete2 ::
-  forall (t6 :: Type) (t5 :: Type). Partial => Maybe (t6 :: Type) -> Maybe (t5 :: Type) -> Int
-incomplete3 ::
-  forall (t8 :: Type) (t7 :: Type). Partial => Maybe (t8 :: Type) -> Maybe (t7 :: Type) -> Int
-incomplete4 ::
-  forall (t10 :: Type) (t9 :: Type). Partial => Maybe (t10 :: Type) -> Maybe (t9 :: Type) -> Int
+incomplete1 :: forall (t4 :: Type) (t3 :: Type). Maybe (t4 :: Type) -> Maybe (t3 :: Type) -> Int
+incomplete2 :: forall (t6 :: Type) (t5 :: Type). Maybe (t6 :: Type) -> Maybe (t5 :: Type) -> Int
+incomplete3 :: forall (t8 :: Type) (t7 :: Type). Maybe (t8 :: Type) -> Maybe (t7 :: Type) -> Int
+incomplete4 :: forall (t10 :: Type) (t9 :: Type). Maybe (t10 :: Type) -> Maybe (t9 :: Type) -> Int
 
 Types
 Maybe :: Type -> Type

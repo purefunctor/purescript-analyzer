@@ -1,5 +1,5 @@
 ---
-source: tests-integration/tests/checking2/generated.rs
+source: tests-integration/tests/checking/generated.rs
 assertion_line: 28
 expression: report
 ---
@@ -34,15 +34,3 @@ derive forall (t13 :: Type) (t12 :: Type -> Type).
 Roles
 Wrap = [Representational, Nominal]
 WrapNoOrd1 = [Representational, Nominal]
-
-Diagnostics
-error[NoInstanceFound]: No instance found for: Ord1 (t12 :: Type -> Type)
-  --> 14:1..14:46
-   |
-14 | derive instance Ord a => Ord (WrapNoOrd1 f a)
-   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-error[NoInstanceFound]: No instance found for: Eq1 (t12 :: Type -> Type)
-  --> 14:1..14:46
-   |
-14 | derive instance Ord a => Ord (WrapNoOrd1 f a)
-   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

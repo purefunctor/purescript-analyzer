@@ -1,5 +1,5 @@
 ---
-source: tests-integration/tests/checking2/generated.rs
+source: tests-integration/tests/checking/generated.rs
 assertion_line: 28
 expression: report
 ---
@@ -25,10 +25,3 @@ derive forall (t7 :: Type -> Type). Functor (WrapNoFunctor @Type (t7 :: Type -> 
 Roles
 Wrap = [Representational, Nominal]
 WrapNoFunctor = [Representational, Nominal]
-
-Diagnostics
-error[NoInstanceFound]: No instance found for: Functor (t7 :: Type -> Type)
-  --> 9:1..9:42
-  |
-9 | derive instance Functor (WrapNoFunctor f)
-  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

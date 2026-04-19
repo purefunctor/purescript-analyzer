@@ -1,5 +1,5 @@
 ---
-source: tests-integration/tests/checking2/generated.rs
+source: tests-integration/tests/checking/generated.rs
 assertion_line: 28
 expression: report
 ---
@@ -19,15 +19,17 @@ compareGT ::
   forall (ord :: Ordering). Compare 10 3 (ord :: Ordering) => Proxy @Ordering (ord :: Ordering)
 deriveString :: forall (s :: Symbol). ToString 42 (s :: Symbol) => Proxy @Symbol (s :: Symbol)
 forceSolve ::
-  { compareEQ :: Proxy @Ordering EQ
-  , compareGT :: Proxy @Ordering GT
-  , compareLT :: Proxy @Ordering LT
-  , deriveLeft :: Proxy @Int 1
-  , deriveMul :: Proxy @Int 12
-  , deriveRight :: Proxy @Int 2
-  , deriveString :: Proxy @Symbol "42"
-  , deriveSum :: Proxy @Int 3
-  , keepStuck :: Proxy @Int 1
-  }
+  forall (t28 :: Ordering) (t27 :: Ordering) (t26 :: Ordering) (t25 :: Int) (t24 :: Int)
+    (t23 :: Int) (t22 :: Symbol) (t21 :: Int) (t20 :: Int).
+    { compareEQ :: Proxy @Ordering (t28 :: Ordering)
+    , compareGT :: Proxy @Ordering (t27 :: Ordering)
+    , compareLT :: Proxy @Ordering (t26 :: Ordering)
+    , deriveLeft :: Proxy @Int (t25 :: Int)
+    , deriveMul :: Proxy @Int (t24 :: Int)
+    , deriveRight :: Proxy @Int (t23 :: Int)
+    , deriveString :: Proxy @Symbol (t22 :: Symbol)
+    , deriveSum :: Proxy @Int (t21 :: Int)
+    , keepStuck :: Proxy @Int (t20 :: Int)
+    }
 
 Types

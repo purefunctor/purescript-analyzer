@@ -1,5 +1,5 @@
 ---
-source: tests-integration/tests/checking2/generated.rs
+source: tests-integration/tests/checking/generated.rs
 assertion_line: 28
 expression: report
 ---
@@ -72,20 +72,3 @@ Id = [Representational]
 Wrap = [Representational, Nominal]
 Compose = [Representational, Representational, Nominal]
 NoOrd = [Representational]
-
-Diagnostics
-error[NoInstanceFound]: No instance found for: Eq ((t27 :: Type -> Type) (t35 :: Type))
-  --> 25:1..25:43
-   |
-25 | derive instance Eq1 f => Eq1 (Compose f g)
-   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-error[NoInstanceFound]: No instance found for: Ord ((t29 :: Type -> Type) (t36 :: Type))
-  --> 26:1..26:45
-   |
-26 | derive instance Ord1 f => Ord1 (Compose f g)
-   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-error[NoInstanceFound]: No instance found for: Ord (NoOrd (t38 :: Type))
-  --> 32:1..32:27
-   |
-32 | derive instance Ord1 NoOrd
-   | ^~~~~~~~~~~~~~~~~~~~~~~~~~

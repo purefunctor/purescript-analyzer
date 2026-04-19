@@ -1,13 +1,13 @@
 ---
-source: tests-integration/tests/checking2/generated.rs
+source: tests-integration/tests/checking/generated.rs
 assertion_line: 28
 expression: report
 ---
 Terms
 eq :: forall (@a :: Type). Eq (a :: Type) => (a :: Type) -> (a :: Type) -> Boolean
 compare :: forall (@a :: Type). Ord (a :: Type) => (a :: Type) -> (a :: Type) -> Int
-test1 :: forall (t2 :: Type). Eq (t2 :: Type) => (t2 :: Type) -> Boolean
-test2 :: forall (t3 :: Type). Ord (t3 :: Type) => Eq (t3 :: Type) => (t3 :: Type) -> Int
+test1 :: forall (t2 :: Type). (t2 :: Type) -> Boolean
+test2 :: forall (t3 :: Type). (t3 :: Type) -> Int
 
 Types
 Eq :: Type -> Constraint

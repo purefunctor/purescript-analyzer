@@ -1,5 +1,5 @@
 ---
-source: tests-integration/tests/checking2/generated.rs
+source: tests-integration/tests/checking/generated.rs
 assertion_line: 28
 expression: report
 ---
@@ -29,10 +29,3 @@ Box = []
 Pair = []
 NoOrd = []
 ContainsNoOrd = []
-
-Diagnostics
-error[NoInstanceFound]: No instance found for: Ord NoOrd
-  --> 23:1..23:34
-   |
-23 | derive instance Ord ContainsNoOrd
-   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -1,5 +1,5 @@
 ---
-source: tests-integration/tests/checking2/generated.rs
+source: tests-integration/tests/checking/generated.rs
 assertion_line: 28
 expression: report
 ---
@@ -25,15 +25,13 @@ stuckOpenRow ::
     RowToList @Type ( a :: Int | (tail :: Row Type) ) (list :: RowList Type) =>
     Proxy @(Row Type) (tail :: Row Type) -> Proxy @(RowList Type) (list :: RowList Type)
 forceSolve ::
-  forall (t13 :: Type).
-    { nowSolved :: Proxy @(RowList Type) (Cons @Type "a" Int (Nil @Type))
-    , rowToListEmpty :: Proxy @(RowList (t13 :: Type)) (Nil @(t13 :: Type))
-    , rowToListMultiple ::
-        Proxy @(RowList Type) (Cons @Type "a" Int (Cons @Type "b" String (Nil @Type)))
-    , rowToListSimple :: Proxy @(RowList Type) (Cons @Type "a" Int (Nil @Type))
-    , rowToListThree ::
-        Proxy @(RowList Type)
-          (Cons @Type "a" Int (Cons @Type "b" String (Cons @Type "c" Boolean (Nil @Type))))
+  forall (t18 :: RowList Type) (t17 :: Type) (t16 :: RowList (t17 :: Type)) (t15 :: RowList Type)
+    (t14 :: RowList Type) (t13 :: RowList Type).
+    { nowSolved :: Proxy @(RowList Type) (t18 :: RowList Type)
+    , rowToListEmpty :: Proxy @(RowList (t17 :: Type)) (t16 :: RowList (t17 :: Type))
+    , rowToListMultiple :: Proxy @(RowList Type) (t15 :: RowList Type)
+    , rowToListSimple :: Proxy @(RowList Type) (t14 :: RowList Type)
+    , rowToListThree :: Proxy @(RowList Type) (t13 :: RowList Type)
     }
 
 Types

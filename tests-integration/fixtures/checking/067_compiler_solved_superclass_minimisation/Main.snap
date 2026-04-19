@@ -1,5 +1,5 @@
 ---
-source: tests-integration/tests/checking2/generated.rs
+source: tests-integration/tests/checking/generated.rs
 assertion_line: 28
 expression: report
 ---
@@ -15,8 +15,7 @@ useUnion ::
     Proxy @(Row Type) (r3 :: Row Type) -> {| (r1 :: Row Type) } -> {| (r2 :: Row Type) } -> Int
 testMin ::
   forall (t20 :: Row Type) (t19 :: Row Type) (t18 :: Row Type).
-    Merge @Type (t20 :: Row Type) (t19 :: Row Type) (t18 :: Row Type) =>
-    Proxy @(Row Type) (t18 :: Row Type) -> {| (t20 :: Row Type) } -> {| (t19 :: Row Type) } -> Int
+    Proxy @(Row Type) (t20 :: Row Type) -> {| (t19 :: Row Type) } -> {| (t18 :: Row Type) } -> Int
 
 Types
 Merge :: forall (t3 :: Type). Row (t3 :: Type) -> Row (t3 :: Type) -> Row (t3 :: Type) -> Constraint

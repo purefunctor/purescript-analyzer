@@ -1,5 +1,5 @@
 ---
-source: tests-integration/tests/checking2/generated.rs
+source: tests-integration/tests/checking/generated.rs
 assertion_line: 28
 expression: report
 ---
@@ -22,12 +22,11 @@ backwardRight ::
     Union @Type ( a :: Int ) (r :: Row Type) ( a :: Int, b :: String | (u :: Row Type) ) =>
     Proxy @(Row Type) (r :: Row Type)
 forceSolve ::
-  forall (t22 :: Row Type) (t21 :: Row Type) (t20 :: Row Type) (t19 :: Row Type) (t18 :: Row Type).
-    Union @Type (t22 :: Row Type) ( b :: String ) (t21 :: Row Type) =>
-    { backwardLeft :: Proxy @(Row Type) ( a :: Int | (t20 :: Row Type) )
-    , backwardRight :: Proxy @(Row Type) ( b :: String | (t19 :: Row Type) )
-    , openLeft :: Proxy @(Row Type) ( a :: Int | (t21 :: Row Type) )
-    , openRight :: Proxy @(Row Type) ( a :: Int, b :: String | (t18 :: Row Type) )
+  forall (t21 :: Row Type) (t20 :: Row Type) (t19 :: Row Type) (t18 :: Row Type).
+    { backwardLeft :: Proxy @(Row Type) (t21 :: Row Type)
+    , backwardRight :: Proxy @(Row Type) (t20 :: Row Type)
+    , openLeft :: Proxy @(Row Type) (t19 :: Row Type)
+    , openRight :: Proxy @(Row Type) (t18 :: Row Type)
     }
 
 Types

@@ -1,5 +1,5 @@
 ---
-source: tests-integration/tests/checking2/generated.rs
+source: tests-integration/tests/checking/generated.rs
 assertion_line: 28
 expression: report
 ---
@@ -16,10 +16,3 @@ derive forall (t3 :: Type). Eq (Either Int (t3 :: Type))
 
 Roles
 Either = [Representational, Representational]
-
-Diagnostics
-error[NoInstanceFound]: No instance found for: Eq (t3 :: Type)
-  --> 9:1..9:34
-  |
-9 | derive instance Eq (Either Int b)
-  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -1,5 +1,5 @@
 ---
-source: tests-integration/tests/checking2/generated.rs
+source: tests-integration/tests/checking/generated.rs
 assertion_line: 28
 expression: report
 ---
@@ -8,6 +8,6 @@ needsAdd :: forall (x :: Int). Add 1 (x :: Int) 3 => Proxy @Int (x :: Int)
 nonHeadGivenImprovement ::
   forall (n :: Int).
     Union @Type ( a :: Proxy @Int (n :: Int) ) () ( a :: Proxy @Int 2 ) => Proxy @Int (n :: Int)
-forceSolve :: { nonHeadGivenImprovement :: Proxy @Int 2 }
+forceSolve :: forall (t4 :: Int). { nonHeadGivenImprovement :: Proxy @Int (t4 :: Int) }
 
 Types

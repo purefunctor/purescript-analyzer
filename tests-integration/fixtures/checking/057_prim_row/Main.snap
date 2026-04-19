@@ -1,5 +1,5 @@
 ---
-source: tests-integration/tests/checking2/generated.rs
+source: tests-integration/tests/checking/generated.rs
 assertion_line: 28
 expression: report
 ---
@@ -58,30 +58,32 @@ nubEmpty ::
     Nub @(t34 :: Type) () (nubbed :: Row (t34 :: Type)) =>
     Proxy @(Row (t34 :: Type)) (nubbed :: Row (t34 :: Type))
 solveUnion ::
-  forall (t35 :: Type).
-    { deriveUnion :: Proxy @(Row Type) ( a :: Int, b :: String )
-    , deriveUnionLeft :: Proxy @(Row Type) ( a :: Int )
-    , deriveUnionRight :: Proxy @(Row Type) ( b :: String )
-    , unionBothEmpty :: Proxy @(Row (t35 :: Type)) ()
-    , unionEmptyLeft :: Proxy @(Row Type) ( a :: Int )
-    , unionEmptyRight :: Proxy @(Row Type) ( a :: Int )
-    , unionMultiple :: Proxy @(Row Type) ( a :: Int, b :: String, c :: Boolean )
+  forall (t42 :: Row Type) (t41 :: Row Type) (t40 :: Row Type) (t39 :: Type)
+    (t38 :: Row (t39 :: Type)) (t37 :: Row Type) (t36 :: Row Type) (t35 :: Row Type).
+    { deriveUnion :: Proxy @(Row Type) (t42 :: Row Type)
+    , deriveUnionLeft :: Proxy @(Row Type) (t41 :: Row Type)
+    , deriveUnionRight :: Proxy @(Row Type) (t40 :: Row Type)
+    , unionBothEmpty :: Proxy @(Row (t39 :: Type)) (t38 :: Row (t39 :: Type))
+    , unionEmptyLeft :: Proxy @(Row Type) (t37 :: Row Type)
+    , unionEmptyRight :: Proxy @(Row Type) (t36 :: Row Type)
+    , unionMultiple :: Proxy @(Row Type) (t35 :: Row Type)
     }
 solveCons ::
-  { deriveCons :: Proxy @(Row Type) ( name :: String )
-  , deriveTail :: Proxy @(Row Type) ( age :: Int )
-  , deriveType :: Proxy @Type String
-  , nestedCons :: Proxy @(Row Type) ( a :: Int, b :: String )
-  }
+  forall (t46 :: Row Type) (t45 :: Row Type) (t44 :: Type) (t43 :: Row Type).
+    { deriveCons :: Proxy @(Row Type) (t46 :: Row Type)
+    , deriveTail :: Proxy @(Row Type) (t45 :: Row Type)
+    , deriveType :: Proxy @Type (t44 :: Type)
+    , nestedCons :: Proxy @(Row Type) (t43 :: Row Type)
+    }
 solveLacks ::
-  forall (t39 :: Type) (t38 :: (t39 :: Type)) (t37 :: Type) (t36 :: (t37 :: Type)).
-    { lacksEmpty :: Proxy @(t39 :: Type) (t38 :: (t39 :: Type))
-    , lacksSimple :: Proxy @(t37 :: Type) (t36 :: (t37 :: Type))
+  forall (t50 :: Type) (t49 :: (t50 :: Type)) (t48 :: Type) (t47 :: (t48 :: Type)).
+    { lacksEmpty :: Proxy @(t50 :: Type) (t49 :: (t50 :: Type))
+    , lacksSimple :: Proxy @(t48 :: Type) (t47 :: (t48 :: Type))
     }
 solveNub ::
-  forall (t40 :: Type).
-    { nubEmpty :: Proxy @(Row (t40 :: Type)) ()
-    , nubNoDuplicates :: Proxy @(Row Type) ( a :: Int, b :: String )
+  forall (t53 :: Type) (t52 :: Row (t53 :: Type)) (t51 :: Row Type).
+    { nubEmpty :: Proxy @(Row (t53 :: Type)) (t52 :: Row (t53 :: Type))
+    , nubNoDuplicates :: Proxy @(Row Type) (t51 :: Row Type)
     }
 
 Types

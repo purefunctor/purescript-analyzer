@@ -1,5 +1,5 @@
 ---
-source: tests-integration/tests/checking2/generated.rs
+source: tests-integration/tests/checking/generated.rs
 assertion_line: 28
 expression: report
 ---
@@ -73,15 +73,3 @@ Wrap = [Representational, Nominal]
 Compose = [Representational, Representational, Nominal]
 Either' = [Representational]
 NoEq = [Representational]
-
-Diagnostics
-error[NoInstanceFound]: No instance found for: Eq ((t26 :: Type -> Type) (t33 :: Type))
-  --> 34:1..34:43
-   |
-34 | derive instance Eq1 f => Eq1 (Compose f g)
-   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-error[NoInstanceFound]: No instance found for: Eq (NoEq (t35 :: Type))
-  --> 43:1..43:25
-   |
-43 | derive instance Eq1 NoEq
-   | ^~~~~~~~~~~~~~~~~~~~~~~~

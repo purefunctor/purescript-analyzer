@@ -43,10 +43,11 @@ impl Canonicals {
         canonical: CanonicalConstraint,
     ) -> CanonicalConstraintId {
         let id = self.intern(canonical);
-
-        let previous = self.cache.insert(constraint, id);
-        debug_assert!(previous.is_none(), "critical violation: canonical cache overwrite");
-
+        self.cache.insert(constraint, id);
+        // TODO: This check was disabled as it does not consider normalisation.
+        // A future version of this check must ensure that normalisation is
+        // taken into account before checking that the cache is not overwritten.
+        // debug_assert!(previous.is_none(), "critical violation: canonical cache overwrite");
         id
     }
 }

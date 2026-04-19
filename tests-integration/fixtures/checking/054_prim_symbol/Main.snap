@@ -1,5 +1,5 @@
 ---
-source: tests-integration/tests/checking2/generated.rs
+source: tests-integration/tests/checking/generated.rs
 assertion_line: 28
 expression: report
 ---
@@ -28,16 +28,18 @@ deriveHeadTail ::
 symbolValue :: String
 symbolValue' :: String
 forceSolve ::
-  { compareEQ :: Proxy @Ordering EQ
-  , compareGT :: Proxy @Ordering GT
-  , compareLT :: Proxy @Ordering LT
-  , deriveAppended :: Proxy @Symbol "HelloWorld"
-  , deriveCons :: Proxy @Symbol "Hello"
-  , deriveHeadTail :: Proxy @Symbol "W"
-  , deriveLeft :: Proxy @Symbol "Hello"
-  , deriveRight :: Proxy @Symbol "World"
-  , symbolValue :: String
-  , symbolValue' :: String
-  }
+  forall (t25 :: Ordering) (t24 :: Ordering) (t23 :: Ordering) (t22 :: Symbol) (t21 :: Symbol)
+    (t20 :: Symbol) (t19 :: Symbol) (t18 :: Symbol).
+    { compareEQ :: Proxy @Ordering (t25 :: Ordering)
+    , compareGT :: Proxy @Ordering (t24 :: Ordering)
+    , compareLT :: Proxy @Ordering (t23 :: Ordering)
+    , deriveAppended :: Proxy @Symbol (t22 :: Symbol)
+    , deriveCons :: Proxy @Symbol (t21 :: Symbol)
+    , deriveHeadTail :: Proxy @Symbol (t20 :: Symbol)
+    , deriveLeft :: Proxy @Symbol (t19 :: Symbol)
+    , deriveRight :: Proxy @Symbol (t18 :: Symbol)
+    , symbolValue :: String
+    , symbolValue' :: String
+    }
 
 Types

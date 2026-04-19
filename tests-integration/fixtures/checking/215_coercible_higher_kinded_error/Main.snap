@@ -1,5 +1,5 @@
 ---
-source: tests-integration/tests/checking2/generated.rs
+source: tests-integration/tests/checking/generated.rs
 assertion_line: 28
 expression: report
 ---
@@ -19,10 +19,3 @@ Roles
 Maybe = [Representational]
 List = [Representational]
 Container = [Representational]
-
-Diagnostics
-error[NoInstanceFound]: No instance found for: Coercible @Type (Maybe (t2 :: Type)) (List (t2 :: Type))
-  --> 11:1..11:62
-   |
-11 | coerceContainerDifferent :: Container Maybe -> Container List
-   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

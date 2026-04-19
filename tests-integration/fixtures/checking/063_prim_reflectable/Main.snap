@@ -1,22 +1,22 @@
 ---
-source: tests-integration/tests/checking2/generated.rs
+source: tests-integration/tests/checking/generated.rs
 assertion_line: 28
 expression: report
 ---
 Terms
 testSymbol :: String
-testSymbol' :: String
+testSymbol' :: forall (t0 :: Type). (t0 :: Type)
 testInt :: Int
-testInt' :: Int
+testInt' :: forall (t1 :: Type). (t1 :: Type)
 testTrue :: Boolean
-testTrue' :: Boolean
+testTrue' :: forall (t2 :: Type). (t2 :: Type)
 testFalse :: Boolean
-testFalse' :: Boolean
+testFalse' :: forall (t3 :: Type). (t3 :: Type)
 testLT :: Ordering
-testLT' :: Ordering
+testLT' :: forall (t4 :: Type). (t4 :: Type)
 testEQ :: Ordering
-testEQ' :: Ordering
+testEQ' :: forall (t5 :: Type). (t5 :: Type)
 testGT :: Ordering
-testGT' :: Ordering
+testGT' :: forall (t6 :: Type). (t6 :: Type)
 
 Types

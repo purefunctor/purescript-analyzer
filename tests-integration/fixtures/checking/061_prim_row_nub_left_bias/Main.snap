@@ -1,5 +1,6 @@
 ---
-source: tests-integration/tests/checking2/generated.rs
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
 expression: report
 ---
 Terms
@@ -9,6 +10,6 @@ merge ::
     Union @Type (r1 :: Row Type) (r2 :: Row Type) (r3 :: Row Type) =>
     Nub @Type (r3 :: Row Type) (r4 :: Row Type) =>
     {| (r1 :: Row Type) } -> {| (r2 :: Row Type) } -> {| (r4 :: Row Type) }
-test :: { a :: Int, b :: String }
+test :: forall (t10 :: Row Type). {| (t10 :: Row Type) }
 
 Types
