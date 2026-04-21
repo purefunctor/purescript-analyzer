@@ -7,14 +7,14 @@ use rustc_hash::FxHashSet;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::constraint2::matching::{InstanceMatch, MatchInstance};
+use crate::core::constraint2::matching::{self, InstanceMatch, MatchInstance};
 use crate::core::constraint2::{WorkItem, canonical};
 use crate::core::unification::{CanUnify, can_unify};
 use crate::core::{RowField, RowType, Type, TypeId, normalise};
 use crate::source::types;
 use crate::state::CheckState;
 
-use super::{extract_row, extract_symbol, match_equality, stuck_on};
+use super::{extract_row, extract_symbol, match_equality};
 
 fn intern_row_value<Q>(context: &CheckContext<Q>, row: RowType) -> TypeId
 where
@@ -154,7 +154,7 @@ where
     }
     let tails: Vec<TypeId> =
         [right_row.tail, union_row.as_ref().and_then(|r| r.tail)].into_iter().flatten().collect();
-    stuck_on(state, context, &tails)
+    matching::blocking_constraint(state, context, &tails)
 }
 
 fn solve_union_left_open_prefix<Q>(
@@ -222,7 +222,7 @@ where
     Q: ExternalQueries,
 {
     if let Some(tail) = right_row.tail {
-        return stuck_on(state, context, &[tail]);
+        return matching::blocking_constraint(state, context, &[tail]);
     }
     if let Some((remaining, mut equalities)) =
         subtract_row_fields(state, context, &union_row.fields, &right_row.fields)?
@@ -250,7 +250,7 @@ where
     Q: ExternalQueries,
 {
     if let Some(tail) = left_row.tail {
-        return stuck_on(state, context, &[tail]);
+        return matching::blocking_constraint(state, context, &[tail]);
     }
     if let Some((remaining, mut equalities)) =
         subtract_row_fields(state, context, &union_row.fields, &left_row.fields)?
@@ -311,7 +311,7 @@ where
                 solve_union_from_left_and_union(state, context, right, &left_row, &union_row)?;
             Ok(Some(solution))
         }
-        _ => Ok(Some(stuck_on(state, context, &[left, right, union])?)),
+        _ => Ok(Some(matching::blocking_constraint(state, context, &[left, right, union])?)),
     }
 }
 
@@ -363,7 +363,7 @@ where
                 Ok(Some(MatchInstance::Apart))
             }
         }
-        _ => Ok(Some(stuck_on(state, context, &[label, tail, row])?)),
+        _ => Ok(Some(matching::blocking_constraint(state, context, &[label, tail, row])?)),
     }
 }
 
@@ -380,11 +380,11 @@ where
     };
 
     let Some(label_value) = extract_symbol(state, context, label)? else {
-        return Ok(Some(stuck_on(state, context, &[label])?));
+        return Ok(Some(matching::blocking_constraint(state, context, &[label])?));
     };
 
     let Some(row_row) = extract_row(state, context, row)? else {
-        return Ok(Some(stuck_on(state, context, &[row])?));
+        return Ok(Some(matching::blocking_constraint(state, context, &[row])?));
     };
 
     let has_label = row_row.fields.iter().any(|field| field.label == label_value);
@@ -393,7 +393,7 @@ where
         Ok(Some(MatchInstance::Apart))
     } else if let Some(tail) = row_row.tail {
         if row_row.fields.is_empty() {
-            return Ok(Some(stuck_on(state, context, &[tail])?));
+            return Ok(Some(matching::blocking_constraint(state, context, &[tail])?));
         }
 
         let constraint =
@@ -425,7 +425,7 @@ where
     };
 
     let Some(original_row) = extract_closed_row(state, context, original)? else {
-        return Ok(Some(stuck_on(state, context, &[original])?));
+        return Ok(Some(matching::blocking_constraint(state, context, &[original])?));
     };
 
     let mut seen = FxHashSet::default();

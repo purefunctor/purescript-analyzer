@@ -16,6 +16,7 @@ use crate::core::constraint2::instances::InstanceCandidate;
 use crate::core::constraint2::{CanonicalConstraintId, WorkItem, canonical};
 use crate::core::substitute::SubstituteName;
 use crate::core::unification::{CanUnify, can_unify};
+use crate::core::walk::{TypeWalker, WalkAction, walk_type};
 use crate::core::{KindOrType, Name, RowField, RowType, Type, TypeId, normalise, toolkit};
 use crate::state::CheckState;
 
@@ -24,7 +25,7 @@ pub enum MatchType {
     /// The types match.
     Match,
     /// The match depends on a unification variable.
-    Stuck(Option<u32>),
+    Stuck(u32),
     /// The types do not match.
     Apart,
 }
@@ -47,6 +48,70 @@ pub enum MatchInstance {
     Stuck(Vec<u32>),
     /// The types do not match.
     Apart,
+}
+
+struct CollectBlocking {
+    blocking: Vec<u32>,
+}
+
+impl TypeWalker for CollectBlocking {
+    fn visit<Q: ExternalQueries>(
+        &mut self,
+        _state: &mut CheckState,
+        _context: &CheckContext<Q>,
+        _id: TypeId,
+        t: &Type,
+    ) -> QueryResult<WalkAction> {
+        if let Type::Unification(id) = t {
+            self.blocking.push(*id);
+        }
+        Ok(WalkAction::Continue)
+    }
+}
+
+pub fn collect_blocking<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    id: &[TypeId],
+) -> QueryResult<Vec<u32>>
+where
+    Q: ExternalQueries,
+{
+    let mut walker = CollectBlocking { blocking: vec![] };
+
+    for &id in id {
+        walk_type(state, context, id, &mut walker)?;
+    }
+
+    Ok(walker.blocking)
+}
+
+pub fn blocking_type<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    id: TypeId,
+) -> QueryResult<MatchType>
+where
+    Q: ExternalQueries,
+{
+    let stuck = collect_blocking(state, context, &[id])?;
+    if let Some(&stuck) = stuck.first() {
+        Ok(MatchType::Stuck(stuck))
+    } else {
+        Ok(MatchType::Apart)
+    }
+}
+
+pub fn blocking_constraint<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    id: &[TypeId],
+) -> QueryResult<MatchInstance>
+where
+    Q: ExternalQueries,
+{
+    let stuck = collect_blocking(state, context, id)?;
+    if !stuck.is_empty() { Ok(MatchInstance::Stuck(stuck)) } else { Ok(MatchInstance::Apart) }
 }
 
 /// Matches a wanted type against a given type.
@@ -129,7 +194,7 @@ where
                 continue 'given;
             }
 
-            if let MatchType::Stuck(Some(id)) = match_result {
+            if let MatchType::Stuck(id) = match_result {
                 stuck.push(id);
             }
 
@@ -145,7 +210,7 @@ where
         let mut goals = vec![];
 
         for (index, result) in results.iter().enumerate() {
-            let MatchType::Stuck(Some(_)) = result else { continue };
+            let MatchType::Stuck(_) = result else { continue };
 
             let wanted = match wanted.arguments[index] {
                 KindOrType::Kind(id) => id,
@@ -263,7 +328,7 @@ where
                 continue 'chain;
             }
 
-            if let MatchType::Stuck(Some(id)) = match_result {
+            if let MatchType::Stuck(id) = match_result {
                 stuck.push(id);
             }
 
@@ -277,7 +342,7 @@ where
         }
 
         for (index, result) in results.iter().enumerate() {
-            let MatchType::Stuck(Some(_)) = result else { continue };
+            let MatchType::Stuck(_) = result else { continue };
 
             let wanted = match wanted.arguments[index] {
                 KindOrType::Kind(id) => id,
@@ -333,7 +398,7 @@ where
     ) -> QueryResult<MatchType>,
 {
     match (wanted_core, given_core) {
-        (Type::Unification(id), _) => Ok(MatchType::Stuck(Some(id))),
+        (Type::Unification(id), _) => Ok(MatchType::Stuck(id)),
 
         (Type::Row(wanted_row_id), Type::Row(given_row_id)) => {
             let wanted_row = context.lookup_row_type(wanted_row_id);
@@ -459,7 +524,7 @@ where
             Closed | Additional => Ok(MatchType::Apart),
             // we could potentially make progress by having the
             // wanted tail absorb the additional given fields
-            Open(_) => Ok(MatchType::Stuck(None)),
+            Open(wanted_tail) => blocking_type(state, context, wanted_tail),
         },
         // If the given row has a tail, match it against the
         // additional fields and tail from the wanted row
@@ -474,7 +539,7 @@ where
             // we cannot match it against fields in the wanted row
             Additional => Ok(MatchType::Apart),
             // we could make progress with an open wanted row
-            Open(_) => Ok(MatchType::Stuck(None)),
+            Open(wanted_tail) => blocking_type(state, context, wanted_tail),
             // we can match it directly with a closed wanted row
             Closed => Ok(result),
         },

@@ -5,11 +5,11 @@ use building_types::QueryResult;
 use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::constraint2::WorkItem;
-use crate::core::constraint2::matching::{InstanceMatch, MatchInstance};
+use crate::core::constraint2::matching::{self, InstanceMatch, MatchInstance};
 use crate::core::{Type, TypeId, normalise};
 use crate::state::CheckState;
 
-use super::{extract_symbol, intern_symbol, match_equality, stuck_on};
+use super::{extract_symbol, intern_symbol, match_equality};
 
 pub fn match_append<Q>(
     state: &mut CheckState,
@@ -48,7 +48,7 @@ where
             let result = intern_symbol(context, right_value);
             match_equality(state, context, right, result)?
         }
-        _ => stuck_on(state, context, &[left, right, appended])?,
+        _ => matching::blocking_constraint(state, context, &[left, right, appended])?,
     };
 
     Ok(Some(matched))
@@ -67,10 +67,10 @@ where
     };
 
     let Some(left_symbol) = extract_symbol(state, context, left)? else {
-        return Ok(Some(stuck_on(state, context, &[left])?));
+        return Ok(Some(matching::blocking_constraint(state, context, &[left])?));
     };
     let Some(right_symbol) = extract_symbol(state, context, right)? else {
-        return Ok(Some(stuck_on(state, context, &[right])?));
+        return Ok(Some(matching::blocking_constraint(state, context, &[right])?));
     };
 
     let result = match left_symbol.cmp(&right_symbol) {
@@ -127,7 +127,7 @@ where
                 goals: vec![WorkItem::Unify(head, head_result), WorkItem::Unify(tail, tail_result)],
             })
         }
-        _ => stuck_on(state, context, &[head, tail, symbol])?,
+        _ => matching::blocking_constraint(state, context, &[head, tail, symbol])?,
     };
 
     Ok(Some(matched))

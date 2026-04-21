@@ -4,11 +4,11 @@ use building_types::QueryResult;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::constraint2::matching::MatchInstance;
+use crate::core::constraint2::matching::{self, MatchInstance};
 use crate::core::{TypeId, normalise};
 use crate::state::CheckState;
 
-use super::{extract_integer, intern_symbol, match_equality, stuck_on};
+use super::{extract_integer, intern_symbol, match_equality};
 
 pub fn match_add<Q>(
     state: &mut CheckState,
@@ -39,7 +39,7 @@ where
             let result = super::intern_integer(context, sum_value - right);
             match_equality(state, context, left, result)?
         }
-        _ => stuck_on(state, context, &[left, right, sum])?,
+        _ => matching::blocking_constraint(state, context, &[left, right, sum])?,
     };
 
     Ok(Some(matched))
@@ -58,10 +58,10 @@ where
     };
 
     let Some(left_int) = extract_integer(state, context, left)? else {
-        return Ok(Some(stuck_on(state, context, &[left])?));
+        return Ok(Some(matching::blocking_constraint(state, context, &[left])?));
     };
     let Some(right_int) = extract_integer(state, context, right)? else {
-        return Ok(Some(stuck_on(state, context, &[right])?));
+        return Ok(Some(matching::blocking_constraint(state, context, &[right])?));
     };
 
     let result = super::intern_integer(context, left_int * right_int);
@@ -97,7 +97,7 @@ where
         return Ok(Some(match_equality(state, context, ordering, result)?));
     }
 
-    Ok(Some(stuck_on(state, context, &[left, right])?))
+    Ok(Some(matching::blocking_constraint(state, context, &[left, right])?))
 }
 
 pub fn match_to_string<Q>(
@@ -113,7 +113,7 @@ where
     };
 
     let Some(value) = extract_integer(state, context, int)? else {
-        return Ok(Some(stuck_on(state, context, &[int])?));
+        return Ok(Some(matching::blocking_constraint(state, context, &[int])?));
     };
 
     let result = intern_symbol(context, &value.to_string());

@@ -12,7 +12,6 @@ use smol_str::SmolStr;
 use crate::context::CheckContext;
 use crate::core::fold::{FoldAction, TypeFold, fold_type};
 use crate::core::unification::{CanUnify, can_unify};
-use crate::core::walk::{TypeWalker, WalkAction, walk_type};
 use crate::core::{RowType, Type, TypeId, normalise};
 use crate::state::CheckState;
 use crate::{ExternalQueries, safe_loop};
@@ -120,54 +119,6 @@ where
     Q: ExternalQueries,
 {
     context.queries.intern_type(Type::Integer(value))
-}
-
-struct CollectBlocking {
-    blocking: Vec<u32>,
-}
-
-impl TypeWalker for CollectBlocking {
-    fn visit<Q: ExternalQueries>(
-        &mut self,
-        _state: &mut CheckState,
-        _context: &CheckContext<Q>,
-        _id: TypeId,
-        t: &Type,
-    ) -> QueryResult<WalkAction> {
-        if let Type::Unification(id) = t {
-            self.blocking.push(*id);
-        }
-        Ok(WalkAction::Continue)
-    }
-}
-
-pub fn collect_blocking<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    ids: &[TypeId],
-) -> QueryResult<Vec<u32>>
-where
-    Q: ExternalQueries,
-{
-    let mut walker = CollectBlocking { blocking: vec![] };
-
-    for &id in ids {
-        walk_type(state, context, id, &mut walker)?;
-    }
-
-    Ok(walker.blocking)
-}
-
-pub fn stuck_on<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    ids: &[TypeId],
-) -> QueryResult<MatchInstance>
-where
-    Q: ExternalQueries,
-{
-    let stuck = collect_blocking(state, context, ids)?;
-    Ok(MatchInstance::Stuck(stuck))
 }
 
 fn match_equality<Q>(

@@ -210,7 +210,7 @@ where
     }
 
     let Some(roles) = toolkit::lookup_file_roles(state, context, left_file, left_id)? else {
-        return Ok(Some(MatchInstance::Stuck(vec![])));
+        return Ok(Some(MatchInstance::Apart));
     };
 
     debug_assert_eq!(roles.len(), left_arguments.len(), "critical failure: mismatched lengths");
