@@ -89,11 +89,11 @@ where
 
     for superclass in class.superclasses {
         let superclass = SubstituteName::many(state, context, &substitutions, superclass)?;
-        if let Some(superclass) = canonical::canonicalise(state, context, superclass)? {
-            if seen.insert(superclass) {
-                constraints.push(superclass);
-                pending.push_back(superclass);
-            }
+        if let Some(superclass) = canonical::canonicalise(state, context, superclass)?
+            && seen.insert(superclass)
+        {
+            constraints.push(superclass);
+            pending.push_back(superclass);
         }
     }
 
