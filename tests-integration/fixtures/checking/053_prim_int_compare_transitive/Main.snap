@@ -35,25 +35,3 @@ transSymmEq ::
     Proxy @Int (n :: Int) -> Proxy @(Row Int) ( left :: (m :: Int), right :: (p :: Int) )
 
 Types
-
-Diagnostics
-error[NoInstanceFound]: No instance found for: Compare (t15 :: Int) (t17 :: Int) LT
-  --> 16:1..16:104
-   |
-16 | transLt :: forall m n p. Compare m n LT => Compare n p LT => Proxy n -> Proxy ( left :: m, right :: p )
-   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-error[NoInstanceFound]: No instance found for: Compare (t21 :: Int) (t23 :: Int) LT
-  --> 19:1..19:106
-   |
-19 | transLtEq :: forall m n p. Compare m n LT => Compare n p EQ => Proxy n -> Proxy ( left :: m, right :: p )
-   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-error[NoInstanceFound]: No instance found for: Compare (t27 :: Int) (t29 :: Int) GT
-  --> 22:1..22:106
-   |
-22 | transEqGt :: forall m n p. Compare m n EQ => Compare n p GT => Proxy n -> Proxy ( left :: m, right :: p )
-   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-error[NoInstanceFound]: No instance found for: Compare (t33 :: Int) (t35 :: Int) EQ
-  --> 25:1..25:108
-   |
-25 | transSymmEq :: forall m n p. Compare n m EQ => Compare n p EQ => Proxy n -> Proxy ( left :: m, right :: p )
-   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

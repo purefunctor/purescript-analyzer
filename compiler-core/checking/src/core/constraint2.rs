@@ -141,7 +141,7 @@ where
                     MatchInstance::Apart => (),
                 }
 
-                match compiler::match_compiler_instance(state, context, wanted)? {
+                match compiler::match_compiler_instance(state, context, wanted, &given)? {
                     Some(MatchInstance::Match(InstanceMatch { goals })) => {
                         work.extend(goals);
                         continue 'work;

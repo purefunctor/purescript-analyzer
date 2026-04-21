@@ -1,9 +1,12 @@
 use std::cmp::Ordering;
 
 use building_types::QueryResult;
+use petgraph::algo::has_path_connecting;
+use petgraph::prelude::DiGraphMap;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
+use crate::core::constraint2::CanonicalConstraintId;
 use crate::core::constraint2::matching::{self, MatchInstance};
 use crate::core::{TypeId, normalise};
 use crate::state::CheckState;
@@ -72,6 +75,7 @@ pub fn match_compare<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     arguments: &[TypeId],
+    given: &[CanonicalConstraintId],
 ) -> QueryResult<Option<MatchInstance>>
 where
     Q: ExternalQueries,
@@ -97,7 +101,63 @@ where
         return Ok(Some(match_equality(state, context, ordering, result)?));
     }
 
+    if let Some(result) = match_compare_transitive(state, context, left, right, ordering, given)? {
+        return Ok(Some(result));
+    }
+
     Ok(Some(matching::blocking_constraint(state, context, &[left, right])?))
+}
+
+fn match_compare_transitive<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    left: TypeId,
+    right: TypeId,
+    ordering: TypeId,
+    given: &[CanonicalConstraintId],
+) -> QueryResult<Option<MatchInstance>>
+where
+    Q: ExternalQueries,
+{
+    let mut graph: DiGraphMap<TypeId, ()> = DiGraphMap::new();
+
+    for &constraint in given {
+        let constraint = &state.canonicals[constraint];
+        if constraint.file_id != context.prim_int.file_id
+            || constraint.type_id != context.prim_int.compare
+        {
+            continue;
+        }
+
+        let Some([a, b, relation]) = constraint.expect_type_arguments::<3>() else {
+            continue;
+        };
+
+        let a = normalise::expand(state, context, a)?;
+        let b = normalise::expand(state, context, b)?;
+        let relation = normalise::expand(state, context, relation)?;
+
+        if relation == context.prim_ordering.lt {
+            graph.add_edge(a, b, ());
+        } else if relation == context.prim_ordering.eq {
+            graph.add_edge(a, b, ());
+            graph.add_edge(b, a, ());
+        } else if relation == context.prim_ordering.gt {
+            graph.add_edge(b, a, ());
+        }
+    }
+
+    let left_reaches_right = has_path_connecting(&graph, left, right, None);
+    let right_reaches_left = has_path_connecting(&graph, right, left, None);
+
+    let result = match (left_reaches_right, right_reaches_left) {
+        (true, true) => context.prim_ordering.eq,
+        (true, false) => context.prim_ordering.lt,
+        (false, true) => context.prim_ordering.gt,
+        (false, false) => return Ok(None),
+    };
+
+    Ok(Some(match_equality(state, context, ordering, result)?))
 }
 
 pub fn match_to_string<Q>(

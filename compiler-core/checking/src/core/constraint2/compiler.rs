@@ -142,6 +142,7 @@ pub fn match_compiler_instance<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     wanted: CanonicalConstraintId,
+    given: &[CanonicalConstraintId],
 ) -> QueryResult<Option<MatchInstance>>
 where
     Q: ExternalQueries,
@@ -165,7 +166,7 @@ where
             let Some(arguments) = canonical.expect_type_arguments::<3>() else {
                 return Ok(None);
             };
-            prim_int::match_compare(state, context, &arguments)?
+            prim_int::match_compare(state, context, &arguments, given)?
         } else if item_id == context.prim_int.to_string {
             let Some(arguments) = canonical.expect_type_arguments::<2>() else {
                 return Ok(None);
