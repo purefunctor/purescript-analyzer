@@ -10,10 +10,11 @@ use interner::{Id, Interner};
 use itertools::Itertools;
 use rustc_hash::FxHashMap;
 
-use crate::ExternalQueries;
 use crate::context::CheckContext;
+use crate::core::substitute::{NameToType, SubstituteName};
 use crate::core::{KindOrType, Type, TypeId, normalise, toolkit, zonk};
 use crate::state::CheckState;
+use crate::{ExternalQueries, safe_loop};
 
 /// The canonical structure of a constraint.
 #[derive(Clone, PartialEq, Eq, Hash)]
@@ -130,4 +131,61 @@ where
 
     let arguments = arguments.collect::<QueryResult<Arc<[_]>>>()?;
     Ok(state.canonicals.intern(CanonicalConstraint { arguments, ..canonical }))
+}
+
+pub fn substitute_canonical<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    substitution: &NameToType,
+    id: CanonicalConstraintId,
+) -> QueryResult<CanonicalConstraintId>
+where
+    Q: ExternalQueries,
+{
+    if substitution.is_empty() {
+        return Ok(id);
+    }
+
+    let canonical = state.canonicals[id].clone();
+    let arguments = canonical.arguments.iter().copied().map(|argument| match argument {
+        KindOrType::Kind(argument) => {
+            substitute_type(state, context, substitution, argument).map(KindOrType::Kind)
+        }
+        KindOrType::Type(argument) => {
+            substitute_type(state, context, substitution, argument).map(KindOrType::Type)
+        }
+    });
+
+    let arguments = arguments.collect::<QueryResult<Arc<[_]>>>()?;
+    Ok(state.canonicals.intern(CanonicalConstraint { arguments, ..canonical }))
+}
+
+pub fn substitute_canonicals<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    substitution: &NameToType,
+    ids: &[CanonicalConstraintId],
+) -> QueryResult<Vec<CanonicalConstraintId>>
+where
+    Q: ExternalQueries,
+{
+    ids.iter().copied().map(|id| substitute_canonical(state, context, substitution, id)).collect()
+}
+
+fn substitute_type<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    substitution: &NameToType,
+    mut id: TypeId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    safe_loop! {
+        let substituted = SubstituteName::many(state, context, substitution, id)?;
+        if substituted == id {
+            return Ok(id);
+        }
+        id = substituted;
+    }
 }

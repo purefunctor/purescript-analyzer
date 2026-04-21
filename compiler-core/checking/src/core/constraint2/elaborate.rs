@@ -1,31 +1,41 @@
 //! Implements elabortion for given constraints.
 
+pub mod improvements;
+
 use std::collections::VecDeque;
 
 use building_types::QueryResult;
 use itertools::Itertools;
 use rustc_hash::FxHashSet;
 
-use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::constraint2::canonical::CanonicalConstraint;
-use crate::core::constraint2::{CanonicalConstraintId, canonical};
+use crate::core::constraint2::matching::MatchInstance;
+use crate::core::constraint2::{CanonicalConstraintId, WorkItem, canonical, compiler};
 use crate::core::substitute::{NameToType, SubstituteName};
-use crate::core::{CheckedClass, KindOrType, toolkit};
+use crate::core::walk::{TypeWalker, WalkAction, walk_type};
+use crate::core::{CheckedClass, KindOrType, Name, Type, TypeId, normalise, toolkit};
 use crate::state::CheckState;
+use crate::{ExternalQueries, safe_loop};
+
+pub struct ElaboratedGiven {
+    pub given: Vec<CanonicalConstraintId>,
+    pub substitution: NameToType,
+}
 
 /// Entrypoint for elaborating given [`CanonicalConstraint`].
 pub fn elaborate_given<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     given: &[CanonicalConstraintId],
-) -> QueryResult<Vec<CanonicalConstraintId>>
+) -> QueryResult<ElaboratedGiven>
 where
     Q: ExternalQueries,
 {
     let given = elaborate_superclasses(state, context, given)?;
     let given = elaborate_coercible(state, context, given);
-    Ok(given)
+    let (given, substitution) = extract_compiler_solved(state, context, given)?;
+    Ok(ElaboratedGiven { given, substitution })
 }
 
 /// Elaborates superclasses from a given [`CanonicalConstraint`].
@@ -164,4 +174,190 @@ where
     given.extend(symmetric);
 
     given
+}
+
+fn extract_compiler_solved<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    given: Vec<CanonicalConstraintId>,
+) -> QueryResult<(Vec<CanonicalConstraintId>, NameToType)>
+where
+    Q: ExternalQueries,
+{
+    let mut substitution = NameToType::default();
+    let mut conflicts = FxHashSet::default();
+
+    safe_loop! {
+        let given = canonical::substitute_canonicals(state, context, &substitution, &given)?;
+        let mut changed = false;
+
+        for &constraint in &given {
+            let Some(matched) = compiler::match_compiler_instance(state, context, constraint, &given)?
+            else {
+                continue;
+            };
+
+            let MatchInstance::Match(instance) = matched else {
+                continue;
+            };
+
+            for goal in instance.goals {
+                let WorkItem::Unify(left, right) = goal else {
+                    continue;
+                };
+
+                let improvements = extract_improvements(state, context, &substitution, left, right)?;
+                for (name, replacement) in improvements {
+                    if register_improvement(
+                        state,
+                        context,
+                        &mut substitution,
+                        &mut conflicts,
+                        name,
+                        replacement,
+                    )? {
+                        changed = true;
+                    }
+                }
+            }
+        }
+
+        if !changed {
+            return Ok((given, substitution));
+        }
+    }
+}
+
+fn extract_improvements<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    substitution: &NameToType,
+    left: TypeId,
+    right: TypeId,
+) -> QueryResult<Vec<(Name, TypeId)>>
+where
+    Q: ExternalQueries,
+{
+    let left = substitute_type(state, context, substitution, left)?;
+    let right = substitute_type(state, context, substitution, right)?;
+
+    let mut improvements = vec![];
+    let mut seen = FxHashSet::default();
+    improvements::collect_structural_improvements(
+        state,
+        context,
+        left,
+        right,
+        &mut seen,
+        &mut improvements,
+    )?;
+
+    Ok(improvements)
+}
+
+fn register_improvement<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    substitution: &mut NameToType,
+    conflicts: &mut FxHashSet<Name>,
+    name: Name,
+    replacement: TypeId,
+) -> QueryResult<bool>
+where
+    Q: ExternalQueries,
+{
+    if conflicts.contains(&name) {
+        return Ok(false);
+    }
+
+    let replacement = substitute_type(state, context, substitution, replacement)?;
+    let replacement = normalise::expand(state, context, replacement)?;
+
+    match context.lookup_type(replacement) {
+        Type::Unification(_) | Type::Unknown(_) => return Ok(false),
+        Type::Rigid(replacement, _, _) if replacement == name => return Ok(false),
+        _ => {}
+    }
+
+    if contains_rigid(state, context, replacement, name)? {
+        return Ok(false);
+    }
+
+    if let Some(current) = substitution.get(&name).copied() {
+        let current = substitute_type(state, context, substitution, current)?;
+        let current = normalise::expand(state, context, current)?;
+        if current == replacement {
+            return Ok(false);
+        }
+
+        substitution.remove(&name);
+        conflicts.insert(name);
+        return Ok(true);
+    }
+
+    substitution.insert(name, replacement);
+    Ok(true)
+}
+
+fn substitute_type<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    substitution: &NameToType,
+    mut type_id: TypeId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    if substitution.is_empty() {
+        return Ok(type_id);
+    }
+
+    safe_loop! {
+        let substituted = SubstituteName::many(state, context, substitution, type_id)?;
+        if substituted == type_id {
+            return Ok(type_id);
+        }
+        type_id = substituted;
+    }
+}
+
+fn contains_rigid<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    type_id: TypeId,
+    target: Name,
+) -> QueryResult<bool>
+where
+    Q: ExternalQueries,
+{
+    struct ContainsRigid {
+        target: Name,
+        contains: bool,
+    }
+
+    impl TypeWalker for ContainsRigid {
+        fn visit<Q>(
+            &mut self,
+            _state: &mut CheckState,
+            _context: &CheckContext<Q>,
+            _id: TypeId,
+            t: &Type,
+        ) -> QueryResult<WalkAction>
+        where
+            Q: ExternalQueries,
+        {
+            if let Type::Rigid(name, _, _) = *t
+                && name == self.target
+            {
+                self.contains = true;
+                Ok(WalkAction::Stop)
+            } else {
+                Ok(WalkAction::Continue)
+            }
+        }
+    }
+
+    let mut walker = ContainsRigid { target, contains: false };
+    walk_type(state, context, type_id, &mut walker)?;
+    Ok(walker.contains)
 }

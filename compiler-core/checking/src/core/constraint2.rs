@@ -112,14 +112,20 @@ pub fn solve_constraints<Q>(
 where
     Q: ExternalQueries,
 {
-    let mut work = wanted.into_iter().map(WorkItem::Constraint).collect::<VecDeque<_>>();
-
     let given = given
         .iter()
         .filter_map(|id| canonical::canonicalise(state, context, *id).transpose())
         .collect::<QueryResult<Vec<_>>>()?;
 
-    let given = elaborate::elaborate_given(state, context, &given)?;
+    let elaborate::ElaboratedGiven { given, substitution } =
+        elaborate::elaborate_given(state, context, &given)?;
+
+    let wanted = wanted
+        .into_iter()
+        .map(|wanted| canonical::substitute_canonical(state, context, &substitution, wanted))
+        .collect::<QueryResult<VecDeque<_>>>()?;
+
+    let mut work = wanted.into_iter().map(WorkItem::Constraint).collect::<VecDeque<_>>();
 
     let mut stuck = Stuck::default();
     let mut residuals = vec![];

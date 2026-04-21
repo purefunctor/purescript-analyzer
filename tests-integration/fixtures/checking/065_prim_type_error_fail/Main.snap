@@ -23,6 +23,11 @@ Proxy = [Phantom]
 
 Diagnostics
 error[CustomFailure]: This operation is not allowed
+  --> 8:1..8:77
+  |
+8 | failBasic :: forall a. Fail (Text "This operation is not allowed") => a -> a
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[CustomFailure]: This operation is not allowed
   --> 11:1..11:20
    |
 11 | useFailBasic :: Int
