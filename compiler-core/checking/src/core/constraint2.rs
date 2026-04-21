@@ -13,7 +13,6 @@ pub mod elaborate;
 pub mod instances;
 pub mod matching;
 
-pub use crate::core::constraint::fd;
 pub use canonical::{CanonicalConstraint, CanonicalConstraintId, Canonicals};
 
 use matching::{InstanceMatch, MatchInstance, match_given_instance, match_instance_chain};

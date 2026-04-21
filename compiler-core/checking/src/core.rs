@@ -3,6 +3,7 @@
 pub mod constraint;
 pub mod constraint2;
 pub mod exhaustive;
+pub mod fd;
 pub mod fold;
 pub mod generalise;
 pub mod normalise;

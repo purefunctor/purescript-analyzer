@@ -11,7 +11,7 @@ use crate::context::CheckContext;
 use crate::core::substitute::SubstituteName;
 use crate::core::{
     CheckedClass, CheckedInstance, CheckedSynonym, ForallBinder, KindOrType, Role, Type, TypeId,
-    constraint, normalise, unification,
+    constraint2, normalise, unification,
 };
 use crate::error::ErrorKind;
 use crate::state::CheckState;
@@ -403,11 +403,14 @@ where
         }
     }
 
-    let Some(constraint::ConstraintApplication { file_id, item_id, arguments }) =
-        constraint::constraint_application(state, context, current)?
-    else {
+    let Some(current) = constraint2::canonical::canonicalise(state, context, current)? else {
         return Ok(None);
     };
+
+    let current = state.canonicals[current].clone();
+    let file_id = current.file_id;
+    let item_id = current.type_id;
+    let arguments = current.arguments.to_vec();
 
     if (file_id, item_id) != instance.resolution {
         return Ok(None);

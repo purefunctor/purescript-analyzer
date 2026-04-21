@@ -7,6 +7,7 @@ use itertools::Itertools;
 use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::context::CheckContext;
+use crate::core::fd::{Fd, compute_closure, get_all_determined};
 use crate::core::substitute::SubstituteName;
 use crate::core::unification::{CanUnify, can_unify};
 use crate::core::walk::{TypeWalker, WalkAction, walk_type};
@@ -17,7 +18,6 @@ use crate::error::ErrorKind;
 use crate::state::CheckState;
 use crate::{CheckedModule, ExternalQueries};
 
-use super::fd::{Fd, compute_closure, get_all_determined};
 use super::{ConstraintApplication, MatchInstance, MatchType};
 
 #[derive(Clone)]

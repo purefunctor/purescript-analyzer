@@ -1,6 +1,5 @@
 pub mod compiler;
 pub mod elaborate;
-pub mod fd;
 pub mod given;
 pub mod instances;
 

@@ -3,12 +3,15 @@
 use building_types::QueryResult;
 use files::FileId;
 use indexing::{IndexedModule, InstanceChainId, TypeItemId};
+use lowering::TypeItemIr;
 use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::context::CheckContext;
 use crate::core::constraint2::CanonicalConstraintId;
+use crate::core::fd::{Fd, get_all_determined};
 use crate::core::walk::{TypeWalker, WalkAction, walk_type};
 use crate::core::{CheckedInstance, KindOrType, Type, TypeId, normalise};
+use crate::error::ErrorKind;
 use crate::state::CheckState;
 use crate::{CheckedModule, ExternalQueries};
 
@@ -115,6 +118,73 @@ fn collect_instances_from_checked(
     );
 }
 
+pub fn validate_rows<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    class_file: FileId,
+    class_item: TypeItemId,
+    arguments: &[TypeId],
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    let functional_dependencies = get_functional_dependencies(context, class_file, class_item)?;
+    let all_determined = get_all_determined(&functional_dependencies);
+
+    for (position, &argument_type) in arguments.iter().enumerate() {
+        if all_determined.contains(&position) {
+            continue;
+        }
+
+        if HasLabeledRole::contains(state, context, argument_type)? {
+            let type_message = state.pretty_id(context, argument_type)?;
+            state.insert_error(ErrorKind::InstanceHeadLabeledRow {
+                class_file,
+                class_item,
+                position,
+                type_message,
+            });
+        }
+    }
+
+    Ok(())
+}
+
+fn get_functional_dependencies<Q>(
+    context: &CheckContext<Q>,
+    class_file: FileId,
+    class_id: TypeItemId,
+) -> QueryResult<Vec<Fd>>
+where
+    Q: ExternalQueries,
+{
+    fn extract(type_item: Option<&TypeItemIr>) -> Vec<Fd> {
+        let Some(TypeItemIr::ClassGroup { class: Some(class), .. }) = type_item else {
+            return vec![];
+        };
+
+        class
+            .functional_dependencies
+            .iter()
+            .map(|dependency| {
+                Fd::new(
+                    dependency.determiners.iter().map(|position| *position as usize),
+                    dependency.determined.iter().map(|position| *position as usize),
+                )
+            })
+            .collect()
+    }
+
+    let dependencies = if class_file == context.id {
+        extract(context.lowered.info.get_type_item(class_id))
+    } else {
+        let lowered = context.queries.lowered(class_file)?;
+        extract(lowered.info.get_type_item(class_id))
+    };
+
+    Ok(dependencies)
+}
+
 struct CollectFileReferences<'a> {
     files: &'a mut FxHashSet<FileId>,
 }
@@ -148,6 +218,48 @@ impl TypeWalker for CollectFileReferences<'_> {
         if let Type::Constructor(file_id, _) = t {
             self.files.insert(*file_id);
         }
+        Ok(WalkAction::Continue)
+    }
+}
+
+struct HasLabeledRole {
+    contains: bool,
+}
+
+impl HasLabeledRole {
+    fn contains<Q>(
+        state: &mut CheckState,
+        context: &CheckContext<Q>,
+        id: TypeId,
+    ) -> QueryResult<bool>
+    where
+        Q: ExternalQueries,
+    {
+        let mut walker = HasLabeledRole { contains: false };
+        walk_type(state, context, id, &mut walker)?;
+        Ok(walker.contains)
+    }
+}
+
+impl TypeWalker for HasLabeledRole {
+    fn visit<Q>(
+        &mut self,
+        _state: &mut CheckState,
+        context: &CheckContext<Q>,
+        _id: TypeId,
+        t: &Type,
+    ) -> QueryResult<WalkAction>
+    where
+        Q: ExternalQueries,
+    {
+        if let Type::Row(row_id) = t {
+            let row = context.lookup_row_type(*row_id);
+            if !row.fields.is_empty() {
+                self.contains = true;
+                return Ok(WalkAction::Stop);
+            }
+        }
+
         Ok(WalkAction::Continue)
     }
 }

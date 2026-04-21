@@ -9,7 +9,7 @@ use crate::context::CheckContext;
 use crate::core::constraint2::CanonicalConstraintId;
 use crate::core::substitute::{NameToType, SubstituteName};
 use crate::core::{
-    CheckedInstance, ForallBinder, KindOrType, Type, TypeId, constraint, generalise, normalise,
+    CheckedInstance, ForallBinder, KindOrType, Type, TypeId, constraint2, generalise, normalise,
     signature, toolkit, unification, zonk,
 };
 use crate::error::{ErrorCrumb, ErrorKind};
@@ -140,7 +140,13 @@ where
         canonical = context.intern_constrained(constraint, canonical);
     }
 
-    constraint::instances::validate_rows(state, context, class_file, class_id, &checked_arguments)?;
+    constraint2::instances::validate_rows(
+        state,
+        context,
+        class_file,
+        class_id,
+        &checked_arguments,
+    )?;
 
     let resolution = (class_file, class_id);
     let canonical = zonk::zonk(state, context, canonical)?;
@@ -442,11 +448,13 @@ where
         return Ok(None);
     };
 
-    let Some(application) = constraint::constraint_application(state, context, constraint)? else {
+    let Some(constraint) = constraint2::canonical::canonicalise(state, context, constraint)? else {
         return Ok(None);
     };
 
-    if (application.file_id, application.item_id) != (class_file, class_id) {
+    let constraint = state.canonicals[constraint].clone();
+
+    if (constraint.file_id, constraint.type_id) != (class_file, class_id) {
         return Ok(None);
     }
 
