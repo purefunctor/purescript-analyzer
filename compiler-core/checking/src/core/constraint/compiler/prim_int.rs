@@ -6,8 +6,8 @@ use petgraph::prelude::DiGraphMap;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::constraint2::CanonicalConstraintId;
-use crate::core::constraint2::matching::{self, MatchInstance};
+use crate::core::constraint::CanonicalConstraintId;
+use crate::core::constraint::matching::{self, MatchInstance};
 use crate::core::{TypeId, normalise};
 use crate::state::CheckState;
 

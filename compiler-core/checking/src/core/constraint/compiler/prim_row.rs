@@ -7,8 +7,8 @@ use rustc_hash::FxHashSet;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::constraint2::matching::{self, InstanceMatch, MatchInstance};
-use crate::core::constraint2::{WorkItem, canonical};
+use crate::core::constraint::matching::{self, InstanceMatch, MatchInstance};
+use crate::core::constraint::{WorkItem, canonical};
 use crate::core::unification::{CanUnify, can_unify};
 use crate::core::{RowField, RowType, Type, TypeId, normalise};
 use crate::source::types;

@@ -9,9 +9,9 @@ use itertools::Itertools;
 use rustc_hash::FxHashSet;
 
 use crate::context::CheckContext;
-use crate::core::constraint2::canonical::CanonicalConstraint;
-use crate::core::constraint2::matching::MatchInstance;
-use crate::core::constraint2::{CanonicalConstraintId, WorkItem, canonical, compiler};
+use crate::core::constraint::canonical::CanonicalConstraint;
+use crate::core::constraint::matching::MatchInstance;
+use crate::core::constraint::{CanonicalConstraintId, WorkItem, canonical, compiler};
 use crate::core::substitute::{NameToType, SubstituteName};
 use crate::core::walk::{TypeWalker, WalkAction, walk_type};
 use crate::core::{CheckedClass, KindOrType, Name, Type, TypeId, normalise, toolkit};

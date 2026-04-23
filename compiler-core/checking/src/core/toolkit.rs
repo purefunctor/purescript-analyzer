@@ -11,7 +11,7 @@ use crate::context::CheckContext;
 use crate::core::substitute::SubstituteName;
 use crate::core::{
     CheckedClass, CheckedInstance, CheckedSynonym, ForallBinder, KindOrType, Role, Type, TypeId,
-    constraint2, normalise, unification,
+    constraint, normalise, unification,
 };
 use crate::error::ErrorKind;
 use crate::state::CheckState;
@@ -403,7 +403,7 @@ where
         }
     }
 
-    let Some(current) = constraint2::canonical::canonicalise(state, context, current)? else {
+    let Some(current) = constraint::canonical::canonicalise(state, context, current)? else {
         return Ok(None);
     };
 

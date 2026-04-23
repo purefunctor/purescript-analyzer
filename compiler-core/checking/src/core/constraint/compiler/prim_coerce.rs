@@ -6,8 +6,8 @@ use indexing::TypeItemId;
 use itertools::izip;
 
 use crate::context::CheckContext;
-use crate::core::constraint2::matching::{InstanceMatch, MatchInstance};
-use crate::core::constraint2::{WorkItem, canonical};
+use crate::core::constraint::matching::{InstanceMatch, MatchInstance};
+use crate::core::constraint::{WorkItem, canonical};
 use crate::core::substitute::SubstituteName;
 use crate::core::unification::{CanUnify, can_unify, unify};
 use crate::core::{Role, Type, TypeId, normalise, toolkit};

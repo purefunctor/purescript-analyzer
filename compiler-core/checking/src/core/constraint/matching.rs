@@ -11,8 +11,8 @@ use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::constraint2::instances::InstanceCandidate;
-use crate::core::constraint2::{CanonicalConstraintId, WorkItem, canonical};
+use crate::core::constraint::instances::InstanceCandidate;
+use crate::core::constraint::{CanonicalConstraintId, WorkItem, canonical};
 use crate::core::fd::{Fd, compute_closure};
 use crate::core::substitute::SubstituteName;
 use crate::core::unification::{CanUnify, can_unify};

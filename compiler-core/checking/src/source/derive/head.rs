@@ -6,7 +6,7 @@ use lowering::TermItemIr;
 use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::{
-    CheckedInstance, Type, constraint2, generalise, signature, toolkit, unification, zonk,
+    CheckedInstance, Type, constraint, generalise, signature, toolkit, unification, zonk,
 };
 use crate::error::{ErrorCrumb, ErrorKind};
 use crate::source::types;
@@ -174,13 +174,7 @@ where
         canonical = context.intern_constrained(constraint, canonical);
     }
 
-    constraint2::instances::validate_rows(
-        state,
-        context,
-        class_file,
-        class_id,
-        &checked_arguments,
-    )?;
+    constraint::instances::validate_rows(state, context, class_file, class_id, &checked_arguments)?;
 
     let strategy = if newtype {
         newtype::check_derive_newtype(state, context, class_file, class_id, &checked_arguments)?

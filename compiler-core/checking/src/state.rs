@@ -7,12 +7,12 @@ use building_types::QueryResult;
 use files::FileId;
 
 use crate::context::CheckContext;
-use crate::core::constraint2::Canonicals;
+use crate::core::constraint::Canonicals;
 use crate::core::exhaustive::{
     ExhaustivenessReport, Pattern, PatternConstructor, PatternId, PatternInterner, PatternKind,
 };
 use crate::core::substitute::{NameToType, SubstituteName};
-use crate::core::{Depth, Name, SmolStrId, Type, TypeId, constraint2, pretty, zonk};
+use crate::core::{Depth, Name, SmolStrId, Type, TypeId, constraint, pretty, zonk};
 use crate::error::{CheckError, ErrorCrumb, ErrorKind};
 use crate::implication::{Implications, Patterns};
 use crate::{CheckedModule, ExternalQueries};
@@ -304,11 +304,11 @@ impl CheckState {
     pub fn solve_constraints<Q>(
         &mut self,
         context: &CheckContext<Q>,
-    ) -> QueryResult<Vec<constraint2::CanonicalConstraintId>>
+    ) -> QueryResult<Vec<constraint::CanonicalConstraintId>>
     where
         Q: ExternalQueries,
     {
-        constraint2::solve_implication(self, context)
+        constraint::solve_implication(self, context)
     }
 
     pub fn pretty_id<Q>(&mut self, context: &CheckContext<Q>, id: TypeId) -> QueryResult<SmolStrId>
@@ -323,7 +323,7 @@ impl CheckState {
     pub fn pretty_constraint_id<Q>(
         &mut self,
         context: &CheckContext<Q>,
-        id: constraint2::CanonicalConstraintId,
+        id: constraint::CanonicalConstraintId,
     ) -> QueryResult<SmolStrId>
     where
         Q: ExternalQueries,

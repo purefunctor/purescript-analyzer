@@ -7,7 +7,7 @@ use lowering::TypeItemIr;
 use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::context::CheckContext;
-use crate::core::constraint2::CanonicalConstraintId;
+use crate::core::constraint::CanonicalConstraintId;
 use crate::core::fd::{Fd, get_all_determined};
 use crate::core::walk::{TypeWalker, WalkAction, walk_type};
 use crate::core::{CheckedInstance, KindOrType, Type, TypeId, normalise};

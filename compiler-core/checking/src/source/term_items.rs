@@ -6,10 +6,10 @@ use rustc_hash::FxHashMap;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::constraint2::CanonicalConstraintId;
+use crate::core::constraint::CanonicalConstraintId;
 use crate::core::substitute::{NameToType, SubstituteName};
 use crate::core::{
-    CheckedInstance, ForallBinder, KindOrType, Type, TypeId, constraint2, generalise, normalise,
+    CheckedInstance, ForallBinder, KindOrType, Type, TypeId, constraint, generalise, normalise,
     signature, toolkit, unification, zonk,
 };
 use crate::error::{ErrorCrumb, ErrorKind};
@@ -140,13 +140,7 @@ where
         canonical = context.intern_constrained(constraint, canonical);
     }
 
-    constraint2::instances::validate_rows(
-        state,
-        context,
-        class_file,
-        class_id,
-        &checked_arguments,
-    )?;
+    constraint::instances::validate_rows(state, context, class_file, class_id, &checked_arguments)?;
 
     let resolution = (class_file, class_id);
     let canonical = zonk::zonk(state, context, canonical)?;
@@ -448,7 +442,7 @@ where
         return Ok(None);
     };
 
-    let Some(constraint) = constraint2::canonical::canonicalise(state, context, constraint)? else {
+    let Some(constraint) = constraint::canonical::canonicalise(state, context, constraint)? else {
         return Ok(None);
     };
 

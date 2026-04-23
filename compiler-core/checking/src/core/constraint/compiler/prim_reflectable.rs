@@ -2,8 +2,8 @@ use building_types::QueryResult;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::constraint2::WorkItem;
-use crate::core::constraint2::matching::{InstanceMatch, MatchInstance};
+use crate::core::constraint::WorkItem;
+use crate::core::constraint::matching::{InstanceMatch, MatchInstance};
 use crate::core::unification::{CanUnify, can_unify};
 use crate::core::{Type, TypeId, normalise};
 use crate::state::CheckState;

@@ -4,7 +4,7 @@ use building_types::QueryResult;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::constraint2::matching::{self, MatchInstance};
+use crate::core::constraint::matching::{self, MatchInstance};
 use crate::core::{RowField, RowType, Type, TypeId, normalise};
 use crate::source::types;
 use crate::state::CheckState;

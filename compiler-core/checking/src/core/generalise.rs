@@ -25,7 +25,7 @@ use petgraph::prelude::DiGraphMap;
 use rustc_hash::FxHashSet;
 
 use crate::context::CheckContext;
-use crate::core::constraint2::{CanonicalConstraintId, canonical, elaborate};
+use crate::core::constraint::{CanonicalConstraintId, canonical, elaborate};
 use crate::core::walk::{TypeWalker, WalkAction, walk_type};
 use crate::core::{ForallBinder, Name, Type, TypeId, normalise, zonk};
 use crate::state::{CheckState, UnificationEntry, UnificationState};

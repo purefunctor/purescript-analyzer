@@ -4,7 +4,7 @@ use smol_str::{SmolStr, format_smolstr};
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::constraint2::matching::{self, InstanceMatch, MatchInstance};
+use crate::core::constraint::matching::{self, InstanceMatch, MatchInstance};
 use crate::core::pretty::Pretty;
 use crate::core::{Type, TypeId, normalise, toolkit, zonk};
 use crate::error::ErrorKind;
