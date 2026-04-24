@@ -1,0 +1,64 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Proxy :: forall (k :: Type) (@a :: (k :: Type)). Proxy @(k :: Type) (a :: (k :: Type))
+closedLeftOpenRight ::
+  forall (r :: Row Type) (u :: Row Type).
+    Union @Type ( a :: Int ) ( b :: String | (r :: Row Type) ) (u :: Row Type) =>
+    Proxy @(Row Type) (u :: Row Type)
+closedLeftKnownFields ::
+  forall (u :: Row Type).
+    Union @Type ( a :: Int ) ( b :: String ) (u :: Row Type) => Proxy @(Row Type) (u :: Row Type)
+closedLeftEmpty ::
+  forall (r :: Row Type) (u :: Row Type).
+    Union @Type () ( b :: String | (r :: Row Type) ) (u :: Row Type) =>
+    Proxy @(Row Type) (u :: Row Type)
+closedRightOutputOpenLeft ::
+  forall (l :: Row Type).
+    Union @Type (l :: Row Type) ( b :: String ) ( a :: Int, b :: String ) =>
+    Proxy @(Row Type) (l :: Row Type)
+closedRightOutputKnownLeft ::
+  forall (l :: Row Type).
+    Union @Type
+      ( a :: Int | (l :: Row Type) )
+      ( b :: String )
+      ( a :: Int, b :: String, c :: Boolean ) =>
+    Proxy @(Row Type) (l :: Row Type)
+closedRightOutputDuplicate ::
+  forall (l :: Row Type).
+    Union @Type (l :: Row Type) ( x :: String ) ( x :: Int, x :: String ) =>
+    Proxy @(Row Type) (l :: Row Type)
+openLeftPrefixOne ::
+  forall (rest :: Row Type) (r :: Row Type) (u :: Row Type).
+    Union @Type
+      ( a :: Int | (rest :: Row Type) )
+      ( b :: String | (r :: Row Type) )
+      (u :: Row Type) =>
+    Proxy @(Row Type) (u :: Row Type)
+openLeftPrefixMany ::
+  forall (rest :: Row Type) (u :: Row Type).
+    Union @Type ( a :: Int, b :: String | (rest :: Row Type) ) ( c :: Boolean ) (u :: Row Type) =>
+    Proxy @(Row Type) (u :: Row Type)
+forceSolve ::
+  forall (t34 :: Row Type) (t33 :: Row Type) (t32 :: Row Type) (t31 :: Row Type) (t30 :: Row Type)
+    (t29 :: Row Type) (t28 :: Row Type).
+    Union @Type (t34 :: Row Type) ( c :: Boolean ) (t33 :: Row Type) =>
+    Union @Type (t32 :: Row Type) ( b :: String | (t31 :: Row Type) ) (t30 :: Row Type) =>
+    { closedLeftEmpty :: Proxy @(Row Type) ( b :: String | (t29 :: Row Type) )
+    , closedLeftKnownFields :: Proxy @(Row Type) ( a :: Int, b :: String )
+    , closedLeftOpenRight :: Proxy @(Row Type) ( a :: Int, b :: String | (t28 :: Row Type) )
+    , closedRightOutputDuplicate :: Proxy @(Row Type) ( x :: Int )
+    , closedRightOutputKnownLeft :: Proxy @(Row Type) ( c :: Boolean )
+    , closedRightOutputOpenLeft :: Proxy @(Row Type) ( a :: Int )
+    , openLeftPrefixMany :: Proxy @(Row Type) ( a :: Int, b :: String | (t33 :: Row Type) )
+    , openLeftPrefixOne :: Proxy @(Row Type) ( a :: Int | (t30 :: Row Type) )
+    }
+
+Types
+Proxy :: forall (k :: Type). (k :: Type) -> Type
+
+Roles
+Proxy = [Phantom]

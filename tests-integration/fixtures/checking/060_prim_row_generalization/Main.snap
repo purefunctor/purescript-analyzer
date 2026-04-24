@@ -29,8 +29,12 @@ chainedUnion ::
     {| (r1 :: Row Type) } -> {| (r5 :: Row Type) }
 testChained ::
   forall (t33 :: Row Type) (t32 :: Row Type) (t31 :: Row Type).
-    Union @Type ( x :: Int | (t33 :: Row Type) ) (t32 :: Row Type) (t31 :: Row Type) =>
-    {| (t31 :: Row Type) }
+    Union @Type (t33 :: Row Type) (t32 :: Row Type) (t31 :: Row Type) =>
+    Union @Type
+      ( x :: Int | (t33 :: Row Type) )
+      (t32 :: Row Type)
+      ( x :: Int | (t31 :: Row Type) ) =>
+    { x :: Int | (t31 :: Row Type) }
 multiMerge ::
   forall (r1 :: Row Type) (r2 :: Row Type) (r3 :: Row Type) (r4 :: Row Type) (r5 :: Row Type)
     (r6 :: Row Type).
