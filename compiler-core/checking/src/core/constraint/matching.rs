@@ -21,6 +21,7 @@ use crate::core::{KindOrType, Name, RowField, RowType, Type, TypeId, normalise, 
 use crate::state::CheckState;
 
 /// The result of matching a wanted type against a given type.
+#[derive(Clone, Copy)]
 pub enum MatchType {
     /// The types match.
     Match,
@@ -332,28 +333,17 @@ where
                 stuck.push(id);
             }
 
-            if matches!(wanted_argument, KindOrType::Type(_)) {
-                results.push(match_result);
+            if let (KindOrType::Type(wanted_argument), KindOrType::Type(given_argument)) =
+                (wanted_argument, given_argument)
+            {
+                results.push((wanted_argument, given_argument, match_result));
             }
         }
 
-        if !can_determine_stuck(context, wanted.file_id, wanted.type_id, &results)? {
+        let match_results = results.iter().map(|(_, _, result)| *result).collect_vec();
+
+        if !can_determine_stuck(context, wanted.file_id, wanted.type_id, &match_results)? {
             return Ok(MatchInstance::Stuck(stuck));
-        }
-
-        for (index, result) in results.iter().enumerate() {
-            let MatchType::Stuck(_) = result else { continue };
-
-            let wanted = match wanted.arguments[index] {
-                KindOrType::Kind(id) => id,
-                KindOrType::Type(id) => id,
-            };
-            let given = match given.arguments[index] {
-                KindOrType::Kind(id) => id,
-                KindOrType::Type(id) => id,
-            };
-
-            goals.push(WorkItem::Unify(wanted, given));
         }
 
         for binder in given.binders {
@@ -364,6 +354,13 @@ where
             let binder_kind = SubstituteName::many(state, context, &bindings, binder.kind)?;
             let binder_type = state.fresh_unification(context.queries, binder_kind);
             bindings.insert(binder.name, binder_type);
+        }
+
+        for (wanted, given, result) in results {
+            if matches!(result, MatchType::Stuck(_)) {
+                let given = SubstituteName::many(state, context, &bindings, given)?;
+                goals.push(WorkItem::Unify(wanted, given));
+            }
         }
 
         for constraint in given.constraints {

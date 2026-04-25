@@ -27,18 +27,20 @@ getWrapper ::
   forall (a :: Type) (rep :: Type).
     Generic (Wrapper (a :: Type)) (rep :: Type) => Proxy @Type (rep :: Type)
 forceSolve ::
-  { getEither ::
-      Proxy @Type
-        (Sum
-          (Constructor "Left" (Argument (t9 :: Type)))
-          (Constructor "Right" (Argument (t10 :: Type))))
-  , getIdentity :: Proxy @Type (Constructor "Identity" (Argument (t8 :: Type)))
-  , getMyUnit :: Proxy @Type (Constructor "MyUnit" NoArguments)
-  , getTuple ::
-      Proxy @Type (Constructor "Tuple" (Product (Argument (t11 :: Type)) (Argument (t12 :: Type))))
-  , getVoid :: Proxy @Type NoConstructors
-  , getWrapper :: Proxy @Type (Constructor "Wrapper" (Argument (t13 :: Type)))
-  }
+  forall (t43 :: Type) (t42 :: Type) (t41 :: Type) (t40 :: Type) (t39 :: Type) (t38 :: Type).
+    { getEither ::
+        Proxy @Type
+          (Sum
+            (Constructor "Left" (Argument (t43 :: Type)))
+            (Constructor "Right" (Argument (t42 :: Type))))
+    , getIdentity :: Proxy @Type (Constructor "Identity" (Argument (t41 :: Type)))
+    , getMyUnit :: Proxy @Type (Constructor "MyUnit" NoArguments)
+    , getTuple ::
+        Proxy @Type
+          (Constructor "Tuple" (Product (Argument (t40 :: Type)) (Argument (t39 :: Type))))
+    , getVoid :: Proxy @Type NoConstructors
+    , getWrapper :: Proxy @Type (Constructor "Wrapper" (Argument (t38 :: Type)))
+    }
 
 Types
 Void :: Type
