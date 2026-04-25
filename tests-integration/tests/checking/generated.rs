@@ -426,7 +426,7 @@ fn run_test(folder: &str, file: &str) {
 
 #[rustfmt::skip] #[test] fn test_199_instance_kind_application_matching_main() { run_test("199_instance_kind_application_matching", "Main"); }
 
-#[rustfmt::skip] #[test] fn test_200_instance_bound_variable_unification_main() { run_test("200_instance_bound_variable_unification", "Main"); }
+#[rustfmt::skip] #[test] fn test_200_instance_given_is_not_blocking_main() { run_test("200_instance_given_is_not_blocking", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_201_synonym_function_result_kind_main() { run_test("201_synonym_function_result_kind", "Main"); }
 

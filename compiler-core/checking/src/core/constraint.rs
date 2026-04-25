@@ -132,16 +132,15 @@ where
     'work: while let Some(item) = work.pop_back() {
         match item {
             WorkItem::Constraint(wanted) => {
+                let mut blocked = FxHashSet::default();
+
                 match match_given_instance(state, context, wanted, &given)? {
                     MatchInstance::Match(InstanceMatch { goals }) => {
                         work.extend(goals);
                         continue 'work;
                     }
                     MatchInstance::Stuck(id) => {
-                        for id in id {
-                            stuck.entry(id).or_default().push(wanted);
-                        }
-                        continue 'work;
+                        blocked.extend(id);
                     }
                     MatchInstance::Apart => (),
                 }
@@ -151,11 +150,8 @@ where
                         work.extend(goals);
                         continue 'work;
                     }
-                    Some(MatchInstance::Stuck(ids)) => {
-                        for id in ids {
-                            stuck.entry(id).or_default().push(wanted);
-                        }
-                        continue 'work;
+                    Some(MatchInstance::Stuck(id)) => {
+                        blocked.extend(id);
                     }
                     Some(MatchInstance::Apart) | None => (),
                 }
@@ -168,10 +164,8 @@ where
                             continue 'work;
                         }
                         MatchInstance::Stuck(id) => {
-                            for id in id {
-                                stuck.entry(id).or_default().push(wanted);
-                            }
-                            continue 'work;
+                            blocked.extend(id);
+                            continue 'chain;
                         }
                         MatchInstance::Apart => {
                             continue 'chain;
@@ -179,7 +173,13 @@ where
                     }
                 }
 
-                residuals.push(wanted);
+                if blocked.is_empty() {
+                    residuals.push(wanted);
+                } else {
+                    for id in blocked {
+                        stuck.entry(id).or_default().push(wanted);
+                    }
+                }
             }
             WorkItem::Unify(t1, t2) => {
                 if unification::unify(state, context, t1, t2)? {
