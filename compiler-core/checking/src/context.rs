@@ -7,6 +7,7 @@ use std::sync::Arc;
 use building_types::QueryResult;
 use files::FileId;
 use indexing::{IndexedModule, TermItemId, TypeItemId};
+use itertools::Itertools;
 use lowering::{GroupedModule, LoweredModule};
 use resolving::ResolvedModule;
 use smol_str::SmolStr;
@@ -14,7 +15,9 @@ use stabilizing::StabilizedModule;
 use sugar::{Bracketed, Sectioned};
 
 use crate::ExternalQueries;
-use crate::core::{Depth, ForallBinder, ForallBinderId, Name, RowType, RowTypeId, Type, TypeId};
+use crate::core::{
+    Depth, ForallBinder, ForallBinderId, Name, RowField, RowType, RowTypeId, Type, TypeId,
+};
 
 /// The read-only environment threaded through the type checking algorithm.
 ///
@@ -190,9 +193,34 @@ where
         self.queries.intern_type(Type::Kinded(inner, kind))
     }
 
-    /// Interns a [`Type::Row`] node.
-    pub fn intern_row(&self, row_id: RowTypeId) -> TypeId {
+    /// Interns a [`Type::Row`] node for an already-interned row.
+    pub fn intern_row_id(&self, row_id: RowTypeId) -> TypeId {
         self.queries.intern_type(Type::Row(row_id))
+    }
+
+    /// Materializes a row-kind [`TypeId`] from fields and an optional tail.
+    pub fn intern_row(
+        &self,
+        fields: impl IntoIterator<Item = RowField>,
+        tail: Option<TypeId>,
+    ) -> TypeId {
+        let mut fields = fields.into_iter().collect_vec();
+        fields.sort_by(|a, b| a.label.cmp(&b.label));
+
+        if fields.is_empty()
+            && let Some(tail) = tail
+        {
+            return tail;
+        }
+
+        let fields = Arc::from(fields);
+        let row = match tail {
+            Some(tail) => RowType::from_open(fields, tail),
+            None => RowType::from_closed(fields),
+        };
+
+        let row_id = self.queries.intern_row_type(row);
+        self.intern_row_id(row_id)
     }
 
     /// Interns a [`Type::Rigid`] node.

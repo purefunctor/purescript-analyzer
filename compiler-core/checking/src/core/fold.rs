@@ -1,7 +1,5 @@
 //! Implements type folding for the core representation.
 
-use std::sync::Arc;
-
 use building_types::QueryResult;
 
 use crate::context::CheckContext;
@@ -95,13 +93,13 @@ where
         Type::Constructor(_, _) => id,
         Type::Integer(_) | Type::String(_, _) => id,
         Type::Row(row_id) => {
-            let mut row = context.lookup_row_type(row_id);
-            for field in Arc::make_mut(&mut row.fields).iter_mut() {
+            let row = context.lookup_row_type(row_id);
+            let mut fields = row.fields.to_vec();
+            for field in fields.iter_mut() {
                 field.id = fold_type(state, context, field.id, folder)?;
             }
-            row.tail = row.tail.map(|tail| fold_type(state, context, tail, folder)).transpose()?;
-            let row_id = context.intern_row_type(row);
-            context.intern_row(row_id)
+            let tail = row.tail.map(|tail| fold_type(state, context, tail, folder)).transpose()?;
+            context.intern_row(fields, tail)
         }
         Type::Rigid(name, depth, kind) => {
             let kind = fold_type(state, context, kind, folder)?;

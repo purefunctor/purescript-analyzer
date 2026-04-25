@@ -522,8 +522,7 @@ where
         // additional fields and tail from the wanted row
         Open(given_tail) => {
             let fields = wanted_only.into_iter().cloned().collect_vec();
-            let row =
-                context.intern_row(context.intern_row_type(RowType::new(fields, wanted_row.tail)));
+            let row = context.intern_row(fields, wanted_row.tail);
             result.and_then(|| recurse(state, context, row, given_tail))
         }
         // If we have a closed given row

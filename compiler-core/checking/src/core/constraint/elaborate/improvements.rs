@@ -5,7 +5,7 @@ use rustc_hash::FxHashSet;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::{Name, RowType, RowTypeId, Type, TypeId, normalise};
+use crate::core::{Name, RowTypeId, Type, TypeId, normalise};
 use crate::state::CheckState;
 
 pub fn collect_structural_improvements<Q>(
@@ -152,9 +152,12 @@ where
     let mut right_index = 0;
     let mut right_only = vec![];
 
-    while left_index < left_row.fields.len() && right_index < right_row.fields.len() {
-        let left_field = &left_row.fields[left_index];
-        let right_field = &right_row.fields[right_index];
+    let left_fields = left_row.fields;
+    let right_fields = right_row.fields;
+
+    while left_index < left_fields.len() && right_index < right_fields.len() {
+        let left_field = &left_fields[left_index];
+        let right_field = &right_fields[right_index];
 
         match left_field.label.cmp(&right_field.label) {
             Ordering::Equal => {
@@ -180,8 +183,8 @@ where
         }
     }
 
-    left_only.extend(left_row.fields[left_index..].iter().cloned());
-    right_only.extend(right_row.fields[right_index..].iter().cloned());
+    left_only.extend(left_fields[left_index..].iter().cloned());
+    right_only.extend(right_fields[right_index..].iter().cloned());
 
     match (left_row.tail, right_row.tail) {
         (Some(left_tail), Some(right_tail)) if left_only.is_empty() && right_only.is_empty() => {
@@ -196,8 +199,7 @@ where
         }
 
         (Some(left_tail), right_tail) if right_only.is_empty() => {
-            let right_remainder = context.intern_row_type(RowType::new(left_only, right_tail));
-            let right_remainder = context.intern_row(right_remainder);
+            let right_remainder = context.intern_row(left_only, right_tail);
             collect_structural_improvements(
                 state,
                 context,
@@ -209,8 +211,7 @@ where
         }
 
         (left_tail, Some(right_tail)) if left_only.is_empty() => {
-            let left_remainder = context.intern_row_type(RowType::new(right_only, left_tail));
-            let left_remainder = context.intern_row(left_remainder);
+            let left_remainder = context.intern_row(right_only, left_tail);
             collect_structural_improvements(
                 state,
                 context,

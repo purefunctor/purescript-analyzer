@@ -326,7 +326,7 @@ where
 
     let mut goals = vec![];
 
-    for (left_field, right_field) in izip!(&*left_row.fields, &*right_row.fields) {
+    for (left_field, right_field) in izip!(left_row.fields.iter(), right_row.fields.iter()) {
         if left_field.label != right_field.label {
             return Ok(Some(MatchInstance::Apart));
         }

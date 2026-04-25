@@ -1,0 +1,12 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+tail :: forall (r :: Row Type). {| (r :: Row Type) } -> Int
+nonTail :: forall (r :: Row Type). {| (r :: Row Type) } -> Int
+asTail :: Array (forall (r :: Row Type). {| (r :: Row Type) } -> Int)
+asNonTail :: Array (forall (r :: Row Type). {| (r :: Row Type) } -> Int)
+
+Types

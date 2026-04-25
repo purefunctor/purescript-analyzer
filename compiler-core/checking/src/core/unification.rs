@@ -864,17 +864,13 @@ where
 
         // t1_tail ~ ( ...extras_right )
         (Some(t1_tail), None) => {
-            let row = RowType::new(extras_right, None);
-            let row_id = context.intern_row_type(row);
-            let row_type = context.intern_row(row_id);
+            let row_type = context.intern_row(extras_right, None);
             unify(state, context, t1_tail, row_type)
         }
 
         // ( ...extras_left ) ~ t2_tail
         (None, Some(t2_tail)) => {
-            let row = RowType::new(extras_left, None);
-            let row_id = context.intern_row_type(row);
-            let row_type = context.intern_row(row_id);
+            let row_type = context.intern_row(extras_left, None);
             unify(state, context, t2_tail, row_type)
         }
 
@@ -894,15 +890,11 @@ where
                 return unify(state, context, t1_tail, t2_tail);
             }
 
-            let tail = Some(state.fresh_unification(context.queries, context.prim.row_type));
+            let tail = state.fresh_unification(context.queries, context.prim.row_type);
 
-            let left_tail_row = RowType::new(extras_right, tail);
-            let left_tail_row_id = context.intern_row_type(left_tail_row);
-            let left_tail_row_type = context.intern_row(left_tail_row_id);
+            let left_tail_row_type = context.intern_row(extras_right, Some(tail));
 
-            let right_tail_row = RowType::new(extras_left, tail);
-            let right_tail_row_id = context.intern_row_type(right_tail_row);
-            let right_tail_row_type = context.intern_row(right_tail_row_id);
+            let right_tail_row_type = context.intern_row(extras_left, Some(tail));
 
             Ok(unify(state, context, t1_tail, left_tail_row_type)?
                 && unify(state, context, t2_tail, right_tail_row_type)?)

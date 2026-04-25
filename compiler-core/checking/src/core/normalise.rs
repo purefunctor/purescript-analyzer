@@ -5,7 +5,7 @@ use itertools::Itertools;
 
 use crate::context::CheckContext;
 use crate::core::substitute::{NameToType, SubstituteName};
-use crate::core::{KindOrType, RowType, Type, TypeId, toolkit};
+use crate::core::{KindOrType, Type, TypeId, toolkit};
 use crate::state::{CheckState, UnificationState};
 use crate::{ExternalQueries, safe_loop};
 
@@ -61,10 +61,6 @@ where
 
         let row = self.context.lookup_row_type(row_id);
 
-        if row.fields.is_empty() {
-            return row.tail;
-        }
-
         let tail_id = row.tail?;
         let tail_t = self.context.lookup_type(tail_id);
 
@@ -84,11 +80,7 @@ where
             left.merge_by(right, |left, right| left.label <= right.label)
         };
 
-        let merged_row = RowType::new(merged_fields, inner.tail);
-        let merged_row = self.context.queries.intern_row_type(merged_row);
-        let merged_row = self.context.queries.intern_type(Type::Row(merged_row));
-
-        Some(merged_row)
+        Some(self.context.intern_row(merged_fields, inner.tail))
     }
 }
 
@@ -97,8 +89,7 @@ where
 /// Notably, this function applies the following rules:
 /// 1. Replaces solved unfiication variables, compressing them
 ///    if they solve to other solved unification variables.
-/// 2. Simplifies row types, such as merging concrete row tails,
-///    or extracting an empty row's tail as a standalone type.
+/// 2. Simplifies row types by merging concrete row tails.
 ///
 /// This function should be used in checking rules where
 /// synonyms must remain opaque such as in kind checking.
@@ -174,10 +165,7 @@ where
     }
 
     let fields = row.fields.iter().cloned();
-    let row = RowType::new(fields, Some(tail));
-
-    let row = context.queries.intern_row_type(row);
-    Ok(context.queries.intern_type(Type::Row(row)))
+    Ok(context.intern_row(fields, Some(tail)))
 }
 
 /// Expands synonym constructor applications with respect to oversaturation.

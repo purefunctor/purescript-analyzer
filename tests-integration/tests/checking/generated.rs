@@ -555,3 +555,7 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_264_row_union_open_duplicates_main() { run_test("264_row_union_open_duplicates", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_265_row_union_documentation_main() { run_test("265_row_union_documentation", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_266_row_tail_main() { run_test("266_row_tail", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_267_row_tail_record_main() { run_test("267_row_tail_record", "Main"); }

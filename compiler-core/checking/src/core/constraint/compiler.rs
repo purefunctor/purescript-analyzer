@@ -6,18 +6,57 @@ pub mod prim_row_list;
 pub mod prim_symbol;
 pub mod prim_type_error;
 
+use std::sync::Arc;
+
 use building_types::QueryResult;
 use smol_str::SmolStr;
 
 use crate::context::CheckContext;
 use crate::core::fold::{FoldAction, TypeFold, fold_type};
 use crate::core::unification::{CanUnify, can_unify};
-use crate::core::{RowType, Type, TypeId, normalise};
+use crate::core::{RowField, RowType, Type, TypeId, normalise};
 use crate::state::CheckState;
 use crate::{ExternalQueries, safe_loop};
 
 use super::matching::{InstanceMatch, MatchInstance};
 use super::{CanonicalConstraintId, WorkItem};
+
+#[derive(Clone)]
+pub enum RowView {
+    Closed { fields: Arc<[RowField]> },
+    EmptyOpen { tail: TypeId },
+    Open { fields: Arc<[RowField]>, tail: TypeId },
+}
+
+impl RowView {
+    fn from_row(row: RowType) -> RowView {
+        let fields = Arc::clone(&row.fields);
+        match row.tail {
+            Some(tail) => RowView::Open { fields, tail },
+            None => RowView::Closed { fields },
+        }
+    }
+
+    fn from_tail(tail: TypeId) -> RowView {
+        RowView::EmptyOpen { tail }
+    }
+
+    pub fn fields(&self) -> &[RowField] {
+        match self {
+            RowView::Closed { fields } => fields,
+            RowView::EmptyOpen { .. } => &[],
+            RowView::Open { fields, .. } => fields,
+        }
+    }
+
+    pub fn tail(&self) -> Option<TypeId> {
+        match self {
+            RowView::Closed { fields: _ } => None,
+            RowView::EmptyOpen { tail } => Some(*tail),
+            RowView::Open { tail, .. } => Some(*tail),
+        }
+    }
+}
 
 struct RecursivelyNormalise;
 
@@ -95,15 +134,17 @@ pub fn extract_row<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     id: TypeId,
-) -> QueryResult<Option<RowType>>
+) -> QueryResult<Option<RowView>>
 where
     Q: ExternalQueries,
 {
     let id = recursively_normalise(state, context, id)?;
-    Ok(Some(match context.lookup_type(id) {
-        Type::Row(id) => context.lookup_row_type(id),
-        _ => RowType::new([], Some(id)),
-    }))
+    let row = if let Type::Row(id) = context.lookup_type(id) {
+        RowView::from_row(context.lookup_row_type(id))
+    } else {
+        RowView::from_tail(id)
+    };
+    Ok(Some(row))
 }
 
 pub fn intern_symbol<Q>(context: &CheckContext<Q>, value: &str) -> TypeId
