@@ -7,6 +7,12 @@ use crate::source::terms::{equations, form_let};
 use crate::source::{binder, terms};
 use crate::state::CheckState;
 
+#[derive(Copy, Clone, Debug)]
+enum IfThenElseMode {
+    Infer,
+    Check { expected: TypeId },
+}
+
 pub fn infer_if_then_else<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -17,21 +23,7 @@ pub fn infer_if_then_else<Q>(
 where
     Q: ExternalQueries,
 {
-    if let Some(if_) = if_ {
-        super::check_expression(state, context, if_, context.prim.boolean)?;
-    }
-
-    let result_type = state.fresh_unification(context.queries, context.prim.t);
-
-    if let Some(then) = then {
-        super::check_expression(state, context, then, result_type)?;
-    }
-
-    if let Some(else_) = else_ {
-        super::check_expression(state, context, else_, result_type)?;
-    }
-
-    Ok(result_type)
+    if_then_else_core(state, context, if_, then, else_, IfThenElseMode::Infer)
 }
 
 pub fn check_if_then_else<Q>(
@@ -45,19 +37,38 @@ pub fn check_if_then_else<Q>(
 where
     Q: ExternalQueries,
 {
+    if_then_else_core(state, context, if_, then, else_, IfThenElseMode::Check { expected })
+}
+
+fn if_then_else_core<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    if_: Option<lowering::ExpressionId>,
+    then: Option<lowering::ExpressionId>,
+    else_: Option<lowering::ExpressionId>,
+    mode: IfThenElseMode,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
     if let Some(if_) = if_ {
         super::check_expression(state, context, if_, context.prim.boolean)?;
     }
 
+    let result_type = match mode {
+        IfThenElseMode::Infer => state.fresh_unification(context.queries, context.prim.t),
+        IfThenElseMode::Check { expected } => expected,
+    };
+
     if let Some(then) = then {
-        super::check_expression(state, context, then, expected)?;
+        super::check_expression(state, context, then, result_type)?;
     }
 
     if let Some(else_) = else_ {
-        super::check_expression(state, context, else_, expected)?;
+        super::check_expression(state, context, else_, result_type)?;
     }
 
-    Ok(expected)
+    Ok(result_type)
 }
 
 pub fn infer_lambda<Q>(
