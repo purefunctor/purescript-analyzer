@@ -207,3 +207,21 @@ where
 
     Ok(residuals)
 }
+
+pub fn is_type_error<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    constraint: TypeId,
+) -> QueryResult<bool>
+where
+    Q: ExternalQueries,
+{
+    let Some(canonical) = canonical::canonicalise(state, context, constraint)? else {
+        return Ok(false);
+    };
+
+    let canonical = &state.canonicals[canonical];
+    Ok(canonical.file_id == context.prim_type_error.file_id
+        && (canonical.type_id == context.prim_type_error.warn
+            || canonical.type_id == context.prim_type_error.fail))
+}

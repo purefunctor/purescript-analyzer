@@ -15,10 +15,3 @@ class forall (a :: Type). LazyFail (a :: Type)
 
 Instances
 instance Fail (Text "LazyFail") => LazyFail Int
-
-Diagnostics
-error[CustomFailure]: LazyFail
-  --> 8:1..9:16
-  |
-8 | instance Fail (Text "LazyFail") => LazyFail Int where
-  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
