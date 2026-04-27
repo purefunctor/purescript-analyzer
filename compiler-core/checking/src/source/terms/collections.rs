@@ -56,6 +56,12 @@ enum ArrayMode {
     Check { element: TypeId },
 }
 
+#[derive(Copy, Clone)]
+enum RecordMode<'a> {
+    Infer,
+    Check { expected_fields: &'a [RowField] },
+}
+
 pub fn infer_array<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -140,35 +146,7 @@ pub fn infer_record<Q>(
 where
     Q: ExternalQueries,
 {
-    let mut fields = vec![];
-
-    for field in record.iter() {
-        match field {
-            lowering::ExpressionRecordItem::RecordField { name, value } => {
-                let Some(name) = name else { continue };
-                let Some(value) = value else { continue };
-
-                let label = SmolStr::clone(name);
-                let id = infer_record_field_expression(state, context, *value)?;
-
-                fields.push(RowField { label, id });
-            }
-            lowering::ExpressionRecordItem::RecordPun { name, resolution } => {
-                let Some(name) = name else { continue };
-                let Some(resolution) = resolution else { continue };
-
-                let label = SmolStr::clone(name);
-                let id = instantiate_variable(state, context, *resolution)?;
-
-                fields.push(RowField { label, id });
-            }
-        }
-    }
-
-    let row_type = context.intern_row(fields, None);
-    let record_type = context.intern_application(context.prim.record, row_type);
-
-    Ok(record_type)
+    record_core(state, context, record, RecordMode::Infer)
 }
 
 pub fn check_record<Q>(
@@ -187,61 +165,12 @@ where
             let row_type = normalise::expand(state, context, row_type)?;
             if let Type::Row(row_id) = context.lookup_type(row_type) {
                 let expected_fields = context.lookup_row_type(row_id);
-
-                let mut fields = vec![];
-
-                for field in record.iter() {
-                    match field {
-                        lowering::ExpressionRecordItem::RecordField { name, value } => {
-                            let Some(name) = name else { continue };
-                            let Some(value) = value else { continue };
-
-                            let label = SmolStr::clone(name);
-
-                            let expected_field_type = expected_fields
-                                .fields
-                                .iter()
-                                .find(|field| field.label == label)
-                                .map(|field| field.id);
-
-                            let id = if let Some(expected_type) = expected_field_type {
-                                super::check_expression(state, context, *value, expected_type)?;
-                                expected_type
-                            } else {
-                                infer_record_field_expression(state, context, *value)?
-                            };
-
-                            fields.push(RowField { label, id });
-                        }
-                        lowering::ExpressionRecordItem::RecordPun { name, resolution } => {
-                            let Some(name) = name else { continue };
-                            let Some(resolution) = resolution else { continue };
-
-                            let label = SmolStr::clone(name);
-
-                            let expected_field_type = expected_fields
-                                .fields
-                                .iter()
-                                .find(|field| field.label == label)
-                                .map(|field| field.id);
-
-                            let id = if let Some(expected_type) = expected_field_type {
-                                let id =
-                                    toolkit::lookup_term_variable(state, context, *resolution)?;
-                                unification::subtype(state, context, id, expected_type)?;
-                                expected_type
-                            } else {
-                                instantiate_variable(state, context, *resolution)?
-                            };
-
-                            fields.push(RowField { label, id });
-                        }
-                    }
-                }
-
-                let row_type = context.intern_row(fields, None);
-                let record_type = context.intern_application(context.prim.record, row_type);
-
+                let record_type = record_core(
+                    state,
+                    context,
+                    record,
+                    RecordMode::Check { expected_fields: &expected_fields.fields },
+                )?;
                 unification::subtype(state, context, record_type, expected)?;
                 return Ok(record_type);
             }
@@ -251,6 +180,94 @@ where
     let inferred = infer_record(state, context, record)?;
     unification::subtype(state, context, inferred, expected)?;
     Ok(inferred)
+}
+
+fn find_expected_field(expected_fields: &[RowField], label: &SmolStr) -> Option<TypeId> {
+    expected_fields.iter().find(|field| field.label == *label).map(|field| field.id)
+}
+
+fn expected_record_field(mode: RecordMode<'_>, label: &SmolStr) -> Option<TypeId> {
+    match mode {
+        RecordMode::Infer => None,
+        RecordMode::Check { expected_fields } => find_expected_field(expected_fields, label),
+    }
+}
+
+fn record_field_type<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    name: &SmolStr,
+    value: lowering::ExpressionId,
+    mode: RecordMode<'_>,
+) -> QueryResult<RowField>
+where
+    Q: ExternalQueries,
+{
+    let label = SmolStr::clone(name);
+
+    let id = if let Some(expected_type) = expected_record_field(mode, &label) {
+        super::check_expression(state, context, value, expected_type)?;
+        expected_type
+    } else {
+        infer_record_field_expression(state, context, value)?
+    };
+
+    Ok(RowField { label, id })
+}
+
+fn record_pun_type<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    name: &SmolStr,
+    resolution: lowering::TermVariableResolution,
+    mode: RecordMode<'_>,
+) -> QueryResult<RowField>
+where
+    Q: ExternalQueries,
+{
+    let label = SmolStr::clone(name);
+
+    let id = if let Some(expected_type) = expected_record_field(mode, &label) {
+        let id = toolkit::lookup_term_variable(state, context, resolution)?;
+        unification::subtype(state, context, id, expected_type)?;
+        expected_type
+    } else {
+        instantiate_variable(state, context, resolution)?
+    };
+
+    Ok(RowField { label, id })
+}
+
+fn record_core<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    record: &[lowering::ExpressionRecordItem],
+    mode: RecordMode<'_>,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let mut fields = vec![];
+
+    for field in record.iter() {
+        let field = match field {
+            lowering::ExpressionRecordItem::RecordField { name, value } => {
+                let Some(name) = name else { continue };
+                let Some(value) = value else { continue };
+                record_field_type(state, context, name, *value, mode)?
+            }
+            lowering::ExpressionRecordItem::RecordPun { name, resolution } => {
+                let Some(name) = name else { continue };
+                let Some(resolution) = resolution else { continue };
+                record_pun_type(state, context, name, *resolution, mode)?
+            }
+        };
+
+        fields.push(field);
+    }
+
+    let row_type = context.intern_row(fields, None);
+    Ok(context.intern_application(context.prim.record, row_type))
 }
 
 pub fn infer_record_access<Q>(
