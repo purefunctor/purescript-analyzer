@@ -186,13 +186,13 @@ where
             infer_where_expression(state, context, w)
         }
         lowering::GuardedExpression::Conditionals { pattern_guarded } => {
-            let mut inferred_type = context.unknown("empty conditionals");
+            let inferred_type = state.fresh_unification(context.queries, context.prim.t);
             for pattern_guarded in pattern_guarded.iter() {
                 for pattern_guard in pattern_guarded.pattern_guards.iter() {
                     check_pattern_guard(state, context, pattern_guard)?;
                 }
                 if let Some(w) = &pattern_guarded.where_expression {
-                    inferred_type = infer_where_expression(state, context, w)?;
+                    check_where_expression(state, context, w, inferred_type)?;
                 }
             }
             Ok(inferred_type)

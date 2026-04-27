@@ -28,15 +28,3 @@ class forall (f :: Type -> Type). Build (f :: Type -> Type)
   forall (@f :: Type -> Type) (a :: Type) (b :: Type).
     Build (f :: Type -> Type) =>
     ((b :: Type) -> (a :: Type)) -> (b :: Type) -> (f :: Type -> Type) (a :: Type)
-
-Diagnostics
-error[NoInstanceFound]: No instance found for: Build ?11
-  --> 10:1..10:61
-   |
-10 | test :: forall f. Build f => Boolean -> Boolean -> f Boolean
-   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-error[NoInstanceFound]: No instance found for: Build ?9
-  --> 10:1..10:61
-   |
-10 | test :: forall f. Build f => Boolean -> Boolean -> f Boolean
-   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
