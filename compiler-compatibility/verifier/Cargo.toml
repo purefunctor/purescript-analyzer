@@ -1,0 +1,31 @@
+[package]
+name = "compatibility-verifier"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+building = { version = "0.1.0", path = "../../compiler-core/building" }
+checking = { version = "0.1.0", path = "../../compiler-core/checking" }
+diagnostics = { version = "0.1.0", path = "../../compiler-core/diagnostics" }
+files = { version = "0.1.0", path = "../../compiler-core/files" }
+indexing = { version = "0.1.0", path = "../../compiler-core/indexing" }
+lowering = { version = "0.1.0", path = "../../compiler-core/lowering" }
+parsing = { version = "0.1.0", path = "../../compiler-core/parsing" }
+registry = { version = "0.1.0", path = "../registry" }
+resolving = { version = "0.1.0", path = "../../compiler-core/resolving" }
+syntax = { version = "0.1.0", path = "../../compiler-core/syntax" }
+
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
+flate2 = "1"
+git2 = "0.20"
+reqwest = { version = "0.12", default-features = false, features = ["blocking", "rustls-tls"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tar = "0.4"
+thiserror = "2"
+url = "2"
+walkdir = "2"
+
+[dev-dependencies]
+tempfile = "3"
