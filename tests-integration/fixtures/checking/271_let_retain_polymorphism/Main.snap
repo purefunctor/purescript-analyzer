@@ -1,0 +1,47 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Tuple ::
+  forall (@a :: Type) (@b :: Type). (a :: Type) -> (b :: Type) -> Tuple (a :: Type) (b :: Type)
+append :: forall (@a :: Type). Semigroup (a :: Type) => (a :: Type) -> (a :: Type) -> (a :: Type)
+test ::
+  forall (a :: Type) (b :: Type).
+    Semigroup (a :: Type) =>
+    Semigroup (b :: Type) =>
+    (a :: Type) -> (a :: Type) -> (b :: Type) -> (b :: Type) -> Tuple (a :: Type) (b :: Type)
+
+Types
+Tuple :: Type -> Type -> Type
+Semigroup :: Type -> Constraint
+
+Classes
+class forall (a :: Type). Semigroup (a :: Type)
+  append :: forall (@a :: Type). Semigroup (a :: Type) => (a :: Type) -> (a :: Type) -> (a :: Type)
+
+Roles
+Tuple = [Representational, Representational]
+
+Diagnostics
+error[CannotUnify]: Cannot unify '(t6 :: Type)' with '(t5 :: Type)'
+  --> 9:59..9:61
+  |
+9 | test a1 a2 b1 b2 = Tuple (appendLocal a1 a2) (appendLocal b1 b2)
+  |                                                           ^~
+error[CannotUnify]: Cannot unify '(t6 :: Type)' with '(t5 :: Type)'
+  --> 9:62..9:64
+  |
+9 | test a1 a2 b1 b2 = Tuple (appendLocal a1 a2) (appendLocal b1 b2)
+  |                                                              ^~
+error[CannotUnify]: Cannot unify '(t5 :: Type)' with '(t6 :: Type)'
+  --> 9:20..9:65
+  |
+9 | test a1 a2 b1 b2 = Tuple (appendLocal a1 a2) (appendLocal b1 b2)
+  |                    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[CannotUnify]: Cannot unify 'Tuple (t5 :: Type) (t5 :: Type)' with 'Tuple (t5 :: Type) (t6 :: Type)'
+  --> 9:20..9:65
+  |
+9 | test a1 a2 b1 b2 = Tuple (appendLocal a1 a2) (appendLocal b1 b2)
+  |                    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
