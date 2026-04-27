@@ -4,7 +4,7 @@ use building_types::QueryResult;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::{TypeId, exhaustive, signature, toolkit, unification};
+use crate::core::{TypeId, constraint, exhaustive, signature, toolkit, unification};
 use crate::error::ErrorKind;
 use crate::source::terms::form_let;
 use crate::source::{binder, terms};
@@ -50,8 +50,14 @@ where
             let required =
                 equations.iter().map(|equation| equation.binders.len()).max().unwrap_or(0);
 
-            let signature::SkolemisedSignature { substitution, constraints: _, arguments, result } =
+            let signature::SkolemisedSignature { substitution, constraints, arguments, result } =
                 signature::expect_signature_patterns(state, context, expected_type, required)?;
+
+            for &constraint in &constraints {
+                if !constraint::is_type_error(state, context, constraint)? {
+                    state.push_given(constraint);
+                }
+            }
 
             let function = context.intern_function_list(&arguments, result);
             state.with_implicit(context, &substitution, |state| {
