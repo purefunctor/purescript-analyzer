@@ -2,7 +2,7 @@ use building_types::QueryResult;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::{exhaustive, toolkit, unification};
+use crate::core::{Type, exhaustive, normalise, toolkit, unification};
 use crate::error::ErrorCrumb;
 use crate::source::terms::equations;
 use crate::source::{binder, types};
@@ -157,13 +157,18 @@ where
         )?;
         state.report_exhaustiveness(context, exhaustiveness);
     } else {
-        // Keep simple let bindings e.g. `bind = ibind` polymorphic.
         if let [equation] = name.equations.as_ref()
             && equation.binders.is_empty()
             && let Some(guarded) = &equation.guarded
         {
             let inferred_type = equations::infer_guarded_expression(state, context, guarded)?;
-            unification::subtype(state, context, inferred_type, name_type)?;
+            // Keep simple let bindings e.g. `appendLocal = append` polymorphic.
+            let name_type = normalise::expand(state, context, name_type)?;
+            if let Type::Unification(unification_id) = context.lookup_type(name_type) {
+                unification::solve(state, context, name_type, unification_id, inferred_type)?;
+            } else {
+                unification::subtype(state, context, inferred_type, name_type)?;
+            }
         } else {
             let equation_set = equations::analyse_equation_set(
                 state,
