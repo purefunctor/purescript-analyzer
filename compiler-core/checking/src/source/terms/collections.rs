@@ -50,6 +50,12 @@ where
     toolkit::collect_wanteds(state, context, id)
 }
 
+#[derive(Copy, Clone, Debug)]
+enum ArrayMode {
+    Infer,
+    Check { element: TypeId },
+}
+
 pub fn infer_array<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -58,16 +64,7 @@ pub fn infer_array<Q>(
 where
     Q: ExternalQueries,
 {
-    let inferred_type = state.fresh_unification(context.queries, context.prim.t);
-
-    for expression in array.iter() {
-        let element_type = super::infer_expression(state, context, *expression)?;
-        unification::subtype(state, context, element_type, inferred_type)?;
-    }
-
-    let array_type = context.intern_application(context.prim.array, inferred_type);
-
-    Ok(array_type)
+    array_core(state, context, array, ArrayMode::Infer)
 }
 
 pub fn check_array<Q>(
@@ -79,20 +76,60 @@ pub fn check_array<Q>(
 where
     Q: ExternalQueries,
 {
-    let normalised = normalise::expand(state, context, expected)?;
-    if let Type::Application(constructor, element_type) = context.lookup_type(normalised) {
-        let constructor = normalise::expand(state, context, constructor)?;
-        if constructor == context.prim.array {
-            for expression in array.iter() {
-                super::check_expression(state, context, *expression, element_type)?;
+    if let Some(element) = expected_array_element(state, context, expected)? {
+        array_core(state, context, array, ArrayMode::Check { element })?;
+        return Ok(expected);
+    }
+
+    let inferred = array_core(state, context, array, ArrayMode::Infer)?;
+    unification::subtype(state, context, inferred, expected)?;
+    Ok(inferred)
+}
+
+fn expected_array_element<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    expected: TypeId,
+) -> QueryResult<Option<TypeId>>
+where
+    Q: ExternalQueries,
+{
+    let expected = normalise::expand(state, context, expected)?;
+    let Type::Application(constructor, element) = context.lookup_type(expected) else {
+        return Ok(None);
+    };
+
+    let constructor = normalise::expand(state, context, constructor)?;
+    if constructor == context.prim.array { Ok(Some(element)) } else { Ok(None) }
+}
+
+fn array_core<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    array: &[lowering::ExpressionId],
+    mode: ArrayMode,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let element = match mode {
+        ArrayMode::Infer => state.fresh_unification(context.queries, context.prim.t),
+        ArrayMode::Check { element } => element,
+    };
+
+    for expression in array {
+        match mode {
+            ArrayMode::Infer => {
+                let inferred = super::infer_expression(state, context, *expression)?;
+                unification::subtype(state, context, inferred, element)?;
             }
-            return Ok(expected);
+            ArrayMode::Check { .. } => {
+                super::check_expression(state, context, *expression, element)?;
+            }
         }
     }
 
-    let inferred = infer_array(state, context, array)?;
-    unification::subtype(state, context, inferred, expected)?;
-    Ok(inferred)
+    Ok(context.intern_application(context.prim.array, element))
 }
 
 pub fn infer_record<Q>(
