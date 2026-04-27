@@ -13,6 +13,12 @@ enum IfThenElseMode {
     Check { expected: TypeId },
 }
 
+#[derive(Copy, Clone, Debug)]
+enum CaseOfMode {
+    Infer,
+    Check { expected: TypeId },
+}
+
 pub fn infer_if_then_else<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -186,36 +192,7 @@ pub fn infer_case_of<Q>(
 where
     Q: ExternalQueries,
 {
-    let result_type = state.fresh_unification(context.queries, context.prim.t);
-
-    let mut trunk_types = vec![];
-    for trunk in trunk.iter() {
-        let trunk_type = super::infer_expression(state, context, *trunk)?;
-        trunk_types.push(trunk_type);
-    }
-
-    instantiate_trunk_types(state, context, &mut trunk_types, branches)?;
-
-    for branch in branches.iter() {
-        for (binder, trunk) in branch.binders.iter().zip(&trunk_types) {
-            binder::check_binder(state, context, *binder, *trunk)?;
-        }
-        if let Some(guarded) = &branch.guarded_expression {
-            let guarded_type = equations::infer_guarded_expression(state, context, guarded)?;
-            unification::subtype(state, context, guarded_type, result_type)?;
-        }
-    }
-
-    let exhaustiveness = exhaustive::check_case_patterns(state, context, &trunk_types, branches)?;
-
-    let has_missing = exhaustiveness.missing.is_some();
-    state.report_exhaustiveness(context, exhaustiveness);
-
-    if has_missing {
-        Ok(context.intern_constrained(context.prim.partial, result_type))
-    } else {
-        Ok(result_type)
-    }
+    case_of_core(state, context, trunk, branches, CaseOfMode::Infer)
 }
 
 pub fn check_case_of<Q>(
@@ -228,6 +205,24 @@ pub fn check_case_of<Q>(
 where
     Q: ExternalQueries,
 {
+    case_of_core(state, context, trunk, branches, CaseOfMode::Check { expected })
+}
+
+fn case_of_core<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    trunk: &[lowering::ExpressionId],
+    branches: &[lowering::CaseBranch],
+    mode: CaseOfMode,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    let expected = match mode {
+        CaseOfMode::Infer => state.fresh_unification(context.queries, context.prim.t),
+        CaseOfMode::Check { expected } => expected,
+    };
+
     let mut trunk_types = vec![];
     for trunk in trunk.iter() {
         let trunk_type = super::infer_expression(state, context, *trunk)?;
@@ -241,7 +236,16 @@ where
             binder::check_binder(state, context, *binder, *trunk)?;
         }
         if let Some(guarded) = &branch.guarded_expression {
-            equations::check_guarded_expression(state, context, guarded, expected)?;
+            match mode {
+                CaseOfMode::Infer => {
+                    let guarded_type =
+                        equations::infer_guarded_expression(state, context, guarded)?;
+                    unification::subtype(state, context, guarded_type, expected)?;
+                }
+                CaseOfMode::Check { .. } => {
+                    equations::check_guarded_expression(state, context, guarded, expected)?;
+                }
+            }
         }
     }
 
@@ -251,7 +255,11 @@ where
     state.report_exhaustiveness(context, exhaustiveness);
 
     if has_missing {
-        state.push_wanted(context.prim.partial);
+        if let CaseOfMode::Infer = mode {
+            return Ok(context.intern_constrained(context.prim.partial, expected));
+        } else {
+            state.push_wanted(context.prim.partial)
+        }
     }
 
     Ok(expected)
