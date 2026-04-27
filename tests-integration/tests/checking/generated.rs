@@ -563,3 +563,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_268_guarded_conditionals_checking_main() { run_test("268_guarded_conditionals_checking", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_269_instance_context_fail_deferred_main() { run_test("269_instance_context_fail_deferred", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_270_top_level_fail_eager_main() { run_test("270_top_level_fail_eager", "Main"); }
