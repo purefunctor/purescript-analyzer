@@ -1,0 +1,24 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+lazyFail :: forall (@a :: Type). LazyFail (a :: Type) => (a :: Type)
+
+Types
+LazyFail :: Type -> Constraint
+
+Classes
+class forall (a :: Type). LazyFail (a :: Type)
+  lazyFail :: forall (@a :: Type). LazyFail (a :: Type) => (a :: Type)
+
+Instances
+instance Fail (Text "LazyFail") => LazyFail Int
+
+Diagnostics
+error[CustomFailure]: LazyFail
+  --> 8:1..9:16
+  |
+8 | instance Fail (Text "LazyFail") => LazyFail Int where
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
