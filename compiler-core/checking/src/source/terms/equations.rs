@@ -26,6 +26,12 @@ enum GuardedExpressionMode {
     Check { expected: TypeId },
 }
 
+#[derive(Copy, Clone, Debug)]
+enum WhereExpressionMode {
+    Infer,
+    Check { expected: TypeId },
+}
+
 pub struct EquationSet {
     pub arguments: Vec<TypeId>,
 }
@@ -282,13 +288,7 @@ pub fn infer_where_expression<Q>(
 where
     Q: ExternalQueries,
 {
-    form_let::check_let_chunks(state, context, &where_expression.bindings)?;
-
-    let Some(expression) = where_expression.expression else {
-        return Ok(context.unknown("missing where expression"));
-    };
-
-    terms::infer_expression(state, context, expression)
+    where_expression_core(state, context, where_expression, WhereExpressionMode::Infer)
 }
 
 fn check_where_expression<Q>(
@@ -300,11 +300,28 @@ fn check_where_expression<Q>(
 where
     Q: ExternalQueries,
 {
+    where_expression_core(state, context, where_expression, WhereExpressionMode::Check { expected })
+}
+
+fn where_expression_core<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    where_expression: &lowering::WhereExpression,
+    mode: WhereExpressionMode,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
     form_let::check_let_chunks(state, context, &where_expression.bindings)?;
 
     let Some(expression) = where_expression.expression else {
         return Ok(context.unknown("missing where expression"));
     };
 
-    terms::check_expression(state, context, expression, expected)
+    match mode {
+        WhereExpressionMode::Infer => terms::infer_expression(state, context, expression),
+        WhereExpressionMode::Check { expected } => {
+            terms::check_expression(state, context, expression, expected)
+        }
+    }
 }
