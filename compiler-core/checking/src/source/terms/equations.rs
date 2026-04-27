@@ -20,6 +20,12 @@ pub enum EquationMode {
     Infer { group_type: TypeId },
 }
 
+#[derive(Copy, Clone, Debug)]
+enum GuardedExpressionMode {
+    Infer,
+    Check { expected: TypeId },
+}
+
 pub struct EquationSet {
     pub arguments: Vec<TypeId>,
 }
@@ -178,26 +184,7 @@ pub fn infer_guarded_expression<Q>(
 where
     Q: ExternalQueries,
 {
-    match guarded {
-        lowering::GuardedExpression::Unconditional { where_expression } => {
-            let Some(w) = where_expression else {
-                return Ok(context.unknown("missing guarded expression"));
-            };
-            infer_where_expression(state, context, w)
-        }
-        lowering::GuardedExpression::Conditionals { pattern_guarded } => {
-            let inferred_type = state.fresh_unification(context.queries, context.prim.t);
-            for pattern_guarded in pattern_guarded.iter() {
-                for pattern_guard in pattern_guarded.pattern_guards.iter() {
-                    check_pattern_guard(state, context, pattern_guard)?;
-                }
-                if let Some(w) = &pattern_guarded.where_expression {
-                    check_where_expression(state, context, w, inferred_type)?;
-                }
-            }
-            Ok(inferred_type)
-        }
-    }
+    guarded_expression_core(state, context, guarded, GuardedExpressionMode::Infer)
 }
 
 pub fn check_guarded_expression<Q>(
@@ -209,24 +196,57 @@ pub fn check_guarded_expression<Q>(
 where
     Q: ExternalQueries,
 {
+    guarded_expression_core(state, context, guarded, GuardedExpressionMode::Check { expected })?;
+    Ok(())
+}
+
+fn guarded_expression_core<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    guarded: &lowering::GuardedExpression,
+    mode: GuardedExpressionMode,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
     match guarded {
         lowering::GuardedExpression::Unconditional { where_expression } => {
-            let Some(w) = where_expression else {
-                return Ok(());
+            let Some(where_expression) = where_expression else {
+                return match mode {
+                    GuardedExpressionMode::Infer => {
+                        Ok(context.unknown("missing guarded expression"))
+                    }
+                    GuardedExpressionMode::Check { expected } => Ok(expected),
+                };
             };
-            check_where_expression(state, context, w, expected)?;
-            Ok(())
+
+            match mode {
+                GuardedExpressionMode::Infer => {
+                    infer_where_expression(state, context, where_expression)
+                }
+                GuardedExpressionMode::Check { expected } => {
+                    check_where_expression(state, context, where_expression, expected)
+                }
+            }
         }
         lowering::GuardedExpression::Conditionals { pattern_guarded } => {
+            let expected_type = match mode {
+                GuardedExpressionMode::Infer => {
+                    state.fresh_unification(context.queries, context.prim.t)
+                }
+                GuardedExpressionMode::Check { expected } => expected,
+            };
+
             for pattern_guarded in pattern_guarded.iter() {
                 for pattern_guard in pattern_guarded.pattern_guards.iter() {
                     check_pattern_guard(state, context, pattern_guard)?;
                 }
-                if let Some(w) = &pattern_guarded.where_expression {
-                    check_where_expression(state, context, w, expected)?;
+                if let Some(where_expression) = &pattern_guarded.where_expression {
+                    check_where_expression(state, context, where_expression, expected_type)?;
                 }
             }
-            Ok(())
+
+            Ok(expected_type)
         }
     }
 }
