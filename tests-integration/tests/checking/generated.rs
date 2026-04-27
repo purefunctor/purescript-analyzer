@@ -559,3 +559,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_266_row_tail_main() { run_test("266_row_tail", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_267_row_tail_record_main() { run_test("267_row_tail_record", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_268_guarded_conditionals_checking_main() { run_test("268_guarded_conditionals_checking", "Main"); }
