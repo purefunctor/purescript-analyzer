@@ -2,6 +2,7 @@
 
 pub mod constraint;
 pub mod exhaustive;
+pub mod fd;
 pub mod fold;
 pub mod generalise;
 pub mod normalise;
@@ -17,7 +18,6 @@ use std::sync::Arc;
 
 use files::FileId;
 use indexing::{TermItemId, TypeItemId};
-use itertools::Itertools;
 use smol_str::{SmolStr, SmolStrBuilder};
 
 /// A globally unique identity for a rigid type variable.
@@ -63,15 +63,18 @@ pub struct ForallBinder {
 pub struct RowType {
     /// A stable-sorted list representing `Map<Label, NonEmptyList<Type>>`.
     pub fields: Arc<[RowField]>,
-    /// Closed row if [`None`]; Open row if [`Some`].
+    /// The tail of an open row.
     pub tail: Option<TypeId>,
 }
 
 impl RowType {
-    pub fn new(fields: impl IntoIterator<Item = RowField>, tail: Option<TypeId>) -> RowType {
-        let mut fields = fields.into_iter().collect_vec();
-        fields.sort_by(|a, b| a.label.cmp(&b.label));
-        RowType { fields: Arc::from(fields), tail }
+    pub fn from_open(fields: Arc<[RowField]>, tail: TypeId) -> RowType {
+        debug_assert!(!fields.is_empty(), "critical violation: empty open row");
+        RowType { fields, tail: Some(tail) }
+    }
+
+    pub fn from_closed(fields: Arc<[RowField]>) -> RowType {
+        RowType { fields, tail: None }
     }
 }
 

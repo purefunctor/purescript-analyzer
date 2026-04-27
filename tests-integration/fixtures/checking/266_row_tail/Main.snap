@@ -1,0 +1,25 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Proxy :: forall (k :: Type) (@a :: (k :: Type)). Proxy @(k :: Type) (a :: (k :: Type))
+tail ::
+  forall (t4 :: Type) (r :: Row (t4 :: Type)).
+    Proxy @(Row (t4 :: Type)) (r :: Row (t4 :: Type)) -> Int
+nonTail :: forall (t7 :: Type) (r :: (t7 :: Type)). Proxy @(t7 :: Type) (r :: (t7 :: Type)) -> Int
+asTail ::
+  forall (t11 :: Type).
+    Array
+      (forall (r :: Row (t11 :: Type)). Proxy @(Row (t11 :: Type)) (r :: Row (t11 :: Type)) -> Int)
+asNonTail ::
+  forall (t15 :: Type).
+    Array
+      (forall (r :: Row (t15 :: Type)). Proxy @(Row (t15 :: Type)) (r :: Row (t15 :: Type)) -> Int)
+
+Types
+Proxy :: forall (k :: Type). (k :: Type) -> Type
+
+Roles
+Proxy = [Phantom]

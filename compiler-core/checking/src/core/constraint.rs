@@ -1,72 +1,40 @@
+//! Implements the constraint solver for PureScript.
+//!
+//! The [`solve_implication`] function is the entrypoint for solving the root
+//! [`Implication`]; the [`solve_implication_id`] function solves a single
+//! [`Implication`] with respect to inheritance; and the [`solve_constraints`]
+//! function implements the equality-driven constraint solver.
+//!
+//! [`Implication`]: crate::implication::Implication
+
+pub mod canonical;
 pub mod compiler;
 pub mod elaborate;
-pub mod fd;
-pub mod given;
 pub mod instances;
+pub mod matching;
+
+pub use canonical::{CanonicalConstraint, CanonicalConstraintId, Canonicals};
+
+use matching::{InstanceMatch, MatchInstance, match_given_instance, match_instance_chain};
 
 use std::collections::VecDeque;
-use std::mem;
+use std::{iter, mem};
 
 use building_types::QueryResult;
-use files::FileId;
-use indexing::TypeItemId;
 use itertools::Itertools;
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::{KindOrType, Type, TypeId, normalise, toolkit, unification};
+use crate::core::{TypeId, unification};
 use crate::error::ErrorKind;
-use crate::implication::ImplicationId;
-use crate::state::CheckState;
-
-use compiler::match_compiler_instances;
-use elaborate::{elaborate_given, substitute_constraint, substitute_constraints};
-use given::match_given_instances;
-use instances::{collect_instance_chains, match_instance};
-
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub struct ConstraintApplication {
-    pub file_id: FileId,
-    pub item_id: TypeItemId,
-    pub arguments: Vec<KindOrType>,
-}
-
-impl ConstraintApplication {
-    pub fn expect_type_arguments<const N: usize>(&self) -> Option<[TypeId; N]> {
-        self.arguments
-            .iter()
-            .filter_map(|argument| match argument {
-                KindOrType::Type(argument) => Some(*argument),
-                KindOrType::Kind(_) => None,
-            })
-            .collect_array()
-    }
-}
-
-#[derive(Debug, Clone)]
-pub enum MatchInstance {
-    Match { constraints: Vec<TypeId>, equalities: Vec<(TypeId, TypeId)> },
-    Apart,
-    Stuck,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum MatchType {
-    Match,
-    Apart,
-    Stuck,
-}
-
-impl MatchType {
-    fn and_then(self, f: impl FnOnce() -> QueryResult<MatchType>) -> QueryResult<MatchType> {
-        if let MatchType::Match = self { f() } else { Ok(self) }
-    }
-}
+use crate::implication::{ImplicationId, Patterns};
+use crate::state::{CheckState, UnificationState};
 
 pub fn solve_implication<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-) -> QueryResult<Vec<TypeId>>
+) -> QueryResult<Vec<CanonicalConstraintId>>
 where
     Q: ExternalQueries,
 {
@@ -74,13 +42,12 @@ where
     solve_implication_id(state, context, implication, &[])
 }
 
-/// Recursively solves an implication and its children.
-fn solve_implication_id<Q>(
+pub fn solve_implication_id<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     implication: ImplicationId,
     inherited: &[TypeId],
-) -> QueryResult<Vec<TypeId>>
+) -> QueryResult<Vec<CanonicalConstraintId>>
 where
     Q: ExternalQueries,
 {
@@ -90,151 +57,171 @@ where
             mem::take(&mut node.wanted),
             mem::take(&mut node.given),
             mem::take(&mut node.patterns),
-            node.children.clone(),
+            mem::take(&mut node.children),
         )
     };
 
-    let all_given = inherited.iter().copied().chain(given.iter().copied()).collect_vec();
+    let inherited_given = {
+        let inherited = inherited.iter();
+        let given = given.iter();
+        iter::chain(inherited, given).copied().collect_vec()
+    };
 
-    // Solve this implication's children with all_given.
-    for child in &children {
-        let residual = solve_implication_id(state, context, *child, &all_given)?;
-
-        // TODO: partition_by_skolem_escape once skolems are introduced.
-        state.implications[implication].wanted.extend(residual);
-    }
-
-    // Solve this implication's wanted constraints with all_given.
-    let remaining = mem::take(&mut state.implications[implication].wanted);
-    let wanted: VecDeque<_> = wanted.into_iter().chain(remaining).collect();
-    let residuals = solve_constraints(state, context, wanted, &all_given)?;
-
-    let implication = &mut state.implications[implication];
-    implication.given = given;
-    implication.wanted = residuals.iter().copied().collect();
-
-    let has_given_partial = all_given.contains(&context.prim.partial);
-    if !has_given_partial {
-        for deferred in patterns {
-            state.checked.errors.push(crate::error::CheckError {
-                kind: ErrorKind::MissingPatterns { patterns: deferred.patterns },
-                crumbs: deferred.crumbs,
-            });
-        }
-    }
-
-    Ok(residuals)
-}
-
-fn solve_constraints<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    wanted: VecDeque<TypeId>,
-    given: &[TypeId],
-) -> QueryResult<Vec<TypeId>>
-where
-    Q: ExternalQueries,
-{
-    let elaborate::ElaboratedGiven { given, substitution } =
-        elaborate_given(state, context, given)?;
-
-    let work_queue = wanted
-        .into_iter()
-        .map(|constraint| substitute_constraint(state, context, &substitution, constraint))
+    let mut wanted = wanted
+        .iter()
+        .filter_map(|id| canonical::canonicalise(state, context, *id).transpose())
         .collect::<QueryResult<VecDeque<_>>>()?;
 
-    let mut work_queue = work_queue;
-    let mut residual = vec![];
+    for child in &children {
+        let residual = solve_implication_id(state, context, *child, &inherited_given)?;
+        wanted.extend(residual);
+    }
 
-    loop {
-        let mut made_progress = false;
+    let residual = solve_constraints(state, context, wanted, &inherited_given)?;
+    let elide_missing_patterns = inherited_given.contains(&context.prim.partial);
 
-        'work: while let Some(wanted) = work_queue.pop_front() {
-            let Some(application) = constraint_application(state, context, wanted)? else {
-                residual.push(wanted);
-                continue;
-            };
-
-            match match_given_instances(state, context, &application, &given)? {
-                Some(MatchInstance::Match { equalities, .. }) => {
-                    for (t1, t2) in equalities {
-                        if unification::unify(state, context, t1, t2)? {
-                            made_progress = true;
-                        }
-                    }
-                    continue 'work;
-                }
-                Some(MatchInstance::Stuck | MatchInstance::Apart) | None => {}
-            }
-
-            match match_compiler_instances(state, context, &application, &given)? {
-                Some(MatchInstance::Match { constraints, equalities }) => {
-                    for (t1, t2) in equalities {
-                        if unification::unify(state, context, t1, t2)? {
-                            made_progress = true;
-                        }
-                    }
-                    let constraints =
-                        substitute_constraints(state, context, &substitution, constraints)?;
-                    work_queue.extend(constraints);
-                    continue 'work;
-                }
-                Some(MatchInstance::Stuck) => {
-                    residual.push(wanted);
-                    continue 'work;
-                }
-                Some(MatchInstance::Apart) | None => {}
-            }
-
-            let instance_chains = collect_instance_chains(state, context, &application)?;
-
-            for chain in instance_chains {
-                'chain: for instance in chain {
-                    match match_instance(state, context, &application, &instance)? {
-                        MatchInstance::Match { constraints, equalities } => {
-                            for (t1, t2) in equalities {
-                                if unification::unify(state, context, t1, t2)? {
-                                    made_progress = true;
-                                }
-                            }
-                            let constraints =
-                                substitute_constraints(state, context, &substitution, constraints)?;
-                            work_queue.extend(constraints);
-                            continue 'work;
-                        }
-                        MatchInstance::Apart => continue 'chain,
-                        MatchInstance::Stuck => break 'chain,
-                    }
-                }
-            }
-
-            residual.push(wanted);
-        }
-
-        if made_progress && !residual.is_empty() {
-            work_queue.extend(residual.drain(..));
-        } else {
-            break;
+    if !elide_missing_patterns {
+        for Patterns { patterns, crumbs } in patterns {
+            state.checked.errors.push(crate::error::CheckError {
+                kind: ErrorKind::MissingPatterns { patterns },
+                crumbs,
+            });
         }
     }
 
     Ok(residual)
 }
 
-pub fn constraint_application<Q>(
+/// A unit of work in the constraint solver.
+pub enum WorkItem {
+    /// A constraint to be solved.
+    Constraint(CanonicalConstraintId),
+    /// A unification to be performed.
+    Unify(TypeId, TypeId),
+}
+
+type Stuck = FxHashMap<u32, Vec<CanonicalConstraintId>>;
+
+pub fn solve_constraints<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    id: TypeId,
-) -> QueryResult<Option<ConstraintApplication>>
+    wanted: VecDeque<CanonicalConstraintId>,
+    given: &[TypeId],
+) -> QueryResult<Vec<CanonicalConstraintId>>
 where
     Q: ExternalQueries,
 {
-    let (constructor, arguments) = toolkit::extract_all_applications(state, context, id)?;
-    let constructor = normalise::expand(state, context, constructor)?;
-    Ok(match context.lookup_type(constructor) {
-        Type::Constructor(file_id, item_id) => {
-            Some(ConstraintApplication { file_id, item_id, arguments })
+    let given = given
+        .iter()
+        .filter_map(|id| canonical::canonicalise(state, context, *id).transpose())
+        .collect::<QueryResult<Vec<_>>>()?;
+
+    let elaborate::ElaboratedGiven { given, substitution } =
+        elaborate::elaborate_given(state, context, &given)?;
+
+    let wanted = wanted
+        .into_iter()
+        .map(|wanted| canonical::substitute_canonical(state, context, &substitution, wanted))
+        .collect::<QueryResult<VecDeque<_>>>()?;
+
+    let mut work = wanted.into_iter().map(WorkItem::Constraint).collect::<VecDeque<_>>();
+
+    let mut stuck = Stuck::default();
+    let mut residuals = vec![];
+
+    'work: while let Some(item) = work.pop_back() {
+        match item {
+            WorkItem::Constraint(wanted) => {
+                let mut blocked = FxHashSet::default();
+
+                match match_given_instance(state, context, wanted, &given)? {
+                    MatchInstance::Match(InstanceMatch { goals }) => {
+                        work.extend(goals);
+                        continue 'work;
+                    }
+                    MatchInstance::Stuck(id) => {
+                        blocked.extend(id);
+                    }
+                    MatchInstance::Apart => (),
+                }
+
+                match compiler::match_compiler_instance(state, context, wanted, &given)? {
+                    Some(MatchInstance::Match(InstanceMatch { goals })) => {
+                        work.extend(goals);
+                        continue 'work;
+                    }
+                    Some(MatchInstance::Stuck(id)) => {
+                        blocked.extend(id);
+                    }
+                    Some(MatchInstance::Apart) | None => (),
+                }
+
+                let chains = instances::collect_instance_chains(state, context, wanted)?;
+                'chain: for chain in chains {
+                    match match_instance_chain(state, context, wanted, &chain)? {
+                        MatchInstance::Match(InstanceMatch { goals }) => {
+                            work.extend(goals);
+                            continue 'work;
+                        }
+                        MatchInstance::Stuck(id) => {
+                            blocked.extend(id);
+                            continue 'chain;
+                        }
+                        MatchInstance::Apart => {
+                            continue 'chain;
+                        }
+                    }
+                }
+
+                if blocked.is_empty() {
+                    residuals.push(wanted);
+                } else {
+                    for id in blocked {
+                        stuck.entry(id).or_default().push(wanted);
+                    }
+                }
+            }
+            WorkItem::Unify(t1, t2) => {
+                if unification::unify(state, context, t1, t2)? {
+                    let mut awake = FxHashSet::default();
+                    stuck.retain(|&id, constraints| {
+                        if let UnificationState::Solved(_) = state.unifications.get(id).state {
+                            let constraints = constraints.iter().copied();
+                            awake.extend(constraints);
+                            false
+                        } else {
+                            true
+                        }
+                    });
+                    for constraint in awake {
+                        work.push_back(WorkItem::Constraint(constraint));
+                    }
+                }
+            }
         }
-        _ => None,
-    })
+    }
+
+    for (_, constraints) in stuck {
+        residuals.extend(constraints);
+    }
+
+    Ok(residuals)
+}
+
+pub fn is_type_error<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    constraint: TypeId,
+) -> QueryResult<bool>
+where
+    Q: ExternalQueries,
+{
+    let Some(canonical) = canonical::canonicalise(state, context, constraint)? else {
+        return Ok(false);
+    };
+
+    let canonical = &state.canonicals[canonical];
+    Ok(canonical.file_id == context.prim_type_error.file_id
+        && (canonical.type_id == context.prim_type_error.warn
+            || canonical.type_id == context.prim_type_error.fail))
 }

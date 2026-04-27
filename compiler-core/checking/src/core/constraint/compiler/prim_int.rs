@@ -6,7 +6,8 @@ use petgraph::prelude::DiGraphMap;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::constraint::{ConstraintApplication, MatchInstance};
+use crate::core::constraint::CanonicalConstraintId;
+use crate::core::constraint::matching::{self, MatchInstance};
 use crate::core::{TypeId, normalise};
 use crate::state::CheckState;
 
@@ -41,7 +42,7 @@ where
             let result = super::intern_integer(context, sum_value - right);
             match_equality(state, context, left, result)?
         }
-        _ => MatchInstance::Stuck,
+        _ => matching::blocking_constraint(state, context, &[left, right, sum])?,
     };
 
     Ok(Some(matched))
@@ -60,10 +61,10 @@ where
     };
 
     let Some(left_int) = extract_integer(state, context, left)? else {
-        return Ok(Some(MatchInstance::Stuck));
+        return Ok(Some(matching::blocking_constraint(state, context, &[left])?));
     };
     let Some(right_int) = extract_integer(state, context, right)? else {
-        return Ok(Some(MatchInstance::Stuck));
+        return Ok(Some(matching::blocking_constraint(state, context, &[right])?));
     };
 
     let result = super::intern_integer(context, left_int * right_int);
@@ -74,7 +75,7 @@ pub fn match_compare<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     arguments: &[TypeId],
-    given: &[ConstraintApplication],
+    given: &[CanonicalConstraintId],
 ) -> QueryResult<Option<MatchInstance>>
 where
     Q: ExternalQueries,
@@ -100,26 +101,30 @@ where
         return Ok(Some(match_equality(state, context, ordering, result)?));
     }
 
-    Ok(Some(match_compare_transitive(state, context, left, right, ordering, given)?))
+    if let Some(result) = match_compare_transitive(state, context, left, right, ordering, given)? {
+        return Ok(Some(result));
+    }
+
+    Ok(Some(matching::blocking_constraint(state, context, &[left, right])?))
 }
 
-// Compare givens induce a directed graph where an edge `a -> b` means `a < b`.
 fn match_compare_transitive<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     left: TypeId,
     right: TypeId,
     ordering: TypeId,
-    given: &[ConstraintApplication],
-) -> QueryResult<MatchInstance>
+    given: &[CanonicalConstraintId],
+) -> QueryResult<Option<MatchInstance>>
 where
     Q: ExternalQueries,
 {
     let mut graph: DiGraphMap<TypeId, ()> = DiGraphMap::new();
 
-    for constraint in given {
+    for &constraint in given {
+        let constraint = &state.canonicals[constraint];
         if constraint.file_id != context.prim_int.file_id
-            || constraint.item_id != context.prim_int.compare
+            || constraint.type_id != context.prim_int.compare
         {
             continue;
         }
@@ -149,10 +154,10 @@ where
         (true, true) => context.prim_ordering.eq,
         (true, false) => context.prim_ordering.lt,
         (false, true) => context.prim_ordering.gt,
-        (false, false) => return Ok(MatchInstance::Stuck),
+        (false, false) => return Ok(None),
     };
 
-    match_equality(state, context, ordering, result)
+    Ok(Some(match_equality(state, context, ordering, result)?))
 }
 
 pub fn match_to_string<Q>(
@@ -168,7 +173,7 @@ where
     };
 
     let Some(value) = extract_integer(state, context, int)? else {
-        return Ok(Some(MatchInstance::Stuck));
+        return Ok(Some(matching::blocking_constraint(state, context, &[int])?));
     };
 
     let result = intern_symbol(context, &value.to_string());

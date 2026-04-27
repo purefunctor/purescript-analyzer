@@ -1,15 +1,13 @@
-use std::sync::Arc;
-
 use building_types::QueryResult;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::constraint::MatchInstance;
-use crate::core::{RowField, RowType, Type, TypeId, normalise};
+use crate::core::constraint::matching::{self, MatchInstance};
+use crate::core::{RowField, Type, TypeId, normalise};
 use crate::source::types;
 use crate::state::CheckState;
 
-use super::{extract_row, intern_symbol, match_equality};
+use super::{RowView, extract_row, intern_symbol, match_equality};
 
 pub fn match_row_to_list<Q>(
     state: &mut CheckState,
@@ -24,10 +22,10 @@ where
     };
 
     let Some(row_value) = extract_row(state, context, row)? else {
-        return Ok(Some(MatchInstance::Stuck));
+        return Ok(Some(matching::blocking_constraint(state, context, &[row])?));
     };
-    if row_value.tail.is_some() {
-        return Ok(Some(MatchInstance::Stuck));
+    if let Some(tail) = row_value.tail() {
+        return Ok(Some(matching::blocking_constraint(state, context, &[tail])?));
     }
 
     let element_kind = row_element_kind(state, context, &row_value)?;
@@ -35,7 +33,7 @@ where
     let nil = context.intern_kind_application(context.prim_row_list.nil, element_kind);
     let cons = context.intern_kind_application(context.prim_row_list.cons, element_kind);
 
-    let result = row_value.fields.iter().rev().fold(nil, |rest, field| {
+    let result = row_value.fields().iter().rev().fold(nil, |rest, field| {
         let label = intern_symbol(context, field.label.as_str());
         let cons_label = context.intern_application(cons, label);
         let cons_type = context.intern_application(cons_label, field.id);
@@ -48,19 +46,16 @@ where
 fn row_element_kind<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    row: &RowType,
+    row: &RowView,
 ) -> QueryResult<TypeId>
 where
     Q: ExternalQueries,
 {
-    let Some(RowField { id, .. }) = row.fields.first() else {
+    let Some(RowField { label, id }) = row.fields().first() else {
         return Ok(state.fresh_unification(context.queries, context.prim.t));
     };
 
-    let fields = Arc::from([RowField { label: row.fields[0].label.clone(), id: *id }]);
-    let singleton_row = RowType { fields, tail: None };
-    let singleton_row_id = context.intern_row_type(singleton_row);
-    let singleton_row_type = context.intern_row(singleton_row_id);
+    let singleton_row_type = context.intern_row([RowField { label: label.clone(), id: *id }], None);
     let row_kind = types::elaborate_kind(state, context, singleton_row_type)?;
 
     let row_kind = normalise::expand(state, context, row_kind)?;

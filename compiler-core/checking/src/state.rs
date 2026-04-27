@@ -7,6 +7,7 @@ use building_types::QueryResult;
 use files::FileId;
 
 use crate::context::CheckContext;
+use crate::core::constraint::Canonicals;
 use crate::core::exhaustive::{
     ExhaustivenessReport, Pattern, PatternConstructor, PatternId, PatternInterner, PatternKind,
 };
@@ -199,6 +200,7 @@ pub struct CheckState {
 
     pub unifications: Unifications,
     pub implications: Implications,
+    pub canonicals: Canonicals,
 
     pub defer_expansion: bool,
     pub depth: Depth,
@@ -215,6 +217,7 @@ impl CheckState {
             patterns: Default::default(),
             unifications: Default::default(),
             implications: Default::default(),
+            canonicals: Default::default(),
             defer_expansion: Default::default(),
             depth: Depth(0),
             crumbs: Default::default(),
@@ -298,7 +301,10 @@ impl CheckState {
         result
     }
 
-    pub fn solve_constraints<Q>(&mut self, context: &CheckContext<Q>) -> QueryResult<Vec<TypeId>>
+    pub fn solve_constraints<Q>(
+        &mut self,
+        context: &CheckContext<Q>,
+    ) -> QueryResult<Vec<constraint::CanonicalConstraintId>>
     where
         Q: ExternalQueries,
     {
@@ -312,6 +318,18 @@ impl CheckState {
         let id = zonk::zonk(self, context, id)?;
         let pretty = pretty::Pretty::new(context.queries, &self.checked).render(id);
         Ok(context.queries.intern_smol_str(pretty))
+    }
+
+    pub fn pretty_constraint_id<Q>(
+        &mut self,
+        context: &CheckContext<Q>,
+        id: constraint::CanonicalConstraintId,
+    ) -> QueryResult<SmolStrId>
+    where
+        Q: ExternalQueries,
+    {
+        let id = self.canonicals.type_id(context, id);
+        self.pretty_id(context, id)
     }
 
     pub fn report_exhaustiveness<Q>(

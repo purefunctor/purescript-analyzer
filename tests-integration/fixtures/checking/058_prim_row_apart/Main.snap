@@ -1,5 +1,5 @@
 ---
-source: tests-integration/tests/checking2/generated.rs
+source: tests-integration/tests/checking/generated.rs
 assertion_line: 28
 expression: report
 ---
@@ -15,17 +15,26 @@ consMissingLabel ::
 lacksPresent ::
   Lacks @Type "b" ( a :: Int, b :: String ) => Proxy @(Row Type) ( a :: Int, b :: String )
 forceSolve ::
-  forall (t5 :: Row Type) (t4 :: Row Type).
-    Union @Type (t5 :: Row Type) ( b :: String ) ( a :: Int, b :: Int ) =>
+  forall (t4 :: Row Type).
     { consMissingLabel :: Proxy @(Row Type) (t4 :: Row Type)
     , lacksPresent :: Proxy @(Row Type) ( a :: Int, b :: String )
-    , unionTypeMismatch :: Proxy @(Row Type) (t5 :: Row Type)
+    , unionTypeMismatch :: Proxy @(Row Type) ( a :: Int )
     }
 
 Types
 
 Diagnostics
 error[CannotUnify]: Cannot unify '( a :: Int, b :: String )' with '( missing :: Int | ?23 )'
+  --> 15:1..19:4
+   |
+15 | forceSolve =
+   | ^~~~~~~~~~~~
+error[CannotUnify]: Cannot unify 'String' with 'Int'
+  --> 15:1..19:4
+   |
+15 | forceSolve =
+   | ^~~~~~~~~~~~
+error[CannotUnify]: Cannot unify '( b :: String )' with '( b :: Int )'
   --> 15:1..19:4
    |
 15 | forceSolve =

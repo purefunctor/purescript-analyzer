@@ -151,11 +151,7 @@ where
 {
     let mut left = OperatorTree::Leaf(item);
 
-    loop {
-        let Some(OperatorPair { id, element }) = items.peek().copied() else {
-            break;
-        };
-
+    while let Some(OperatorPair { id, element }) = items.peek().copied() {
         let id = id.ok_or(BracketingError::InvalidOperator)?;
 
         let (associativity, precedence) =

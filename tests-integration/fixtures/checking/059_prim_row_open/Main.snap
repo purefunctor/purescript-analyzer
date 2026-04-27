@@ -1,5 +1,5 @@
 ---
-source: tests-integration/tests/checking2/generated.rs
+source: tests-integration/tests/checking/generated.rs
 assertion_line: 28
 expression: report
 ---
@@ -40,29 +40,30 @@ lacksPresent ::
   forall (r :: Row Type).
     Lacks @Type "a" ( a :: Int | (r :: Row Type) ) => Proxy @(Row Type) (r :: Row Type) -> Int
 forceSolve ::
-  forall (t40 :: Row Type) (t39 :: Row Type) (t38 :: Row Type) (t37 :: Row Type) (t36 :: Row Type)
-    (t35 :: Row Type) (t34 :: Row Type).
-    Union @Type (t40 :: Row Type) ( b :: String ) (t39 :: Row Type) =>
-    { backwardLeft :: Proxy @(Row Type) ( a :: Int | (t38 :: Row Type) )
+  forall (t41 :: Row Type) (t40 :: Row Type) (t39 :: Row Type) (t38 :: Row Type) (t37 :: Row Type)
+    (t36 :: Row Type) (t35 :: Row Type) (t34 :: Row Type).
+    Union @Type (t41 :: Row Type) ( b :: String ) ( a :: Int, b :: String | (t40 :: Row Type) ) =>
+    Union @Type (t39 :: Row Type) ( b :: String ) (t38 :: Row Type) =>
+    { backwardLeft :: Proxy @(Row Type) (t41 :: Row Type)
     , backwardRight :: Proxy @(Row Type) ( b :: String | (t37 :: Row Type) )
     , consOpen :: Proxy @(Row Type) ( a :: String, x :: Int | (t36 :: Row Type) )
     , decomposeOpen :: Proxy @Type Int
     , extractTail :: Proxy @(Row Type) ( a :: String | (t35 :: Row Type) )
     , lacksOpen :: Int
     , lacksPresent :: Int
-    , openLeft :: Proxy @(Row Type) ( a :: Int | (t39 :: Row Type) )
+    , openLeft :: Proxy @(Row Type) ( a :: Int | (t38 :: Row Type) )
     , openRight :: Proxy @(Row Type) ( a :: Int, b :: String | (t34 :: Row Type) )
     }
 
 Types
 
 Diagnostics
-error[AmbiguousConstraint]: Ambiguous constraint: Lacks @Type "a" ( a :: Int | ?86 )
+error[AmbiguousConstraint]: Ambiguous constraint: Lacks @Type "a" ( a :: Int | ?84 )
   --> 33:1..43:4
    |
 33 | forceSolve =
    | ^~~~~~~~~~~~
-error[AmbiguousConstraint]: Ambiguous constraint: Lacks @Type "missing" ?83
+error[AmbiguousConstraint]: Ambiguous constraint: Lacks @Type "missing" ?81
   --> 33:1..43:4
    |
 33 | forceSolve =

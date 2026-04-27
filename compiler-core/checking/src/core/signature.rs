@@ -149,10 +149,6 @@ where
     let arguments = remaining.by_ref().take(required).collect();
     let result = context.intern_function_iter(remaining, result);
 
-    for &constraint in &constraints {
-        state.push_given(constraint);
-    }
-
     Ok(SkolemisedSignature { substitution, constraints, arguments, result })
 }
 

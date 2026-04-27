@@ -6,7 +6,8 @@ use indexing::TypeItemId;
 use itertools::izip;
 
 use crate::context::CheckContext;
-use crate::core::constraint::MatchInstance;
+use crate::core::constraint::matching::{InstanceMatch, MatchInstance};
+use crate::core::constraint::{WorkItem, canonical};
 use crate::core::substitute::SubstituteName;
 use crate::core::unification::{CanUnify, can_unify, unify};
 use crate::core::{Role, Type, TypeId, normalise, toolkit};
@@ -37,15 +38,19 @@ where
     let right = normalise::expand(state, context, right)?;
 
     if left == right {
-        return Ok(Some(MatchInstance::Match { constraints: vec![], equalities: vec![] }));
+        return Ok(Some(MatchInstance::Match(InstanceMatch { goals: vec![] })));
     }
 
-    if is_unification_head(state, context, left)? || is_unification_head(state, context, right)? {
-        return Ok(Some(MatchInstance::Stuck));
+    if let Some(stuck) = unification_head(state, context, left)? {
+        return Ok(Some(MatchInstance::Stuck(vec![stuck])));
+    }
+
+    if let Some(stuck) = unification_head(state, context, right)? {
+        return Ok(Some(MatchInstance::Stuck(vec![stuck])));
     }
 
     if try_refl(state, context, left, right)? {
-        return Ok(Some(MatchInstance::Match { constraints: vec![], equalities: vec![] }));
+        return Ok(Some(MatchInstance::Match(InstanceMatch { goals: vec![] })));
     }
 
     let newtype_result = try_newtype_coercion(state, context, left, right)?;
@@ -76,22 +81,22 @@ where
     Ok(Some(MatchInstance::Apart))
 }
 
-fn is_unification_head<Q>(
+fn unification_head<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     mut id: TypeId,
-) -> QueryResult<bool>
+) -> QueryResult<Option<u32>>
 where
     Q: ExternalQueries,
 {
     safe_loop! {
         id = normalise::expand(state, context, id)?;
         match context.lookup_type(id) {
-            Type::Unification(_) => return Ok(true),
+            Type::Unification(u) => return Ok(Some(u)),
             Type::Application(function, _) | Type::KindApplication(function, _) => {
                 id = function;
             }
-            _ => return Ok(false),
+            _ => return Ok(None),
         }
     }
 }
@@ -129,10 +134,15 @@ where
                 toolkit::get_newtype_inner(state, context, file_id, item_id, left)?
             {
                 let constraint = make_coercible_constraint(state, context, inner, right)?;
-                return Ok(NewtypeCoercionResult::Success(MatchInstance::Match {
-                    constraints: vec![constraint],
-                    equalities: vec![],
-                }));
+                let canonical_id = canonical::canonicalise(state, context, constraint)?;
+                let goals = if let Some(canonical_id) = canonical_id {
+                    vec![WorkItem::Constraint(canonical_id)]
+                } else {
+                    vec![]
+                };
+                return Ok(NewtypeCoercionResult::Success(MatchInstance::Match(InstanceMatch {
+                    goals,
+                })));
             }
         } else {
             hidden_newtype = Some((file_id, item_id));
@@ -148,10 +158,15 @@ where
                 toolkit::get_newtype_inner(state, context, file_id, item_id, right)?
             {
                 let constraint = make_coercible_constraint(state, context, left, inner)?;
-                return Ok(NewtypeCoercionResult::Success(MatchInstance::Match {
-                    constraints: vec![constraint],
-                    equalities: vec![],
-                }));
+                let canonical_id = canonical::canonicalise(state, context, constraint)?;
+                let goals = if let Some(canonical_id) = canonical_id {
+                    vec![WorkItem::Constraint(canonical_id)]
+                } else {
+                    vec![]
+                };
+                return Ok(NewtypeCoercionResult::Success(MatchInstance::Match(InstanceMatch {
+                    goals,
+                })));
             }
         } else if hidden_newtype.is_none() {
             hidden_newtype = Some((file_id, item_id));
@@ -195,14 +210,13 @@ where
     }
 
     let Some(roles) = toolkit::lookup_file_roles(state, context, left_file, left_id)? else {
-        return Ok(Some(MatchInstance::Stuck));
+        return Ok(Some(MatchInstance::Apart));
     };
 
     debug_assert_eq!(roles.len(), left_arguments.len(), "critical failure: mismatched lengths");
     debug_assert_eq!(roles.len(), right_arguments.len(), "critical failure: mismatched lengths");
 
-    let mut constraints = vec![];
-    let mut equalities = vec![];
+    let mut goals = vec![];
 
     for (role, &left_argument, &right_argument) in izip!(&*roles, &left_arguments, &right_arguments)
     {
@@ -211,7 +225,9 @@ where
             Role::Representational => {
                 let constraint =
                     make_coercible_constraint(state, context, left_argument, right_argument)?;
-                constraints.push(constraint);
+                if let Some(canonical_id) = canonical::canonicalise(state, context, constraint)? {
+                    goals.push(WorkItem::Constraint(canonical_id));
+                }
             }
             Role::Nominal => {
                 if left_argument != right_argument {
@@ -219,13 +235,13 @@ where
                     {
                         return Ok(Some(MatchInstance::Apart));
                     }
-                    equalities.push((left_argument, right_argument));
+                    goals.push(WorkItem::Unify(left_argument, right_argument));
                 }
             }
         }
     }
 
-    Ok(Some(MatchInstance::Match { constraints, equalities }))
+    Ok(Some(MatchInstance::Match(InstanceMatch { goals })))
 }
 
 fn try_function_coercion<Q>(
@@ -246,13 +262,19 @@ where
         return Ok(None);
     };
 
-    let left_constraint = make_coercible_constraint(state, context, left_argument, right_argument)?;
-    let right_constraint = make_coercible_constraint(state, context, left_result, right_result)?;
+    let mut goals = vec![];
 
-    Ok(Some(MatchInstance::Match {
-        constraints: vec![left_constraint, right_constraint],
-        equalities: vec![],
-    }))
+    let left_constraint = make_coercible_constraint(state, context, left_argument, right_argument)?;
+    if let Some(canonical_id) = canonical::canonicalise(state, context, left_constraint)? {
+        goals.push(WorkItem::Constraint(canonical_id));
+    }
+
+    let right_constraint = make_coercible_constraint(state, context, left_result, right_result)?;
+    if let Some(canonical_id) = canonical::canonicalise(state, context, right_constraint)? {
+        goals.push(WorkItem::Constraint(canonical_id));
+    }
+
+    Ok(Some(MatchInstance::Match(InstanceMatch { goals })))
 }
 
 fn decompose_function_simple<Q>(
@@ -302,28 +324,32 @@ where
         return Ok(Some(MatchInstance::Apart));
     }
 
-    let mut constraints = vec![];
+    let mut goals = vec![];
 
-    for (left_field, right_field) in izip!(&*left_row.fields, &*right_row.fields) {
+    for (left_field, right_field) in izip!(left_row.fields.iter(), right_row.fields.iter()) {
         if left_field.label != right_field.label {
             return Ok(Some(MatchInstance::Apart));
         }
         let constraint = make_coercible_constraint(state, context, left_field.id, right_field.id)?;
-        constraints.push(constraint);
+        if let Some(canonical_id) = canonical::canonicalise(state, context, constraint)? {
+            goals.push(WorkItem::Constraint(canonical_id));
+        }
     }
 
     match (left_row.tail, right_row.tail) {
         (None, None) => (),
         (Some(left_tail), Some(right_tail)) => {
             let constraint = make_coercible_constraint(state, context, left_tail, right_tail)?;
-            constraints.push(constraint);
+            if let Some(canonical_id) = canonical::canonicalise(state, context, constraint)? {
+                goals.push(WorkItem::Constraint(canonical_id));
+            }
         }
         (None, Some(_)) | (Some(_), None) => {
             return Ok(Some(MatchInstance::Apart));
         }
     }
 
-    Ok(Some(MatchInstance::Match { constraints, equalities: vec![] }))
+    Ok(Some(MatchInstance::Match(InstanceMatch { goals })))
 }
 
 fn try_higher_kinded_coercion<Q>(
@@ -359,7 +385,14 @@ where
     let right_saturated = context.intern_application(right_applied, argument);
     let constraint = make_coercible_constraint(state, context, left_saturated, right_saturated)?;
 
-    Ok(Some(MatchInstance::Match { constraints: vec![constraint], equalities: vec![] }))
+    let canonical_id = canonical::canonicalise(state, context, constraint)?;
+    let goals = if let Some(canonical_id) = canonical_id {
+        vec![WorkItem::Constraint(canonical_id)]
+    } else {
+        vec![]
+    };
+
+    Ok(Some(MatchInstance::Match(InstanceMatch { goals })))
 }
 
 fn decompose_kind_for_coercion<Q>(

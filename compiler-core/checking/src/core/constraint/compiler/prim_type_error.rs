@@ -4,18 +4,22 @@ use smol_str::{SmolStr, format_smolstr};
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::constraint::MatchInstance;
+use crate::core::constraint::matching::{self, InstanceMatch, MatchInstance};
 use crate::core::pretty::Pretty;
 use crate::core::{Type, TypeId, normalise, toolkit, zonk};
 use crate::error::ErrorKind;
 use crate::state::CheckState;
 
-fn is_stuck<Q>(state: &mut CheckState, context: &CheckContext<Q>, id: TypeId) -> QueryResult<bool>
+fn first_blocking_unification<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    id: TypeId,
+) -> QueryResult<Option<u32>>
 where
     Q: ExternalQueries,
 {
-    let id = normalise::expand(state, context, id)?;
-    Ok(matches!(context.lookup_type(id), Type::Unification(_)))
+    let blocking = matching::collect_blocking(state, context, &[id])?;
+    Ok(blocking.into_iter().next())
 }
 
 fn extract_symbol_text<Q>(
@@ -72,20 +76,21 @@ fn render_label(kind: StringKind, text: &str) -> SmolStr {
 
 /// Renders a `Doc` type into a string for custom type error messages.
 ///
-/// Returns `None` if the doc is stuck on an unsolved unification variable,
-/// signalling that the constraint solver should return `Stuck`.
+/// Returns `Ok(Some(text))` on success, `Ok(None)` if the doc structure is
+/// unrecognised, and `Err(id)` if stuck on an unsolved unification variable
+/// with the given ID.
 fn render_doc<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     doc: TypeId,
-) -> QueryResult<Option<SmolStr>>
+) -> Result<Option<SmolStr>, RenderStuck>
 where
     Q: ExternalQueries,
 {
     let doc = normalise::expand(state, context, doc)?;
 
-    if matches!(context.lookup_type(doc), Type::Unification(_)) {
-        return Ok(None);
+    if let Type::Unification(u) = context.lookup_type(doc) {
+        return Err(RenderStuck::Blocked(u));
     }
 
     let (constructor, arguments) = toolkit::extract_type_application(state, context, doc)?;
@@ -93,22 +98,22 @@ where
 
     if constructor == prim.text {
         let &[symbol] = arguments.as_slice() else { return Ok(None) };
-        if is_stuck(state, context, symbol)? {
-            return Ok(None);
+        if let Some(u) = first_blocking_unification(state, context, symbol)? {
+            return Err(RenderStuck::Blocked(u));
         }
-        extract_symbol_text(state, context, symbol)
+        Ok(extract_symbol_text(state, context, symbol)?)
     } else if constructor == prim.quote {
         let &[quoted_type] = arguments.as_slice() else { return Ok(None) };
-        if is_stuck(state, context, quoted_type)? {
-            return Ok(None);
+        if let Some(u) = first_blocking_unification(state, context, quoted_type)? {
+            return Err(RenderStuck::Blocked(u));
         }
         let quoted_type = zonk::zonk(state, context, quoted_type)?;
         let rendered = Pretty::new(context.queries, &state.checked).render(quoted_type);
         Ok(Some(rendered))
     } else if constructor == prim.quote_label {
         let &[symbol] = arguments.as_slice() else { return Ok(None) };
-        if is_stuck(state, context, symbol)? {
-            return Ok(None);
+        if let Some(u) = first_blocking_unification(state, context, symbol)? {
+            return Err(RenderStuck::Blocked(u));
         }
         Ok(extract_symbol_with_kind(state, context, symbol)?
             .map(|(kind, text)| render_label(kind, &text)))
@@ -135,6 +140,17 @@ where
     }
 }
 
+enum RenderStuck {
+    Blocked(u32),
+    Query(building_types::QueryError),
+}
+
+impl From<building_types::QueryError> for RenderStuck {
+    fn from(err: building_types::QueryError) -> Self {
+        RenderStuck::Query(err)
+    }
+}
+
 pub fn match_warn<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -145,14 +161,17 @@ where
 {
     let &[doc] = arguments else { return Ok(None) };
 
-    let Some(message) = render_doc(state, context, doc)? else {
-        return Ok(Some(MatchInstance::Stuck));
+    let message = match render_doc(state, context, doc) {
+        Ok(Some(message)) => message,
+        Ok(None) => return Ok(Some(MatchInstance::Stuck(vec![]))),
+        Err(RenderStuck::Blocked(u)) => return Ok(Some(MatchInstance::Stuck(vec![u]))),
+        Err(RenderStuck::Query(cycle)) => return Err(cycle),
     };
 
     let message_id = context.queries.intern_smol_str(message);
     state.insert_error(ErrorKind::CustomWarning { message_id });
 
-    Ok(Some(MatchInstance::Match { constraints: vec![], equalities: vec![] }))
+    Ok(Some(MatchInstance::Match(InstanceMatch { goals: vec![] })))
 }
 
 pub fn match_fail<Q>(
@@ -165,12 +184,15 @@ where
 {
     let &[doc] = arguments else { return Ok(None) };
 
-    let Some(message) = render_doc(state, context, doc)? else {
-        return Ok(Some(MatchInstance::Stuck));
+    let message = match render_doc(state, context, doc) {
+        Ok(Some(message)) => message,
+        Ok(None) => return Ok(Some(MatchInstance::Stuck(vec![]))),
+        Err(RenderStuck::Blocked(u)) => return Ok(Some(MatchInstance::Stuck(vec![u]))),
+        Err(RenderStuck::Query(cycle)) => return Err(cycle),
     };
 
     let message_id = context.queries.intern_smol_str(message);
     state.insert_error(ErrorKind::CustomFailure { message_id });
 
-    Ok(Some(MatchInstance::Match { constraints: vec![], equalities: vec![] }))
+    Ok(Some(MatchInstance::Match(InstanceMatch { goals: vec![] })))
 }

@@ -409,9 +409,7 @@ where
     }
 
     let row_tail = state.fresh_unification(context.queries, context.prim.row_type);
-    let row_type = RowType::new(fields, Some(row_tail));
-    let row_type_id = context.intern_row_type(row_type);
-    let row_type = context.intern_row(row_type_id);
+    let row_type = context.intern_row(fields, Some(row_tail));
     let record_type = context.intern_application(context.prim.record, row_type);
 
     state.checked.nodes.binders.insert(binder_id, record_type);
@@ -499,9 +497,7 @@ where
         if let Some(tail) = expected_row.tail {
             let row_tail = state.fresh_unification(context.queries, context.prim.row_type);
 
-            let row_type = RowType::new(extra_fields, Some(row_tail));
-            let row_type_id = context.intern_row_type(row_type);
-            let row_type = context.intern_row(row_type_id);
+            let row_type = context.intern_row(extra_fields, Some(row_tail));
 
             unification::unify(state, context, tail, row_type)?;
         } else {

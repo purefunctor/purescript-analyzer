@@ -9,7 +9,7 @@ use smol_str::SmolStr;
 
 use crate::context::CheckContext;
 use crate::core::substitute::SubstituteName;
-use crate::core::{ForallBinder, RowField, RowType, Type, TypeId, normalise, toolkit, unification};
+use crate::core::{ForallBinder, RowField, Type, TypeId, normalise, toolkit, unification};
 use crate::error::ErrorCrumb;
 use crate::source::{operator, synonym};
 use crate::state::CheckState;
@@ -432,9 +432,7 @@ where
         None
     };
 
-    let row = RowType::new(fields, tail);
-    let row_id = context.intern_row_type(row);
-    let row_type = context.intern_row(row_id);
+    let row_type = context.intern_row(fields, tail);
 
     Ok((row_type, row_kind))
 }

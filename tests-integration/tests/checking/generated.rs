@@ -426,7 +426,7 @@ fn run_test(folder: &str, file: &str) {
 
 #[rustfmt::skip] #[test] fn test_199_instance_kind_application_matching_main() { run_test("199_instance_kind_application_matching", "Main"); }
 
-#[rustfmt::skip] #[test] fn test_200_instance_bound_variable_unification_main() { run_test("200_instance_bound_variable_unification", "Main"); }
+#[rustfmt::skip] #[test] fn test_200_instance_given_is_not_blocking_main() { run_test("200_instance_given_is_not_blocking", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_201_synonym_function_result_kind_main() { run_test("201_synonym_function_result_kind", "Main"); }
 
@@ -551,3 +551,19 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_262_given_stuck_match_collapse_main() { run_test("262_given_stuck_match_collapse", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_263_let_binding_ambiguous_constraint_main() { run_test("263_let_binding_ambiguous_constraint", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_264_row_union_open_duplicates_main() { run_test("264_row_union_open_duplicates", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_265_row_union_documentation_main() { run_test("265_row_union_documentation", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_266_row_tail_main() { run_test("266_row_tail", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_267_row_tail_record_main() { run_test("267_row_tail_record", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_268_guarded_conditionals_checking_main() { run_test("268_guarded_conditionals_checking", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_269_instance_context_fail_deferred_main() { run_test("269_instance_context_fail_deferred", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_270_top_level_fail_eager_main() { run_test("270_top_level_fail_eager", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_271_let_retain_polymorphism_main() { run_test("271_let_retain_polymorphism", "Main"); }

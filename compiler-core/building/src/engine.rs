@@ -483,10 +483,8 @@ impl QueryEngine {
         {
             let storage = self.storage.read();
             match get(&storage).unwrap_or(&DerivedState::NotComputed) {
-                DerivedState::Computed { computed, trace, .. } => {
-                    if trace.built == revision {
-                        return Ok(V::clone(computed));
-                    }
+                DerivedState::Computed { computed, trace, .. } if trace.built == revision => {
+                    return Ok(V::clone(computed));
                 }
                 DerivedState::InProgress { id, promises } => {
                     let future = self.create_future(*id, promises)?;

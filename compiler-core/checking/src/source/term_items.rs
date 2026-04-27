@@ -6,6 +6,7 @@ use rustc_hash::FxHashMap;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
+use crate::core::constraint::CanonicalConstraintId;
 use crate::core::substitute::{NameToType, SubstituteName};
 use crate::core::{
     CheckedInstance, ForallBinder, KindOrType, Type, TypeId, constraint, generalise, normalise,
@@ -22,8 +23,8 @@ struct TermSccState {
 }
 
 enum PendingValueGroup {
-    Checked { residuals: Vec<TypeId> },
-    Inferred { residuals: Vec<TypeId> },
+    Checked { residuals: Vec<CanonicalConstraintId> },
+    Inferred { residuals: Vec<CanonicalConstraintId> },
 }
 
 pub fn check_term_items<Q>(state: &mut CheckState, context: &CheckContext<Q>) -> QueryResult<()>
@@ -264,7 +265,9 @@ where
 
     state.with_implicit(context, &substitution, |state| {
         for &constraint in &instance_constraints {
-            state.push_given(constraint);
+            if !constraint::is_type_error(state, context, constraint)? {
+                state.push_given(constraint);
+            }
         }
 
         let class_member_type = if let Some((member_file, member_id)) = member.resolution {
@@ -339,7 +342,7 @@ where
         };
 
         for residual in residuals {
-            let constraint = state.pretty_id(context, residual)?;
+            let constraint = state.pretty_constraint_id(context, residual)?;
             state.insert_error(ErrorKind::NoInstanceFound { constraint });
         }
 
@@ -441,11 +444,13 @@ where
         return Ok(None);
     };
 
-    let Some(application) = constraint::constraint_application(state, context, constraint)? else {
+    let Some(constraint) = constraint::canonical::canonicalise(state, context, constraint)? else {
         return Ok(None);
     };
 
-    if (application.file_id, application.item_id) != (class_file, class_id) {
+    let constraint = state.canonicals[constraint].clone();
+
+    if (constraint.file_id, constraint.type_id) != (class_file, class_id) {
         return Ok(None);
     }
 
@@ -656,7 +661,7 @@ fn check_value_group_core_check<Q>(
     signature_id: lowering::TypeId,
     signature_type: TypeId,
     equations: &[lowering::Equation],
-) -> QueryResult<Vec<TypeId>>
+) -> QueryResult<Vec<CanonicalConstraintId>>
 where
     Q: ExternalQueries,
 {
@@ -680,7 +685,7 @@ fn check_value_group_core_infer<Q>(
     context: &CheckContext<Q>,
     item_id: TermItemId,
     equations: &[lowering::Equation],
-) -> QueryResult<Vec<TypeId>>
+) -> QueryResult<Vec<CanonicalConstraintId>>
 where
     Q: ExternalQueries,
 {
@@ -748,15 +753,13 @@ where
         state.checked.terms.insert(item_id, t);
 
         for constraint in errors.ambiguous {
-            let constraint = zonk::zonk(state, context, constraint)?;
-            let constraint = state.pretty_id(context, constraint)?;
+            let constraint = state.pretty_constraint_id(context, constraint)?;
             state.with_error_crumb(ErrorCrumb::TermDeclaration(item_id), |state| {
                 state.insert_error(ErrorKind::AmbiguousConstraint { constraint });
             });
         }
         for constraint in errors.unsatisfied {
-            let constraint = zonk::zonk(state, context, constraint)?;
-            let constraint = state.pretty_id(context, constraint)?;
+            let constraint = state.pretty_constraint_id(context, constraint)?;
             state.with_error_crumb(ErrorCrumb::TermDeclaration(item_id), |state| {
                 state.insert_error(ErrorKind::NoInstanceFound { constraint });
             });

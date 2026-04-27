@@ -1,188 +1,186 @@
-use std::collections::HashSet;
+//! Implements elabortion for given constraints.
+
+pub mod improvements;
+
+use std::collections::VecDeque;
 
 use building_types::QueryResult;
-use files::FileId;
-use indexing::TypeItemId;
 use itertools::Itertools;
 use rustc_hash::FxHashSet;
 
 use crate::context::CheckContext;
-use crate::core::constraint::compiler;
+use crate::core::constraint::canonical::CanonicalConstraint;
+use crate::core::constraint::matching::MatchInstance;
+use crate::core::constraint::{CanonicalConstraintId, WorkItem, canonical, compiler};
 use crate::core::substitute::{NameToType, SubstituteName};
 use crate::core::walk::{TypeWalker, WalkAction, walk_type};
-use crate::core::{KindOrType, Name, Type, TypeId, normalise, toolkit};
+use crate::core::{CheckedClass, KindOrType, Name, Type, TypeId, normalise, toolkit};
 use crate::state::CheckState;
 use crate::{ExternalQueries, safe_loop};
 
-use super::{ConstraintApplication, MatchInstance};
-
-mod improvements;
-
 pub struct ElaboratedGiven {
-    pub given: Vec<ConstraintApplication>,
+    pub given: Vec<CanonicalConstraintId>,
     pub substitution: NameToType,
 }
 
+/// Entrypoint for elaborating given [`CanonicalConstraint`].
 pub fn elaborate_given<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    given: &[TypeId],
+    given: &[CanonicalConstraintId],
 ) -> QueryResult<ElaboratedGiven>
 where
     Q: ExternalQueries,
 {
-    let given = elaborate_given_superclasses(state, context, given)?;
-    let given = extract_given_applications(state, context, given)?;
-    let given = extract_coercible_symmetry(context, given);
+    let given = elaborate_superclasses(state, context, given)?;
+    let given = elaborate_coercible(state, context, given);
     let (given, substitution) = extract_compiler_solved(state, context, given)?;
     Ok(ElaboratedGiven { given, substitution })
 }
 
-fn elaborate_given_superclasses<Q>(
+/// Elaborates superclasses from a given [`CanonicalConstraint`].
+pub fn elaborate_superclasses<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    given: &[TypeId],
-) -> QueryResult<Vec<TypeId>>
+    given: &[CanonicalConstraintId],
+) -> QueryResult<Vec<CanonicalConstraintId>>
 where
     Q: ExternalQueries,
 {
-    let mut elaborated = vec![];
+    let mut elaborated = Vec::with_capacity(given.len());
+    let mut pending = VecDeque::with_capacity(given.len());
+    let mut seen = FxHashSet::default();
 
-    for &constraint in given {
-        elaborated.push(constraint);
-        elaborate_superclasses(state, context, constraint, &mut elaborated)?;
+    for &given in given {
+        if seen.insert(given) {
+            elaborated.push(given);
+            pending.push_back(given);
+        }
+    }
+
+    while let Some(constraint) = pending.pop_front() {
+        elaborate_via_superclass(
+            state,
+            context,
+            constraint,
+            &mut elaborated,
+            &mut pending,
+            &mut seen,
+        )?;
     }
 
     Ok(elaborated)
 }
 
-/// Discovers superclass constraints for a given constraint.
-pub fn elaborate_superclasses<Q>(
+fn elaborate_via_superclass<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    constraint: TypeId,
-    constraints: &mut Vec<TypeId>,
+    constraint: CanonicalConstraintId,
+    constraints: &mut Vec<CanonicalConstraintId>,
+    pending: &mut VecDeque<CanonicalConstraintId>,
+    seen: &mut FxHashSet<CanonicalConstraintId>,
 ) -> QueryResult<()>
 where
     Q: ExternalQueries,
 {
-    fn aux<Q>(
-        state: &mut CheckState,
-        context: &CheckContext<Q>,
-        constraint: TypeId,
-        constraints: &mut Vec<TypeId>,
-        seen: &mut HashSet<(FileId, TypeItemId)>,
-    ) -> QueryResult<()>
-    where
-        Q: ExternalQueries,
-    {
-        let Some(application) = super::constraint_application(state, context, constraint)? else {
-            return Ok(());
-        };
+    let CanonicalConstraint { file_id, type_id, .. } = state.canonicals[constraint];
+    let Some(class) = toolkit::lookup_file_class(state, context, file_id, type_id)? else {
+        return Ok(());
+    };
 
-        if !seen.insert((application.file_id, application.item_id)) {
-            return Ok(());
-        }
-
-        let Some(class_info) =
-            toolkit::lookup_file_class(state, context, application.file_id, application.item_id)?
-        else {
-            return Ok(());
-        };
-
-        if class_info.superclasses.is_empty() {
-            return Ok(());
-        }
-
-        let mut bindings = NameToType::default();
-        let mut arguments = application.arguments.iter().copied();
-
-        for &binder_id in &class_info.kind_binders {
-            let Some(KindOrType::Kind(argument)) = arguments.next() else {
-                return Ok(());
-            };
-            let binder = context.lookup_forall_binder(binder_id);
-            bindings.insert(binder.name, argument);
-        }
-
-        for &binder_id in &class_info.type_parameters {
-            let Some(KindOrType::Type(argument)) = arguments.next() else {
-                return Ok(());
-            };
-            let binder = context.lookup_forall_binder(binder_id);
-            bindings.insert(binder.name, argument);
-        }
-
-        if arguments.next().is_some() {
-            return Ok(());
-        }
-
-        for &superclass in &class_info.superclasses {
-            let substituted = SubstituteName::many(state, context, &bindings, superclass)?;
-            constraints.push(substituted);
-            aux(state, context, substituted, constraints, seen)?;
-        }
-
-        Ok(())
+    if class.superclasses.is_empty() {
+        return Ok(());
     }
 
-    let mut seen = HashSet::new();
-    aux(state, context, constraint, constraints, &mut seen)
+    let CanonicalConstraint { arguments, .. } = &state.canonicals[constraint];
+    let Some(substitutions) = superclass_substitutions(context, &class, arguments)? else {
+        return Ok(());
+    };
+
+    for superclass in class.superclasses {
+        let superclass = SubstituteName::many(state, context, &substitutions, superclass)?;
+        if let Some(superclass) = canonical::canonicalise(state, context, superclass)?
+            && seen.insert(superclass)
+        {
+            constraints.push(superclass);
+            pending.push_back(superclass);
+        }
+    }
+
+    Ok(())
 }
 
-fn extract_given_applications<Q>(
+fn superclass_substitutions<Q>(
+    context: &CheckContext<Q>,
+    class: &CheckedClass,
+    arguments: &[KindOrType],
+) -> QueryResult<Option<NameToType>>
+where
+    Q: ExternalQueries,
+{
+    let mut bindings = NameToType::default();
+    let mut arguments = arguments.iter().copied();
+
+    for &binder_id in &class.kind_binders {
+        let Some(KindOrType::Kind(argument)) = arguments.next() else {
+            return Ok(None);
+        };
+        let binder = context.lookup_forall_binder(binder_id);
+        bindings.insert(binder.name, argument);
+    }
+
+    for &binder_id in &class.type_parameters {
+        let Some(KindOrType::Type(argument)) = arguments.next() else {
+            return Ok(None);
+        };
+        let binder = context.lookup_forall_binder(binder_id);
+        bindings.insert(binder.name, argument);
+    }
+
+    if arguments.next().is_some() {
+        return Ok(None);
+    }
+
+    Ok(Some(bindings))
+}
+
+/// Elaborates useful [`CanonicalConstraint`] for `Coercible`.
+pub fn elaborate_coercible<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    constraints: Vec<TypeId>,
-) -> QueryResult<Vec<ConstraintApplication>>
+    mut given: Vec<CanonicalConstraintId>,
+) -> Vec<CanonicalConstraintId>
 where
     Q: ExternalQueries,
 {
-    constraints
-        .into_iter()
-        .map(|constraint| super::constraint_application(state, context, constraint))
-        .filter_map_ok(|constraint| constraint)
-        .collect()
-}
+    let symmetric = given.iter().filter_map(|given| {
+        let CanonicalConstraint { file_id, type_id, ref arguments } = state.canonicals[*given];
 
-fn extract_coercible_symmetry<Q>(
-    context: &CheckContext<Q>,
-    mut applications: Vec<ConstraintApplication>,
-) -> Vec<ConstraintApplication>
-where
-    Q: ExternalQueries,
-{
-    let symmetric = applications.iter().filter_map(|application| {
-        if application.file_id != context.prim_coerce.file_id
-            || application.item_id != context.prim_coerce.coercible
-        {
+        if (file_id, type_id) != (context.prim_coerce.file_id, context.prim_coerce.coercible) {
             return None;
         }
 
         let (kind @ KindOrType::Kind(_), left @ KindOrType::Type(_), right @ KindOrType::Type(_)) =
-            application.arguments.iter().copied().collect_tuple()?
+            arguments.iter().copied().collect_tuple()?
         else {
             return None;
         };
 
-        Some(ConstraintApplication {
-            file_id: application.file_id,
-            item_id: application.item_id,
-            arguments: vec![kind, right, left],
-        })
+        let arguments = [kind, right, left].into();
+        Some(state.canonicals.intern(CanonicalConstraint { file_id, type_id, arguments }))
     });
 
     let symmetric = symmetric.collect_vec();
-    applications.extend(symmetric);
+    given.extend(symmetric);
 
-    applications
+    given
 }
 
 fn extract_compiler_solved<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    applications: Vec<ConstraintApplication>,
-) -> QueryResult<(Vec<ConstraintApplication>, NameToType)>
+    given: Vec<CanonicalConstraintId>,
+) -> QueryResult<(Vec<CanonicalConstraintId>, NameToType)>
 where
     Q: ExternalQueries,
 {
@@ -190,25 +188,24 @@ where
     let mut conflicts = FxHashSet::default();
 
     safe_loop! {
-        let substituted = applications
-            .iter()
-            .map(|application| substitute_application(state, context, &substitution, application))
-            .collect::<QueryResult<Vec<_>>>()?;
-
+        let given = canonical::substitute_canonicals(state, context, &substitution, &given)?;
         let mut changed = false;
 
-        for application in &substituted {
-            let Some(matched) =
-                elaborate_compiler_instances(state, context, application, &substituted)?
+        for &constraint in &given {
+            let Some(matched) = compiler::match_compiler_instance(state, context, constraint, &given)?
             else {
                 continue;
             };
 
-            let MatchInstance::Match { equalities, .. } = matched else {
+            let MatchInstance::Match(instance) = matched else {
                 continue;
             };
 
-            for (left, right) in equalities {
+            for goal in instance.goals {
+                let WorkItem::Unify(left, right) = goal else {
+                    continue;
+                };
+
                 let improvements = extract_improvements(state, context, &substitution, left, right)?;
                 for (name, replacement) in improvements {
                     if register_improvement(
@@ -226,190 +223,9 @@ where
         }
 
         if !changed {
-            return Ok((substituted, substitution));
+            return Ok((given, substitution));
         }
     }
-}
-
-fn elaborate_compiler_instances<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    wanted: &ConstraintApplication,
-    given: &[ConstraintApplication],
-) -> QueryResult<Option<MatchInstance>>
-where
-    Q: ExternalQueries,
-{
-    let ConstraintApplication { file_id, item_id, .. } = wanted;
-
-    let match_instance = if *file_id == context.prim_int.file_id {
-        if *item_id == context.prim_int.add {
-            let Some(arguments) = wanted.expect_type_arguments::<3>() else {
-                return Ok(None);
-            };
-            compiler::prim_int::match_add(state, context, &arguments)?
-        } else if *item_id == context.prim_int.mul {
-            let Some(arguments) = wanted.expect_type_arguments::<3>() else {
-                return Ok(None);
-            };
-            compiler::prim_int::match_mul(state, context, &arguments)?
-        } else if *item_id == context.prim_int.compare {
-            let Some(arguments) = wanted.expect_type_arguments::<3>() else {
-                return Ok(None);
-            };
-            compiler::prim_int::match_compare(state, context, &arguments, given)?
-        } else if *item_id == context.prim_int.to_string {
-            let Some(arguments) = wanted.expect_type_arguments::<2>() else {
-                return Ok(None);
-            };
-            compiler::prim_int::match_to_string(state, context, &arguments)?
-        } else {
-            None
-        }
-    } else if *file_id == context.prim_symbol.file_id {
-        if *item_id == context.prim_symbol.append {
-            let Some(arguments) = wanted.expect_type_arguments::<3>() else {
-                return Ok(None);
-            };
-            compiler::prim_symbol::match_append(state, context, &arguments)?
-        } else if *item_id == context.prim_symbol.compare {
-            let Some(arguments) = wanted.expect_type_arguments::<3>() else {
-                return Ok(None);
-            };
-            compiler::prim_symbol::match_compare(state, context, &arguments)?
-        } else if *item_id == context.prim_symbol.cons {
-            let Some(arguments) = wanted.expect_type_arguments::<3>() else {
-                return Ok(None);
-            };
-            compiler::prim_symbol::match_cons(state, context, &arguments)?
-        } else {
-            None
-        }
-    } else if *file_id == context.prim_row.file_id {
-        if *item_id == context.prim_row.union {
-            let Some(arguments) = wanted.expect_type_arguments::<3>() else {
-                return Ok(None);
-            };
-            compiler::prim_row::match_union(state, context, &arguments)?
-        } else if *item_id == context.prim_row.cons {
-            let Some(arguments) = wanted.expect_type_arguments::<4>() else {
-                return Ok(None);
-            };
-            compiler::prim_row::match_cons(state, context, &arguments)?
-        } else if *item_id == context.prim_row.lacks {
-            let Some(arguments) = wanted.expect_type_arguments::<2>() else {
-                return Ok(None);
-            };
-            compiler::prim_row::match_lacks(state, context, &arguments)?
-        } else if *item_id == context.prim_row.nub {
-            let Some(arguments) = wanted.expect_type_arguments::<2>() else {
-                return Ok(None);
-            };
-            compiler::prim_row::match_nub(state, context, &arguments)?
-        } else {
-            None
-        }
-    } else if *file_id == context.prim_row_list.file_id {
-        if *item_id == context.prim_row_list.row_to_list {
-            let Some(arguments) = wanted.expect_type_arguments::<2>() else {
-                return Ok(None);
-            };
-            compiler::prim_row_list::match_row_to_list(state, context, &arguments)?
-        } else {
-            None
-        }
-    } else if *file_id == context.prim_coerce.file_id {
-        if *item_id == context.prim_coerce.coercible {
-            let Some(arguments) = wanted.expect_type_arguments::<2>() else {
-                return Ok(None);
-            };
-            compiler::prim_coerce::match_coercible(state, context, &arguments)?
-        } else {
-            None
-        }
-    } else if context.known_reflectable.is_symbol == Some((*file_id, *item_id)) {
-        let Some(arguments) = wanted.expect_type_arguments::<1>() else {
-            return Ok(None);
-        };
-        compiler::prim_symbol::match_is_symbol(state, context, &arguments)?
-    } else if context.known_reflectable.reflectable == Some((*file_id, *item_id)) {
-        let Some(arguments) = wanted.expect_type_arguments::<2>() else {
-            return Ok(None);
-        };
-        compiler::prim_reflectable::match_reflectable(state, context, &arguments)?
-    } else {
-        None
-    };
-
-    Ok(match_instance)
-}
-
-pub fn substitute_constraint<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    substitution: &NameToType,
-    mut constraint: TypeId,
-) -> QueryResult<TypeId>
-where
-    Q: ExternalQueries,
-{
-    if substitution.is_empty() {
-        return Ok(constraint);
-    }
-    safe_loop! {
-        let substituted = SubstituteName::many(state, context, substitution, constraint)?;
-        if substituted == constraint {
-            return Ok(constraint);
-        }
-        constraint = substituted;
-    }
-}
-
-pub fn substitute_constraints<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    substitution: &NameToType,
-    constraints: Vec<TypeId>,
-) -> QueryResult<Vec<TypeId>>
-where
-    Q: ExternalQueries,
-{
-    constraints
-        .into_iter()
-        .map(|constraint| substitute_constraint(state, context, substitution, constraint))
-        .collect()
-}
-
-fn substitute_application<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    substitution: &NameToType,
-    application: &ConstraintApplication,
-) -> QueryResult<ConstraintApplication>
-where
-    Q: ExternalQueries,
-{
-    let substitute_argument = |argument| match argument {
-        KindOrType::Kind(argument) => {
-            substitute_constraint(state, context, substitution, argument).map(KindOrType::Kind)
-        }
-        KindOrType::Type(argument) => {
-            substitute_constraint(state, context, substitution, argument).map(KindOrType::Type)
-        }
-    };
-
-    let arguments = application
-        .arguments
-        .iter()
-        .copied()
-        .map(substitute_argument)
-        .collect::<QueryResult<Vec<_>>>()?;
-
-    Ok(ConstraintApplication {
-        file_id: application.file_id,
-        item_id: application.item_id,
-        arguments,
-    })
 }
 
 fn extract_improvements<Q>(
@@ -422,8 +238,8 @@ fn extract_improvements<Q>(
 where
     Q: ExternalQueries,
 {
-    let left = substitute_constraint(state, context, substitution, left)?;
-    let right = substitute_constraint(state, context, substitution, right)?;
+    let left = substitute_type(state, context, substitution, left)?;
+    let right = substitute_type(state, context, substitution, right)?;
 
     let mut improvements = vec![];
     let mut seen = FxHashSet::default();
@@ -454,12 +270,12 @@ where
         return Ok(false);
     }
 
-    let replacement = substitute_constraint(state, context, substitution, replacement)?;
+    let replacement = substitute_type(state, context, substitution, replacement)?;
     let replacement = normalise::expand(state, context, replacement)?;
 
     match context.lookup_type(replacement) {
         Type::Unification(_) | Type::Unknown(_) => return Ok(false),
-        Type::Rigid(other, _, _) if other == name => return Ok(false),
+        Type::Rigid(replacement, _, _) if replacement == name => return Ok(false),
         _ => {}
     }
 
@@ -468,7 +284,7 @@ where
     }
 
     if let Some(current) = substitution.get(&name).copied() {
-        let current = substitute_constraint(state, context, substitution, current)?;
+        let current = substitute_type(state, context, substitution, current)?;
         let current = normalise::expand(state, context, current)?;
         if current == replacement {
             return Ok(false);
@@ -481,6 +297,28 @@ where
 
     substitution.insert(name, replacement);
     Ok(true)
+}
+
+fn substitute_type<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    substitution: &NameToType,
+    mut type_id: TypeId,
+) -> QueryResult<TypeId>
+where
+    Q: ExternalQueries,
+{
+    if substitution.is_empty() {
+        return Ok(type_id);
+    }
+
+    safe_loop! {
+        let substituted = SubstituteName::many(state, context, substitution, type_id)?;
+        if substituted == type_id {
+            return Ok(type_id);
+        }
+        type_id = substituted;
+    }
 }
 
 fn contains_rigid<Q>(

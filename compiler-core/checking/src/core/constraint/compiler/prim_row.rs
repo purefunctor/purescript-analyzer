@@ -1,27 +1,19 @@
-use std::cmp::Ordering;
 use std::iter;
 
 use building_types::QueryResult;
 use indexing::TypeItemId;
-use rustc_hash::FxHashSet;
+use rustc_hash::{FxHashMap, FxHashSet};
+use smol_str::SmolStr;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::constraint::MatchInstance;
-use crate::core::unification::{CanUnify, can_unify};
-use crate::core::{RowField, RowType, Type, TypeId, normalise};
+use crate::core::constraint::matching::{self, InstanceMatch, MatchInstance};
+use crate::core::constraint::{WorkItem, canonical};
+use crate::core::{RowField, Type, TypeId, normalise};
 use crate::source::types;
 use crate::state::CheckState;
 
-use super::{extract_row, extract_symbol, match_equality};
-
-fn intern_row_value<Q>(context: &CheckContext<Q>, row: RowType) -> TypeId
-where
-    Q: ExternalQueries,
-{
-    let row_id = context.intern_row_type(row);
-    context.intern_row(row_id)
-}
+use super::{RowView, extract_row, extract_symbol, match_equality};
 
 fn make_prim_row_constraint<Q>(
     state: &mut CheckState,
@@ -70,184 +62,57 @@ fn extract_closed_row<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     id: TypeId,
-) -> QueryResult<Option<RowType>>
+) -> QueryResult<Option<RowView>>
 where
     Q: ExternalQueries,
 {
-    let Some(row) = extract_row(state, context, id)? else { return Ok(None) };
-    if row.tail.is_some() {
+    let Some(row) = extract_row(state, context, id)? else {
         return Ok(None);
+    };
+    match row {
+        RowView::Closed { fields: _ } => Ok(Some(row)),
+        RowView::EmptyOpen { .. } | RowView::Open { .. } => Ok(None),
     }
-    Ok(Some(row))
 }
 
-type SubtractResult = (Vec<RowField>, Vec<(TypeId, TypeId)>);
-
-fn subtract_row_fields<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    source: &[RowField],
-    to_remove: &[RowField],
-) -> QueryResult<Option<SubtractResult>>
-where
-    Q: ExternalQueries,
-{
-    let mut result = vec![];
-    let mut equalities = vec![];
-    let mut to_remove_iter = to_remove.iter().peekable();
-
-    for field in source {
-        if let Some(remove_field) = to_remove_iter.peek() {
-            match field.label.cmp(&remove_field.label) {
-                Ordering::Less => {
-                    result.push(field.clone());
-                }
-                Ordering::Equal => {
-                    if let CanUnify::Apart = can_unify(state, context, field.id, remove_field.id)? {
-                        return Ok(None);
-                    }
-                    equalities.push((field.id, remove_field.id));
-                    to_remove_iter.next();
-                }
-                Ordering::Greater => {
-                    return Ok(None);
-                }
-            }
-        } else {
-            result.push(field.clone());
-        }
+fn partition_union_output(
+    output: &[RowField],
+    right: &[RowField],
+) -> Option<(Vec<RowField>, Vec<RowField>)> {
+    let mut right_labels = FxHashMap::default();
+    for field in right {
+        let label = SmolStr::clone(&field.label);
+        *right_labels.entry(label).or_insert(0usize) += 1;
     }
 
-    if to_remove_iter.next().is_some() {
-        return Ok(None);
-    }
+    let mut left_fields = vec![];
+    let mut right_fields = vec![];
 
-    Ok(Some((result, equalities)))
-}
-
-fn solve_union_left_empty_prefix<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    left: TypeId,
-    right_row: &RowType,
-    union_row: &Option<RowType>,
-) -> QueryResult<MatchInstance>
-where
-    Q: ExternalQueries,
-{
-    if let Some(union_row) = union_row
-        && right_row.tail.is_none()
-    {
-        if let Some((remaining, mut equalities)) =
-            subtract_row_fields(state, context, &union_row.fields, &right_row.fields)?
+    // Union is left-biased, so when solving `Union left right output` from a closed
+    // `right` and `output`, the right-hand fields are taken from the end of output.
+    // Example: `Union ( | l ) ( x :: R ) ( x :: L, x :: R )` leaves
+    // `( x :: L )` for `l`.
+    for field in output.iter().rev() {
+        if let Some(demand) = right_labels.get_mut(&field.label)
+            && *demand > 0
         {
-            let row_type = RowType::new(remaining, union_row.tail);
-            let result = intern_row_value(context, row_type);
-
-            equalities.push((left, result));
-            return Ok(MatchInstance::Match { constraints: vec![], equalities });
+            *demand -= 1;
+            let field = RowField::clone(field);
+            right_fields.push(field);
+        } else {
+            let field = RowField::clone(field);
+            left_fields.push(field);
         }
-        return Ok(MatchInstance::Apart);
     }
-    Ok(MatchInstance::Stuck)
-}
 
-fn solve_union_left_open_prefix<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    left_row: &RowType,
-    rest: TypeId,
-    right: TypeId,
-    union: TypeId,
-) -> QueryResult<MatchInstance>
-where
-    Q: ExternalQueries,
-{
-    let fresh_tail = state.fresh_unification(context.queries, context.prim.row_type);
-
-    let fields = left_row.fields.iter().cloned();
-    let row_type = RowType::new(fields, Some(fresh_tail));
-    let result = intern_row_value(context, row_type);
-
-    let constraint = make_prim_row_constraint(
-        state,
-        context,
-        context.prim_row.union,
-        &[rest, right, fresh_tail],
-    )?;
-
-    Ok(MatchInstance::Match { constraints: vec![constraint], equalities: vec![(union, result)] })
-}
-
-fn solve_union_left_closed<Q>(
-    context: &CheckContext<Q>,
-    left_row: &RowType,
-    right_row: &RowType,
-    union: TypeId,
-) -> MatchInstance
-where
-    Q: ExternalQueries,
-{
-    let left = left_row.fields.iter();
-    let right = right_row.fields.iter();
-
-    let fields = iter::chain(left, right).cloned();
-    let row_type = RowType::new(fields, right_row.tail);
-    let result = intern_row_value(context, row_type);
-
-    MatchInstance::Match { constraints: vec![], equalities: vec![(union, result)] }
-}
-
-fn solve_union_from_right_and_union<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    left: TypeId,
-    right_row: &RowType,
-    union_row: &RowType,
-) -> QueryResult<MatchInstance>
-where
-    Q: ExternalQueries,
-{
-    if right_row.tail.is_some() {
-        return Ok(MatchInstance::Stuck);
+    if right_labels.values().any(|&demand| demand > 0) {
+        return None;
     }
-    if let Some((remaining, mut equalities)) =
-        subtract_row_fields(state, context, &union_row.fields, &right_row.fields)?
-    {
-        let row_type = RowType::new(remaining, union_row.tail);
-        let result = intern_row_value(context, row_type);
 
-        equalities.push((left, result));
-        Ok(MatchInstance::Match { constraints: vec![], equalities })
-    } else {
-        Ok(MatchInstance::Apart)
-    }
-}
+    left_fields.reverse();
+    right_fields.reverse();
 
-fn solve_union_from_left_and_union<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    right: TypeId,
-    left_row: &RowType,
-    union_row: &RowType,
-) -> QueryResult<MatchInstance>
-where
-    Q: ExternalQueries,
-{
-    if left_row.tail.is_some() {
-        return Ok(MatchInstance::Stuck);
-    }
-    if let Some((remaining, mut equalities)) =
-        subtract_row_fields(state, context, &union_row.fields, &left_row.fields)?
-    {
-        let row_type = RowType::new(remaining, union_row.tail);
-        let result = intern_row_value(context, row_type);
-
-        equalities.push((right, result));
-        Ok(MatchInstance::Match { constraints: vec![], equalities })
-    } else {
-        Ok(MatchInstance::Apart)
-    }
+    Some((left_fields, right_fields))
 }
 
 pub fn match_union<Q>(
@@ -266,35 +131,87 @@ where
     let right_row = extract_row(state, context, right)?;
     let union_row = extract_row(state, context, union)?;
 
-    match (left_row, right_row, union_row) {
-        (Some(left_row), Some(right_row), union_row) => {
-            if let Some(rest) = left_row.tail {
-                if left_row.fields.is_empty() {
-                    let solution = solve_union_left_empty_prefix(
-                        state, context, left, &right_row, &union_row,
-                    )?;
-                    return Ok(Some(solution));
-                }
+    match (&left_row, &right_row, &union_row) {
+        // Matches when the left row is closed and the right row is known.
+        // The known fields from both sides are merged, and the right tail,
+        // if any, stays as the tail of the union output.
+        //
+        // `Union ( a :: A ) ( | r ) ( | u )` solves `u ~ ( a :: A | r )`.
+        // `Union ( a :: A ) ( b :: B ) ( | u )` solves `u ~ ( a :: A, b :: B )`.
+        // `Union () ( b :: B | r ) ( | u )` solves `u ~ ( b :: B | r )`.
+        (Some(RowView::Closed { fields: left_fields }), Some(right_row), _) => {
+            let left = left_fields.iter();
+            let right = right_row.fields().iter();
 
-                let solution =
-                    solve_union_left_open_prefix(state, context, &left_row, rest, right, union)?;
-                Ok(Some(solution))
+            let fields = iter::chain(left, right).cloned();
+            let result = context.intern_row(fields, right_row.tail());
+
+            Ok(Some(MatchInstance::Match(InstanceMatch {
+                goals: vec![WorkItem::Unify(union, result)],
+            })))
+        }
+
+        // Matches when the left row has a tail and both the right row and output
+        // row are closed. We can solve the left row by subtracting the right
+        // fields from the output.
+        //
+        // `Union ( | l ) ( b :: B ) ( a :: A, b :: B )` solves `l ~ ( a :: A )`.
+        // `Union ( a :: A | l ) ( b :: B ) ( a :: A, b :: B, c :: C )` solves `l ~ ( c :: C )`.
+        // `Union ( | l ) ( x :: R ) ( x :: L, x :: R )` solves `l ~ ( x :: L )`.
+        (
+            Some(RowView::EmptyOpen { .. } | RowView::Open { .. }),
+            Some(RowView::Closed { fields: right_fields }),
+            Some(RowView::Closed { fields: union_fields }),
+        ) => {
+            let Some((left_fields, right_fields)) =
+                partition_union_output(union_fields, right_fields)
+            else {
+                return Ok(Some(MatchInstance::Apart));
+            };
+
+            let left_result = context.intern_row(left_fields, None);
+            let right_result = context.intern_row(right_fields, None);
+
+            Ok(Some(MatchInstance::Match(InstanceMatch {
+                goals: vec![
+                    WorkItem::Unify(left, left_result),
+                    WorkItem::Unify(right, right_result),
+                ],
+            })))
+        }
+
+        // Matches when the left row has a tail and at least one known field.
+        // These known fields are moved into the output and we recurse on the
+        // left tail. With no known fields, this would not make progress, so
+        // the constraint must stay blocked.
+        //
+        // `Union ( a :: A | t ) ( | r ) ( | u )` solves `u ~ ( a :: A | f )`,
+        // plus the remaining `Union ( | t ) ( | r ) ( | f )` constraint.
+        //
+        // `Union ( a :: A, b :: B | t ) ( c :: C ) ( | u )` solves `u ~ ( a :: A, b :: B | f )`,
+        // plus the remaining `Union ( | t ) ( c :: C ) ( | f )` constraint.
+        (Some(RowView::Open { fields: left_fields, tail }), Some(_), _) => {
+            let fresh = state.fresh_unification(context.queries, context.prim.row_type);
+            let result = context.intern_row(left_fields.iter().cloned(), Some(fresh));
+
+            let constraint = make_prim_row_constraint(
+                state,
+                context,
+                context.prim_row.union,
+                &[*tail, right, fresh],
+            )?;
+
+            let constraint = canonical::canonicalise(state, context, constraint)?;
+            let goals = if let Some(constraint) = constraint {
+                vec![WorkItem::Constraint(constraint), WorkItem::Unify(union, result)]
             } else {
-                let solution = solve_union_left_closed(context, &left_row, &right_row, union);
-                Ok(Some(solution))
-            }
+                vec![WorkItem::Unify(union, result)]
+            };
+
+            Ok(Some(MatchInstance::Match(InstanceMatch { goals })))
         }
-        (_, Some(right_row), Some(union_row)) => {
-            let solution =
-                solve_union_from_right_and_union(state, context, left, &right_row, &union_row)?;
-            Ok(Some(solution))
-        }
-        (Some(left_row), _, Some(union_row)) => {
-            let solution =
-                solve_union_from_left_and_union(state, context, right, &left_row, &union_row)?;
-            Ok(Some(solution))
-        }
-        _ => Ok(Some(MatchInstance::Stuck)),
+
+        _ => Ok(Some(matching::blocking_constraint(state, context, &[left, right, union])?)),
     }
 }
 
@@ -317,17 +234,19 @@ where
     match (label_symbol, tail_row, row_row) {
         (Some(label_value), Some(tail_row), _) => {
             let mut fields = vec![RowField { label: label_value, id: a }];
-            fields.extend(tail_row.fields.iter().cloned());
+            fields.extend(tail_row.fields().iter().cloned());
 
-            let result = intern_row_value(context, RowType::new(fields, tail_row.tail));
+            let result = context.intern_row(fields, tail_row.tail());
 
-            Ok(Some(MatchInstance::Match { constraints: vec![], equalities: vec![(row, result)] }))
+            Ok(Some(MatchInstance::Match(InstanceMatch {
+                goals: vec![WorkItem::Unify(row, result)],
+            })))
         }
         (Some(label_value), _, Some(row_row)) => {
             let mut remaining = vec![];
             let mut found_type = None;
 
-            for field in row_row.fields.iter() {
+            for field in row_row.fields().iter() {
                 if field.label == label_value && found_type.is_none() {
                     found_type = Some(field.id);
                 } else {
@@ -336,16 +255,15 @@ where
             }
 
             if let Some(field_type) = found_type {
-                let tail_result = intern_row_value(context, RowType::new(remaining, row_row.tail));
-                Ok(Some(MatchInstance::Match {
-                    constraints: vec![],
-                    equalities: vec![(a, field_type), (tail, tail_result)],
-                }))
+                let tail_result = context.intern_row(remaining, row_row.tail());
+                Ok(Some(MatchInstance::Match(InstanceMatch {
+                    goals: vec![WorkItem::Unify(a, field_type), WorkItem::Unify(tail, tail_result)],
+                })))
             } else {
                 Ok(Some(MatchInstance::Apart))
             }
         }
-        _ => Ok(Some(MatchInstance::Stuck)),
+        _ => Ok(Some(matching::blocking_constraint(state, context, &[label, tail, row])?)),
     }
 }
 
@@ -362,28 +280,43 @@ where
     };
 
     let Some(label_value) = extract_symbol(state, context, label)? else {
-        return Ok(Some(MatchInstance::Stuck));
+        return Ok(Some(matching::blocking_constraint(state, context, &[label])?));
     };
 
     let Some(row_row) = extract_row(state, context, row)? else {
-        return Ok(Some(MatchInstance::Stuck));
+        return Ok(Some(matching::blocking_constraint(state, context, &[row])?));
     };
 
-    let has_label = row_row.fields.iter().any(|field| field.label == label_value);
-
-    if has_label {
-        Ok(Some(MatchInstance::Apart))
-    } else if let Some(tail) = row_row.tail {
-        if row_row.fields.is_empty() {
-            return Ok(Some(MatchInstance::Stuck));
+    match row_row {
+        RowView::Closed { fields } => {
+            let has_label = fields.iter().any(|field| field.label == label_value);
+            if has_label {
+                Ok(Some(MatchInstance::Apart))
+            } else {
+                Ok(Some(MatchInstance::Match(InstanceMatch { goals: vec![] })))
+            }
         }
+        RowView::EmptyOpen { tail } => {
+            Ok(Some(matching::blocking_constraint(state, context, &[tail])?))
+        }
+        RowView::Open { fields, tail } => {
+            let has_label = fields.iter().any(|field| field.label == label_value);
+            if has_label {
+                return Ok(Some(MatchInstance::Apart));
+            }
 
-        let constraint =
-            make_prim_row_constraint(state, context, context.prim_row.lacks, &[label, tail])?;
+            let constraint =
+                make_prim_row_constraint(state, context, context.prim_row.lacks, &[label, tail])?;
 
-        Ok(Some(MatchInstance::Match { constraints: vec![constraint], equalities: vec![] }))
-    } else {
-        Ok(Some(MatchInstance::Match { constraints: vec![], equalities: vec![] }))
+            let canonical_id = canonical::canonicalise(state, context, constraint)?;
+            let goals = if let Some(canonical_id) = canonical_id {
+                vec![WorkItem::Constraint(canonical_id)]
+            } else {
+                vec![]
+            };
+
+            Ok(Some(MatchInstance::Match(InstanceMatch { goals })))
+        }
     }
 }
 
@@ -400,18 +333,18 @@ where
     };
 
     let Some(original_row) = extract_closed_row(state, context, original)? else {
-        return Ok(Some(MatchInstance::Stuck));
+        return Ok(Some(matching::blocking_constraint(state, context, &[original])?));
     };
 
     let mut seen = FxHashSet::default();
     let mut fields = vec![];
 
-    for field in original_row.fields.iter() {
+    for field in original_row.fields().iter() {
         if seen.insert(field.label.clone()) {
             fields.push(field.clone());
         }
     }
 
-    let result = intern_row_value(context, RowType::new(fields, None));
+    let result = context.intern_row(fields, None);
     Ok(Some(match_equality(state, context, nubbed, result)?))
 }

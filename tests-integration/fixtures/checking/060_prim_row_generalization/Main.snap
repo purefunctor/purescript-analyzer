@@ -1,5 +1,5 @@
 ---
-source: tests-integration/tests/checking2/generated.rs
+source: tests-integration/tests/checking/generated.rs
 assertion_line: 28
 expression: report
 ---
@@ -30,6 +30,10 @@ chainedUnion ::
 testChained ::
   forall (t33 :: Row Type) (t32 :: Row Type) (t31 :: Row Type).
     Union @Type (t33 :: Row Type) (t32 :: Row Type) (t31 :: Row Type) =>
+    Union @Type
+      ( x :: Int | (t33 :: Row Type) )
+      (t32 :: Row Type)
+      ( x :: Int | (t31 :: Row Type) ) =>
     { x :: Int | (t31 :: Row Type) }
 multiMerge ::
   forall (r1 :: Row Type) (r2 :: Row Type) (r3 :: Row Type) (r4 :: Row Type) (r5 :: Row Type)
@@ -45,8 +49,8 @@ testMulti1 ::
     {| (t48 :: Row Type) } -> {| (t47 :: Row Type) }
 testMulti2 ::
   forall (t52 :: Row Type) (t51 :: Row Type) (t50 :: Row Type).
-    Nub @Type ( a :: Int | (t52 :: Row Type) ) (t51 :: Row Type) =>
-    Union @Type (t51 :: Row Type) ( b :: Int ) (t50 :: Row Type) =>
-    {| (t50 :: Row Type) }
+    Union @Type (t52 :: Row Type) ( b :: Int ) (t51 :: Row Type) =>
+    Nub @Type ( a :: Int | (t50 :: Row Type) ) (t52 :: Row Type) =>
+    {| (t51 :: Row Type) }
 
 Types

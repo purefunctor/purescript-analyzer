@@ -1,0 +1,25 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Tuple ::
+  forall (@a :: Type) (@b :: Type). (a :: Type) -> (b :: Type) -> Tuple (a :: Type) (b :: Type)
+append :: forall (@a :: Type). Semigroup (a :: Type) => (a :: Type) -> (a :: Type) -> (a :: Type)
+test ::
+  forall (a :: Type) (b :: Type).
+    Semigroup (a :: Type) =>
+    Semigroup (b :: Type) =>
+    (a :: Type) -> (a :: Type) -> (b :: Type) -> (b :: Type) -> Tuple (a :: Type) (b :: Type)
+
+Types
+Tuple :: Type -> Type -> Type
+Semigroup :: Type -> Constraint
+
+Classes
+class forall (a :: Type). Semigroup (a :: Type)
+  append :: forall (@a :: Type). Semigroup (a :: Type) => (a :: Type) -> (a :: Type) -> (a :: Type)
+
+Roles
+Tuple = [Representational, Representational]

@@ -403,11 +403,14 @@ where
         }
     }
 
-    let Some(constraint::ConstraintApplication { file_id, item_id, arguments }) =
-        constraint::constraint_application(state, context, current)?
-    else {
+    let Some(current) = constraint::canonical::canonicalise(state, context, current)? else {
         return Ok(None);
     };
+
+    let current = state.canonicals[current].clone();
+    let file_id = current.file_id;
+    let item_id = current.type_id;
+    let arguments = current.arguments.to_vec();
 
     if (file_id, item_id) != instance.resolution {
         return Ok(None);
