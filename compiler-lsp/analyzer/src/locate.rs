@@ -5,7 +5,7 @@ use building::QueryEngine;
 use files::FileId;
 use indexing::{ImportItemId, IndexedModule, TermItemId, TypeItemId};
 use line_index::{LineCol, LineIndex};
-use lowering::{BinderId, ExpressionId, TermOperatorId, TypeId, TypeOperatorId};
+use lowering::{BinderId, ExpressionId, RecordPunId, TermOperatorId, TypeId, TypeOperatorId};
 use rowan::ast::{AstNode, AstPtr};
 use rowan::{TextRange, TextSize, TokenAtOffset};
 use stabilizing::StabilizedModule;
@@ -85,6 +85,7 @@ pub enum Located {
     Binder(BinderId),
     Expression(ExpressionId),
     Type(TypeId),
+    Pun(RecordPunId),
     TermOperator(TermOperatorId),
     TypeOperator(TypeOperatorId),
     TermItem(TermItemId),
@@ -156,6 +157,10 @@ fn locate_node(
         let ptr = ptr.cast()?;
         let id = stabilized.lookup_ptr(&ptr)?;
         Some(Located::Type(id))
+    } else if cst::RecordPun::can_cast(kind) {
+        let ptr = ptr.cast()?;
+        let id = stabilized.lookup_ptr(&ptr)?;
+        Some(Located::Pun(id))
     } else if cst::TermOperator::can_cast(kind) {
         let ptr = ptr.cast()?;
         let id = stabilized.lookup_ptr(&ptr)?;

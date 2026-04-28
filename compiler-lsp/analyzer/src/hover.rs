@@ -53,6 +53,7 @@ pub fn implementation(
         }
         locate::Located::TermItem(term_id) => hover_file_term(engine, current_file, term_id),
         locate::Located::TypeItem(type_id) => hover_file_type(engine, current_file, type_id),
+        locate::Located::Pun(_) => Ok(None),
         locate::Located::Nothing => Ok(None),
     }
 }
