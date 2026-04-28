@@ -182,8 +182,6 @@ fn hover_expression(
     expression_id: ExpressionId,
 ) -> Result<Option<Hover>, AnalyzerError> {
     let lowered = engine.lowered(current_file)?;
-    let stabilized = engine.stabilized(current_file)?;
-
     let kind = lowered.info.get_expression_kind(expression_id).ok_or(AnalyzerError::NonFatal)?;
 
     match kind {
@@ -196,6 +194,7 @@ fn hover_expression(
             match resolution {
                 TermVariableResolution::Binder(_) => Ok(None),
                 TermVariableResolution::Let(let_binding_id) => {
+                    let stabilized = engine.stabilized(current_file)?;
                     let (parsed, _) = engine.parsed(current_file)?;
                     let root = parsed.syntax_node();
                     let let_binding = lowered.info.get_let_binding_group(*let_binding_id);
