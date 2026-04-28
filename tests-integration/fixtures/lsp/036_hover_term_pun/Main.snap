@@ -1,0 +1,51 @@
+---
+source: tests-integration/tests/lsp/generated.rs
+assertion_line: 12
+expression: report
+---
+Hover at Position { line: 2, character: 11 }
+
+```
+inferred { argument } = { argument }
+--         $              $
+```
+
+```purescript
+(t1 :: Type)
+```
+
+
+Hover at Position { line: 2, character: 26 }
+
+```
+inferred { argument } = { argument }
+--         $              $
+```
+
+```purescript
+(t1 :: Type)
+```
+
+
+Hover at Position { line: 6, character: 10 }
+
+```
+checked { argument } = { argument }
+--        $              $
+```
+
+```purescript
+(ofCourse :: Type)
+```
+
+
+Hover at Position { line: 6, character: 25 }
+
+```
+checked { argument } = { argument }
+--        $              $
+```
+
+```purescript
+(ofCourse :: Type)
+```

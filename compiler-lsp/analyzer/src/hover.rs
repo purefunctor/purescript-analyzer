@@ -53,7 +53,7 @@ pub fn implementation(
         }
         locate::Located::TermItem(term_id) => hover_file_term(engine, current_file, term_id),
         locate::Located::TypeItem(type_id) => hover_file_type(engine, current_file, type_id),
-        locate::Located::Pun(_) => Ok(None),
+        locate::Located::Pun(pun_id) => hover_pun(engine, current_file, pun_id),
         locate::Located::Nothing => Ok(None),
     }
 }
@@ -202,7 +202,9 @@ fn hover_expression(
                     let let_binding = lowered.info.get_let_binding_group(*let_binding_id);
                     hover_let(&root, &stabilized, let_binding)
                 }
-                TermVariableResolution::RecordPun(_) => Ok(None),
+                TermVariableResolution::RecordPun(pun_id) => {
+                    hover_pun(engine, current_file, *pun_id)
+                }
                 TermVariableResolution::Reference(f_id, t_id) => {
                     hover_file_term(engine, *f_id, *t_id)
                 }
@@ -352,4 +354,24 @@ fn render_syntax(root: &SyntaxNode, range: TextRange) -> Option<MarkedString> {
     let value = extract::extract_syntax(root, range);
     let string = LanguageString { language: "purescript".to_string(), value };
     Some(MarkedString::LanguageString(string))
+}
+
+fn hover_pun(
+    engine: &QueryEngine,
+    current_file: FileId,
+    pun_id: lowering::RecordPunId,
+) -> Result<Option<Hover>, AnalyzerError> {
+    let checked = engine.checked(current_file)?;
+
+    let pun_type = checked.nodes.lookup_pun(pun_id);
+    let pun_type = pun_type.ok_or(AnalyzerError::NonFatal)?;
+
+    let pretty = Pretty::new(engine, &checked).width(80);
+    let value = pretty.render(pun_type).to_string();
+    let value = MarkedString::from_language_code("purescript".to_string(), value);
+
+    let contents = HoverContents::Scalar(value);
+    let range = None;
+
+    Ok(Some(Hover { contents, range }))
 }
