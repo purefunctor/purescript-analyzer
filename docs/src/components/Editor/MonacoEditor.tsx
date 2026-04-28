@@ -93,6 +93,20 @@ export function MonacoEditor({ value, onChange }: Props) {
 
     editorRef.current = editor;
 
+    const syncFontMetrics = () => {
+      monaco.editor.remeasureFonts();
+      editor.layout();
+    };
+
+    let disposed = false;
+    const syncFontMetricsWhenReady = () => {
+      if (disposed) return;
+      syncFontMetrics();
+    };
+
+    document.fonts?.ready.then(syncFontMetricsWhenReady);
+    document.fonts?.addEventListener("loadingdone", syncFontMetricsWhenReady);
+
     // Disable iOS/macOS double-space-to-period behavior
     const textarea = containerRef.current.querySelector("textarea");
     if (textarea) {
@@ -101,6 +115,8 @@ export function MonacoEditor({ value, onChange }: Props) {
     }
 
     return () => {
+      disposed = true;
+      document.fonts?.removeEventListener("loadingdone", syncFontMetricsWhenReady);
       editor.dispose();
     };
   }, []);
