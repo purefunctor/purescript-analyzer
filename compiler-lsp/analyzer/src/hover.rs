@@ -1,5 +1,6 @@
 use async_lsp::lsp_types::*;
 use building::QueryEngine;
+use checking::core::pretty::Pretty;
 use files::{FileId, Files};
 use indexing::{ImportItemId, TermItemId, TypeItemId};
 use itertools::Itertools;
@@ -210,7 +211,21 @@ fn hover_expression(
             let (f_id, t_id) = resolution.as_ref().ok_or(AnalyzerError::NonFatal)?;
             hover_file_term(engine, *f_id, *t_id)
         }
-        _ => Ok(None),
+        _ => {
+            let checked = engine.checked(current_file)?;
+
+            let expression_type = checked.nodes.lookup_expression(expression_id);
+            let expression_type = expression_type.ok_or(AnalyzerError::NonFatal)?;
+
+            let pretty = Pretty::new(engine, &checked).width(80);
+            let value = pretty.render(expression_type).to_string();
+            let value = MarkedString::from_language_code("purescript".to_string(), value);
+
+            let contents = HoverContents::Scalar(value);
+            let range = None;
+
+            Ok(Some(Hover { contents, range }))
+        }
     }
 }
 
@@ -284,12 +299,20 @@ fn hover_file_term(
     file_id: FileId,
     term_id: TermItemId,
 ) -> Result<Option<Hover>, AnalyzerError> {
+    let indexed = engine.indexed(file_id)?;
+    let checked = engine.checked(file_id)?;
+
     let (root, range) = AnnotationSyntaxRange::of_file_term(engine, file_id, term_id)?;
-
     let annotation = range.annotation.and_then(|range| render_annotation(&root, range));
-    let syntax = range.syntax.and_then(|range| render_syntax(&root, range));
 
-    let array = [syntax, annotation].into_iter().flatten();
+    let name = if let Some(name) = &indexed.items[term_id].name { name } else { "<unknown>" };
+    let signature = checked.lookup_term(term_id).ok_or(AnalyzerError::NonFatal)?;
+
+    let pretty = Pretty::new(engine, &checked).width(80).signature(name);
+    let value = pretty.render(signature).to_string();
+    let value = MarkedString::from_language_code("purescript".to_string(), value);
+
+    let array = [Some(value), annotation].into_iter().flatten();
     let separator = MarkedString::String("---".to_string());
     let array = Itertools::intersperse(array, separator).collect();
 

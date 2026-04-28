@@ -1,0 +1,39 @@
+---
+source: tests-integration/tests/lsp/generated.rs
+assertion_line: 12
+expression: report
+---
+Hover at Position { line: 4, character: 11 }
+
+```
+variable = life
+--         $
+```
+
+```purescript
+life :: Int
+```
+
+
+Hover at Position { line: 9, character: 7 }
+
+```
+just = Just
+--     $
+```
+
+```purescript
+Just :: forall (@a :: Type). (a :: Type) -> Maybe (a :: Type)
+```
+
+
+Hover at Position { line: 12, character: 10 }
+
+```
+nothing = Nothing
+--        $
+```
+
+```purescript
+Nothing :: forall (@a :: Type). Maybe (a :: Type)
+```

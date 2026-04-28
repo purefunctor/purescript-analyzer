@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/lsp/generated.rs
+assertion_line: 12
 expression: report
 ---
 Hover at Position { line: 2, character: 8 }
@@ -44,7 +45,7 @@ import Lib (life, Maybe(..), (+),  type (++))
 ```
 
 ```purescript
-infix 5 plus as +
++ :: Int -> Int -> Int
 ```
 
 
@@ -100,7 +101,7 @@ just = Just
 ```
 
 ```purescript
-Just a
+Just :: forall (@a :: Type). (a :: Type) -> Maybe (a :: Type)
 ```
 
 
@@ -122,7 +123,7 @@ nothing = Nothing
 ```
 
 ```purescript
-Nothing
+Nothing :: forall (@a :: Type). Maybe (a :: Type)
 ```
 
 
@@ -134,7 +135,7 @@ opName = (+)
 ```
 
 ```purescript
-infix 5 plus as +
++ :: Int -> Int -> Int
 ```
 
 
@@ -146,7 +147,7 @@ opChain = 9 + 10
 ```
 
 ```purescript
-infix 5 plus as +
++ :: Int -> Int -> Int
 ```
 
 
