@@ -1,0 +1,51 @@
+---
+source: tests-integration/tests/lsp/generated.rs
+assertion_line: 12
+expression: report
+---
+Hover at Position { line: 2, character: 11 }
+
+```
+fromBinder argument = argument
+--         $
+```
+
+```purescript
+(t0 :: Type)
+```
+
+
+Hover at Position { line: 5, character: 12 }
+
+```
+fromLiteral "hello" = "hello"
+--          $
+```
+
+```purescript
+String
+```
+
+
+Hover at Position { line: 8, character: 10 }
+
+```
+fromArray [ element ] = [ element ]
+--        $
+```
+
+```purescript
+Array (t1 :: Type)
+```
+
+
+Hover at Position { line: 11, character: 11 }
+
+```
+fromRecord { element } = { element }
+--         $
+```
+
+```purescript
+{ element :: (t3 :: Type) | (t2 :: Row Type) }
+```

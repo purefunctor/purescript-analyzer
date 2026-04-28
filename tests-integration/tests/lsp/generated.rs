@@ -83,3 +83,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_035_hover_term_signature_main() { run_test("035_hover_term_signature", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_036_hover_term_pun_main() { run_test("036_hover_term_pun", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_037_hover_term_binder_main() { run_test("037_hover_term_binder", "Main"); }

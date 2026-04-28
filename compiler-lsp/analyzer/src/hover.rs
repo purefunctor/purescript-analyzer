@@ -174,7 +174,21 @@ fn hover_binder(
             let (f_id, t_id) = resolution.as_ref().ok_or(AnalyzerError::NonFatal)?;
             hover_file_term(engine, *f_id, *t_id)
         }
-        _ => Ok(None),
+        _ => {
+            let checked = engine.checked(current_file)?;
+
+            let binder_type = checked.nodes.lookup_binder(binder_id);
+            let binder_type = binder_type.ok_or(AnalyzerError::NonFatal)?;
+
+            let pretty = Pretty::new(engine, &checked).width(80);
+            let value = pretty.render(binder_type).to_string();
+            let value = MarkedString::from_language_code("purescript".to_string(), value);
+
+            let contents = HoverContents::Scalar(value);
+            let range = None;
+
+            Ok(Some(Hover { contents, range }))
+        }
     }
 }
 
@@ -194,7 +208,9 @@ fn hover_expression(
         ExpressionKind::Variable { resolution, .. } => {
             let resolution = resolution.as_ref().ok_or(AnalyzerError::NonFatal)?;
             match resolution {
-                TermVariableResolution::Binder(_) => Ok(None),
+                TermVariableResolution::Binder(binder_id) => {
+                    hover_binder(engine, current_file, *binder_id)
+                }
                 TermVariableResolution::Let(let_binding_id) => {
                     let stabilized = engine.stabilized(current_file)?;
                     let (parsed, _) = engine.parsed(current_file)?;
