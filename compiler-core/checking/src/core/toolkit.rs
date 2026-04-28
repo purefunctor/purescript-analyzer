@@ -463,7 +463,8 @@ where
         let binder = context.lookup_forall_binder(binder_id);
         let binder_kind = normalise::normalise(state, context, binder.kind)?;
 
-        let rigid = state.fresh_rigid(context.queries, binder_kind);
+        let text = state.checked.lookup_name(binder.name);
+        let rigid = state.fresh_rigid_named(context.queries, binder_kind, text);
         id = SubstituteName::one(state, context, binder.name, rigid, inner)?;
     }
 
@@ -718,7 +719,8 @@ where
                 KindOrType::Kind(argument) | KindOrType::Type(argument) => argument,
             })
             .unwrap_or_else(|| {
-                let rigid = state.fresh_rigid(context.queries, binder.kind);
+                let text = state.checked.lookup_name(binder.name);
+                let rigid = state.fresh_rigid_named(context.queries, binder.kind, text);
                 rigids.push(rigid);
                 rigid
             });

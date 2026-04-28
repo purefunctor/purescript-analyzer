@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 async-lsp = { version = "0.2.2", features = ["tokio"] }
 building = { version = "0.1.0", path = "../../compiler-core/building" }
+checking = { version = "0.1.0", path = "../../compiler-core/checking" }
 files = { version = "0.1.0", path = "../../compiler-core/files" }
 indexing = { version = "0.1.0", path = "../../compiler-core/indexing" }
 itertools = "0.14.0"

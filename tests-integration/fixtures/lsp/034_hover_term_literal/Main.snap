@@ -1,0 +1,63 @@
+---
+source: tests-integration/tests/lsp/generated.rs
+assertion_line: 12
+expression: report
+---
+Hover at Position { line: 2, character: 7 }
+
+```
+life = 42
+--     $
+```
+
+```purescript
+Int
+```
+
+
+Hover at Position { line: 5, character: 9 }
+
+```
+hello = "world"
+--       $
+```
+
+```purescript
+String
+```
+
+
+Hover at Position { line: 8, character: 9 }
+
+```
+colon = ':'
+--       $
+```
+
+```purescript
+Char
+```
+
+
+Hover at Position { line: 11, character: 8 }
+
+```
+array = [ 1, 2, 3 ]
+--      $
+```
+
+```purescript
+Array Int
+```
+
+
+Hover at Position { line: 14, character: 9 }
+
+```
+record = { life }
+--       $
+```
+
+```purescript
+{ life :: Int }
+```

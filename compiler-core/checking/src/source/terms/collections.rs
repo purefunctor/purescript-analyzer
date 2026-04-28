@@ -218,6 +218,7 @@ where
 fn record_pun_type<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
+    pun: lowering::RecordPunId,
     name: &SmolStr,
     resolution: lowering::TermVariableResolution,
     mode: RecordMode<'_>,
@@ -234,6 +235,8 @@ where
     } else {
         instantiate_variable(state, context, resolution)?
     };
+
+    state.checked.nodes.puns.insert(pun, id);
 
     Ok(RowField { label, id })
 }
@@ -256,10 +259,10 @@ where
                 let Some(value) = value else { continue };
                 record_field_type(state, context, name, *value, mode)?
             }
-            lowering::ExpressionRecordItem::RecordPun { name, resolution } => {
+            lowering::ExpressionRecordItem::RecordPun { id, name, resolution } => {
                 let Some(name) = name else { continue };
                 let Some(resolution) = resolution else { continue };
-                record_pun_type(state, context, name, *resolution, mode)?
+                record_pun_type(state, context, *id, name, *resolution, mode)?
             }
         };
 

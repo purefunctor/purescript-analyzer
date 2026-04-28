@@ -43,11 +43,16 @@ where
     let expected = normalise::normalise(state, context, expected)?;
     let expected = toolkit::skolemise_forall(state, context, expected)?;
     let expected = toolkit::collect_givens(state, context, expected)?;
-    if let Some(section_result) = context.sectioned.expressions.get(&expression) {
-        check_sectioned_expression(state, context, expression, section_result, expected)
+
+    let expected = if let Some(section_result) = context.sectioned.expressions.get(&expression) {
+        check_sectioned_expression(state, context, expression, section_result, expected)?
     } else {
-        check_expression_core(state, context, expression, expected)
-    }
+        check_expression_core(state, context, expression, expected)?
+    };
+
+    state.checked.nodes.expressions.insert(expression, expected);
+
+    Ok(expected)
 }
 
 fn check_sectioned_expression<Q>(
@@ -166,11 +171,15 @@ fn infer_expression_quiet<Q>(
 where
     Q: ExternalQueries,
 {
-    if let Some(section_result) = context.sectioned.expressions.get(&expression) {
-        infer_sectioned_expression(state, context, expression, section_result)
+    let inferred = if let Some(section_result) = context.sectioned.expressions.get(&expression) {
+        infer_sectioned_expression(state, context, expression, section_result)?
     } else {
-        infer_expression_core(state, context, expression)
-    }
+        infer_expression_core(state, context, expression)?
+    };
+
+    state.checked.nodes.expressions.insert(expression, inferred);
+
+    Ok(inferred)
 }
 
 fn infer_sectioned_expression<Q>(

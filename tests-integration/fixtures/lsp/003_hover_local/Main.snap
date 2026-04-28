@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/lsp/generated.rs
+assertion_line: 12
 expression: report
 ---
 Hover at Position { line: 6, character: 6 }
@@ -60,7 +61,7 @@ just = Just 42
 ```
 
 ```purescript
-Just a
+Just :: forall (@a :: Type). (a :: Type) -> Maybe (a :: Type)
 ```
 
 
@@ -82,7 +83,7 @@ nothing = Nothing
 ```
 
 ```purescript
-Nothing
+Nothing :: forall (@a :: Type). Maybe (a :: Type)
 ```
 
 
@@ -94,7 +95,7 @@ Hover at Position { line: 34, character: 3 }
 ```
 
 ```purescript
-Just a
+Just :: forall (@a :: Type). (a :: Type) -> Maybe (a :: Type)
 ```
 
 
@@ -106,5 +107,5 @@ Hover at Position { line: 37, character: 3 }
 ```
 
 ```purescript
-Nothing
+Nothing :: forall (@a :: Type). Maybe (a :: Type)
 ```

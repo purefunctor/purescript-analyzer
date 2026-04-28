@@ -108,26 +108,26 @@ where
         return Ok(unknown);
     };
 
-    match kind {
+    let binder_type = match kind {
         lowering::BinderKind::Typed { binder, type_ } => {
-            let Some(b) = binder else { return Ok(unknown) };
-            let Some(t) = type_ else { return Ok(unknown) };
+            let Some(binder_id) = binder else { return Ok(unknown) };
+            let Some(type_id) = type_ else { return Ok(unknown) };
 
-            let (t, _) = types::infer_kind(state, context, *t)?;
+            let (type_id, _) = types::infer_kind(state, context, *type_id)?;
             match mode {
                 BinderMode::Check { elaborating: false, .. } => {
-                    check_argument_binder(state, context, *b, t)?;
+                    check_argument_binder(state, context, *binder_id, type_id)?;
                 }
                 _ => {
-                    check_binder(state, context, *b, t)?;
+                    check_binder(state, context, *binder_id, type_id)?;
                 }
             }
 
             if let BinderMode::Check { expected_type, elaborating } = mode {
-                subtype_for_mode(state, context, t, expected_type, elaborating)?;
+                subtype_for_mode(state, context, type_id, expected_type, elaborating)?;
             }
 
-            Ok(t)
+            type_id
         }
 
         lowering::BinderKind::OperatorChain { .. } => {
@@ -137,7 +137,7 @@ where
                 subtype_for_mode(state, context, inferred_type, expected_type, elaborating)?;
             }
 
-            Ok(inferred_type)
+            inferred_type
         }
 
         lowering::BinderKind::Integer { .. } => {
@@ -147,7 +147,7 @@ where
                 unification::unify(state, context, inferred_type, expected_type)?;
             }
 
-            Ok(inferred_type)
+            inferred_type
         }
 
         lowering::BinderKind::Number { .. } => {
@@ -157,7 +157,7 @@ where
                 unification::unify(state, context, inferred_type, expected_type)?;
             }
 
-            Ok(inferred_type)
+            inferred_type
         }
 
         lowering::BinderKind::Constructor { resolution, arguments } => {
@@ -182,20 +182,16 @@ where
 
             if let BinderMode::Check { expected_type, elaborating } = mode {
                 subtype_for_mode(state, context, inferred_type, expected_type, elaborating)?;
-                Ok(expected_type)
+                expected_type
             } else {
-                Ok(inferred_type)
+                inferred_type
             }
         }
 
-        lowering::BinderKind::Variable { .. } => {
-            let type_id = match mode {
-                BinderMode::Infer => state.fresh_unification(context.queries, context.prim.t),
-                BinderMode::Check { expected_type, .. } => expected_type,
-            };
-            state.checked.nodes.binders.insert(binder_id, type_id);
-            Ok(type_id)
-        }
+        lowering::BinderKind::Variable { .. } => match mode {
+            BinderMode::Infer => state.fresh_unification(context.queries, context.prim.t),
+            BinderMode::Check { expected_type, .. } => expected_type,
+        },
 
         lowering::BinderKind::Named { binder, .. } => {
             let Some(binder) = binder else { return Ok(unknown) };
@@ -210,14 +206,15 @@ where
                     }
                 }
             };
+
             state.checked.nodes.binders.insert(binder_id, type_id);
 
-            Ok(type_id)
+            type_id
         }
 
         lowering::BinderKind::Wildcard => match mode {
-            BinderMode::Infer => Ok(state.fresh_unification(context.queries, context.prim.t)),
-            BinderMode::Check { expected_type, .. } => Ok(expected_type),
+            BinderMode::Infer => state.fresh_unification(context.queries, context.prim.t),
+            BinderMode::Check { expected_type, .. } => expected_type,
         },
 
         lowering::BinderKind::String { .. } => {
@@ -227,7 +224,7 @@ where
                 unification::unify(state, context, inferred_type, expected_type)?;
             }
 
-            Ok(inferred_type)
+            inferred_type
         }
 
         lowering::BinderKind::Char { .. } => {
@@ -237,7 +234,7 @@ where
                 unification::unify(state, context, inferred_type, expected_type)?;
             }
 
-            Ok(inferred_type)
+            inferred_type
         }
 
         lowering::BinderKind::Boolean { .. } => {
@@ -247,7 +244,7 @@ where
                 unification::unify(state, context, inferred_type, expected_type)?;
             }
 
-            Ok(inferred_type)
+            inferred_type
         }
 
         lowering::BinderKind::Array { array } => {
@@ -269,22 +266,26 @@ where
                 subtype_for_mode(state, context, array_type, expected_type, elaborating)?;
             }
 
-            Ok(array_type)
+            array_type
         }
 
         lowering::BinderKind::Record { record } => {
             if let BinderMode::Check { expected_type, elaborating } = mode {
-                check_record_binder(state, context, binder_id, record, expected_type, elaborating)
+                check_record_binder(state, context, binder_id, record, expected_type, elaborating)?
             } else {
-                infer_record_binder(state, context, binder_id, record)
+                infer_record_binder(state, context, binder_id, record)?
             }
         }
 
         lowering::BinderKind::Parenthesized { parenthesized } => {
             let Some(parenthesized) = parenthesized else { return Ok(unknown) };
-            binder_core(state, context, *parenthesized, mode)
+            binder_core(state, context, *parenthesized, mode)?
         }
-    }
+    };
+
+    state.checked.nodes.binders.insert(binder_id, binder_type);
+
+    Ok(binder_type)
 }
 
 fn subtype_for_mode<Q>(

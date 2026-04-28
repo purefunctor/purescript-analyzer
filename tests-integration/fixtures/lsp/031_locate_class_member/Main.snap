@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/lsp/generated.rs
+assertion_line: 12
 expression: report
 ---
 References at Position { line: 3, character: 3 }
@@ -30,5 +31,6 @@ Hover at Position { line: 3, character: 7 }
 ```
 
 ```purescript
-eqEqEqEq :: a -> a -> Boolean
+eqEqEqEq ::
+  forall (@a :: Type). Eq (a :: Type) => (a :: Type) -> (a :: Type) -> Boolean
 ```

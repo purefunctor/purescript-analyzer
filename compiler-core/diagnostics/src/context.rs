@@ -3,11 +3,23 @@ use indexing::IndexedModule;
 use lowering::LoweredModule;
 use rowan::ast::{AstNode, AstPtr};
 use rowan::{NodeOrToken, TextRange};
-use smol_str::SmolStr;
 use stabilizing::StabilizedModule;
 use syntax::{SyntaxElement, SyntaxKind, SyntaxNode, SyntaxNodePtr};
 
 use crate::Span;
+
+pub trait ExternalQueries {
+    fn lookup_checking_smol_str(&self, id: checking::core::SmolStrId) -> smol_str::SmolStr;
+}
+
+impl<T> ExternalQueries for T
+where
+    T: checking::ExternalQueries + ?Sized,
+{
+    fn lookup_checking_smol_str(&self, id: checking::core::SmolStrId) -> smol_str::SmolStr {
+        self.lookup_smol_str(id)
+    }
+}
 
 fn is_trivia(element: &SyntaxElement) -> bool {
     match element {
@@ -77,31 +89,24 @@ where
 }
 
 pub struct DiagnosticsContext<'a> {
+    pub queries: &'a dyn ExternalQueries,
     pub content: &'a str,
     pub root: &'a SyntaxNode,
     pub stabilized: &'a StabilizedModule,
     pub indexed: &'a IndexedModule,
     pub lowered: &'a LoweredModule,
-    pub checking_lookup: Option<&'a dyn Fn(checking::core::SmolStrId) -> SmolStr>,
 }
 
 impl<'a> DiagnosticsContext<'a> {
     pub fn new(
+        queries: &'a dyn ExternalQueries,
         content: &'a str,
         root: &'a SyntaxNode,
         stabilized: &'a StabilizedModule,
         indexed: &'a IndexedModule,
         lowered: &'a LoweredModule,
     ) -> DiagnosticsContext<'a> {
-        DiagnosticsContext { content, root, stabilized, indexed, lowered, checking_lookup: None }
-    }
-
-    pub fn with_checking_lookup(
-        mut self,
-        lookup: &'a dyn Fn(checking::core::SmolStrId) -> SmolStr,
-    ) -> DiagnosticsContext<'a> {
-        self.checking_lookup = Some(lookup);
-        self
+        DiagnosticsContext { queries, content, root, stabilized, indexed, lowered }
     }
 
     pub fn span_from_syntax_ptr(&self, ptr: &SyntaxNodePtr) -> Option<Span> {

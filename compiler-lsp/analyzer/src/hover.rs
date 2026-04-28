@@ -1,5 +1,6 @@
 use async_lsp::lsp_types::*;
 use building::QueryEngine;
+use checking::core::pretty::Pretty;
 use files::{FileId, Files};
 use indexing::{ImportItemId, TermItemId, TypeItemId};
 use itertools::Itertools;
@@ -52,6 +53,7 @@ pub fn implementation(
         }
         locate::Located::TermItem(term_id) => hover_file_term(engine, current_file, term_id),
         locate::Located::TypeItem(type_id) => hover_file_type(engine, current_file, type_id),
+        locate::Located::Pun(pun_id) => hover_pun(engine, current_file, pun_id),
         locate::Located::Nothing => Ok(None),
     }
 }
@@ -172,7 +174,21 @@ fn hover_binder(
             let (f_id, t_id) = resolution.as_ref().ok_or(AnalyzerError::NonFatal)?;
             hover_file_term(engine, *f_id, *t_id)
         }
-        _ => Ok(None),
+        _ => {
+            let checked = engine.checked(current_file)?;
+
+            let binder_type = checked.nodes.lookup_binder(binder_id);
+            let binder_type = binder_type.ok_or(AnalyzerError::NonFatal)?;
+
+            let pretty = Pretty::new(engine, &checked).width(80);
+            let value = pretty.render(binder_type).to_string();
+            let value = MarkedString::from_language_code("purescript".to_string(), value);
+
+            let contents = HoverContents::Scalar(value);
+            let range = None;
+
+            Ok(Some(Hover { contents, range }))
+        }
     }
 }
 
@@ -182,8 +198,6 @@ fn hover_expression(
     expression_id: ExpressionId,
 ) -> Result<Option<Hover>, AnalyzerError> {
     let lowered = engine.lowered(current_file)?;
-    let stabilized = engine.stabilized(current_file)?;
-
     let kind = lowered.info.get_expression_kind(expression_id).ok_or(AnalyzerError::NonFatal)?;
 
     match kind {
@@ -194,14 +208,19 @@ fn hover_expression(
         ExpressionKind::Variable { resolution, .. } => {
             let resolution = resolution.as_ref().ok_or(AnalyzerError::NonFatal)?;
             match resolution {
-                TermVariableResolution::Binder(_) => Ok(None),
+                TermVariableResolution::Binder(binder_id) => {
+                    hover_binder(engine, current_file, *binder_id)
+                }
                 TermVariableResolution::Let(let_binding_id) => {
+                    let stabilized = engine.stabilized(current_file)?;
                     let (parsed, _) = engine.parsed(current_file)?;
                     let root = parsed.syntax_node();
                     let let_binding = lowered.info.get_let_binding_group(*let_binding_id);
                     hover_let(&root, &stabilized, let_binding)
                 }
-                TermVariableResolution::RecordPun(_) => Ok(None),
+                TermVariableResolution::RecordPun(pun_id) => {
+                    hover_pun(engine, current_file, *pun_id)
+                }
                 TermVariableResolution::Reference(f_id, t_id) => {
                     hover_file_term(engine, *f_id, *t_id)
                 }
@@ -211,7 +230,21 @@ fn hover_expression(
             let (f_id, t_id) = resolution.as_ref().ok_or(AnalyzerError::NonFatal)?;
             hover_file_term(engine, *f_id, *t_id)
         }
-        _ => Ok(None),
+        _ => {
+            let checked = engine.checked(current_file)?;
+
+            let expression_type = checked.nodes.lookup_expression(expression_id);
+            let expression_type = expression_type.ok_or(AnalyzerError::NonFatal)?;
+
+            let pretty = Pretty::new(engine, &checked).width(80);
+            let value = pretty.render(expression_type).to_string();
+            let value = MarkedString::from_language_code("purescript".to_string(), value);
+
+            let contents = HoverContents::Scalar(value);
+            let range = None;
+
+            Ok(Some(Hover { contents, range }))
+        }
     }
 }
 
@@ -285,12 +318,20 @@ fn hover_file_term(
     file_id: FileId,
     term_id: TermItemId,
 ) -> Result<Option<Hover>, AnalyzerError> {
+    let indexed = engine.indexed(file_id)?;
+    let checked = engine.checked(file_id)?;
+
     let (root, range) = AnnotationSyntaxRange::of_file_term(engine, file_id, term_id)?;
-
     let annotation = range.annotation.and_then(|range| render_annotation(&root, range));
-    let syntax = range.syntax.and_then(|range| render_syntax(&root, range));
 
-    let array = [syntax, annotation].into_iter().flatten();
+    let name = if let Some(name) = &indexed.items[term_id].name { name } else { "<unknown>" };
+    let signature = checked.lookup_term(term_id).ok_or(AnalyzerError::NonFatal)?;
+
+    let pretty = Pretty::new(engine, &checked).width(80).signature(name);
+    let value = pretty.render(signature).to_string();
+    let value = MarkedString::from_language_code("purescript".to_string(), value);
+
+    let array = [Some(value), annotation].into_iter().flatten();
     let separator = MarkedString::String("---".to_string());
     let array = Itertools::intersperse(array, separator).collect();
 
@@ -329,4 +370,24 @@ fn render_syntax(root: &SyntaxNode, range: TextRange) -> Option<MarkedString> {
     let value = extract::extract_syntax(root, range);
     let string = LanguageString { language: "purescript".to_string(), value };
     Some(MarkedString::LanguageString(string))
+}
+
+fn hover_pun(
+    engine: &QueryEngine,
+    current_file: FileId,
+    pun_id: lowering::RecordPunId,
+) -> Result<Option<Hover>, AnalyzerError> {
+    let checked = engine.checked(current_file)?;
+
+    let pun_type = checked.nodes.lookup_pun(pun_id);
+    let pun_type = pun_type.ok_or(AnalyzerError::NonFatal)?;
+
+    let pretty = Pretty::new(engine, &checked).width(80);
+    let value = pretty.render(pun_type).to_string();
+    let value = MarkedString::from_language_code("purescript".to_string(), value);
+
+    let contents = HoverContents::Scalar(value);
+    let range = None;
+
+    Ok(Some(Hover { contents, range }))
 }

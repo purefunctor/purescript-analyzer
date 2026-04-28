@@ -154,7 +154,6 @@ fn lower_binder_kind(
                     BinderRecordItem::RecordField { name, value }
                 }
                 cst::RecordItem::RecordPun(cst) => {
-                    // Get the RecordPun node's ID from stabilizing
                     let id = context.stabilized.lookup_cst(&cst).expect_id();
 
                     let name = cst.name().and_then(|cst| {
@@ -494,6 +493,8 @@ fn lower_expression_kind(
                     ExpressionRecordItem::RecordField { name, value }
                 }
                 cst::RecordItem::RecordPun(cst) => {
+                    let id = context.stabilized.lookup_cst(&cst).expect_id();
+
                     let name = cst.name().and_then(|cst| {
                         let token = cst.text()?;
                         Some(string_text(token))
@@ -502,7 +503,7 @@ fn lower_expression_kind(
                         let qualifier: Option<&str> = None;
                         state.resolve_term_full(context, qualifier, name)
                     });
-                    ExpressionRecordItem::RecordPun { name, resolution }
+                    ExpressionRecordItem::RecordPun { id, name, resolution }
                 }
             };
             let record = cst.children().map(|cst| lower_item(state, cst)).collect();

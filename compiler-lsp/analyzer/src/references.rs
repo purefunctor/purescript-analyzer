@@ -60,6 +60,7 @@ pub fn implementation(
         locate::Located::TypeItem(type_id) => {
             references_file_type(engine, files, current_file, current_file, type_id)
         }
+        locate::Located::Pun(_) => Ok(None),
         locate::Located::Nothing => Ok(None),
     }
 }

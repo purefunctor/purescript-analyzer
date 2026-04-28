@@ -2,7 +2,6 @@ use std::collections::HashMap;
 use std::fs;
 
 use building::{QueryEngine, QueryError, prim};
-use checking::ExternalQueries as _;
 use diagnostics::{
     Diagnostic, DiagnosticsContext, Severity, Span, ToDiagnostics, format_rustc_with_path,
 };
@@ -184,8 +183,6 @@ fn collect_file(
     match engine.checked(file_id) {
         Ok(checked) => {
             with_diagnostics_context(engine, file_id, &root, meta, |ctx| {
-                let lookup = |id| engine.lookup_smol_str(id);
-                let ctx = ctx.with_checking_lookup(&lookup);
                 for error in &checked.errors {
                     report
                         .diagnostics
@@ -213,7 +210,7 @@ fn with_diagnostics_context(
     let Ok(lowered) = engine.lowered(file_id) else {
         return;
     };
-    f(DiagnosticsContext::new(&meta.content, root, &stabilized, &indexed, &lowered));
+    f(DiagnosticsContext::new(engine, &meta.content, root, &stabilized, &indexed, &lowered));
 }
 
 fn parse_diagnostics(meta: &FileMeta, errors: &[parsing::ParseError]) -> Vec<CompilerDiagnostic> {

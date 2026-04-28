@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/lsp/generated.rs
+assertion_line: 12
 expression: report
 ---
 Hover at Position { line: 6, character: 7 }
@@ -10,7 +11,7 @@ test = id
 ```
 
 ```purescript
-id :: forall a. a -> a
+id :: forall (a :: Type). (a :: Type) -> (a :: Type)
 ```
 ---
 The identity function
@@ -24,10 +25,8 @@ test2 = const
 ```
 
 ```purescript
-const :: forall a b.
-  a ->
-  b ->
-  a
+const ::
+  forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type) -> (a :: Type)
 ```
 
 
@@ -38,6 +37,10 @@ test3 = docOnly
 --      $
 ```
 
+```purescript
+docOnly :: Int
+```
+---
 Documentation only
 
 
@@ -48,6 +51,10 @@ test4 = multiLine
 --      $
 ```
 
+```purescript
+multiLine :: Int
+```
+---
 Line 1
 Line 2
 Line 3
@@ -60,6 +67,10 @@ test5 = multiLine2
 --      $
 ```
 
+```purescript
+multiLine2 :: Int
+```
+---
 Line 1
 Line 2
 Line 3
@@ -72,6 +83,10 @@ test6 = multiLine3
 --      $
 ```
 
+```purescript
+multiLine3 :: Int
+```
+---
 Line 1
 
 Line 2
