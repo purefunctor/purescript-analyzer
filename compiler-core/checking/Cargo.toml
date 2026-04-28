@@ -8,6 +8,7 @@ building-types = { version = "0.1.0", path = "../building-types" }
 files = { version = "0.1.0", path = "../files" }
 indexing = { version = "0.1.0", path = "../indexing" }
 interner = { version = "0.1.0", path = "../interner" }
+indexmap = "2.12.1"
 itertools = "0.14.0"
 lowering = { version = "0.1.0", path = "../lowering" }
 petgraph = "0.8.3"

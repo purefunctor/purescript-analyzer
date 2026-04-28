@@ -11,7 +11,7 @@ use rustc_hash::FxHashSet;
 use crate::context::CheckContext;
 use crate::core::constraint::canonical::CanonicalConstraint;
 use crate::core::constraint::matching::MatchInstance;
-use crate::core::constraint::{CanonicalConstraintId, WorkItem, canonical, compiler};
+use crate::core::constraint::{CanonicalConstraintId, canonical, compiler};
 use crate::core::substitute::{NameToType, SubstituteName};
 use crate::core::walk::{TypeWalker, WalkAction, walk_type};
 use crate::core::{CheckedClass, KindOrType, Name, Type, TypeId, normalise, toolkit};
@@ -201,11 +201,7 @@ where
                 continue;
             };
 
-            for goal in instance.goals {
-                let WorkItem::Unify(left, right) = goal else {
-                    continue;
-                };
-
+            for (left, right) in instance.unifications {
                 let improvements = extract_improvements(state, context, &substitution, left, right)?;
                 for (name, replacement) in improvements {
                     if register_improvement(

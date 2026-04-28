@@ -2,7 +2,6 @@ use building_types::QueryResult;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::constraint::WorkItem;
 use crate::core::constraint::matching::{InstanceMatch, MatchInstance};
 use crate::core::unification::{CanUnify, can_unify};
 use crate::core::{Type, TypeId, normalise};
@@ -63,7 +62,7 @@ where
     Ok(match can_unify(state, context, actual, expected)? {
         CanUnify::Apart => MatchInstance::Apart,
         CanUnify::Equal | CanUnify::Unify => {
-            MatchInstance::Match(InstanceMatch { goals: vec![WorkItem::Unify(actual, expected)] })
+            MatchInstance::Match(InstanceMatch::from_unifications(vec![(actual, expected)]))
         }
     })
 }

@@ -171,7 +171,7 @@ where
     let message_id = context.queries.intern_smol_str(message);
     state.insert_error(ErrorKind::CustomWarning { message_id });
 
-    Ok(Some(MatchInstance::Match(InstanceMatch { goals: vec![] })))
+    Ok(Some(MatchInstance::Match(InstanceMatch::empty())))
 }
 
 pub fn match_fail<Q>(
@@ -194,5 +194,5 @@ where
     let message_id = context.queries.intern_smol_str(message);
     state.insert_error(ErrorKind::CustomFailure { message_id });
 
-    Ok(Some(MatchInstance::Match(InstanceMatch { goals: vec![] })))
+    Ok(Some(MatchInstance::Match(InstanceMatch::empty())))
 }

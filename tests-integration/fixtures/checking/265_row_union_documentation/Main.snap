@@ -45,16 +45,16 @@ openLeftPrefixMany ::
 forceSolve ::
   forall (t34 :: Row Type) (t33 :: Row Type) (t32 :: Row Type) (t31 :: Row Type) (t30 :: Row Type)
     (t29 :: Row Type) (t28 :: Row Type).
-    Union @Type (t34 :: Row Type) ( c :: Boolean ) (t33 :: Row Type) =>
-    Union @Type (t32 :: Row Type) ( b :: String | (t31 :: Row Type) ) (t30 :: Row Type) =>
+    Union @Type (t34 :: Row Type) ( b :: String | (t33 :: Row Type) ) (t32 :: Row Type) =>
+    Union @Type (t31 :: Row Type) ( c :: Boolean ) (t30 :: Row Type) =>
     { closedLeftEmpty :: Proxy @(Row Type) ( b :: String | (t29 :: Row Type) )
     , closedLeftKnownFields :: Proxy @(Row Type) ( a :: Int, b :: String )
     , closedLeftOpenRight :: Proxy @(Row Type) ( a :: Int, b :: String | (t28 :: Row Type) )
     , closedRightOutputDuplicate :: Proxy @(Row Type) ( x :: Int )
     , closedRightOutputKnownLeft :: Proxy @(Row Type) ( c :: Boolean )
     , closedRightOutputOpenLeft :: Proxy @(Row Type) ( a :: Int )
-    , openLeftPrefixMany :: Proxy @(Row Type) ( a :: Int, b :: String | (t33 :: Row Type) )
-    , openLeftPrefixOne :: Proxy @(Row Type) ( a :: Int | (t30 :: Row Type) )
+    , openLeftPrefixMany :: Proxy @(Row Type) ( a :: Int, b :: String | (t30 :: Row Type) )
+    , openLeftPrefixOne :: Proxy @(Row Type) ( a :: Int | (t32 :: Row Type) )
     }
 
 Types

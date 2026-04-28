@@ -46,12 +46,12 @@ WrapBoth = [Representational, Representational, Nominal, Nominal]
 WrapBothNoConstraint = [Representational, Representational, Nominal, Nominal]
 
 Diagnostics
-error[NoInstanceFound]: No instance found for: Foldable (t15 :: Type -> Type)
+error[NoInstanceFound]: No instance found for: Foldable (t14 :: Type -> Type)
   --> 10:1..10:54
    |
 10 | derive instance Bifoldable (WrapBothNoConstraint f g)
    | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-error[NoInstanceFound]: No instance found for: Foldable (t14 :: Type -> Type)
+error[NoInstanceFound]: No instance found for: Foldable (t15 :: Type -> Type)
   --> 10:1..10:54
    |
 10 | derive instance Bifoldable (WrapBothNoConstraint f g)

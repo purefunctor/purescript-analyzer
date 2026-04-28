@@ -28,12 +28,12 @@ Roles
 WrapBoth = [Representational, Representational, Nominal, Nominal]
 
 Diagnostics
-error[NoInstanceFound]: No instance found for: Functor (t7 :: Type -> Type)
+error[NoInstanceFound]: No instance found for: Functor (t6 :: Type -> Type)
   --> 6:1..6:41
   |
 6 | derive instance Bifunctor (WrapBoth f g)
   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-error[NoInstanceFound]: No instance found for: Functor (t6 :: Type -> Type)
+error[NoInstanceFound]: No instance found for: Functor (t7 :: Type -> Type)
   --> 6:1..6:41
   |
 6 | derive instance Bifunctor (WrapBoth f g)

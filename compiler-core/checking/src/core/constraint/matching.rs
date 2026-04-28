@@ -12,7 +12,7 @@ use rustc_hash::{FxHashMap, FxHashSet};
 use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::constraint::instances::InstanceCandidate;
-use crate::core::constraint::{CanonicalConstraintId, WorkItem, canonical};
+use crate::core::constraint::{CanonicalConstraintId, canonical};
 use crate::core::fd::{Fd, compute_closure};
 use crate::core::substitute::SubstituteName;
 use crate::core::unification::{CanUnify, can_unify};
@@ -38,7 +38,22 @@ impl MatchType {
 }
 
 pub struct InstanceMatch {
-    pub goals: Vec<WorkItem>,
+    pub unifications: Vec<(TypeId, TypeId)>,
+    pub constraints: Vec<CanonicalConstraintId>,
+}
+
+impl InstanceMatch {
+    pub fn empty() -> InstanceMatch {
+        InstanceMatch { unifications: vec![], constraints: vec![] }
+    }
+
+    pub fn from_unifications(unifications: Vec<(TypeId, TypeId)>) -> InstanceMatch {
+        InstanceMatch { unifications, constraints: vec![] }
+    }
+
+    pub fn from_constraints(constraints: Vec<CanonicalConstraintId>) -> InstanceMatch {
+        InstanceMatch { unifications: vec![], constraints }
+    }
 }
 
 /// The result of matching a wanted constraint against a given constraint.
@@ -212,15 +227,15 @@ where
             return Ok(MatchInstance::Stuck(stuck));
         }
 
-        let mut goals = vec![];
+        let mut unifications = vec![];
 
         for (wanted, given, result) in results {
             if matches!(result, MatchType::Stuck(_)) {
-                goals.push(WorkItem::Unify(wanted, given));
+                unifications.push((wanted, given));
             }
         }
 
-        return Ok(MatchInstance::Match(InstanceMatch { goals }));
+        return Ok(MatchInstance::Match(InstanceMatch::from_unifications(unifications)));
     }
 
     Ok(MatchInstance::Apart)
@@ -230,14 +245,14 @@ pub type InstanceBindings = FxHashMap<Name, TypeId>;
 
 /// Matches a wanted type against an instance type.
 ///
-/// This function also collects [`InstanceBindings`] and [`WorkItem`]
+/// This function also collects [`InstanceBindings`] and unifications
 /// during matching. The bindings will be used to substitute variables
 /// appearing in the subgoals of the instance declaration.
 pub fn match_instance_type<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     bindings: &mut InstanceBindings,
-    goals: &mut Vec<WorkItem>,
+    unifications: &mut Vec<(TypeId, TypeId)>,
     wanted: TypeId,
     given: TypeId,
 ) -> QueryResult<MatchType>
@@ -260,7 +275,7 @@ where
                 CanUnify::Equal => Ok(MatchType::Match),
                 CanUnify::Apart => Ok(MatchType::Apart),
                 CanUnify::Unify => {
-                    goals.push(WorkItem::Unify(wanted, bound));
+                    unifications.push((wanted, bound));
                     Ok(MatchType::Match)
                 }
             }
@@ -271,7 +286,7 @@ where
     } else {
         let mut recurse =
             |state: &mut CheckState, context: &CheckContext<Q>, wanted: TypeId, given: TypeId| {
-                match_instance_type(state, context, bindings, goals, wanted, given)
+                match_instance_type(state, context, bindings, unifications, wanted, given)
             };
         match_core(state, context, &mut recurse, wanted, given, wanted_core, given_core)
     }
@@ -298,7 +313,7 @@ where
         let mut stuck = vec![];
 
         let mut bindings = FxHashMap::default();
-        let mut goals = vec![];
+        let mut unifications = vec![];
 
         for (&wanted_argument, &given_argument) in
             iter::zip(wanted.arguments.iter(), given.arguments.iter())
@@ -312,7 +327,7 @@ where
                         state,
                         context,
                         &mut bindings,
-                        &mut goals,
+                        &mut unifications,
                         wanted_argument,
                         given_argument,
                     )?
@@ -354,18 +369,19 @@ where
         for (wanted, given, result) in results {
             if matches!(result, MatchType::Stuck(_)) {
                 let given = SubstituteName::many(state, context, &bindings, given)?;
-                goals.push(WorkItem::Unify(wanted, given));
+                unifications.push((wanted, given));
             }
         }
 
+        let mut constraints = vec![];
         for constraint in given.constraints {
             let constraint = SubstituteName::many(state, context, &bindings, constraint)?;
             if let Some(constraint) = canonical::canonicalise(state, context, constraint)? {
-                goals.push(WorkItem::Constraint(constraint));
+                constraints.push(constraint);
             };
         }
 
-        return Ok(MatchInstance::Match(InstanceMatch { goals }));
+        return Ok(MatchInstance::Match(InstanceMatch { unifications, constraints }));
     }
 
     Ok(MatchInstance::Apart)

@@ -302,6 +302,7 @@ dependencies = [
  "building-types",
  "files",
  "indexing",
+ "indexmap",
  "interner",
  "itertools 0.14.0",
  "lowering",

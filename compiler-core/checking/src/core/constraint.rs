@@ -21,8 +21,9 @@ use std::collections::VecDeque;
 use std::{iter, mem};
 
 use building_types::QueryResult;
+use indexmap::IndexSet;
 use itertools::Itertools;
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::{FxBuildHasher, FxHashMap, FxHashSet};
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
@@ -92,15 +93,50 @@ where
     Ok(residual)
 }
 
-/// A unit of work in the constraint solver.
-pub enum WorkItem {
-    /// A constraint to be solved.
-    Constraint(CanonicalConstraintId),
-    /// A unification to be performed.
-    Unify(TypeId, TypeId),
+pub struct WorkList {
+    unifications: Vec<(TypeId, TypeId)>,
+    constraints: VecDeque<CanonicalConstraintId>,
+}
+
+impl WorkList {
+    pub fn extend_from_match(&mut self, instance: InstanceMatch) {
+        self.unifications.extend(instance.unifications);
+        self.constraints.extend(instance.constraints);
+    }
 }
 
 type Stuck = FxHashMap<u32, Vec<CanonicalConstraintId>>;
+type Awake = IndexSet<CanonicalConstraintId, FxBuildHasher>;
+
+fn wake_constraints(work: &mut WorkList, stuck: &mut Stuck, state: &CheckState) {
+    let mut awake = Awake::default();
+
+    stuck.retain(|&id, constraints| {
+        if let UnificationState::Solved(_) = state.unifications.get(id).state {
+            for &constraint in constraints.iter() {
+                awake.insert(constraint);
+            }
+            false
+        } else {
+            true
+        }
+    });
+
+    if awake.is_empty() {
+        return;
+    }
+
+    // For each constraint in the constraint set;
+    for constraints in stuck.values_mut() {
+        // keep only the constraints that are not awake;
+        constraints.retain(|constraint| !awake.contains(constraint));
+    }
+
+    // and keep only the non-empty constraint sets.
+    stuck.retain(|_, constraints| !constraints.is_empty());
+
+    work.constraints.extend(awake);
+}
 
 pub fn solve_constraints<Q>(
     state: &mut CheckState,
@@ -124,79 +160,70 @@ where
         .map(|wanted| canonical::substitute_canonical(state, context, &substitution, wanted))
         .collect::<QueryResult<VecDeque<_>>>()?;
 
-    let mut work = wanted.into_iter().map(WorkItem::Constraint).collect::<VecDeque<_>>();
-
+    let mut work = WorkList { unifications: vec![], constraints: wanted };
     let mut stuck = Stuck::default();
     let mut residuals = vec![];
 
-    'work: while let Some(item) = work.pop_back() {
-        match item {
-            WorkItem::Constraint(wanted) => {
-                let mut blocked = FxHashSet::default();
+    'work: loop {
+        let mut has_unification = false;
+        for (t1, t2) in mem::take(&mut work.unifications) {
+            has_unification |= unification::unify(state, context, t1, t2)?;
+        }
 
-                match match_given_instance(state, context, wanted, &given)? {
-                    MatchInstance::Match(InstanceMatch { goals }) => {
-                        work.extend(goals);
-                        continue 'work;
-                    }
-                    MatchInstance::Stuck(id) => {
-                        blocked.extend(id);
-                    }
-                    MatchInstance::Apart => (),
+        if has_unification {
+            wake_constraints(&mut work, &mut stuck, state);
+        }
+
+        let Some(wanted) = work.constraints.pop_front() else {
+            break 'work;
+        };
+
+        let mut blocked = FxHashSet::default();
+
+        match match_given_instance(state, context, wanted, &given)? {
+            MatchInstance::Match(instance) => {
+                work.extend_from_match(instance);
+                continue 'work;
+            }
+            MatchInstance::Stuck(id) => {
+                blocked.extend(id);
+            }
+            MatchInstance::Apart => (),
+        }
+
+        match compiler::match_compiler_instance(state, context, wanted, &given)? {
+            Some(MatchInstance::Match(instance)) => {
+                work.extend_from_match(instance);
+                continue 'work;
+            }
+            Some(MatchInstance::Stuck(id)) => {
+                blocked.extend(id);
+            }
+            Some(MatchInstance::Apart) | None => (),
+        }
+
+        let chains = instances::collect_instance_chains(state, context, wanted)?;
+        'chain: for chain in chains {
+            match match_instance_chain(state, context, wanted, &chain)? {
+                MatchInstance::Match(instance) => {
+                    work.extend_from_match(instance);
+                    continue 'work;
                 }
-
-                match compiler::match_compiler_instance(state, context, wanted, &given)? {
-                    Some(MatchInstance::Match(InstanceMatch { goals })) => {
-                        work.extend(goals);
-                        continue 'work;
-                    }
-                    Some(MatchInstance::Stuck(id)) => {
-                        blocked.extend(id);
-                    }
-                    Some(MatchInstance::Apart) | None => (),
+                MatchInstance::Stuck(id) => {
+                    blocked.extend(id);
+                    continue 'chain;
                 }
-
-                let chains = instances::collect_instance_chains(state, context, wanted)?;
-                'chain: for chain in chains {
-                    match match_instance_chain(state, context, wanted, &chain)? {
-                        MatchInstance::Match(InstanceMatch { goals }) => {
-                            work.extend(goals);
-                            continue 'work;
-                        }
-                        MatchInstance::Stuck(id) => {
-                            blocked.extend(id);
-                            continue 'chain;
-                        }
-                        MatchInstance::Apart => {
-                            continue 'chain;
-                        }
-                    }
-                }
-
-                if blocked.is_empty() {
-                    residuals.push(wanted);
-                } else {
-                    for id in blocked {
-                        stuck.entry(id).or_default().push(wanted);
-                    }
+                MatchInstance::Apart => {
+                    continue 'chain;
                 }
             }
-            WorkItem::Unify(t1, t2) => {
-                if unification::unify(state, context, t1, t2)? {
-                    let mut awake = FxHashSet::default();
-                    stuck.retain(|&id, constraints| {
-                        if let UnificationState::Solved(_) = state.unifications.get(id).state {
-                            let constraints = constraints.iter().copied();
-                            awake.extend(constraints);
-                            false
-                        } else {
-                            true
-                        }
-                    });
-                    for constraint in awake {
-                        work.push_back(WorkItem::Constraint(constraint));
-                    }
-                }
+        }
+
+        if blocked.is_empty() {
+            residuals.push(wanted);
+        } else {
+            for id in blocked {
+                stuck.entry(id).or_default().push(wanted);
             }
         }
     }

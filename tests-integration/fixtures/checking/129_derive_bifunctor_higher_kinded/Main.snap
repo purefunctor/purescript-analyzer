@@ -46,12 +46,12 @@ WrapBoth = [Representational, Representational, Nominal, Nominal]
 WrapBothNoConstraint = [Representational, Representational, Nominal, Nominal]
 
 Diagnostics
-error[NoInstanceFound]: No instance found for: Functor (t15 :: Type -> Type)
+error[NoInstanceFound]: No instance found for: Functor (t14 :: Type -> Type)
   --> 10:1..10:53
    |
 10 | derive instance Bifunctor (WrapBothNoConstraint f g)
    | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-error[NoInstanceFound]: No instance found for: Functor (t14 :: Type -> Type)
+error[NoInstanceFound]: No instance found for: Functor (t15 :: Type -> Type)
   --> 10:1..10:53
    |
 10 | derive instance Bifunctor (WrapBothNoConstraint f g)

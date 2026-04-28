@@ -4,7 +4,6 @@ use building_types::QueryResult;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::constraint::WorkItem;
 use crate::core::constraint::matching::{self, InstanceMatch, MatchInstance};
 use crate::core::{Type, TypeId, normalise};
 use crate::state::CheckState;
@@ -123,9 +122,10 @@ where
 
             let head_result = intern_symbol(context, &head_char.to_string());
             let tail_result = intern_symbol(context, chars.as_str());
-            MatchInstance::Match(InstanceMatch {
-                goals: vec![WorkItem::Unify(head, head_result), WorkItem::Unify(tail, tail_result)],
-            })
+            MatchInstance::Match(InstanceMatch::from_unifications(vec![
+                (head, head_result),
+                (tail, tail_result),
+            ]))
         }
         _ => matching::blocking_constraint(state, context, &[head, tail, symbol])?,
     };
@@ -148,7 +148,7 @@ where
     let symbol = normalise::expand(state, context, symbol)?;
 
     let matched = if extract_symbol(state, context, symbol)?.is_some() {
-        MatchInstance::Match(InstanceMatch { goals: vec![] })
+        MatchInstance::Match(InstanceMatch::empty())
     } else if let Type::Unification(id) = context.lookup_type(symbol) {
         MatchInstance::Stuck(vec![id])
     } else {
