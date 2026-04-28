@@ -68,7 +68,7 @@ pub enum DoStatement {
 #[derive(Debug, PartialEq, Eq)]
 pub enum ExpressionRecordItem {
     RecordField { name: Option<SmolStr>, value: Option<ExpressionId> },
-    RecordPun { name: Option<SmolStr>, resolution: Option<TermVariableResolution> },
+    RecordPun { id: RecordPunId, name: Option<SmolStr>, resolution: Option<TermVariableResolution> },
 }
 
 #[derive(Debug, PartialEq, Eq)]
