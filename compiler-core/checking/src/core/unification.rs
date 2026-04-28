@@ -185,7 +185,8 @@ where
         // check is triggered because `h` was defined in a deeper scope.
         (_, Type::Forall(binder_id, inner)) => {
             let binder = context.lookup_forall_binder(binder_id);
-            let skolem = state.fresh_rigid(context.queries, binder.kind);
+            let text = state.checked.lookup_name(binder.name);
+            let skolem = state.fresh_rigid_named(context.queries, binder.kind, text);
 
             let inner = SubstituteName::one(state, context, binder.name, skolem, inner)?;
             state.with_depth(|state| subtype_with::<P, Q>(state, context, t1, inner))
@@ -317,7 +318,11 @@ where
 
             unify(state, context, t1_binder.kind, t2_binder.kind)?;
 
-            let skolem = state.fresh_rigid(context.queries, t1_binder.kind);
+            let text = state
+                .checked
+                .lookup_name(t1_binder.name)
+                .or_else(|| state.checked.lookup_name(t2_binder.name));
+            let skolem = state.fresh_rigid_named(context.queries, t1_binder.kind, text);
 
             let t1_inner = SubstituteName::one(state, context, t1_binder.name, skolem, t1_inner)?;
             let t2_inner = SubstituteName::one(state, context, t2_binder.name, skolem, t2_inner)?;
@@ -341,13 +346,15 @@ where
         // with the substitution [?a := 'b].
         (Type::Forall(binder_id, inner), _) => {
             let binder = context.lookup_forall_binder(binder_id);
-            let skolem = state.fresh_rigid(context.queries, binder.kind);
+            let text = state.checked.lookup_name(binder.name);
+            let skolem = state.fresh_rigid_named(context.queries, binder.kind, text);
             let inner = SubstituteName::one(state, context, binder.name, skolem, inner)?;
             state.with_depth(|state| unify(state, context, inner, t2))?
         }
         (_, Type::Forall(binder_id, inner)) => {
             let binder = context.lookup_forall_binder(binder_id);
-            let skolem = state.fresh_rigid(context.queries, binder.kind);
+            let text = state.checked.lookup_name(binder.name);
+            let skolem = state.fresh_rigid_named(context.queries, binder.kind, text);
             let inner = SubstituteName::one(state, context, binder.name, skolem, inner)?;
             state.with_depth(|state| unify(state, context, t1, inner))?
         }

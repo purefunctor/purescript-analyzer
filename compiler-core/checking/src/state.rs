@@ -257,7 +257,19 @@ impl CheckState {
     }
 
     pub fn fresh_rigid(&mut self, queries: &impl ExternalQueries, kind: TypeId) -> TypeId {
+        self.fresh_rigid_named(queries, kind, None)
+    }
+
+    pub fn fresh_rigid_named(
+        &mut self,
+        queries: &impl ExternalQueries,
+        kind: TypeId,
+        text: Option<SmolStrId>,
+    ) -> TypeId {
         let name = self.names.fresh();
+        if let Some(text) = text {
+            self.checked.names.insert(name, text);
+        }
         queries.intern_type(Type::Rigid(name, self.depth, kind))
     }
 

@@ -96,7 +96,7 @@ Roles
 Tuple = [Representational, Representational]
 
 Diagnostics
-error[NoInstanceFound]: No instance found for: Discard (t24 :: Type -> Type)
+error[NoInstanceFound]: No instance found for: Discard (m :: Type -> Type)
   --> 44:1..44:44
    |
 44 | testDoDiscard :: forall m. Monad m => m Int
