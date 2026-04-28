@@ -169,6 +169,7 @@ fn check_source(queries: &impl ExternalQueries, file_id: FileId) -> QueryResult<
 
     source::check_type_items(&mut state, &context)?;
     source::check_term_items(&mut state, &context)?;
+    core::zonk::zonk_nodes(&mut state, &context)?;
 
     Ok(state.checked)
 }
