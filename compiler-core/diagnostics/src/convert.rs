@@ -161,9 +161,7 @@ impl ToDiagnostics for CheckError {
     fn to_diagnostics(&self, context: &DiagnosticsContext<'_>) -> Vec<Diagnostic> {
         let primary = context.primary_span_from_crumbs(&self.crumbs);
 
-        let Some(lookup_message) = context.checking_lookup else {
-            return vec![];
-        };
+        let lookup_message = |id| context.queries.lookup_checking_smol_str(id);
 
         let (severity, code, message) = match &self.kind {
             ErrorKind::AmbiguousConstraint { constraint } => {

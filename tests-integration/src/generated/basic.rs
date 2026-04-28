@@ -392,9 +392,7 @@ fn write_checked_diagnostics(
     let lowered = engine.lowered(id).unwrap();
     let resolved = engine.resolved(id).unwrap();
 
-    let lookup_smol_str = |id| engine.lookup_smol_str(id);
-    let context = DiagnosticsContext::new(&content, &root, &stabilized, indexed, &lowered)
-        .with_checking_lookup(&lookup_smol_str);
+    let context = DiagnosticsContext::new(engine, &content, &root, &stabilized, indexed, &lowered);
 
     let mut all_diagnostics = vec![];
 
