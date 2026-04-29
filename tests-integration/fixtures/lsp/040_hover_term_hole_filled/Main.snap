@@ -1,0 +1,27 @@
+---
+source: tests-integration/tests/lsp/generated.rs
+assertion_line: 12
+expression: report
+---
+Hover at Position { line: 4, character: 11 }
+
+```
+test = add ?one ?two
+--         $    $
+```
+
+```purescript
+Int
+```
+
+
+Hover at Position { line: 4, character: 16 }
+
+```
+test = add ?one ?two
+--         $    $
+```
+
+```purescript
+Int
+```
