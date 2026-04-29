@@ -102,12 +102,8 @@ Hover at Position { line: 60, character: 6 }
 ```
 
 ```purescript
-valueOnly :: _
+Int
 ```
----
-`valueOnly` is a `let`-bound name.
----
-note: type information is currently not available
 
 
 Hover at Position { line: 62, character: 6 }
@@ -118,5 +114,5 @@ Hover at Position { line: 62, character: 6 }
 ```
 
 ```purescript
-withSignature :: Int
+Int
 ```

@@ -10,7 +10,6 @@ use lowering::{
 use rowan::TextRange;
 use rowan::ast::{AstNode, AstPtr};
 use smol_str::ToSmolStr;
-use stabilizing::StabilizedModule;
 use syntax::{SyntaxNode, cst};
 
 use crate::extract::{self, AnnotationSyntaxRange};
@@ -212,11 +211,7 @@ fn hover_expression(
                     hover_binder(engine, current_file, *binder_id)
                 }
                 TermVariableResolution::Let(let_binding_id) => {
-                    let stabilized = engine.stabilized(current_file)?;
-                    let (parsed, _) = engine.parsed(current_file)?;
-                    let root = parsed.syntax_node();
-                    let let_binding = lowered.info.get_let_binding_group(*let_binding_id);
-                    hover_let(&root, &stabilized, let_binding)
+                    hover_let(engine, current_file, *let_binding_id)
                 }
                 TermVariableResolution::RecordPun(pun_id) => {
                     hover_pun(engine, current_file, *pun_id)
@@ -249,52 +244,23 @@ fn hover_expression(
 }
 
 fn hover_let(
-    root: &SyntaxNode,
-    stabilized: &StabilizedModule,
-    let_binding: &lowering::LetBindingNameGroup,
+    engine: &QueryEngine,
+    current_file: FileId,
+    let_binding_id: lowering::LetBindingNameGroupId,
 ) -> Result<Option<Hover>, AnalyzerError> {
-    let signature = let_binding.signature.and_then(|id| {
-        let ptr = stabilized.syntax_ptr(id)?;
-        Some(AnnotationSyntaxRange::from_ptr(root, &ptr))
-    });
+    let checked = engine.checked(current_file)?;
 
-    if let Some(range) = signature {
-        let annotation = range.annotation.and_then(|range| render_annotation(root, range));
-        let syntax = range.syntax.and_then(|range| render_syntax(root, range));
+    let let_type = checked.nodes.lookup_let(let_binding_id);
+    let let_type = let_type.ok_or(AnalyzerError::NonFatal)?;
 
-        let array = [syntax, annotation].into_iter().flatten();
-        let separator = MarkedString::String("---".to_string());
-        let array = Itertools::intersperse(array, separator).collect();
+    let pretty = Pretty::new(engine, &checked).width(80);
+    let value = pretty.render(let_type).to_string();
+    let value = MarkedString::from_language_code("purescript".to_string(), value);
 
-        let contents = HoverContents::Array(array);
-        let range = None;
+    let contents = HoverContents::Scalar(value);
+    let range = None;
 
-        Ok(Some(Hover { contents, range }))
-    } else {
-        let id = let_binding.equations.first().copied().ok_or(AnalyzerError::NonFatal)?;
-
-        let ptr = stabilized.ast_ptr(id).ok_or(AnalyzerError::NonFatal)?;
-        let node = ptr.try_to_node(root).ok_or(AnalyzerError::NonFatal)?;
-
-        let token = node.name_token().ok_or(AnalyzerError::NonFatal)?;
-        let text = token.text();
-
-        let array = vec![
-            MarkedString::LanguageString(LanguageString {
-                language: "purescript".to_string(),
-                value: format!("{text} :: _"),
-            }),
-            MarkedString::String("---".to_string()),
-            MarkedString::String(format!("`{text}` is a `let`-bound name.")),
-            MarkedString::String("---".to_string()),
-            MarkedString::String("note: type information is currently not available".to_string()),
-        ];
-
-        let contents = HoverContents::Array(array);
-        let range = None;
-
-        Ok(Some(Hover { contents, range }))
-    }
+    Ok(Some(Hover { contents, range }))
 }
 
 fn hover_type(

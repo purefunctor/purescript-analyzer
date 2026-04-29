@@ -23,7 +23,7 @@ Hover at Position { line: 17, character: 6 }
 ```
 
 ```purescript
-life :: Int
+Int
 ```
 
 
@@ -35,12 +35,8 @@ Hover at Position { line: 17, character: 12 }
 ```
 
 ```purescript
-value :: _
+Int
 ```
----
-`value` is a `let`-bound name.
----
-note: type information is currently not available
 
 
 Hover at Position { line: 22, character: 9 }
