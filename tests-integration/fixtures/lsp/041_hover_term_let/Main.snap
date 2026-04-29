@@ -1,0 +1,19 @@
+---
+source: tests-integration/tests/lsp/generated.rs
+assertion_line: 12
+expression: report
+---
+Hover at Position { line: 6, character: 4 }
+
+```
+    identity
+--  $
+```
+
+```purescript
+identity :: _
+```
+---
+`identity` is a `let`-bound name.
+---
+note: type information is currently not available

@@ -91,3 +91,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_039_hover_term_hole_main() { run_test("039_hover_term_hole", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_040_hover_term_hole_filled_main() { run_test("040_hover_term_hole_filled", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_041_hover_term_let_main() { run_test("041_hover_term_let", "Main"); }
