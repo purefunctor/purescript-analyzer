@@ -2,12 +2,11 @@ use std::mem;
 
 use building_types::QueryResult;
 
-use crate::ExternalQueries;
-use crate::OperatorBranchTypes;
 use crate::context::CheckContext;
 use crate::core::fold::{FoldAction, TypeFold, fold_type};
 use crate::core::{Type, TypeId};
 use crate::state::CheckState;
+use crate::{ExternalQueries, OperatorBranchTypes};
 
 struct Zonk;
 

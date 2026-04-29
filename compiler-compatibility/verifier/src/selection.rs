@@ -1,7 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet, HashMap, VecDeque};
-use std::fs;
-use std::io;
 use std::path::Path;
+use std::{fs, io};
 
 use registry::{Manifest, PackageSet, RegistryError, RegistryReader};
 use serde::{Deserialize, Serialize};
