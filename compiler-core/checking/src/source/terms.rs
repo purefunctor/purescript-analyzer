@@ -312,7 +312,10 @@ where
             }
         }
 
-        lowering::ExpressionKind::Hole => Ok(unknown),
+        lowering::ExpressionKind::Hole => {
+            let kind = state.fresh_unification(context.queries, context.prim.t);
+            Ok(state.fresh_unification(context.queries, kind))
+        }
 
         lowering::ExpressionKind::String => Ok(context.prim.string),
 

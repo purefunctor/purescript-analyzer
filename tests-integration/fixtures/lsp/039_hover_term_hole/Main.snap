@@ -11,5 +11,5 @@ hole = ?hole
 ```
 
 ```purescript
-?[missing expression]
+(t0 :: Type)
 ```

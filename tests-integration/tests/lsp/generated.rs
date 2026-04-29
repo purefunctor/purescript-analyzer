@@ -88,4 +88,4 @@ fn run_test(folder: &str, file: &str) {
 
 #[rustfmt::skip] #[test] fn test_038_definition_pun_main() { run_test("038_definition_pun", "Main"); }
 
-#[rustfmt::skip] #[test] fn test_039_hover_hole_main() { run_test("039_hover_hole", "Main"); }
+#[rustfmt::skip] #[test] fn test_039_hover_term_hole_main() { run_test("039_hover_term_hole", "Main"); }
