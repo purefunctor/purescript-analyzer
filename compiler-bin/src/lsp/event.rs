@@ -24,7 +24,7 @@ pub struct CollectDiagnostics(FileId);
 
 pub fn collect_diagnostics(state: &mut State, id: CollectDiagnostics) -> Result<(), LspError> {
     state.spawn(move |snapshot| {
-        let _span = tracing::info_span!("collect-diagnostics-task").entered();
+        let _span = tracing::info_span!("collect_diagnostics").entered();
         collect_diagnostics_core(snapshot, id).inspect_err(|error| error.emit_trace())
     });
     Ok(())
@@ -43,6 +43,7 @@ fn collect_diagnostics_core(
     let indexed = snapshot.engine.indexed(id)?;
     let resolved = snapshot.engine.resolved(id)?;
     let lowered = snapshot.engine.lowered(id)?;
+    let checked = snapshot.engine.checked(id)?;
 
     let uri = {
         let files = snapshot.files.read();
@@ -59,6 +60,10 @@ fn collect_diagnostics_core(
     }
 
     for error in &resolved.errors {
+        all_diagnostics.extend(error.to_diagnostics(&context));
+    }
+
+    for error in &checked.errors {
         all_diagnostics.extend(error.to_diagnostics(&context));
     }
 
