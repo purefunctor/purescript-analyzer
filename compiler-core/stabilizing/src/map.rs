@@ -77,35 +77,8 @@ impl StabilizedModule {
 }
 
 impl PartialEq for StabilizedModule {
-    fn eq(&self, other: &Self) -> bool {
-        if self.arena.len() != other.arena.len() {
-            return false;
-        }
-
-        if self.table.len() != other.table.len() {
-            return false;
-        }
-
-        for &self_id in self.table.iter() {
-            let self_ptr = arena_index(&self.arena, self_id).unwrap_or_else(|| {
-                unreachable!("invariant violated: {self_id} is not a valid index");
-            });
-
-            let self_hash = FxBuildHasher.hash_one(self_ptr);
-
-            let other_found = other.table.find(self_hash, |&other_id| {
-                let other_ptr = arena_index(&self.arena, other_id).unwrap_or_else(|| {
-                    unreachable!("invariant violated: {other_id} is not a valid index");
-                });
-                self_ptr == other_ptr
-            });
-
-            if other_found.is_none() {
-                return false;
-            }
-        }
-
-        true
+    fn eq(&self, other: &StabilizedModule) -> bool {
+        self.arena == other.arena
     }
 }
 
