@@ -3,7 +3,7 @@
 use building_types::QueryResult;
 
 use crate::context::CheckContext;
-use crate::core::{ForallBinder, Type, TypeId, normalise};
+use crate::core::{ForallBinder, RowField, RowTypeId, Type, TypeId, normalise};
 use crate::state::CheckState;
 use crate::{ExternalQueries, safe_loop};
 
@@ -93,12 +93,11 @@ where
         Type::Constructor(_, _) => id,
         Type::Integer(_) | Type::String(_, _) => id,
         Type::Row(row_id) => {
-            let row = context.lookup_row_type(row_id);
-            let mut fields = row.fields.to_vec();
+            let (mut fields, tail) = flatten_row(state, context, row_id)?;
             for field in fields.iter_mut() {
                 field.id = fold_type(state, context, field.id, folder)?;
             }
-            let tail = row.tail.map(|tail| fold_type(state, context, tail, folder)).transpose()?;
+            let tail = tail.map(|tail| fold_type(state, context, tail, folder)).transpose()?;
             context.intern_row(fields, tail)
         }
         Type::Rigid(name, depth, kind) => {
@@ -109,4 +108,49 @@ where
     };
 
     Ok(result)
+}
+
+/// Flatten a row type into a single row.
+///
+/// In most cases, row fields are stored contiguously in the [`RowType`] struct.
+/// However, the constraint solver or other parts of the compiler may produce
+/// the following transient structure:
+///
+/// ```purescript
+/// ?t9 = ( t9 :: Type | ?t8 )
+/// ?t8 = ( t8 :: Type | ?t8 )
+/// ?t7 = ( t7 :: Type | ?t6 )
+/// ```
+///
+/// This is effectively a linked list of row fields, and in exceptional cases,
+/// recursive traversal of this structure is ineffective and leads to stack overflow.
+///
+/// This function flattens a given [`RowType`] by traversing the [`RowType::tail`]
+/// and collecting fields, building the ideal canonical representation for a row type.
+fn flatten_row<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    row_id: RowTypeId,
+) -> QueryResult<(Vec<RowField>, Option<TypeId>)>
+where
+    Q: ExternalQueries,
+{
+    let mut row = context.lookup_row_type(row_id);
+    let mut fields = row.fields.to_vec();
+
+    safe_loop! {
+        let Some(tail) = row.tail else {
+            break;
+        };
+
+        let tail = normalise::normalise(state, context, tail)?;
+        let Type::Row(row_id) = context.lookup_type(tail) else {
+            break;
+        };
+
+        row = context.lookup_row_type(row_id);
+        fields.extend(row.fields.iter().cloned());
+    }
+
+    Ok((fields, row.tail))
 }

@@ -150,22 +150,54 @@ fn expand_row_tail<Q>(
 where
     Q: ExternalQueries,
 {
-    let Type::Row(row_id) = context.lookup_type(id) else {
+    let Type::Row(_) = context.lookup_type(id) else {
         return Ok(id);
     };
 
-    let row = context.lookup_row_type(row_id);
-    let Some(original_tail) = row.tail else {
-        return Ok(id);
+    let mut current_id = id;
+    let mut row_fields = vec![];
+
+    // This flag tracks that we've flattened at least one row tail.
+    // If we have, we will build a row from the collected fields;
+    // otherwise, we need to return the original row type.
+    let mut flattened_once = false;
+
+    let row_tail = safe_loop! {
+        let Type::Row(row_id) = context.lookup_type(current_id) else {
+            if flattened_once {
+                break Some(current_id);
+            } else {
+                return Ok(id);
+            }
+        };
+
+        let row = context.lookup_row_type(row_id);
+        row_fields.extend(row.fields.iter().cloned());
+
+        let Some(original_tail) = row.tail else {
+            if flattened_once {
+                break None;
+            } else {
+                return Ok(id);
+            }
+        };
+
+        let expanded_tail = expand(state, context, original_tail)?;
+        let normalised_tail = normalise(state, context, expanded_tail)?;
+
+        if original_tail == normalised_tail {
+            if flattened_once {
+                break Some(original_tail);
+            } else {
+                return Ok(id);
+            }
+        }
+
+         current_id = normalised_tail;
+         flattened_once = true;
     };
 
-    let tail = expand(state, context, original_tail)?;
-    if tail == original_tail {
-        return Ok(id);
-    }
-
-    let fields = row.fields.iter().cloned();
-    Ok(context.intern_row(fields, Some(tail)))
+    Ok(context.intern_row(row_fields, row_tail))
 }
 
 /// Expands synonym constructor applications with respect to oversaturation.
