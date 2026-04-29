@@ -8,8 +8,9 @@ use lowering::{
 };
 use rowan::ast::{AstNode, AstPtr};
 use smol_str::ToSmolStr;
-use syntax::cst;
+use syntax::{SyntaxNode, SyntaxNodePtr, cst};
 
+use crate::extract::AnnotationSyntaxRange;
 use crate::{AnalyzerError, common, locate};
 
 pub fn implementation(
@@ -252,7 +253,7 @@ fn definition_expression(
                 TermVariableResolution::RecordPun(id) => {
                     let root = parsed.syntax_node();
                     let ptr = stabilized.syntax_ptr(*id).ok_or(AnalyzerError::NonFatal)?;
-                    let range = locate::syntax_range(&content, &root, &ptr)
+                    let range = record_pun_name_range(&content, &root, &ptr)
                         .ok_or(AnalyzerError::NonFatal)?;
                     Ok(Some(GotoDefinitionResponse::Scalar(Location { uri, range })))
                 }
@@ -267,6 +268,17 @@ fn definition_expression(
         }
         _ => Ok(None),
     }
+}
+
+fn record_pun_name_range(content: &str, root: &SyntaxNode, ptr: &SyntaxNodePtr) -> Option<Range> {
+    let node = ptr.try_to_node(root)?;
+    let pun = cst::RecordPun::cast(node)?;
+
+    let name = pun.name()?;
+    let name = name.syntax();
+    let range = AnnotationSyntaxRange::from_node(name).syntax?;
+
+    locate::text_range_to_range(content, range)
 }
 
 fn definition_type(
