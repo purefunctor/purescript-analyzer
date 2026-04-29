@@ -569,3 +569,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_271_let_retain_polymorphism_main() { run_test("271_let_retain_polymorphism", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_272_stress_test_row_main() { run_test("272_stress_test_row", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_273_expression_hole_main() { run_test("273_expression_hole", "Main"); }

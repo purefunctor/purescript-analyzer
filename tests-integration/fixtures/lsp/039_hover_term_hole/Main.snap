@@ -1,0 +1,15 @@
+---
+source: tests-integration/tests/lsp/generated.rs
+assertion_line: 12
+expression: report
+---
+Hover at Position { line: 2, character: 7 }
+
+```
+hole = ?hole
+--     $
+```
+
+```purescript
+?[missing expression]
+```
