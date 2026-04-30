@@ -93,3 +93,9 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_040_hover_term_hole_filled_main() { run_test("040_hover_term_hole_filled", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_041_hover_term_let_main() { run_test("041_hover_term_let", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_042_hover_type_constructor_main() { run_test("042_hover_type_constructor", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_043_hover_type_literal_main() { run_test("043_hover_type_literal", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_044_hover_type_variable_main() { run_test("044_hover_type_variable", "Main"); }

@@ -270,12 +270,27 @@ fn hover_type(
 ) -> Result<Option<Hover>, AnalyzerError> {
     let lowered = engine.lowered(current_file)?;
     let kind = lowered.info.get_type_kind(type_id).ok_or(AnalyzerError::NonFatal)?;
+
     match kind {
         TypeKind::Constructor { resolution, .. } => {
             let (f_id, t_id) = resolution.as_ref().ok_or(AnalyzerError::NonFatal)?;
             hover_file_type(engine, *f_id, *t_id)
         }
-        _ => Ok(None),
+        _ => {
+            let checked = engine.checked(current_file)?;
+
+            let type_kind = checked.nodes.lookup_type(type_id);
+            let type_kind = type_kind.ok_or(AnalyzerError::NonFatal)?;
+
+            let pretty = Pretty::new(engine, &checked).width(80);
+            let value = pretty.render(type_kind).to_string();
+            let value = MarkedString::from_language_code("purescript".to_string(), value);
+
+            let contents = HoverContents::Scalar(value);
+            let range = None;
+
+            Ok(Some(Hover { contents, range }))
+        }
     }
 }
 

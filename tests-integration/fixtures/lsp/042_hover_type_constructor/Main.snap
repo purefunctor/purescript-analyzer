@@ -1,0 +1,15 @@
+---
+source: tests-integration/tests/lsp/generated.rs
+assertion_line: 12
+expression: report
+---
+Hover at Position { line: 5, character: 23 }
+
+```
+foreign import main :: Effect Unit
+--                     $
+```
+
+```purescript
+Effect :: Type -> Type
+```

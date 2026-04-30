@@ -94,7 +94,9 @@ just :: forall a. a -> Maybe a
 --                      $    $
 ```
 
-<empty>
+```purescript
+Type
+```
 
 
 Hover at Position { line: 11, character: 8 }

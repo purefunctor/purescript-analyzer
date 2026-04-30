@@ -1,0 +1,27 @@
+---
+source: tests-integration/tests/lsp/generated.rs
+assertion_line: 12
+expression: report
+---
+Hover at Position { line: 2, character: 12 }
+
+```
+type Life = 42
+--          $
+```
+
+```purescript
+Int
+```
+
+
+Hover at Position { line: 5, character: 13 }
+
+```
+type Hello = "World"
+--           $
+```
+
+```purescript
+Symbol
+```

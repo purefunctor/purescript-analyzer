@@ -30,7 +30,10 @@ where
     Q: ExternalQueries,
 {
     state.with_error_crumb(ErrorCrumb::CheckingKind(source_type), |state| {
-        check_kind_core(state, context, source_type, expected_kind)
+        let (inferred_type, inferred_kind) =
+            check_kind_core(state, context, source_type, expected_kind)?;
+        state.checked.nodes.types.insert(source_type, inferred_kind);
+        Ok((inferred_type, inferred_kind))
     })
 }
 
@@ -54,13 +57,15 @@ where
 pub fn infer_kind<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    id: lowering::TypeId,
+    source_type: lowering::TypeId,
 ) -> QueryResult<(TypeId, TypeId)>
 where
     Q: ExternalQueries,
 {
-    state.with_error_crumb(ErrorCrumb::InferringKind(id), |state| {
-        infer_kind_core(state, context, id)
+    state.with_error_crumb(ErrorCrumb::InferringKind(source_type), |state| {
+        let (inferred_type, inferred_kind) = infer_kind_core(state, context, source_type)?;
+        state.checked.nodes.types.insert(source_type, inferred_kind);
+        Ok((inferred_type, inferred_kind))
     })
 }
 
