@@ -4,7 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 import Icons from "unplugin-icons/vite";
 
 export default defineConfig({
-  base: "/purescript-analyzer/",
+  base: "/purescript-alexandrite/",
   plugins: [react(), tailwindcss(), Icons({ compiler: "jsx", jsx: "react" })],
   server: {
     headers: {
