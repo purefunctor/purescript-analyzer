@@ -49,10 +49,15 @@
     "configuration": {
       "title": "PureScript Analyzer",
       "properties": {
+        "purescriptAnalyzer.serverPath": {
+          "type": "string",
+          "default": "purescript-analyzer",
+          "description": "Path or command used to start the PureScript Analyzer language server."
+        },
         "purescriptAnalyzer.sourceCommand": {
           "type": "string",
-          "default": null,
-          "description": "Command to use to get source files. Setting this also disables the spago.lock integration."
+          "default": "",
+          "description": "Path or command used to obtain source files. This disables spago.lock integration."
         }
       }
     }

@@ -11,6 +11,8 @@ let client: LanguageClient;
 
 export function activate(context: ExtensionContext) {
   const config = workspace.getConfiguration("purescriptAnalyzer");
+  const serverPath =
+    config.get<string>("serverPath")?.trim() || "purescript-analyzer";
   const sourceCommand = config.get<string>("sourceCommand");
 
   const args: string[] = [];
@@ -19,7 +21,7 @@ export function activate(context: ExtensionContext) {
   }
 
   const serverOptions: ServerOptions = {
-    command: "purescript-analyzer",
+    command: serverPath,
     args,
     transport: TransportKind.stdio,
   };
