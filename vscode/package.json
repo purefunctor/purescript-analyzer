@@ -3,7 +3,7 @@
   "description": "PureScript Analyzer integration for Visual Studio Code",
   "author": "Justin Garcia",
   "license": "BSD-3-Clause",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "repository": {
     "type": "git",
     "url": "https://github.com/purefunctor/purescript-analyzer"
@@ -23,24 +23,17 @@
     "vscode:prepublish": "npm run compile",
     "check": "tsc --noEmit",
     "compile": "npm run check && node esbuild.js --production",
+    "package": "npm run compile && npx @vscode/vsce package --no-dependencies",
     "watch": "node esbuild.js --watch",
     "format": "prettier -w src/**/*.ts tsconfig.json package.json esbuild.js"
   },
-  "dependencies": {
-    "glob": "^13.0.6",
-    "vscode-languageclient": "^9.0.1"
-  },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "@stylistic/eslint-plugin": "^5.10.0",
     "@types/node": "^22.19.17",
-    "@types/vscode": "^1.116.0",
-    "@vscode/test-electron": "^2.5.2",
+    "@types/vscode": "1.98.0",
     "esbuild": "^0.28.0",
-    "eslint": "^10.2.1",
     "prettier": "^3.8.3",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.59.1"
+    "vscode-languageclient": "^9.0.1"
   },
   "extensionDependencies": [
     "nwolverson.language-purescript"
