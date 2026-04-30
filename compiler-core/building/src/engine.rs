@@ -826,12 +826,12 @@ impl checking::ExternalQueries for QueryEngine {
         QueryEngine::checked(self, id)
     }
 
-    fn intern_type(&self, t: checking::core::Type) -> checking::core::TypeId {
+    fn intern_type(&self, t: checking::Type) -> checking::TypeId {
         let mut storage = self.storage.write();
         storage.interned.checking.intern_type(t)
     }
 
-    fn lookup_type(&self, id: checking::core::TypeId) -> checking::core::Type {
+    fn lookup_type(&self, id: checking::TypeId) -> checking::Type {
         let storage = self.storage.read();
         storage.interned.checking.lookup_type(id)
     }

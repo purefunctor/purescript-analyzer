@@ -1,10 +1,12 @@
 pub mod context;
-pub mod core;
 pub mod error;
 pub mod implication;
 pub mod safety;
 pub mod source;
 pub mod state;
+
+pub mod core;
+pub use core::{Type, TypeId};
 
 pub mod interners;
 pub use interners::CoreInterners;
@@ -20,7 +22,7 @@ use smol_str::SmolStr;
 
 use crate::core::{
     CheckedClass, CheckedInstance, CheckedSynonym, ForallBinder, ForallBinderId, Name, Role,
-    RowType, RowTypeId, SmolStrId, Type, TypeId,
+    RowType, RowTypeId, SmolStrId,
 };
 use crate::error::CheckError;
 
