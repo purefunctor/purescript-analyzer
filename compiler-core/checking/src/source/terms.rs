@@ -27,7 +27,9 @@ where
     Q: ExternalQueries,
 {
     state.with_error_crumb(ErrorCrumb::CheckingExpression(expression), |state| {
-        check_expression_quiet(state, context, expression, expected)
+        let expected = check_expression_quiet(state, context, expression, expected)?;
+        state.checked.nodes.expressions.insert(expression, expected);
+        Ok(expected)
     })
 }
 
@@ -44,15 +46,11 @@ where
     let expected = toolkit::skolemise_forall(state, context, expected)?;
     let expected = toolkit::collect_givens(state, context, expected)?;
 
-    let expected = if let Some(section_result) = context.sectioned.expressions.get(&expression) {
-        check_sectioned_expression(state, context, expression, section_result, expected)?
+    if let Some(section_result) = context.sectioned.expressions.get(&expression) {
+        check_sectioned_expression(state, context, expression, section_result, expected)
     } else {
-        check_expression_core(state, context, expression, expected)?
-    };
-
-    state.checked.nodes.expressions.insert(expression, expected);
-
-    Ok(expected)
+        check_expression_core(state, context, expression, expected)
+    }
 }
 
 fn check_sectioned_expression<Q>(
@@ -159,7 +157,9 @@ where
     Q: ExternalQueries,
 {
     state.with_error_crumb(ErrorCrumb::InferringExpression(expression), |state| {
-        infer_expression_quiet(state, context, expression)
+        let inferred = infer_expression_quiet(state, context, expression)?;
+        state.checked.nodes.expressions.insert(expression, inferred);
+        Ok(inferred)
     })
 }
 
@@ -171,15 +171,11 @@ fn infer_expression_quiet<Q>(
 where
     Q: ExternalQueries,
 {
-    let inferred = if let Some(section_result) = context.sectioned.expressions.get(&expression) {
-        infer_sectioned_expression(state, context, expression, section_result)?
+    if let Some(section_result) = context.sectioned.expressions.get(&expression) {
+        infer_sectioned_expression(state, context, expression, section_result)
     } else {
-        infer_expression_core(state, context, expression)?
-    };
-
-    state.checked.nodes.expressions.insert(expression, inferred);
-
-    Ok(inferred)
+        infer_expression_core(state, context, expression)
+    }
 }
 
 fn infer_sectioned_expression<Q>(
