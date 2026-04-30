@@ -4,9 +4,7 @@ use checking::core::pretty::Pretty;
 use files::{FileId, Files};
 use indexing::{ImportItemId, TermItemId, TypeItemId};
 use itertools::Itertools;
-use lowering::{
-    BinderId, BinderKind, ExpressionId, ExpressionKind, TermVariableResolution, TypeId, TypeKind,
-};
+use lowering::{BinderKind, ExpressionKind, TermVariableResolution, TypeKind};
 use rowan::TextRange;
 use rowan::ast::{AstNode, AstPtr};
 use smol_str::ToSmolStr;
@@ -164,7 +162,7 @@ fn hover_import(
 fn hover_binder(
     engine: &QueryEngine,
     current_file: FileId,
-    binder_id: BinderId,
+    binder_id: lowering::BinderId,
 ) -> Result<Option<Hover>, AnalyzerError> {
     let lowered = engine.lowered(current_file)?;
     let kind = lowered.info.get_binder_kind(binder_id).ok_or(AnalyzerError::NonFatal)?;
@@ -179,14 +177,7 @@ fn hover_binder(
             let binder_type = checked.nodes.lookup_binder(binder_id);
             let binder_type = binder_type.ok_or(AnalyzerError::NonFatal)?;
 
-            let pretty = Pretty::new(engine, &checked).width(80);
-            let value = pretty.render(binder_type).to_string();
-            let value = MarkedString::from_language_code("purescript".to_string(), value);
-
-            let contents = HoverContents::Scalar(value);
-            let range = None;
-
-            Ok(Some(Hover { contents, range }))
+            hover_checked_type(engine, current_file, binder_type)
         }
     }
 }
@@ -194,7 +185,7 @@ fn hover_binder(
 fn hover_expression(
     engine: &QueryEngine,
     current_file: FileId,
-    expression_id: ExpressionId,
+    expression_id: lowering::ExpressionId,
 ) -> Result<Option<Hover>, AnalyzerError> {
     let lowered = engine.lowered(current_file)?;
     let kind = lowered.info.get_expression_kind(expression_id).ok_or(AnalyzerError::NonFatal)?;
@@ -231,14 +222,7 @@ fn hover_expression(
             let expression_type = checked.nodes.lookup_expression(expression_id);
             let expression_type = expression_type.ok_or(AnalyzerError::NonFatal)?;
 
-            let pretty = Pretty::new(engine, &checked).width(80);
-            let value = pretty.render(expression_type).to_string();
-            let value = MarkedString::from_language_code("purescript".to_string(), value);
-
-            let contents = HoverContents::Scalar(value);
-            let range = None;
-
-            Ok(Some(Hover { contents, range }))
+            hover_checked_type(engine, current_file, expression_type)
         }
     }
 }
@@ -253,20 +237,13 @@ fn hover_let(
     let let_type = checked.nodes.lookup_let(let_binding_id);
     let let_type = let_type.ok_or(AnalyzerError::NonFatal)?;
 
-    let pretty = Pretty::new(engine, &checked).width(80);
-    let value = pretty.render(let_type).to_string();
-    let value = MarkedString::from_language_code("purescript".to_string(), value);
-
-    let contents = HoverContents::Scalar(value);
-    let range = None;
-
-    Ok(Some(Hover { contents, range }))
+    hover_checked_type(engine, current_file, let_type)
 }
 
 fn hover_type(
     engine: &QueryEngine,
     current_file: FileId,
-    type_id: TypeId,
+    type_id: lowering::TypeId,
 ) -> Result<Option<Hover>, AnalyzerError> {
     let lowered = engine.lowered(current_file)?;
     let kind = lowered.info.get_type_kind(type_id).ok_or(AnalyzerError::NonFatal)?;
@@ -282,16 +259,26 @@ fn hover_type(
             let type_kind = checked.nodes.lookup_type(type_id);
             let type_kind = type_kind.ok_or(AnalyzerError::NonFatal)?;
 
-            let pretty = Pretty::new(engine, &checked).width(80);
-            let value = pretty.render(type_kind).to_string();
-            let value = MarkedString::from_language_code("purescript".to_string(), value);
-
-            let contents = HoverContents::Scalar(value);
-            let range = None;
-
-            Ok(Some(Hover { contents, range }))
+            hover_checked_type(engine, current_file, type_kind)
         }
     }
+}
+
+fn hover_checked_type(
+    engine: &QueryEngine,
+    current_file: FileId,
+    type_id: checking::TypeId,
+) -> Result<Option<Hover>, AnalyzerError> {
+    let checked = engine.checked(current_file)?;
+
+    let pretty = Pretty::new(engine, &checked).width(80);
+    let value = pretty.render(type_id).to_string();
+    let value = MarkedString::from_language_code("purescript".to_string(), value);
+
+    let contents = HoverContents::Scalar(value);
+    let range = None;
+
+    Ok(Some(Hover { contents, range }))
 }
 
 fn hover_file_term(
@@ -371,12 +358,5 @@ fn hover_pun(
     let pun_type = checked.nodes.lookup_pun(pun_id);
     let pun_type = pun_type.ok_or(AnalyzerError::NonFatal)?;
 
-    let pretty = Pretty::new(engine, &checked).width(80);
-    let value = pretty.render(pun_type).to_string();
-    let value = MarkedString::from_language_code("purescript".to_string(), value);
-
-    let contents = HoverContents::Scalar(value);
-    let range = None;
-
-    Ok(Some(Hover { contents, range }))
+    hover_checked_type(engine, current_file, pun_type)
 }
