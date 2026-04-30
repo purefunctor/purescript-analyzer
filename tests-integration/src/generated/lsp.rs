@@ -5,13 +5,13 @@ use std::fmt::Write;
 use analyzer::completion::SuggestionsCache;
 use analyzer::{QueryEngine, prim};
 use async_lsp::lsp_types::{
-    CompletionList, CompletionResponse, GotoDefinitionResponse, HoverContents, LanguageString,
-    Location, MarkedString, Position, Url,
+    CompletionItemKind, CompletionList, CompletionResponse, GotoDefinitionResponse, HoverContents,
+    LanguageString, Location, MarkedString, Position, Url,
 };
 use files::{FileId, Files};
 use itertools::Itertools;
 use line_index::{LineIndex, TextSize};
-use render::TabledCompletionItem;
+use render::{TabledCompletionItem, TabledDetailedCompletionItem};
 use tabled::Table;
 use tabled::settings::{Padding, Style};
 
@@ -199,14 +199,25 @@ fn dispatch_cursor(
                 match response {
                     CompletionResponse::Array(items)
                     | CompletionResponse::List(CompletionList { items, .. }) => {
-                        let items = items.into_iter().filter_map(|item| {
-                            analyzer::completion::resolve::implementation(engine, item).ok()
-                        });
+                        let items: Vec<_> = items
+                            .into_iter()
+                            .filter_map(|item| {
+                                analyzer::completion::resolve::implementation(engine, item).ok()
+                            })
+                            .collect();
 
-                        let items: Vec<TabledCompletionItem> =
-                            items.into_iter().map(TabledCompletionItem::from).collect();
+                        let has_values =
+                            items.iter().any(|item| item.kind == Some(CompletionItemKind::VALUE));
 
-                        let mut table = Table::new(items);
+                        let mut table = if has_values {
+                            let items: Vec<TabledDetailedCompletionItem> =
+                                items.into_iter().map(TabledDetailedCompletionItem::from).collect();
+                            Table::new(items)
+                        } else {
+                            let items: Vec<TabledCompletionItem> =
+                                items.into_iter().map(TabledCompletionItem::from).collect();
+                            Table::new(items)
+                        };
                         table.with(Style::modern_rounded());
                         table.with(Padding::new(2, 2, 0, 0));
 

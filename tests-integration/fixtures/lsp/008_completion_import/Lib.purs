@@ -1,5 +1,6 @@
 module Lib where
 
+-- | Imported value
 life :: Int
 life = 42
 

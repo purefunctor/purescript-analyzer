@@ -1,4 +1,4 @@
-use async_lsp::lsp_types::{CompletionItem, CompletionTextEdit, TextEdit};
+use async_lsp::lsp_types::{CompletionItem, CompletionItemKind, CompletionTextEdit, TextEdit};
 use itertools::Itertools;
 use tabled::Tabled;
 use tabled::derive::display;
@@ -35,6 +35,49 @@ impl From<CompletionItem> for TabledCompletionItem {
             label_description,
             sort_text,
             filter_text,
+            text_edit,
+            additional_text_edits,
+        }
+    }
+}
+
+#[derive(Tabled)]
+pub struct TabledDetailedCompletionItem {
+    label: String,
+    #[tabled(display("display::option", " ..."))]
+    label_detail: Option<String>,
+    #[tabled(display("display::option", "..."))]
+    label_description: Option<String>,
+    #[tabled(display("display::option", "..."))]
+    sort_text: Option<String>,
+    #[tabled(display("display::option", "..."))]
+    filter_text: Option<String>,
+    #[tabled(display("display::option", "..."))]
+    detail: Option<String>,
+    #[tabled(display("display_completion_text_edit"))]
+    text_edit: Option<CompletionTextEdit>,
+    #[tabled(display("display_text_edits"))]
+    additional_text_edits: Option<Vec<TextEdit>>,
+}
+
+impl From<CompletionItem> for TabledDetailedCompletionItem {
+    fn from(value: CompletionItem) -> TabledDetailedCompletionItem {
+        let label = value.label;
+        let (label_detail, label_description) =
+            value.label_details.map(|value| (value.detail, value.description)).unwrap_or_default();
+        let sort_text = value.sort_text;
+        let filter_text = value.filter_text;
+        let detail =
+            (value.kind == Some(CompletionItemKind::VALUE)).then_some(value.detail).flatten();
+        let text_edit = value.text_edit;
+        let additional_text_edits = value.additional_text_edits;
+        TabledDetailedCompletionItem {
+            label,
+            label_detail,
+            label_description,
+            sort_text,
+            filter_text,
+            detail,
             text_edit,
             additional_text_edits,
         }

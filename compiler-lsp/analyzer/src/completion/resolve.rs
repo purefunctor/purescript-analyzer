@@ -2,6 +2,7 @@ use std::mem;
 
 use async_lsp::lsp_types::*;
 use building::QueryEngine;
+use checking::core::pretty::Pretty;
 use files::FileId;
 use indexing::{TermItemId, TypeItemId};
 use serde::{Deserialize, Serialize};
@@ -23,19 +24,19 @@ pub fn implementation(
         return Ok(item);
     };
 
-    let root_range = match resolve {
-        CompletionResolveData::Import(f_id) => AnnotationSyntaxRange::of_file(engine, f_id),
-        CompletionResolveData::TermItem(f_id, t_id) => {
-            AnnotationSyntaxRange::of_file_term(engine, f_id, t_id)
+    match resolve {
+        CompletionResolveData::Import(file_id) => {
+            match AnnotationSyntaxRange::of_file(engine, file_id) {
+                Ok((root, range)) => Ok(resolve_documentation(root, range, item)),
+                Err(error) => Err((error, item)),
+            }
         }
-        CompletionResolveData::TypeItem(f_id, t_id) => {
-            AnnotationSyntaxRange::of_file_type(engine, f_id, t_id)
+        CompletionResolveData::TermItem(file_id, term_id) => {
+            resolve_term_item(engine, file_id, term_id, item)
         }
-    };
-
-    match root_range {
-        Ok((root, range)) => Ok(resolve_documentation(root, range, item)),
-        Err(error) => Err((error, item)),
+        CompletionResolveData::TypeItem(file_id, type_id) => {
+            resolve_type_item(engine, file_id, type_id, item)
+        }
     }
 }
 
@@ -56,6 +57,84 @@ fn resolve_documentation(
     });
 
     item
+}
+
+fn resolve_term_item(
+    engine: &QueryEngine,
+    file_id: FileId,
+    term_id: TermItemId,
+    mut item: CompletionItem,
+) -> Result<CompletionItem, (AnalyzerError, CompletionItem)> {
+    if let Ok((root, range)) = AnnotationSyntaxRange::of_file_term(engine, file_id, term_id) {
+        let annotation = range.annotation.map(|range| extract_annotation(&root, range));
+        item.documentation = annotation.map(|annotation| {
+            Documentation::MarkupContent(MarkupContent {
+                kind: MarkupKind::Markdown,
+                value: annotation,
+            })
+        });
+    }
+
+    if let Some(signature) = render_term_signature(engine, file_id, term_id) {
+        item.detail = Some(signature);
+    }
+
+    Ok(item)
+}
+
+fn render_term_signature(
+    engine: &QueryEngine,
+    file_id: FileId,
+    term_id: TermItemId,
+) -> Option<String> {
+    let indexed = engine.indexed(file_id).ok()?;
+    let checked = engine.checked(file_id).ok()?;
+
+    let name = &indexed.items[term_id].name;
+    let name = name.as_deref()?;
+    let signature = checked.lookup_term(term_id)?;
+
+    let pretty = Pretty::new(engine, &checked).width(80).signature(name);
+    Some(pretty.render(signature).to_string())
+}
+
+fn resolve_type_item(
+    engine: &QueryEngine,
+    file_id: FileId,
+    type_id: TypeItemId,
+    mut item: CompletionItem,
+) -> Result<CompletionItem, (AnalyzerError, CompletionItem)> {
+    if let Ok((root, range)) = AnnotationSyntaxRange::of_file_type(engine, file_id, type_id) {
+        let annotation = range.annotation.map(|range| extract_annotation(&root, range));
+        item.documentation = annotation.map(|annotation| {
+            Documentation::MarkupContent(MarkupContent {
+                kind: MarkupKind::Markdown,
+                value: annotation,
+            })
+        });
+    }
+
+    if let Some(signature) = render_type_signature(engine, file_id, type_id) {
+        item.detail = Some(signature);
+    }
+
+    Ok(item)
+}
+
+fn render_type_signature(
+    engine: &QueryEngine,
+    file_id: FileId,
+    type_id: TypeItemId,
+) -> Option<String> {
+    let indexed = engine.indexed(file_id).ok()?;
+    let checked = engine.checked(file_id).ok()?;
+
+    let name = &indexed.items[type_id].name;
+    let name = name.as_deref()?;
+    let signature = checked.lookup_type(type_id)?;
+
+    let pretty = Pretty::new(engine, &checked).width(80).signature(name);
+    Some(pretty.render(signature).to_string())
 }
 
 #[derive(Serialize, Deserialize)]
