@@ -312,12 +312,20 @@ fn hover_file_type(
     file_id: FileId,
     type_id: TypeItemId,
 ) -> Result<Option<Hover>, AnalyzerError> {
+    let indexed = engine.indexed(file_id)?;
+    let checked = engine.checked(file_id)?;
+
     let (root, range) = AnnotationSyntaxRange::of_file_type(engine, file_id, type_id)?;
-
     let annotation = range.annotation.and_then(|range| render_annotation(&root, range));
-    let syntax = range.syntax.and_then(|range| render_syntax(&root, range));
 
-    let array = [syntax, annotation].into_iter().flatten();
+    let name = if let Some(name) = &indexed.items[type_id].name { name } else { "<unknown>" };
+    let signature = checked.lookup_type(type_id).ok_or(AnalyzerError::NonFatal)?;
+
+    let pretty = Pretty::new(engine, &checked).width(80).signature(name);
+    let value = pretty.render(signature).to_string();
+    let value = MarkedString::from_language_code("purescript".to_string(), value);
+
+    let array = [Some(value), annotation].into_iter().flatten();
     let separator = MarkedString::String("---".to_string());
     let array = Itertools::intersperse(array, separator).collect();
 

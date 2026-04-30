@@ -46,7 +46,9 @@ just :: Maybe Int
 --       $
 ```
 
-<empty>
+```purescript
+Maybe :: Type -> Type
+```
 
 
 Hover at Position { line: 24, character: 8 }
@@ -68,7 +70,9 @@ nothing :: Maybe Int
 --          $
 ```
 
-<empty>
+```purescript
+Maybe :: Type -> Type
+```
 
 
 Hover at Position { line: 29, character: 11 }

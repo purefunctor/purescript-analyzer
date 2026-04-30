@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/lsp/generated.rs
+assertion_line: 12
 expression: report
 ---
 Hover at Position { line: 3, character: 20 }
@@ -10,7 +11,7 @@ foreign import data Effect :: Type -> Type
 ```
 
 ```purescript
-foreign import data Effect :: Type -> Type
+Effect :: Type -> Type
 ```
 ---
 A safe abstraction over side-effects

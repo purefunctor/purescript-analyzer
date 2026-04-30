@@ -34,7 +34,9 @@ import Lib (life, Maybe(..), (+),  type (++))
 --      $    $     $          $          $
 ```
 
-<empty>
+```purescript
+Maybe :: Type -> Type
+```
 
 
 Hover at Position { line: 2, character: 30 }
@@ -57,7 +59,7 @@ import Lib (life, Maybe(..), (+),  type (++))
 ```
 
 ```purescript
-infix 5 type Cons as ++
+++ :: Type -> Type -> Type
 ```
 
 
@@ -80,7 +82,9 @@ just :: forall a. a -> Maybe a
 --                      $    $
 ```
 
-<empty>
+```purescript
+Maybe :: Type -> Type
+```
 
 
 Hover at Position { line: 9, character: 29 }
@@ -112,7 +116,9 @@ nothing :: forall a. Maybe a
 --                    $
 ```
 
-<empty>
+```purescript
+Maybe :: Type -> Type
+```
 
 
 Hover at Position { line: 16, character: 11 }
@@ -159,5 +165,5 @@ type TypeOpChain = Int ++ Int
 ```
 
 ```purescript
-infix 5 type Cons as ++
+++ :: Type -> Type -> Type
 ```
