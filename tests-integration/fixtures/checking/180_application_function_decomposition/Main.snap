@@ -1,5 +1,5 @@
 ---
-source: tests-integration/tests/checking2/generated.rs
+source: tests-integration/tests/checking/generated.rs
 assertion_line: 28
 expression: report
 ---
@@ -67,9 +67,9 @@ class forall (i :: Type) (f :: Type -> Type). Foldable (f :: Type -> Type) <= Fo
 Instances
 instance forall (t14 :: Type -> Type).
   Foldable (t14 :: Type -> Type) => Foldable (NonEmpty (t14 :: Type -> Type))
-instance forall (t15 :: Type) (t16 :: Type -> Type).
-  FoldableWithIndex (t15 :: Type) (t16 :: Type -> Type) =>
-  FoldableWithIndex (Maybe (t15 :: Type)) (NonEmpty (t16 :: Type -> Type))
+instance forall (t16 :: Type) (t17 :: Type -> Type).
+  FoldableWithIndex (t16 :: Type) (t17 :: Type -> Type) =>
+  FoldableWithIndex (Maybe (t16 :: Type)) (NonEmpty (t17 :: Type -> Type))
 
 Roles
 Maybe = [Representational]

@@ -1,5 +1,5 @@
 ---
-source: tests-integration/tests/checking2/generated.rs
+source: tests-integration/tests/checking/generated.rs
 assertion_line: 28
 expression: report
 ---
@@ -25,14 +25,14 @@ derive forall (t6 :: Type -> Type) (t7 :: Type -> Type).
   Functor (t6 :: Type -> Type) =>
   Functor (t7 :: Type -> Type) =>
   Bifunctor (WrapBoth @Type @Type (t6 :: Type -> Type) (t7 :: Type -> Type))
-derive forall (t8 :: Type -> Type) (t9 :: Type -> Type).
-  Foldable (t8 :: Type -> Type) =>
-  Foldable (t9 :: Type -> Type) =>
-  Bifoldable (WrapBoth @Type @Type (t8 :: Type -> Type) (t9 :: Type -> Type))
 derive forall (t10 :: Type -> Type) (t11 :: Type -> Type).
-  Traversable (t10 :: Type -> Type) =>
-  Traversable (t11 :: Type -> Type) =>
-  Bitraversable (WrapBoth @Type @Type (t10 :: Type -> Type) (t11 :: Type -> Type))
+  Foldable (t10 :: Type -> Type) =>
+  Foldable (t11 :: Type -> Type) =>
+  Bifoldable (WrapBoth @Type @Type (t10 :: Type -> Type) (t11 :: Type -> Type))
+derive forall (t14 :: Type -> Type) (t15 :: Type -> Type).
+  Traversable (t14 :: Type -> Type) =>
+  Traversable (t15 :: Type -> Type) =>
+  Bitraversable (WrapBoth @Type @Type (t14 :: Type -> Type) (t15 :: Type -> Type))
 
 Roles
 WrapBoth = [Representational, Representational, Nominal, Nominal]

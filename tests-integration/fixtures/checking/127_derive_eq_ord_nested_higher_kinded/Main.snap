@@ -25,16 +25,16 @@ V :: forall (t7 :: Type). ((t7 :: Type) -> Type) -> (Int -> (t7 :: Type)) -> Typ
 Derived
 derive forall (t8 :: Type -> Type) (t9 :: Type -> Type).
   Eq1 (t8 :: Type -> Type) => Eq (T @Type (t8 :: Type -> Type) (t9 :: Type -> Type))
-derive forall (t10 :: Type -> Type) (t11 :: Type -> Type).
-  Ord1 (t10 :: Type -> Type) => Ord (T @Type (t10 :: Type -> Type) (t11 :: Type -> Type))
-derive forall (t12 :: Type). Eq (t12 :: Type) => Eq (Maybe (t12 :: Type))
-derive forall (t13 :: Type). Ord (t13 :: Type) => Ord (Maybe (t13 :: Type))
-derive forall (t14 :: Type -> Type). Eq1 (t14 :: Type -> Type) => Eq (U (t14 :: Type -> Type))
-derive forall (t15 :: Type -> Type). Ord1 (t15 :: Type -> Type) => Ord (U (t15 :: Type -> Type))
-derive forall (t16 :: Type -> Type) (t17 :: Int -> Type).
-  Eq1 (t16 :: Type -> Type) => Eq (V @Type (t16 :: Type -> Type) (t17 :: Int -> Type))
-derive forall (t18 :: Type -> Type) (t19 :: Int -> Type).
-  Ord1 (t18 :: Type -> Type) => Ord (V @Type (t18 :: Type -> Type) (t19 :: Int -> Type))
+derive forall (t12 :: Type -> Type) (t13 :: Type -> Type).
+  Ord1 (t12 :: Type -> Type) => Ord (T @Type (t12 :: Type -> Type) (t13 :: Type -> Type))
+derive forall (t16 :: Type). Eq (t16 :: Type) => Eq (Maybe (t16 :: Type))
+derive forall (t18 :: Type). Ord (t18 :: Type) => Ord (Maybe (t18 :: Type))
+derive forall (t20 :: Type -> Type). Eq1 (t20 :: Type -> Type) => Eq (U (t20 :: Type -> Type))
+derive forall (t22 :: Type -> Type). Ord1 (t22 :: Type -> Type) => Ord (U (t22 :: Type -> Type))
+derive forall (t24 :: Type -> Type) (t25 :: Int -> Type).
+  Eq1 (t24 :: Type -> Type) => Eq (V @Type (t24 :: Type -> Type) (t25 :: Int -> Type))
+derive forall (t28 :: Type -> Type) (t29 :: Int -> Type).
+  Ord1 (t28 :: Type -> Type) => Ord (V @Type (t28 :: Type -> Type) (t29 :: Int -> Type))
 
 Roles
 T = [Representational, Representational]
@@ -48,17 +48,17 @@ error[NoInstanceFound]: No instance found for: Eq ((t9 :: Type -> Type) Int)
   |
 8 | derive instance Eq1 f => Eq (T f g)
   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-error[NoInstanceFound]: No instance found for: Ord ((t11 :: Type -> Type) Int)
+error[NoInstanceFound]: No instance found for: Ord ((t13 :: Type -> Type) Int)
   --> 9:1..9:38
   |
 9 | derive instance Ord1 f => Ord (T f g)
   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-error[NoInstanceFound]: No instance found for: Eq ((t17 :: Int -> Type) 42)
+error[NoInstanceFound]: No instance found for: Eq ((t25 :: Int -> Type) 42)
   --> 23:1..23:36
    |
 23 | derive instance Eq1 f => Eq (V f g)
    | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-error[NoInstanceFound]: No instance found for: Ord ((t19 :: Int -> Type) 42)
+error[NoInstanceFound]: No instance found for: Ord ((t29 :: Int -> Type) 42)
   --> 24:1..24:38
    |
 24 | derive instance Ord1 f => Ord (V f g)

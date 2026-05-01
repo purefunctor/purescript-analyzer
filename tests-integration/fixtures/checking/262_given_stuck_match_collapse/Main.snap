@@ -1,5 +1,5 @@
 ---
-source: tests-integration/tests/checking2/generated.rs
+source: tests-integration/tests/checking/generated.rs
 assertion_line: 28
 expression: report
 ---
@@ -33,11 +33,11 @@ class forall (t9 :: Type) (t8 :: Type) (t7 :: Type) (f :: (t9 :: Type)) (g :: (t
 Instances
 instance forall (t11 :: Type) (t10 :: (t11 :: Type)).
   TypeEquals @(t11 :: Type) (t10 :: (t11 :: Type)) (t10 :: (t11 :: Type))
-instance forall (t12 :: Type) (t13 :: Type) (t14 :: Type).
-  TypeEquals @Type (t12 :: Type) (A -> String) =>
-  TypeEquals @Type (t13 :: Type) (B -> String) =>
-  TypeEquals @Type (t14 :: Type) (C -> String) =>
-  Match3 @Type @Type @Type (t12 :: Type) (t13 :: Type) (t14 :: Type)
+instance forall (t14 :: Type) (t15 :: Type) (t16 :: Type).
+  TypeEquals @Type (t14 :: Type) (A -> String) =>
+  TypeEquals @Type (t15 :: Type) (B -> String) =>
+  TypeEquals @Type (t16 :: Type) (C -> String) =>
+  Match3 @Type @Type @Type (t14 :: Type) (t15 :: Type) (t16 :: Type)
 
 Roles
 A = []

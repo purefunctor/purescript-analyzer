@@ -13,11 +13,12 @@ use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::constraint::instances::InstanceCandidate;
 use crate::core::constraint::{CanonicalConstraintId, canonical};
+use crate::core::toolkit;
 use crate::core::fd::{Fd, compute_closure};
 use crate::core::substitute::SubstituteName;
 use crate::core::unification::{CanUnify, can_unify};
 use crate::core::walk::{TypeWalker, WalkAction, walk_type};
-use crate::core::{KindOrType, Name, RowField, RowType, Type, TypeId, normalise, toolkit};
+use crate::core::{KindOrType, Name, RowField, RowType, Type, TypeId, normalise};
 use crate::state::CheckState;
 
 /// The result of matching a wanted type against a given type.
@@ -304,8 +305,14 @@ where
 {
     let wanted = state.canonicals[wanted].clone();
 
-    'chain: for given in chain {
-        let Some(given) = toolkit::decompose_instance(state, context, &given.instance)? else {
+    'chain: for candidate in chain {
+        let Some(given) = toolkit::instance_info(
+            state,
+            context,
+            candidate.instance.matchable,
+            candidate.instance.resolution,
+        )?
+        else {
             continue 'chain;
         };
 

@@ -279,9 +279,11 @@ where
 
     let resolution = (class_file, class_id);
     let canonical = zonk::zonk(state, context, canonical)?;
-    let canonical = generalise::generalise_implicit(state, context, canonical)?;
+    let signature = generalise::generalise_implicit(state, context, canonical)?;
+    let matchable = toolkit::freshen_instance_signature(state, context, signature)?;
 
-    state.checked.derived.insert(derive_id, CheckedInstance { resolution, canonical });
+    let checked = CheckedInstance { resolution, signature, matchable };
+    state.checked.derived.insert(derive_id, checked);
 
     Ok(strategy.map(|strategy| DeriveHeadResult {
         item_id,

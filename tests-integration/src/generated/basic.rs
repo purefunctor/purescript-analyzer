@@ -302,7 +302,7 @@ pub fn report_checked(engine: &QueryEngine, id: FileId) -> String {
     let mut instance_entries: Vec<_> = checked.instances.iter().collect();
     instance_entries.sort_by_key(|(id, _)| *id);
     for (_instance_id, instance) in instance_entries {
-        let canonical = pretty(instance.canonical);
+        let canonical = pretty(instance.signature);
         writeln!(out, "instance {canonical}").unwrap();
     }
 
@@ -312,7 +312,7 @@ pub fn report_checked(engine: &QueryEngine, id: FileId) -> String {
     let mut derived_entries: Vec<_> = checked.derived.iter().collect();
     derived_entries.sort_by_key(|(id, _)| *id);
     for (_derive_id, instance) in derived_entries {
-        let canonical = pretty(instance.canonical);
+        let canonical = pretty(instance.signature);
         writeln!(out, "derive {canonical}").unwrap();
     }
 

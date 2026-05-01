@@ -113,10 +113,10 @@ fn collect_instances_from_checked(
             .instances
             .iter()
             .filter(|(_, instance)| instance.resolution == (class_file, class_id))
-            .map(|(&id, instance)| InstanceCandidate {
+            .map(|(&id, &instance)| InstanceCandidate {
                 id: indexed.pairs.instance_chain_id(id),
                 position: indexed.pairs.instance_chain_position(id).unwrap_or(0),
-                instance: CheckedInstance::clone(instance),
+                instance,
             }),
     );
 
@@ -125,8 +125,7 @@ fn collect_instances_from_checked(
             .derived
             .values()
             .filter(|instance| instance.resolution == (class_file, class_id))
-            .cloned()
-            .map(|instance| InstanceCandidate { id: None, position: 0, instance }),
+            .map(|&instance| InstanceCandidate { id: None, position: 0, instance }),
     );
 }
 

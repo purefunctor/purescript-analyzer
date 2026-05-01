@@ -38,20 +38,20 @@ derive forall (t12 :: Type -> Type) (t13 :: Type -> Type).
   Functor (t12 :: Type -> Type) =>
   Functor (t13 :: Type -> Type) =>
   Bifunctor (WrapBoth @Type @Type (t12 :: Type -> Type) (t13 :: Type -> Type))
-derive forall (t14 :: Type -> Type) (t15 :: Type -> Type).
-  Bifunctor (WrapBothNoConstraint @Type @Type (t14 :: Type -> Type) (t15 :: Type -> Type))
+derive forall (t16 :: Type -> Type) (t17 :: Type -> Type).
+  Bifunctor (WrapBothNoConstraint @Type @Type (t16 :: Type -> Type) (t17 :: Type -> Type))
 
 Roles
 WrapBoth = [Representational, Representational, Nominal, Nominal]
 WrapBothNoConstraint = [Representational, Representational, Nominal, Nominal]
 
 Diagnostics
-error[NoInstanceFound]: No instance found for: Functor (t14 :: Type -> Type)
+error[NoInstanceFound]: No instance found for: Functor (t16 :: Type -> Type)
   --> 10:1..10:53
    |
 10 | derive instance Bifunctor (WrapBothNoConstraint f g)
    | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-error[NoInstanceFound]: No instance found for: Functor (t15 :: Type -> Type)
+error[NoInstanceFound]: No instance found for: Functor (t17 :: Type -> Type)
   --> 10:1..10:53
    |
 10 | derive instance Bifunctor (WrapBothNoConstraint f g)

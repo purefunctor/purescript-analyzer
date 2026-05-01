@@ -7,11 +7,13 @@ use files::FileId;
 use indexing::{TermItemId, TypeItemId};
 use lowering::TypeItemIr;
 
+use rustc_hash::FxHashMap;
+
 use crate::context::CheckContext;
 use crate::core::substitute::SubstituteName;
 use crate::core::{
-    CheckedClass, CheckedInstance, CheckedSynonym, ForallBinder, KindOrType, Role, Type, TypeId,
-    constraint, normalise, unification,
+    CheckedClass, CheckedSynonym, ForallBinder, KindOrType, Role, Type, TypeId, constraint,
+    normalise, unification,
 };
 use crate::error::ErrorKind;
 use crate::state::CheckState;
@@ -33,7 +35,7 @@ pub enum InspectMode {
     Full,
 }
 
-pub struct DecomposedInstance {
+pub struct InstanceInfo {
     pub binders: Vec<ForallBinder>,
     pub constraints: Vec<TypeId>,
     pub arguments: Vec<KindOrType>,
@@ -378,16 +380,53 @@ where
     }
 }
 
-pub fn decompose_instance<Q>(
+pub fn freshen_instance_signature<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    instance: &CheckedInstance,
-) -> QueryResult<Option<DecomposedInstance>>
+    canonical: TypeId,
+) -> QueryResult<TypeId>
 where
     Q: ExternalQueries,
 {
-    let InspectQuantified { binders, quantified } =
-        inspect_quantified(state, context, instance.canonical)?;
+    let InspectQuantified { binders, quantified } = inspect_quantified(state, context, canonical)?;
+
+    if binders.is_empty() {
+        return Ok(canonical);
+    }
+
+    let depth = state.depth;
+
+    let mut substitution = FxHashMap::default();
+    let mut freshened = vec![];
+
+    for binder in &binders {
+        let kind = SubstituteName::many(state, context, &substitution, binder.kind)?;
+
+        let name = state.names.fresh();
+        let rigid = context.intern_rigid(name, depth, kind);
+
+        if let Some(text) = state.checked.lookup_name(binder.name) {
+            state.checked.names.insert(name, text);
+        }
+
+        substitution.insert(binder.name, rigid);
+        freshened.push(ForallBinder { visible: binder.visible, name, kind });
+    }
+
+    let quantified = SubstituteName::many(state, context, &substitution, quantified)?;
+    Ok(context.intern_forall_iter(freshened, quantified))
+}
+
+pub fn instance_info<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    canonical: TypeId,
+    resolution: (FileId, TypeItemId),
+) -> QueryResult<Option<InstanceInfo>>
+where
+    Q: ExternalQueries,
+{
+    let InspectQuantified { binders, quantified } = inspect_quantified(state, context, canonical)?;
 
     let mut current = quantified;
     let mut constraints = vec![];
@@ -412,11 +451,11 @@ where
     let item_id = current.type_id;
     let arguments = current.arguments.to_vec();
 
-    if (file_id, item_id) != instance.resolution {
+    if (file_id, item_id) != resolution {
         return Ok(None);
     }
 
-    Ok(Some(DecomposedInstance { binders, constraints, arguments }))
+    Ok(Some(InstanceInfo { binders, constraints, arguments }))
 }
 
 pub fn instantiate_unifications<Q>(

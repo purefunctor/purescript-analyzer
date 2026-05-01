@@ -39,28 +39,28 @@ NoEq :: Type -> Type
 Derived
 derive forall (t14 :: Type). Eq (t14 :: Type) => Eq (Id (t14 :: Type))
 derive Eq1 Id
-derive forall (t15 :: Type). Eq (t15 :: Type) => Eq (Pair (t15 :: Type))
+derive forall (t16 :: Type). Eq (t16 :: Type) => Eq (Pair (t16 :: Type))
 derive Eq1 Pair
-derive forall (t16 :: Type). Eq (t16 :: Type) => Eq (Mixed (t16 :: Type))
+derive forall (t18 :: Type). Eq (t18 :: Type) => Eq (Mixed (t18 :: Type))
 derive Eq1 Mixed
-derive forall (t17 :: Type). Eq (t17 :: Type) => Eq (Rec (t17 :: Type))
+derive forall (t20 :: Type). Eq (t20 :: Type) => Eq (Rec (t20 :: Type))
 derive Eq1 Rec
-derive forall (t18 :: Type -> Type) (t19 :: Type).
-  Eq1 (t18 :: Type -> Type) =>
-  Eq (t19 :: Type) =>
-  Eq (Wrap @Type (t18 :: Type -> Type) (t19 :: Type))
-derive forall (t20 :: Type -> Type). Eq1 (t20 :: Type -> Type) => Eq1 (Wrap @Type (t20 :: Type -> Type))
-derive forall (t21 :: Type -> Type) (t24 :: Type) (t22 :: (t24 :: Type) -> Type) (t23 :: (t24 :: Type)).
-  Eq1 (t21 :: Type -> Type) =>
-  Eq ((t22 :: (t24 :: Type) -> Type) (t23 :: (t24 :: Type))) =>
+derive forall (t22 :: Type -> Type) (t23 :: Type).
+  Eq1 (t22 :: Type -> Type) =>
+  Eq (t23 :: Type) =>
+  Eq (Wrap @Type (t22 :: Type -> Type) (t23 :: Type))
+derive forall (t26 :: Type -> Type). Eq1 (t26 :: Type -> Type) => Eq1 (Wrap @Type (t26 :: Type -> Type))
+derive forall (t28 :: Type -> Type) (t31 :: Type) (t29 :: (t31 :: Type) -> Type) (t30 :: (t31 :: Type)).
+  Eq1 (t28 :: Type -> Type) =>
+  Eq ((t29 :: (t31 :: Type) -> Type) (t30 :: (t31 :: Type))) =>
   Eq
-    (Compose @Type @(t24 :: Type)
-      (t21 :: Type -> Type)
-      (t22 :: (t24 :: Type) -> Type)
-      (t23 :: (t24 :: Type)))
-derive forall (t25 :: Type -> Type) (t26 :: Type -> Type).
-  Eq1 (t25 :: Type -> Type) => Eq1 (Compose @Type @Type (t25 :: Type -> Type) (t26 :: Type -> Type))
-derive forall (t27 :: Type). Eq (t27 :: Type) => Eq (Either' (t27 :: Type))
+    (Compose @Type @(t31 :: Type)
+      (t28 :: Type -> Type)
+      (t29 :: (t31 :: Type) -> Type)
+      (t30 :: (t31 :: Type)))
+derive forall (t36 :: Type -> Type) (t37 :: Type -> Type).
+  Eq1 (t36 :: Type -> Type) => Eq1 (Compose @Type @Type (t36 :: Type -> Type) (t37 :: Type -> Type))
+derive forall (t40 :: Type). Eq (t40 :: Type) => Eq (Either' (t40 :: Type))
 derive Eq1 Either'
 derive Eq1 NoEq
 
@@ -75,12 +75,12 @@ Either' = [Representational]
 NoEq = [Representational]
 
 Diagnostics
-error[NoInstanceFound]: No instance found for: Eq ((t26 :: Type -> Type) (t33 :: Type))
+error[NoInstanceFound]: No instance found for: Eq ((t37 :: Type -> Type) (t47 :: Type))
   --> 34:1..34:43
    |
 34 | derive instance Eq1 f => Eq1 (Compose f g)
    | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-error[NoInstanceFound]: No instance found for: Eq (NoEq (t35 :: Type))
+error[NoInstanceFound]: No instance found for: Eq (NoEq (t49 :: Type))
   --> 43:1..43:25
    |
 43 | derive instance Eq1 NoEq

@@ -1,5 +1,5 @@
 ---
-source: tests-integration/tests/checking2/generated.rs
+source: tests-integration/tests/checking/generated.rs
 assertion_line: 28
 expression: report
 ---
@@ -23,14 +23,14 @@ derive forall (t5 :: Type -> Type) (t6 :: Type -> Type).
   Functor (t5 :: Type -> Type) =>
   Functor (t6 :: Type -> Type) =>
   Functor (Compose @Type @Type (t5 :: Type -> Type) (t6 :: Type -> Type))
-derive forall (t7 :: Type -> Type) (t8 :: Type -> Type).
-  Foldable (t7 :: Type -> Type) =>
-  Foldable (t8 :: Type -> Type) =>
-  Foldable (Compose @Type @Type (t7 :: Type -> Type) (t8 :: Type -> Type))
 derive forall (t9 :: Type -> Type) (t10 :: Type -> Type).
-  Traversable (t9 :: Type -> Type) =>
-  Traversable (t10 :: Type -> Type) =>
-  Traversable (Compose @Type @Type (t9 :: Type -> Type) (t10 :: Type -> Type))
+  Foldable (t9 :: Type -> Type) =>
+  Foldable (t10 :: Type -> Type) =>
+  Foldable (Compose @Type @Type (t9 :: Type -> Type) (t10 :: Type -> Type))
+derive forall (t13 :: Type -> Type) (t14 :: Type -> Type).
+  Traversable (t13 :: Type -> Type) =>
+  Traversable (t14 :: Type -> Type) =>
+  Traversable (Compose @Type @Type (t13 :: Type -> Type) (t14 :: Type -> Type))
 
 Roles
 Compose = [Representational, Representational, Nominal]

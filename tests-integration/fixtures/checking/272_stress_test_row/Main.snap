@@ -6,9 +6,9 @@ expression: report
 Terms
 Proxy :: forall (k :: Type) (@a :: (k :: Type)). Proxy @(k :: Type) (a :: (k :: Type))
 build ::
-  forall (t18 :: Type) (t17 :: Type) (n :: (t18 :: Type)) (r :: (t17 :: Type)).
-    Build @(t18 :: Type) @(t17 :: Type) (n :: (t18 :: Type)) (r :: (t17 :: Type)) =>
-    Proxy @(t18 :: Type) (n :: (t18 :: Type)) -> Proxy @(t17 :: Type) (r :: (t17 :: Type))
+  forall (t25 :: Type) (t24 :: Type) (n :: (t25 :: Type)) (r :: (t24 :: Type)).
+    Build @(t25 :: Type) @(t24 :: Type) (n :: (t25 :: Type)) (r :: (t24 :: Type)) =>
+    Proxy @(t25 :: Type) (n :: (t25 :: Type)) -> Proxy @(t24 :: Type) (r :: (t24 :: Type))
 test ::
   Proxy @(Row Int)
     ( n1 :: 1
@@ -10022,13 +10022,13 @@ class forall (t5 :: Type) (t4 :: Type) (n :: (t5 :: Type)) (r :: (t4 :: Type)). 
 
 Instances
 instance forall (t6 :: Type). Build @Int @(Row (t6 :: Type)) 0 ()
-instance forall (t9 :: Int) (t7 :: Int) (t10 :: Symbol) (t11 :: Symbol) (t12 :: Row Int) (t8 :: Row Int).
-  Add (t9 :: Int) 1 (t7 :: Int) =>
-  ToString (t7 :: Int) (t10 :: Symbol) =>
-  Append "n" (t10 :: Symbol) (t11 :: Symbol) =>
-  Build @Int @(Row Int) (t9 :: Int) (t12 :: Row Int) =>
-  Cons @Int (t11 :: Symbol) (t7 :: Int) (t12 :: Row Int) (t8 :: Row Int) =>
-  Build @Int @(Row Int) (t7 :: Int) (t8 :: Row Int)
+instance forall (t10 :: Int) (t8 :: Int) (t11 :: Symbol) (t12 :: Symbol) (t13 :: Row Int) (t9 :: Row Int).
+  Add (t10 :: Int) 1 (t8 :: Int) =>
+  ToString (t8 :: Int) (t11 :: Symbol) =>
+  Append "n" (t11 :: Symbol) (t12 :: Symbol) =>
+  Build @Int @(Row Int) (t10 :: Int) (t13 :: Row Int) =>
+  Cons @Int (t12 :: Symbol) (t8 :: Int) (t13 :: Row Int) (t9 :: Row Int) =>
+  Build @Int @(Row Int) (t8 :: Int) (t9 :: Row Int)
 
 Roles
 Proxy = [Phantom]

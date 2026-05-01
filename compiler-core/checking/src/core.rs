@@ -127,12 +127,81 @@ pub struct CheckedClass {
 }
 
 /// Represents a checked instance declaration head.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct CheckedInstance {
     /// Type class reference.
     pub resolution: (FileId, TypeItemId),
-    /// Canonical instance type, e.g. `forall a. Eq a => Eq (Array a)`.
-    pub canonical: TypeId,
+    /// The signature of the instance, e.g. `forall a. Eq a => Eq (Array a)`.
+    ///
+    /// This type is shared between the checking rules for [instance heads] and
+    /// the [instance bodies]. Checking rules for instance bodies are syntax
+    /// driven. In the example below, all instances of the type variable `a`
+    /// resolve to the same [`Type::Rigid`].
+    ///
+    /// ```purescript
+    /// instance Eq a => Eq (Array a) where
+    ///    eq :: Array a -> Array a -> Boolean
+    ///    eq = eqArrayImpl
+    /// ```
+    ///
+    /// [instance heads]: checking::source::term_items::check_instance_declaration
+    /// [instance bodies]: checking::source::term_items::check_instance_members
+    pub signature: TypeId,
+    /// Like [`CheckedInstance::signature`] but for constraint matching.
+    ///
+    /// Take for example:
+    ///
+    /// ```purescript
+    /// newtype List a = List { head :: Int, tail :: Maybe (List a) }
+    ///
+    /// derive newtype instance Eq a => Eq (List a)
+    /// ```
+    ///
+    /// The compiler aims to prove that there is an Eq instance for List's
+    /// internal representation, producing the constraint `Eq (List a)`,
+    /// making it self-recursive. During matching, `Eq (List a)` will
+    /// select itself among the available `Eq` instances.
+    ///
+    /// By design, type variables in instance declarations are pattern
+    /// variables during matching i.e. the constraint solver produces
+    /// substitutions when matching arguments.
+    ///
+    /// These substitutions are used to instantiate variables in subgoals.
+    /// For example, this enables matching `Eq (Array Int)` against
+    /// `Eq a => Eq (Array a)` producing the substitution `a = Int` for
+    /// the subgoal `Eq Int` to surface.
+    ///
+    /// Also by design, any pattern variables left unbound become unification
+    /// variables, such that the constraint solver can fill them in later
+    /// through unification and functional dependencies. Intermediate type
+    /// variables in type-level programming come to mind:
+    ///
+    /// ```purescript
+    /// instance Build 0 ()
+    /// else instance
+    ///   ( Add minusOne 1 currentId
+    ///   , ToString currentId labelId
+    ///   , Append "n" labelId actualLabel
+    ///   , Build minusOne minusOneResult
+    ///   , Cons actualLabel currentId minusOneResult finalResult
+    ///   ) => Build currentId finalResult
+    /// ```
+    ///
+    /// `Eq (List a)` matching against itself goes wrong because:
+    /// 1. both usages of `a` are the same [`Name`], which triggers a fast path
+    ///    in instance matching where the pattern variable `a` is not bound;
+    /// 2. in effect, the pattern variable becomes a unification variable,
+    ///    which propagates into the subgoal `Eq ?a`, which is never solved.
+    ///
+    /// By creating a separate [`Name`] for use as a pattern variable:
+    /// 1. we avoid the fast path in instance matching, creating the
+    ///    binding from the [matchable] `a` to the [signature] `a`;
+    /// 2. in effect, the subgoal `Eq a` does not become `Eq ?a`,
+    ///    removing the unsolved constraint error.
+    ///
+    /// [signature]: CheckedInstance::signature
+    /// [matchable]: CheckedInstance::matchable
+    pub matchable: TypeId,
 }
 
 /// The core type representation used by the checker after name resolution.

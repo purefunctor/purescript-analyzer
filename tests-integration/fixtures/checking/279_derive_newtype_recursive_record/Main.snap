@@ -18,15 +18,8 @@ Instances
 instance forall (t3 :: Type). Eq (t3 :: Type) => Eq (Maybe (t3 :: Type))
 
 Derived
-derive forall (t4 :: Type). Eq (t4 :: Type) => Eq (List @Type (t4 :: Type))
+derive forall (t5 :: Type). Eq (t5 :: Type) => Eq (List @Type (t5 :: Type))
 
 Roles
 Maybe = [Representational]
 List = [Representational]
-
-Diagnostics
-error[NoInstanceFound]: No instance found for: Eq ?13
-  --> 12:1..12:44
-   |
-12 | derive newtype instance Eq a => Eq (List a)
-   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

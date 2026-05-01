@@ -20,15 +20,15 @@ WrapNoEq1 :: forall (t5 :: Type). ((t5 :: Type) -> Type) -> (t5 :: Type) -> Type
 Derived
 derive forall (t6 :: Type -> Type) (t7 :: Type).
   Eq1 (t6 :: Type -> Type) => Eq (t7 :: Type) => Eq (Wrap @Type (t6 :: Type -> Type) (t7 :: Type))
-derive forall (t9 :: Type) (t8 :: Type -> Type).
-  Eq (t9 :: Type) => Eq (WrapNoEq1 @Type (t8 :: Type -> Type) (t9 :: Type))
+derive forall (t11 :: Type) (t10 :: Type -> Type).
+  Eq (t11 :: Type) => Eq (WrapNoEq1 @Type (t10 :: Type -> Type) (t11 :: Type))
 
 Roles
 Wrap = [Representational, Nominal]
 WrapNoEq1 = [Representational, Nominal]
 
 Diagnostics
-error[NoInstanceFound]: No instance found for: Eq1 (t8 :: Type -> Type)
+error[NoInstanceFound]: No instance found for: Eq1 (t10 :: Type -> Type)
   --> 11:1..11:43
    |
 11 | derive instance Eq a => Eq (WrapNoEq1 f a)

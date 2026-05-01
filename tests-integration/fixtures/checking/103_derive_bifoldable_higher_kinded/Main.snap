@@ -38,20 +38,20 @@ derive forall (t12 :: Type -> Type) (t13 :: Type -> Type).
   Foldable (t12 :: Type -> Type) =>
   Foldable (t13 :: Type -> Type) =>
   Bifoldable (WrapBoth @Type @Type (t12 :: Type -> Type) (t13 :: Type -> Type))
-derive forall (t14 :: Type -> Type) (t15 :: Type -> Type).
-  Bifoldable (WrapBothNoConstraint @Type @Type (t14 :: Type -> Type) (t15 :: Type -> Type))
+derive forall (t16 :: Type -> Type) (t17 :: Type -> Type).
+  Bifoldable (WrapBothNoConstraint @Type @Type (t16 :: Type -> Type) (t17 :: Type -> Type))
 
 Roles
 WrapBoth = [Representational, Representational, Nominal, Nominal]
 WrapBothNoConstraint = [Representational, Representational, Nominal, Nominal]
 
 Diagnostics
-error[NoInstanceFound]: No instance found for: Foldable (t14 :: Type -> Type)
+error[NoInstanceFound]: No instance found for: Foldable (t16 :: Type -> Type)
   --> 10:1..10:54
    |
 10 | derive instance Bifoldable (WrapBothNoConstraint f g)
    | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-error[NoInstanceFound]: No instance found for: Foldable (t15 :: Type -> Type)
+error[NoInstanceFound]: No instance found for: Foldable (t17 :: Type -> Type)
   --> 10:1..10:54
    |
 10 | derive instance Bifoldable (WrapBothNoConstraint f g)

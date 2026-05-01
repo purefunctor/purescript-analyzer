@@ -22,7 +22,7 @@ Roles
 Box = [Representational]
 
 Diagnostics
-error[NoInstanceFound]: No instance found for: Show (t3 :: Type)
+error[NoInstanceFound]: No instance found for: Show (t4 :: Type)
   --> 9:1..11:24
   |
 9 | instance Show (Box a) where

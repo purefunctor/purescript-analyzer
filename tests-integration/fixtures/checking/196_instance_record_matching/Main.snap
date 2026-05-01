@@ -1,5 +1,5 @@
 ---
-source: tests-integration/tests/checking2/generated.rs
+source: tests-integration/tests/checking/generated.rs
 assertion_line: 28
 expression: report
 ---
@@ -23,4 +23,4 @@ class forall (a :: Type) (b :: Type). Convert (a :: Type) (b :: Type)
 
 Instances
 instance forall (t4 :: Row Type). Make {| (t4 :: Row Type) } {| (t4 :: Row Type) }
-instance forall (t5 :: Row Type). Convert {| (t5 :: Row Type) } { converted :: {| (t5 :: Row Type) } }
+instance forall (t6 :: Row Type). Convert {| (t6 :: Row Type) } { converted :: {| (t6 :: Row Type) } }

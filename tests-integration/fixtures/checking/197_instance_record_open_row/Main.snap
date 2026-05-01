@@ -1,5 +1,5 @@
 ---
-source: tests-integration/tests/checking2/generated.rs
+source: tests-integration/tests/checking/generated.rs
 assertion_line: 28
 expression: report
 ---
@@ -25,4 +25,4 @@ class forall (a :: Type) (b :: Type). Nest (a :: Type) (b :: Type)
 
 Instances
 instance forall (t4 :: Row Type). Clone {| (t4 :: Row Type) } {| (t4 :: Row Type) }
-instance forall (t5 :: Row Type). Nest {| (t5 :: Row Type) } { inner :: {| (t5 :: Row Type) }, outer :: Int }
+instance forall (t6 :: Row Type). Nest {| (t6 :: Row Type) } { inner :: {| (t6 :: Row Type) }, outer :: Int }

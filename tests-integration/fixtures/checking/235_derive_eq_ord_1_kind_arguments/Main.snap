@@ -1,5 +1,5 @@
 ---
-source: tests-integration/tests/checking2/generated.rs
+source: tests-integration/tests/checking/generated.rs
 assertion_line: 28
 expression: report
 ---
@@ -17,14 +17,14 @@ derive forall (t5 :: Type) (t3 :: (t5 :: Type) -> Type) (t4 :: (t5 :: Type)).
   Newtype @Type
     (App @(t5 :: Type) (t3 :: (t5 :: Type) -> Type) (t4 :: (t5 :: Type)))
     ((t3 :: (t5 :: Type) -> Type) (t4 :: (t5 :: Type)))
-derive forall (t6 :: Type -> Type) (t7 :: Type).
-  Eq1 (t6 :: Type -> Type) => Eq (t7 :: Type) => Eq (App @Type (t6 :: Type -> Type) (t7 :: Type))
-derive forall (t8 :: Type -> Type). Eq1 (t8 :: Type -> Type) => Eq1 (App @Type (t8 :: Type -> Type))
 derive forall (t9 :: Type -> Type) (t10 :: Type).
-  Ord1 (t9 :: Type -> Type) =>
-  Ord (t10 :: Type) =>
-  Ord (App @Type (t9 :: Type -> Type) (t10 :: Type))
-derive forall (t11 :: Type -> Type). Ord1 (t11 :: Type -> Type) => Ord1 (App @Type (t11 :: Type -> Type))
+  Eq1 (t9 :: Type -> Type) => Eq (t10 :: Type) => Eq (App @Type (t9 :: Type -> Type) (t10 :: Type))
+derive forall (t13 :: Type -> Type). Eq1 (t13 :: Type -> Type) => Eq1 (App @Type (t13 :: Type -> Type))
+derive forall (t15 :: Type -> Type) (t16 :: Type).
+  Ord1 (t15 :: Type -> Type) =>
+  Ord (t16 :: Type) =>
+  Ord (App @Type (t15 :: Type -> Type) (t16 :: Type))
+derive forall (t19 :: Type -> Type). Ord1 (t19 :: Type -> Type) => Ord1 (App @Type (t19 :: Type -> Type))
 
 Roles
 App = [Representational, Nominal]

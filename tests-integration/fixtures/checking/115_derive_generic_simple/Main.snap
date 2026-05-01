@@ -27,19 +27,19 @@ getWrapper ::
   forall (a :: Type) (rep :: Type).
     Generic (Wrapper (a :: Type)) (rep :: Type) => Proxy @Type (rep :: Type)
 forceSolve ::
-  forall (t43 :: Type) (t42 :: Type) (t41 :: Type) (t40 :: Type) (t39 :: Type) (t38 :: Type).
+  forall (t49 :: Type) (t48 :: Type) (t47 :: Type) (t46 :: Type) (t45 :: Type) (t44 :: Type).
     { getEither ::
         Proxy @Type
           (Sum
-            (Constructor "Left" (Argument (t43 :: Type)))
-            (Constructor "Right" (Argument (t42 :: Type))))
-    , getIdentity :: Proxy @Type (Constructor "Identity" (Argument (t41 :: Type)))
+            (Constructor "Left" (Argument (t49 :: Type)))
+            (Constructor "Right" (Argument (t48 :: Type))))
+    , getIdentity :: Proxy @Type (Constructor "Identity" (Argument (t47 :: Type)))
     , getMyUnit :: Proxy @Type (Constructor "MyUnit" NoArguments)
     , getTuple ::
         Proxy @Type
-          (Constructor "Tuple" (Product (Argument (t40 :: Type)) (Argument (t39 :: Type))))
+          (Constructor "Tuple" (Product (Argument (t46 :: Type)) (Argument (t45 :: Type))))
     , getVoid :: Proxy @Type NoConstructors
-    , getWrapper :: Proxy @Type (Constructor "Wrapper" (Argument (t38 :: Type)))
+    , getWrapper :: Proxy @Type (Constructor "Wrapper" (Argument (t44 :: Type)))
     }
 
 Types
@@ -56,18 +56,18 @@ derive Generic Void NoConstructors
 derive Generic MyUnit (Constructor "MyUnit" NoArguments)
 derive forall (t8 :: Type).
   Generic (Identity (t8 :: Type)) (Constructor "Identity" (Argument (t8 :: Type)))
-derive forall (t9 :: Type) (t10 :: Type).
+derive forall (t10 :: Type) (t11 :: Type).
   Generic
-    (Either (t9 :: Type) (t10 :: Type))
+    (Either (t10 :: Type) (t11 :: Type))
     (Sum
-      (Constructor "Left" (Argument (t9 :: Type)))
-      (Constructor "Right" (Argument (t10 :: Type))))
-derive forall (t11 :: Type) (t12 :: Type).
+      (Constructor "Left" (Argument (t10 :: Type)))
+      (Constructor "Right" (Argument (t11 :: Type))))
+derive forall (t14 :: Type) (t15 :: Type).
   Generic
-    (Tuple (t11 :: Type) (t12 :: Type))
-    (Constructor "Tuple" (Product (Argument (t11 :: Type)) (Argument (t12 :: Type))))
-derive forall (t13 :: Type).
-  Generic (Wrapper (t13 :: Type)) (Constructor "Wrapper" (Argument (t13 :: Type)))
+    (Tuple (t14 :: Type) (t15 :: Type))
+    (Constructor "Tuple" (Product (Argument (t14 :: Type)) (Argument (t15 :: Type))))
+derive forall (t18 :: Type).
+  Generic (Wrapper (t18 :: Type)) (Constructor "Wrapper" (Argument (t18 :: Type)))
 
 Roles
 Void = []

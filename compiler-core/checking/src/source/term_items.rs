@@ -144,9 +144,11 @@ where
 
     let resolution = (class_file, class_id);
     let canonical = zonk::zonk(state, context, canonical)?;
-    let canonical = generalise::generalise_implicit(state, context, canonical)?;
+    let signature = generalise::generalise_implicit(state, context, canonical)?;
+    let matchable = toolkit::freshen_instance_signature(state, context, signature)?;
 
-    state.checked.instances.insert(instance_id, CheckedInstance { resolution, canonical });
+    let instance = CheckedInstance { resolution, signature, matchable };
+    state.checked.instances.insert(instance_id, instance);
 
     Ok(())
 }
@@ -203,7 +205,9 @@ where
                 continue;
             };
 
-            let Some(instance) = toolkit::decompose_instance(state, context, &instance)? else {
+            let Some(instance) =
+                toolkit::instance_info(state, context, instance.signature, instance.resolution)?
+            else {
                 continue;
             };
 
@@ -229,7 +233,7 @@ fn check_instance_member_group<Q>(
     instance_item_id: TermItemId,
     member: &lowering::InstanceMemberGroup,
     (class_file, class_id): (FileId, TypeItemId),
-    instance: &toolkit::DecomposedInstance,
+    instance: &toolkit::InstanceInfo,
 ) -> QueryResult<()>
 where
     Q: ExternalQueries,
@@ -252,7 +256,7 @@ fn check_instance_member_group_core<Q>(
     context: &CheckContext<Q>,
     member: &lowering::InstanceMemberGroup,
     (class_file, class_id): (FileId, TypeItemId),
-    instance: &toolkit::DecomposedInstance,
+    instance: &toolkit::InstanceInfo,
 ) -> QueryResult<()>
 where
     Q: ExternalQueries,
@@ -359,7 +363,7 @@ struct FreshenedInstanceRigids {
 fn freshen_instance_rigids<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
-    instance: &toolkit::DecomposedInstance,
+    instance: &toolkit::InstanceInfo,
 ) -> QueryResult<FreshenedInstanceRigids>
 where
     Q: ExternalQueries,
