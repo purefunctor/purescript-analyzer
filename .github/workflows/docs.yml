@@ -27,7 +27,7 @@ jobs:
         run: rustup update stable && rustup default stable && rustup target add wasm32-unknown-unknown
 
       - name: Cache Rust build artifacts
-        uses: Swatinem/rust-cache@v2.8.2
+        uses: Swatinem/rust-cache@v2.9.1
         with:
           cache-bin: "false"
           prefix-key: "v3-docs"
