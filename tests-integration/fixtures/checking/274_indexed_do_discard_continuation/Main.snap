@@ -1,0 +1,49 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Unit :: Unit
+pure ::
+  forall (hooks :: Type) (a :: Type).
+    (a :: Type) -> Render (hooks :: Type) (hooks :: Type) (a :: Type)
+discard ::
+  forall (a :: Type) (b :: Type) (x :: Type) (y :: Type) (z :: Type).
+    Render (x :: Type) (y :: Type) (a :: Type) ->
+    ((a :: Type) -> Render (y :: Type) (z :: Type) (b :: Type)) ->
+    Render (x :: Type) (z :: Type) (b :: Type)
+use1 :: forall (hooks :: Type). Render (hooks :: Type) (Use1 (hooks :: Type)) Unit
+use2 :: forall (hooks :: Type). Render (hooks :: Type) (Use2 (hooks :: Type)) Unit
+test :: Render Start (Use2 (Use1 Start)) Unit
+
+Types
+Render :: Type -> Type -> Type -> Type
+Unit :: Type
+Start :: Type
+Use1 :: Type -> Type
+Use2 :: Type -> Type
+
+Roles
+Render = [Nominal, Nominal, Nominal]
+Unit = []
+Start = []
+Use1 = [Phantom]
+Use2 = [Phantom]
+
+Diagnostics
+error[CannotUnify]: Cannot unify 'Start' with 'Use2 (Use1 Start)'
+  --> 28:8..31:12
+   |
+28 | test = do
+   |        ^~
+error[CannotUnify]: Cannot unify 'Render Start Start' with 'Render Start (Use2 (Use1 Start))'
+  --> 28:8..31:12
+   |
+28 | test = do
+   |        ^~
+error[CannotUnify]: Cannot unify 'Render Start Start Unit' with 'Render Start (Use2 (Use1 Start)) Unit'
+  --> 28:8..31:12
+   |
+28 | test = do
+   |        ^~
