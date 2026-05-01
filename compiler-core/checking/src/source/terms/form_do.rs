@@ -406,22 +406,6 @@ pub fn infer_do_discard_core<Q>(
 where
     Q: ExternalQueries,
 {
-    let expression_type = super::infer_expression(state, context, expression)?;
-
-    let Some(application::GenericApplication { argument, result }) =
-        application::check_generic_application(state, context, discard_type)?
-    else {
-        return Ok(context.unknown("invalid function application"));
-    };
-    unification::subtype(state, context, expression_type, argument)?;
-
-    let Some(application::GenericApplication { result, .. }) =
-        application::check_generic_application(state, context, result)?
-    else {
-        return Ok(context.unknown("invalid function application"));
-    };
-
-    unification::subtype(state, context, continuation_type, result)?;
-
-    Ok(continuation_type)
+    let binder_type = state.fresh_unification(context.queries, context.prim.t);
+    infer_do_bind_core(state, context, discard_type, continuation_type, expression, binder_type)
 }

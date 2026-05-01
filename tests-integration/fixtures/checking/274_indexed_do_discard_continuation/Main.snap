@@ -30,20 +30,3 @@ Unit = []
 Start = []
 Use1 = [Phantom]
 Use2 = [Phantom]
-
-Diagnostics
-error[CannotUnify]: Cannot unify 'Start' with 'Use2 (Use1 Start)'
-  --> 28:8..31:12
-   |
-28 | test = do
-   |        ^~
-error[CannotUnify]: Cannot unify 'Render Start Start' with 'Render Start (Use2 (Use1 Start))'
-  --> 28:8..31:12
-   |
-28 | test = do
-   |        ^~
-error[CannotUnify]: Cannot unify 'Render Start Start Unit' with 'Render Start (Use2 (Use1 Start)) Unit'
-  --> 28:8..31:12
-   |
-28 | test = do
-   |        ^~
