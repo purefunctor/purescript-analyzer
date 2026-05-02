@@ -32,13 +32,12 @@ expression: "(node, errors)"
                 ExpressionInteger@45..46
                   INTEGER@45..46 "1"
                 COMMA@46..47 ","
-                ERROR@47..49
-                  ERROR@47..47 ""
+                ExpressionNegate@47..50
                   Annotation@47..48
                     TEXT@47..48 " "
                   MINUS@48..49 "-"
-                ExpressionInteger@49..50
-                  INTEGER@49..50 "2"
+                  ExpressionInteger@49..50
+                    INTEGER@49..50 "2"
                 COMMA@50..51 ","
                 ExpressionInteger@51..53
                   Annotation@51..52
@@ -50,14 +49,5 @@ expression: "(node, errors)"
         TEXT@54..55 "\n"
       END_OF_FILE@55..55 ""
     ,
-    [
-        ParseError {
-            offset: 48,
-            position: Position {
-                line: 3,
-                column: 13,
-            },
-            message: "Unexpected token in array",
-        },
-    ],
+    [],
 )

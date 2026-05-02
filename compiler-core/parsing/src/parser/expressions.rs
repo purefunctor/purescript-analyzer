@@ -112,7 +112,7 @@ fn expression_4(p: &mut Parser) {
 }
 
 fn at_argument(p: &Parser) -> bool {
-    p.at(SyntaxKind::AT) || p.at_in(EXPRESSION_START)
+    p.at(SyntaxKind::AT) || p.at_in(ARGUMENT_START)
 }
 
 fn expression_argument(p: &mut Parser) {
@@ -515,7 +515,7 @@ const EXPRESSION_ATOM_START: TokenSet = TokenSet::new(&[
 .union(names::LOWER)
 .union(names::OPERATOR_NAME);
 
-pub(super) const EXPRESSION_START: TokenSet = TokenSet::new(&[
+const ARGUMENT_START: TokenSet = TokenSet::new(&[
     SyntaxKind::IF,
     SyntaxKind::LET,
     SyntaxKind::BACKSLASH,
@@ -524,6 +524,9 @@ pub(super) const EXPRESSION_START: TokenSet = TokenSet::new(&[
     SyntaxKind::ADO,
 ])
 .union(EXPRESSION_ATOM_START);
+
+pub(super) const EXPRESSION_START: TokenSet =
+    ARGUMENT_START.union(TokenSet::new(&[SyntaxKind::MINUS]));
 
 const EXPRESSION_ATOM_RECOVERY: TokenSet =
     TokenSet::new(&[SyntaxKind::LAYOUT_SEPARATOR, SyntaxKind::LAYOUT_END]);
