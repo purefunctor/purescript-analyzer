@@ -13,12 +13,11 @@ use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::constraint::instances::InstanceCandidate;
 use crate::core::constraint::{CanonicalConstraintId, canonical};
-use crate::core::toolkit;
 use crate::core::fd::{Fd, compute_closure};
 use crate::core::substitute::SubstituteName;
 use crate::core::unification::{CanUnify, can_unify};
 use crate::core::walk::{TypeWalker, WalkAction, walk_type};
-use crate::core::{KindOrType, Name, RowField, RowType, Type, TypeId, normalise};
+use crate::core::{KindOrType, Name, RowField, RowType, Type, TypeId, normalise, toolkit};
 use crate::state::CheckState;
 
 /// The result of matching a wanted type against a given type.
