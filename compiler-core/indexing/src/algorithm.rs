@@ -1,7 +1,9 @@
 use std::collections::hash_map::Entry;
+use std::iter;
 
 use rowan::ast::AstNode;
 use rustc_hash::FxHashMap;
+use rustc_hash::FxHashSet;
 use smol_str::{SmolStr, ToSmolStr};
 use stabilizing::{AstId, ExpectId, StabilizedModule};
 use syntax::{PureScript, SyntaxToken, cst};
@@ -711,10 +713,10 @@ fn index_import_items(
 }
 
 fn index_term_import(state: &mut State, import: &mut IndexingImport, name: &str, id: ImportItemId) {
-    if let Some(&existing) = import.terms.get(name) {
-        state.errors.push(IndexingError::DuplicateImport { id, existing });
+    let name = SmolStr::from(name);
+    if let Some(&existing) = import.terms.get(&name) {
+        state.errors.push(IndexingError::DuplicateImport { duplicate: id, existing });
     } else {
-        let name = SmolStr::from(name);
         import.terms.insert(name, id);
     }
 }
@@ -726,13 +728,30 @@ fn index_type_import(
     id: ImportItemId,
     items: Option<cst::TypeItems>,
 ) {
+    let name = SmolStr::from(name);
     let items = items.map(|items| index_type_items(state, import, id, items));
-    if let Some((existing, _)) = import.types.get(name) {
-        let existing = *existing;
-        state.errors.push(IndexingError::DuplicateImport { id, existing });
+    if let Some((existing_id, existing_items)) = import.types.get_mut(&name) {
+        let existing = *existing_id;
+        *existing_items = merge_implicit_items(existing_items.take(), items);
+        state.errors.push(IndexingError::DuplicateImport { duplicate: id, existing });
     } else {
-        let name = SmolStr::from(name);
         import.types.insert(name, (id, items));
+    }
+}
+
+fn merge_implicit_items(
+    existing: Option<ImplicitItems>,
+    incoming: Option<ImplicitItems>,
+) -> Option<ImplicitItems> {
+    match (existing, incoming) {
+        (None, items) | (items, None) => items,
+        (Some(ImplicitItems::Everything), _) | (_, Some(ImplicitItems::Everything)) => {
+            Some(ImplicitItems::Everything)
+        }
+        (Some(ImplicitItems::Enumerated(existing)), Some(ImplicitItems::Enumerated(incoming))) => {
+            let merged: FxHashSet<_> = iter::chain(existing, incoming).collect();
+            Some(ImplicitItems::Enumerated(Box::from_iter(merged.into_iter())))
+        }
     }
 }
 

@@ -1,5 +1,5 @@
 use checking::error::{CheckError, ErrorKind};
-use indexing::TypeItemKind;
+use indexing::{IndexingError, TypeItemKind};
 use itertools::Itertools;
 use lowering::LoweringError;
 use resolving::ResolvingError;
@@ -153,6 +153,36 @@ impl ToDiagnostics for ResolvingError {
 
                 vec![Diagnostic::error("InvalidImportItem", message, span, "resolving")]
             }
+        }
+    }
+}
+
+impl ToDiagnostics for IndexingError {
+    fn to_diagnostics(&self, ctx: &DiagnosticsContext<'_>) -> Vec<Diagnostic> {
+        match self {
+            IndexingError::DuplicateImport { duplicate, existing } => {
+                let Some(ptr) = ctx.stabilized.syntax_ptr(*duplicate) else { return vec![] };
+                let Some(span) = ctx.span_from_syntax_ptr(&ptr) else { return vec![] };
+
+                let text = ctx.text_of(span).trim();
+                let message = format!("Import list contains multiple references to '{text}'");
+
+                let mut diagnostic =
+                    Diagnostic::warning("DuplicateImport", message, span, "indexing");
+
+                if let Some(existing_ptr) = ctx.stabilized.syntax_ptr(*existing) {
+                    if let Some(existing_span) = ctx.span_from_syntax_ptr(&existing_ptr) {
+                        diagnostic = diagnostic.with_related(existing_span, "First imported here");
+                    }
+                }
+
+                vec![diagnostic]
+            }
+            IndexingError::DuplicateItem { .. }
+            | IndexingError::MismatchedItem { .. }
+            | IndexingError::InvalidRole { .. }
+            | IndexingError::InvalidExport { .. }
+            | IndexingError::DuplicateExport { .. } => vec![],
         }
     }
 }

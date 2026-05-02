@@ -121,9 +121,21 @@ fn collect_file(
 
     match engine.indexed(file_id) {
         Ok(indexed) => {
-            for error in &indexed.errors {
-                report.diagnostics.push(debug_diagnostic(meta, "indexing", "IndexingError", error));
-            }
+            with_diagnostics_context(engine, file_id, &root, meta, |ctx| {
+                for error in &indexed.errors {
+                    let diagnostics = error.to_diagnostics(&ctx);
+                    if diagnostics.is_empty() {
+                        report.diagnostics.push(debug_diagnostic(
+                            meta,
+                            "indexing",
+                            "IndexingError",
+                            error,
+                        ));
+                    } else {
+                        report.diagnostics.extend(convert_diagnostics(meta, diagnostics));
+                    }
+                }
+            });
         }
         Err(error) => {
             push_query_error(report, meta, "indexing", error);

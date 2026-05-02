@@ -36,5 +36,5 @@ pub enum IndexingError {
     InvalidRole { id: TypeRoleId, existing: Option<TypeItemId> },
     InvalidExport { id: ExportItemId },
     DuplicateExport { id: ExportItemId, existing: ExportItemId },
-    DuplicateImport { id: ImportItemId, existing: ImportItemId },
+    DuplicateImport { duplicate: ImportItemId, existing: ImportItemId },
 }
