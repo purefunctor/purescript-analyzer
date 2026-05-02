@@ -1,0 +1,51 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+step ::
+  forall (@f :: Type) (@a :: Type) (@x :: Type) (@a' :: Type).
+    Step (f :: Type) (a :: Type) (x :: Type) (a' :: Type) =>
+    (f :: Type) -> (a :: Type) -> (x :: Type) -> (a' :: Type)
+done ::
+  forall (@f :: Type) (@a :: Type) (@x :: Type).
+    Done (f :: Type) (a :: Type) (x :: Type) => (f :: Type) -> (a :: Type) -> (x :: Type)
+walk ::
+  forall (@f :: Type) (@a :: Type) (@r :: Type).
+    Walk (f :: Type) (a :: Type) (r :: Type) => (f :: Type) -> (a :: Type) -> (r :: Type)
+
+Types
+Step :: Type -> Type -> Type -> Type -> Constraint
+Done :: Type -> Type -> Type -> Constraint
+Walk :: Type -> Type -> Type -> Constraint
+
+Classes
+class forall (f :: Type) (a :: Type) (x :: Type) (a' :: Type). Step (f :: Type) (a :: Type) (x :: Type) (a' :: Type)
+  step ::
+  forall (@f :: Type) (@a :: Type) (@x :: Type) (@a' :: Type).
+    Step (f :: Type) (a :: Type) (x :: Type) (a' :: Type) =>
+    (f :: Type) -> (a :: Type) -> (x :: Type) -> (a' :: Type)
+class forall (f :: Type) (a :: Type) (x :: Type). Done (f :: Type) (a :: Type) (x :: Type)
+  done ::
+  forall (@f :: Type) (@a :: Type) (@x :: Type).
+    Done (f :: Type) (a :: Type) (x :: Type) => (f :: Type) -> (a :: Type) -> (x :: Type)
+class forall (f :: Type) (a :: Type) (r :: Type). Walk (f :: Type) (a :: Type) (r :: Type)
+  walk ::
+  forall (@f :: Type) (@a :: Type) (@r :: Type).
+    Walk (f :: Type) (a :: Type) (r :: Type) => (f :: Type) -> (a :: Type) -> (r :: Type)
+
+Instances
+instance forall (t10 :: Type) (t11 :: Type) (t12 :: Type) (t14 :: Type) (t13 :: Type).
+  Step (t10 :: Type) (t11 :: Type) (t12 :: Type) (t14 :: Type) =>
+  Walk (t10 :: Type) (t14 :: Type) (t13 :: Type) =>
+  Walk (t10 :: Type) (t11 :: Type) ((t12 :: Type) -> (t13 :: Type))
+instance forall (t20 :: Type) (t21 :: Type) (t22 :: Type).
+  Done (t20 :: Type) (t21 :: Type) (t22 :: Type) => Walk (t20 :: Type) (t21 :: Type) (t22 :: Type)
+
+Diagnostics
+error[NoInstanceFound]: No instance found for: Done (t26 :: Type) (t29 :: Type) (t30 :: Type)
+  --> 12:1..23:14
+   |
+12 | instance walkArg ::
+   | ^~~~~~~~~~~~~~~~~~~

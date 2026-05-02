@@ -583,3 +583,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_278_prim_int_compare_concrete_seed_main() { run_test("278_prim_int_compare_concrete_seed", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_279_derive_newtype_recursive_record_main() { run_test("279_derive_newtype_recursive_record", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_280_skolem_vs_structural_instance_head_main() { run_test("280_skolem_vs_structural_instance_head", "Main"); }
