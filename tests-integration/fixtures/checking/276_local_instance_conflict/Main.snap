@@ -1,0 +1,34 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+classInt :: Int
+test :: Array ?[invalid term item]
+
+Types
+Class :: Type -> Constraint
+
+Classes
+class forall (a :: Type). Class (a :: Type)
+
+Instances
+instance Class
+
+Diagnostics
+error[InstanceHeadMismatch]: Instance head mismatch: expected 1 arguments, got 0
+  --> 1:1..9:18
+  |
+1 | module Main where
+  | ^~~~~~~~~~~~~~~~~
+error[CannotUnify]: Cannot unify 'Type -> Constraint' with 'Constraint'
+  --> 1:1..9:18
+  |
+1 | module Main where
+  | ^~~~~~~~~~~~~~~~~
+error[CannotUnify]: Cannot unify 'Type' with '?[invalid kind]'
+  --> 9:8..9:18
+  |
+9 | test = [classInt]
+  |        ^~~~~~~~~~

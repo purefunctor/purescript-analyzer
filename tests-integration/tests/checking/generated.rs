@@ -575,3 +575,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_274_indexed_do_discard_continuation_main() { run_test("274_indexed_do_discard_continuation", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_275_cross_module_instance_lookup_main() { run_test("275_cross_module_instance_lookup", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_276_local_instance_conflict_main() { run_test("276_local_instance_conflict", "Main"); }
