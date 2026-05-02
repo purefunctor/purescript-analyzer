@@ -10,10 +10,3 @@ useBoth ::
 test :: Int
 
 Types
-
-Diagnostics
-error[NoInstanceFound]: No instance found for: Marker Member
-  --> 9:1..9:12
-  |
-9 | test :: Int
-  | ^~~~~~~~~~~

@@ -25,28 +25,40 @@ pub struct InstanceCandidate {
     pub instance: CheckedInstance,
 }
 
+/// Candidate instance chains collected for a constraint, plus the unification
+/// variables that prevented the search from widening to additional modules.
+///
+/// When `blocking` is non-empty, the candidate set may be incomplete. The
+/// constraint solver would need to wait for these unification variables to
+/// be truly solved before constraint solving is abandoned.
+pub struct InstanceChains {
+    pub chains: Vec<Vec<InstanceCandidate>>,
+    pub blocking: Vec<u32>,
+}
+
 /// Collects [`InstanceCandidate`]s for a given constraint.
 pub fn collect_instance_chains<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     constraint: CanonicalConstraintId,
-) -> QueryResult<Vec<Vec<InstanceCandidate>>>
+) -> QueryResult<InstanceChains>
 where
     Q: ExternalQueries,
 {
     let constraint = state.canonicals[constraint].clone(); // TODO: FIXME
 
-    let mut files_to_search = FxHashSet::from_iter([constraint.file_id]);
+    let mut files = FxHashSet::from_iter([constraint.file_id]);
+    let mut blocking = vec![];
     for &argument in constraint.arguments.iter() {
         let argument = match argument {
             KindOrType::Kind(id) | KindOrType::Type(id) => id,
         };
-        CollectFileReferences::collect(state, context, argument, &mut files_to_search)?;
+        CollectFileReferences::collect(state, context, argument, &mut files, &mut blocking)?;
     }
 
     let mut instances = vec![];
 
-    for &file_id in &files_to_search {
+    for &file_id in &files {
         if file_id == context.id {
             collect_instances_from_checked(
                 &mut instances,
@@ -86,7 +98,7 @@ where
         chains.push(chain);
     }
 
-    Ok(chains)
+    Ok(InstanceChains { chains, blocking })
 }
 
 fn collect_instances_from_checked(
@@ -187,6 +199,7 @@ where
 
 struct CollectFileReferences<'a> {
     files: &'a mut FxHashSet<FileId>,
+    blocking: &'a mut Vec<u32>,
 }
 
 impl<'a> CollectFileReferences<'a> {
@@ -195,12 +208,13 @@ impl<'a> CollectFileReferences<'a> {
         context: &CheckContext<Q>,
         id: TypeId,
         files: &'a mut FxHashSet<FileId>,
+        blocking: &'a mut Vec<u32>,
     ) -> QueryResult<()>
     where
         Q: ExternalQueries,
     {
         let id = normalise::expand(state, context, id)?;
-        walk_type(state, context, id, &mut CollectFileReferences { files })
+        walk_type(state, context, id, &mut CollectFileReferences { files, blocking })
     }
 }
 
@@ -215,8 +229,14 @@ impl TypeWalker for CollectFileReferences<'_> {
     where
         Q: ExternalQueries,
     {
-        if let Type::Constructor(file_id, _) = t {
-            self.files.insert(*file_id);
+        match t {
+            Type::Constructor(file_id, _) => {
+                self.files.insert(*file_id);
+            }
+            Type::Unification(id) => {
+                self.blocking.push(*id);
+            }
+            _ => {}
         }
         Ok(WalkAction::Continue)
     }

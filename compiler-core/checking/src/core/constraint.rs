@@ -202,8 +202,8 @@ where
             Some(MatchInstance::Apart) | None => (),
         }
 
-        let chains = instances::collect_instance_chains(state, context, wanted)?;
-        'chain: for chain in chains {
+        let search = instances::collect_instance_chains(state, context, wanted)?;
+        'chain: for chain in search.chains {
             match match_instance_chain(state, context, wanted, &chain)? {
                 MatchInstance::Match(instance) => {
                     work.extend_from_match(instance);
@@ -218,6 +218,10 @@ where
                 }
             }
         }
+
+        // If no candidate matched, the candidate search itself may also be incomplete
+        // due to unsolved unification variables; we will wait for them to be solved.
+        blocked.extend(search.blocking);
 
         if blocked.is_empty() {
             residuals.push(wanted);

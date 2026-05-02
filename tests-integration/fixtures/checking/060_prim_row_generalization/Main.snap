@@ -45,8 +45,8 @@ testMulti1 ::
     {| (t48 :: Row Type) } -> {| (t47 :: Row Type) }
 testMulti2 ::
   forall (t52 :: Row Type) (t51 :: Row Type) (t50 :: Row Type).
-    Union @Type (t52 :: Row Type) ( b :: Int ) (t51 :: Row Type) =>
-    Nub @Type ( a :: Int | (t50 :: Row Type) ) (t52 :: Row Type) =>
-    {| (t51 :: Row Type) }
+    Nub @Type ( a :: Int | (t52 :: Row Type) ) (t51 :: Row Type) =>
+    Union @Type (t51 :: Row Type) ( b :: Int ) (t50 :: Row Type) =>
+    {| (t50 :: Row Type) }
 
 Types
