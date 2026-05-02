@@ -1,0 +1,19 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+useBoth ::
+  forall (s :: Type) (m :: Type).
+    Marker (m :: Type) => Lookup (s :: Type) (m :: Type) => (s :: Type) -> Int
+test :: Int
+
+Types
+
+Diagnostics
+error[NoInstanceFound]: No instance found for: Marker Member
+  --> 9:1..9:12
+  |
+9 | test :: Int
+  | ^~~~~~~~~~~
