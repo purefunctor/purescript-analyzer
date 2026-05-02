@@ -1,0 +1,63 @@
+---
+source: compiler-core/parsing/tests/parser.rs
+assertion_line: 9
+expression: "(node, errors)"
+---
+(
+    Module@0..55
+      ModuleHeader@0..34
+        MODULE@0..6 "module"
+        Annotation@6..7
+          TEXT@6..7 " "
+        ModuleName@7..28
+          UPPER@7..28 "ExpressionArrayNegate"
+        Annotation@28..29
+          TEXT@28..29 " "
+        WHERE@29..34 "where"
+      LAYOUT_START@34..34 ""
+      ModuleStatements@34..54
+        ValueEquation@34..54
+          Annotation@34..36
+            TEXT@34..36 "\n\n"
+          LOWER@36..41 "array"
+          Unconditional@41..54
+            Annotation@41..42
+              TEXT@41..42 " "
+            EQUAL@42..43 "="
+            WhereExpression@43..54
+              ExpressionArray@43..54
+                Annotation@43..44
+                  TEXT@43..44 " "
+                LEFT_SQUARE@44..45 "["
+                ExpressionInteger@45..46
+                  INTEGER@45..46 "1"
+                COMMA@46..47 ","
+                ERROR@47..49
+                  ERROR@47..47 ""
+                  Annotation@47..48
+                    TEXT@47..48 " "
+                  MINUS@48..49 "-"
+                ExpressionInteger@49..50
+                  INTEGER@49..50 "2"
+                COMMA@50..51 ","
+                ExpressionInteger@51..53
+                  Annotation@51..52
+                    TEXT@51..52 " "
+                  INTEGER@52..53 "3"
+                RIGHT_SQUARE@53..54 "]"
+      LAYOUT_END@54..54 ""
+      Annotation@54..55
+        TEXT@54..55 "\n"
+      END_OF_FILE@55..55 ""
+    ,
+    [
+        ParseError {
+            offset: 48,
+            position: Position {
+                line: 3,
+                column: 13,
+            },
+            message: "Unexpected token in array",
+        },
+    ],
+)
