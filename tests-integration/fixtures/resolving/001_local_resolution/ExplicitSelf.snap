@@ -30,14 +30,12 @@ Exported Classes:
 
 Local Terms:
   - value
-  - eqMaybe
-  - eqId
-  - eq
   - HiddenType
   - Just
   - Id
   - Nothing
   - HiddenConstructor
+  - eq
 
 Local Types:
   - HiddenConstructor

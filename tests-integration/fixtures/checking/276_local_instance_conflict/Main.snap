@@ -5,7 +5,7 @@ expression: report
 ---
 Terms
 classInt :: Int
-test :: Array ?[invalid term item]
+test :: Array Int
 
 Types
 Class :: Type -> Constraint
@@ -27,8 +27,3 @@ error[CannotUnify]: Cannot unify 'Type -> Constraint' with 'Constraint'
   |
 1 | module Main where
   | ^~~~~~~~~~~~~~~~~
-error[CannotUnify]: Cannot unify 'Type' with '?[invalid kind]'
-  --> 9:8..9:18
-  |
-9 | test = [classInt]
-  |        ^~~~~~~~~~

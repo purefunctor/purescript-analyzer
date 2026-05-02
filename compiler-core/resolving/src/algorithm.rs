@@ -330,6 +330,11 @@ fn add_local_class(
 
 fn export_module_items(state: &mut State, indexed: &IndexedModule, file: FileId) {
     let local_terms = indexed.items.iter_terms().filter_map(|(id, item)| {
+        // Instances cannot be referred to directly by their given name yet.
+        // They're simply assumed to exist in a global context for coherence.
+        if matches!(item.kind, TermItemKind::Instance { .. } | TermItemKind::Derive { .. }) {
+            return None;
+        }
         let name = item.name.as_ref()?;
         Some((name, file, id))
     });
@@ -350,8 +355,6 @@ fn export_module_items(state: &mut State, indexed: &IndexedModule, file: FileId)
     add_local_classes(&mut state.locals, &mut state.errors, local_classes);
 
     let exported_terms = indexed.items.iter_terms().filter_map(|(id, item)| {
-        // Instances cannot be to referred directly by their given name yet.
-        // They're simply assumed to exist in a global context for coherence.
         if matches!(item.kind, TermItemKind::Instance { .. } | TermItemKind::Derive { .. }) {
             return None;
         }
