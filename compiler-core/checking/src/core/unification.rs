@@ -897,10 +897,10 @@ where
                 return unify(state, context, t1_tail, t2_tail);
             }
 
-            let tail = state.fresh_unification(context.queries, context.prim.row_type);
+            let tail_kind = state.fresh_unification(context.queries, context.prim.t);
+            let tail = state.fresh_unification(context.queries, tail_kind);
 
             let left_tail_row_type = context.intern_row(extras_right, Some(tail));
-
             let right_tail_row_type = context.intern_row(extras_left, Some(tail));
 
             Ok(unify(state, context, t1_tail, left_tail_row_type)?

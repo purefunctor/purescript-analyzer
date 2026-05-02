@@ -9,7 +9,7 @@ unify ::
     Box (r :: Row (Type -> Type)) -> Box (r :: Row (Type -> Type)) -> Box (r :: Row (Type -> Type))
 withF :: forall (r :: Row (Type -> Type)). Box ( f :: F | (r :: Row (Type -> Type)) )
 withG :: forall (r :: Row (Type -> Type)). Box ( g :: G | (r :: Row (Type -> Type)) )
-test :: forall (t3 :: Row Type). Box ( f :: F, g :: G | (t3 :: Row Type) )
+test :: forall (t3 :: Row (Type -> Type)). Box ( f :: F, g :: G | (t3 :: Row (Type -> Type)) )
 
 Types
 F :: Type -> Type
@@ -20,25 +20,3 @@ Roles
 F = [Nominal]
 G = [Nominal]
 Box = [Nominal]
-
-Diagnostics
-error[CannotUnify]: Cannot unify 'Type -> Type' with 'Type'
-  --> 13:20..13:25
-   |
-13 | test = unify withF withG
-   |                    ^~~~~
-error[CannotUnify]: Cannot unify 'Row (Type -> Type)' with 'Row Type'
-  --> 13:20..13:25
-   |
-13 | test = unify withF withG
-   |                    ^~~~~
-error[CannotUnify]: Cannot unify 'Type -> Type' with 'Type'
-  --> 13:20..13:25
-   |
-13 | test = unify withF withG
-   |                    ^~~~~
-error[CannotUnify]: Cannot unify 'Row (Type -> Type)' with 'Row Type'
-  --> 13:20..13:25
-   |
-13 | test = unify withF withG
-   |                    ^~~~~
