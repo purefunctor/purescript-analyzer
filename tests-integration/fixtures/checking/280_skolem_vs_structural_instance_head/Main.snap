@@ -42,10 +42,3 @@ instance forall (t10 :: Type) (t11 :: Type) (t12 :: Type) (t14 :: Type) (t13 :: 
   Walk (t10 :: Type) (t11 :: Type) ((t12 :: Type) -> (t13 :: Type))
 instance forall (t20 :: Type) (t21 :: Type) (t22 :: Type).
   Done (t20 :: Type) (t21 :: Type) (t22 :: Type) => Walk (t20 :: Type) (t21 :: Type) (t22 :: Type)
-
-Diagnostics
-error[NoInstanceFound]: No instance found for: Done (t26 :: Type) (t29 :: Type) (t30 :: Type)
-  --> 12:1..23:14
-   |
-12 | instance walkArg ::
-   | ^~~~~~~~~~~~~~~~~~~

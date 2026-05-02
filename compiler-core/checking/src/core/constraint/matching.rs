@@ -25,8 +25,19 @@ use crate::state::CheckState;
 pub enum MatchType {
     /// The types match.
     Match,
-    /// The match depends on a unification variable.
+    /// The match has a wanted-side unification variable.
     Stuck(u32),
+    /// The match has a wanted-side skolem variable.
+    ///
+    /// Skolem variables represent types chosen by the caller and they usually
+    /// appear inside of a universal quantifier like `forall`. Since the caller
+    /// decides how the skolem variable is instantiated, we cannot prove that
+    /// it is [`MatchType::Apart`] from any given type.
+    ///
+    /// For example, when attempting to match `Solve ~a`, `a` can be instantiated
+    /// into `Int`, so perhaps rejecting `Solve Int` is unsound. In practice, we
+    /// simply report that no matching instance was found for `Solve ~a`.
+    Skolem,
     /// The types do not match.
     Apart,
 }
@@ -34,6 +45,10 @@ pub enum MatchType {
 impl MatchType {
     fn and_then(self, f: impl FnOnce() -> QueryResult<MatchType>) -> QueryResult<MatchType> {
         if matches!(self, MatchType::Match) { f() } else { Ok(self) }
+    }
+
+    pub fn is_unknown(&self) -> bool {
+        matches!(self, MatchType::Stuck(_) | MatchType::Skolem)
     }
 }
 
@@ -251,6 +266,7 @@ pub type InstanceBindings = FxHashMap<Name, TypeId>;
 pub fn match_instance_type<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
+    patterns: &FxHashSet<Name>,
     bindings: &mut InstanceBindings,
     unifications: &mut Vec<(TypeId, TypeId)>,
     wanted: TypeId,
@@ -269,8 +285,10 @@ where
     let wanted_core = context.lookup_type(wanted);
     let given_core = context.lookup_type(given);
 
-    if let (_, &Type::Rigid(name, _, _)) = (&wanted_core, &given_core) {
-        if let Some(&bound) = bindings.get(&name) {
+    if let Type::Rigid(name, _, _) = given_core
+        && patterns.contains(&name)
+    {
+        return if let Some(&bound) = bindings.get(&name) {
             match can_unify(state, context, wanted, bound)? {
                 CanUnify::Equal => Ok(MatchType::Match),
                 CanUnify::Apart => Ok(MatchType::Apart),
@@ -282,14 +300,20 @@ where
         } else {
             bindings.insert(name, wanted);
             Ok(MatchType::Match)
-        }
-    } else {
-        let mut recurse =
-            |state: &mut CheckState, context: &CheckContext<Q>, wanted: TypeId, given: TypeId| {
-                match_instance_type(state, context, bindings, unifications, wanted, given)
-            };
-        match_core(state, context, &mut recurse, wanted, given, wanted_core, given_core)
+        };
     }
+
+    // See documentation for [`MatchType::Skolem`].
+    if matches!(wanted_core, Type::Rigid(_, _, _)) {
+        return Ok(MatchType::Skolem);
+    }
+
+    let mut recurse =
+        |state: &mut CheckState, context: &CheckContext<Q>, wanted: TypeId, given: TypeId| {
+            match_instance_type(state, context, patterns, bindings, unifications, wanted, given)
+        };
+
+    match_core(state, context, &mut recurse, wanted, given, wanted_core, given_core)
 }
 
 /// Matches a wanted constraint against an instance chain.
@@ -315,6 +339,9 @@ where
             continue 'chain;
         };
 
+        let pattern_variables: FxHashSet<Name> =
+            given.binders.iter().map(|binder| binder.name).collect();
+
         let mut results = vec![];
         let mut stuck = vec![];
 
@@ -332,6 +359,7 @@ where
                     match_instance_type(
                         state,
                         context,
+                        &pattern_variables,
                         &mut bindings,
                         &mut unifications,
                         wanted_argument,
@@ -580,11 +608,12 @@ fn can_determine_stuck<Q>(
 where
     Q: ExternalQueries,
 {
-    let stuck_indices: Vec<_> = results
+    let stuck_indices = results
         .iter()
         .enumerate()
-        .filter_map(|(index, result)| matches!(result, MatchType::Stuck(_)).then_some(index))
-        .collect();
+        .filter_map(|(index, result)| result.is_unknown().then_some(index));
+
+    let stuck_indices = stuck_indices.collect_vec();
 
     if stuck_indices.is_empty() {
         return Ok(true);
