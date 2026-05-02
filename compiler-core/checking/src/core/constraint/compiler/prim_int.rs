@@ -11,7 +11,7 @@ use crate::core::constraint::matching::{self, MatchInstance};
 use crate::core::{TypeId, normalise};
 use crate::state::CheckState;
 
-use super::{extract_integer, intern_symbol, match_equality};
+use super::{extract_integer, intern_integer, intern_symbol, match_equality};
 
 pub fn match_add<Q>(
     state: &mut CheckState,
@@ -31,15 +31,15 @@ where
 
     let matched = match (left_int, right_int, sum_int) {
         (Some(left), Some(right), _) => {
-            let result = super::intern_integer(context, left + right);
+            let result = intern_integer(context, left + right);
             match_equality(state, context, sum, result)?
         }
         (Some(left), _, Some(sum_value)) => {
-            let result = super::intern_integer(context, sum_value - left);
+            let result = intern_integer(context, sum_value - left);
             match_equality(state, context, right, result)?
         }
         (_, Some(right), Some(sum_value)) => {
-            let result = super::intern_integer(context, sum_value - right);
+            let result = intern_integer(context, sum_value - right);
             match_equality(state, context, left, result)?
         }
         _ => matching::blocking_constraint(state, context, &[left, right, sum])?,
@@ -67,7 +67,7 @@ where
         return Ok(Some(matching::blocking_constraint(state, context, &[right])?));
     };
 
-    let result = super::intern_integer(context, left_int * right_int);
+    let result = intern_integer(context, left_int * right_int);
     Ok(Some(match_equality(state, context, product, result)?))
 }
 
@@ -147,17 +147,38 @@ where
         }
     }
 
-    let left_reaches_right = has_path_connecting(&graph, left, right, None);
-    let right_reaches_left = has_path_connecting(&graph, right, left, None);
+    graph.add_node(left);
+    graph.add_node(right);
 
-    let result = match (left_reaches_right, right_reaches_left) {
+    let integers = graph.nodes().map(|node| {
+        let value = extract_integer(state, context, node)?;
+        Ok(value.map(|value| (value, node)))
+    });
+
+    let mut integers =
+        integers.filter_map(|result| result.transpose()).collect::<QueryResult<Vec<_>>>()?;
+
+    integers.sort_by_key(|&(value, _)| value);
+
+    // Create edges between concrete integer nodes such that the
+    // reachability algorithm considers them too; the direction
+    // is ascending, as set by the prim_ordering.lt case above.
+    for window in integers.windows(2) {
+        let &[(_, lower), (_, upper)] = window else { continue };
+        graph.add_edge(lower, upper, ());
+    }
+
+    let left_to_right = has_path_connecting(&graph, left, right, None);
+    let right_to_left = has_path_connecting(&graph, right, left, None);
+
+    let result = match (left_to_right, right_to_left) {
         (true, true) => context.prim_ordering.eq,
         (true, false) => context.prim_ordering.lt,
         (false, true) => context.prim_ordering.gt,
         (false, false) => return Ok(None),
     };
 
-    Ok(Some(match_equality(state, context, ordering, result)?))
+    match_equality(state, context, ordering, result).map(Some)
 }
 
 pub fn match_to_string<Q>(

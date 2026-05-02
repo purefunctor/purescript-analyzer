@@ -25,25 +25,3 @@ chainAbstractAndConcrete ::
     Proxy @(Row Int) ( left :: (h :: Int), right :: 4 )
 
 Types
-
-Diagnostics
-error[NoInstanceFound]: No instance found for: Compare (h :: Int) (-1) GT
-  --> 14:1..14:85
-   |
-14 | weakenZeroToNegOne :: forall h. Compare h 0 GT => Proxy ( left :: h, right :: (-1) )
-   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-error[NoInstanceFound]: No instance found for: Compare (h :: Int) (-2) GT
-  --> 18:1..18:85
-   |
-18 | weakenZeroToNegTwo :: forall h. Compare h 0 GT => Proxy ( left :: h, right :: (-2) )
-   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-error[NoInstanceFound]: No instance found for: Compare (h :: Int) 1 LT
-  --> 22:1..22:76
-   |
-22 | weakenZeroLT :: forall h. Compare h 0 LT => Proxy ( left :: h, right :: 1 )
-   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-error[NoInstanceFound]: No instance found for: Compare (h :: Int) 4 GT
-  --> 26:1..30:37
-   |
-26 | chainAbstractAndConcrete
-   | ^~~~~~~~~~~~~~~~~~~~~~~~
