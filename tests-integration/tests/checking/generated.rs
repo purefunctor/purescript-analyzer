@@ -584,8 +584,8 @@ fn run_test(folder: &str, file: &str) {
 
 #[rustfmt::skip] #[test] fn test_279_derive_newtype_recursive_record_main() { run_test("279_derive_newtype_recursive_record", "Main"); }
 
-#[rustfmt::skip] #[test] fn test_280_skolem_vs_structural_instance_head_main() { run_test("280_skolem_vs_structural_instance_head", "Main"); }
-
-#[rustfmt::skip] #[test] fn test_281_irrefutable_pattern_guard_binder_exhaustive_main() { run_test("281_irrefutable_pattern_guard_binder_exhaustive", "Main"); }
+#[rustfmt::skip] #[test] fn test_280_instance_chain_skolem_main() { run_test("280_instance_chain_skolem", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_281_irrefutable_variable_pattern_main() { run_test("281_irrefutable_variable_pattern", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_282_lacks_empty_closed_row_skolem_main() { run_test("282_lacks_empty_closed_row_skolem", "Main"); }

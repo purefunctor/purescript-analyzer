@@ -1,0 +1,19 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+useLacksEmpty ::
+  forall (t2 :: Type) (name :: Symbol).
+    Lacks @(t2 :: Type) (name :: Symbol) () => Proxy @Symbol (name :: Symbol) -> Int
+forwardLacksEmpty :: forall (name :: Symbol). Proxy @Symbol (name :: Symbol) -> Int
+
+Types
+
+Diagnostics
+error[NoInstanceFound]: No instance found for: Lacks @?6 (name :: Symbol) ()
+  --> 9:1..9:52
+  |
+9 | forwardLacksEmpty :: forall name. Proxy name -> Int
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
