@@ -273,12 +273,18 @@ where
         return Ok(None);
     };
 
-    let Some(label_value) = extract_symbol(state, context, label)? else {
-        return Ok(Some(matching::blocking_constraint(state, context, &[label])?));
-    };
-
     let Some(row_row) = extract_row(state, context, row)? else {
         return Ok(Some(matching::blocking_constraint(state, context, &[row])?));
+    };
+
+    if let RowView::Closed { fields } = &row_row
+        && fields.is_empty()
+    {
+        return Ok(Some(MatchInstance::Match(InstanceMatch::empty())));
+    }
+
+    let Some(label_value) = extract_symbol(state, context, label)? else {
+        return Ok(Some(matching::blocking_constraint(state, context, &[label])?));
     };
 
     match row_row {
