@@ -1,0 +1,44 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+variable :: Array Int -> Int
+wildcard :: Array Int -> Int
+refutable :: Array Int -> Int
+arrayLength :: forall (a :: Type). Array (a :: Type) -> Int
+
+Types
+
+Diagnostics
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: _
+  --> 4:12..6:42
+  |
+4 | variable = case _ of
+  |            ^~~~~~~~~
+error[NoInstanceFound]: No instance found for: Partial
+  --> 3:1..3:29
+  |
+3 | variable :: Array Int -> Int
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: _
+  --> 9:12..11:32
+  |
+9 | wildcard = case _ of
+  |            ^~~~~~~~~
+error[NoInstanceFound]: No instance found for: Partial
+  --> 8:1..8:29
+  |
+8 | wildcard :: Array Int -> Int
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: _
+  --> 14:13..16:24
+   |
+14 | refutable = case _ of
+   |             ^~~~~~~~~
+error[NoInstanceFound]: No instance found for: Partial
+  --> 13:1..13:30
+   |
+13 | refutable :: Array Int -> Int
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
