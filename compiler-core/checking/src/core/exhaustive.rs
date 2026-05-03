@@ -1171,13 +1171,13 @@ fn is_trivially_true_guard<Q>(context: &CheckContext<Q>, guard: &lowering::Patte
 where
     Q: ExternalQueries,
 {
-    if guard.binder.is_some() {
-        return false;
+    if let Some(binder_id) = guard.binder {
+        return is_irrefutable_binder(context, binder_id);
     }
-    let Some(expr_id) = guard.expression else {
+    let Some(expression_id) = guard.expression else {
         return false;
     };
-    let Some(kind) = context.lowered.info.get_expression_kind(expr_id) else {
+    let Some(kind) = context.lowered.info.get_expression_kind(expression_id) else {
         return false;
     };
     match kind {
@@ -1185,6 +1185,24 @@ where
         lowering::ExpressionKind::Variable {
             resolution: Some(lowering::TermVariableResolution::Reference(file_id, term_id)),
         } => context.known_terms.otherwise == Some((*file_id, *term_id)),
+        _ => false,
+    }
+}
+
+fn is_irrefutable_binder<Q>(context: &CheckContext<Q>, binder_id: lowering::BinderId) -> bool
+where
+    Q: ExternalQueries,
+{
+    let Some(kind) = context.lowered.info.get_binder_kind(binder_id) else {
+        return false;
+    };
+    match kind {
+        lowering::BinderKind::Variable { .. } | lowering::BinderKind::Wildcard => true,
+        lowering::BinderKind::Named { binder, .. }
+        | lowering::BinderKind::Parenthesized { parenthesized: binder }
+        | lowering::BinderKind::Typed { binder, .. } => {
+            binder.is_some_and(|binder| is_irrefutable_binder(context, binder))
+        }
         _ => false,
     }
 }
