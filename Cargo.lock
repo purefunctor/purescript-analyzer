@@ -2495,13 +2495,15 @@ dependencies = [
  "building",
  "criterion",
  "files",
- "glob",
+ "globset",
  "indexing",
  "lexing",
  "parsing",
  "rayon",
+ "serde_json",
  "stabilizing",
  "url",
+ "walkdir",
 ]
 
 [[package]]
