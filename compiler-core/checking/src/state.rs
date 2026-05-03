@@ -5,9 +5,10 @@ use std::sync::Arc;
 
 use building_types::QueryResult;
 use files::FileId;
+use rustc_hash::FxHashMap;
 
 use crate::context::CheckContext;
-use crate::core::constraint::Canonicals;
+use crate::core::constraint::{CanonicalConstraintId, Canonicals};
 use crate::core::exhaustive::{
     ExhaustivenessReport, Pattern, PatternConstructor, PatternId, PatternInterner, PatternKind,
 };
@@ -201,6 +202,7 @@ pub struct CheckState {
     pub unifications: Unifications,
     pub implications: Implications,
     pub canonicals: Canonicals,
+    pub canonical_errors: FxHashMap<CanonicalConstraintId, Vec<ErrorKind>>,
 
     pub defer_expansion: bool,
     pub depth: Depth,
@@ -218,6 +220,7 @@ impl CheckState {
             unifications: Default::default(),
             implications: Default::default(),
             canonicals: Default::default(),
+            canonical_errors: Default::default(),
             defer_expansion: Default::default(),
             depth: Depth(0),
             crumbs: Default::default(),

@@ -8,25 +8,3 @@ useUnwrap :: forall (t :: Type). Newtype @Type (t :: Type) HiddenInt => (t :: Ty
 useCoerce :: forall (t :: Type). Newtype @Type (t :: Type) HiddenInt => (t :: Type) -> HiddenInt
 
 Types
-
-Diagnostics
-error[CoercibleConstructorNotInScope]: Constructor not in scope for Coercible
-  --> 7:1..7:61
-  |
-7 | useUnwrap :: forall t. Newtype t HiddenInt => t -> HiddenInt
-  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-error[CoercibleConstructorNotInScope]: Constructor not in scope for Coercible
-  --> 7:1..7:61
-  |
-7 | useUnwrap :: forall t. Newtype t HiddenInt => t -> HiddenInt
-  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-error[CoercibleConstructorNotInScope]: Constructor not in scope for Coercible
-  --> 10:1..10:61
-   |
-10 | useCoerce :: forall t. Newtype t HiddenInt => t -> HiddenInt
-   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-error[CoercibleConstructorNotInScope]: Constructor not in scope for Coercible
-  --> 10:1..10:61
-   |
-10 | useCoerce :: forall t. Newtype t HiddenInt => t -> HiddenInt
-   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -79,9 +79,11 @@ pub fn solve_and_report_constraints<Q>(
 where
     Q: ExternalQueries,
 {
-    let residual = state.solve_constraints(context)?;
-    for constraint in residual {
-        let constraint = state.pretty_constraint_id(context, constraint)?;
+    for residual in state.solve_constraints(context)? {
+        let attached = state.canonical_errors.remove(&residual);
+        attached.into_iter().flatten().for_each(|error| state.insert_error(error));
+
+        let constraint = state.pretty_constraint_id(context, residual)?;
         state.insert_error(ErrorKind::NoInstanceFound { constraint });
     }
     Ok(())

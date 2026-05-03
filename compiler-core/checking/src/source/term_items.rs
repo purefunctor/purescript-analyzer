@@ -346,6 +346,9 @@ where
         };
 
         for residual in residuals {
+            let attached = state.canonical_errors.remove(&residual);
+            attached.into_iter().flatten().for_each(|error| state.insert_error(error));
+
             let constraint = state.pretty_constraint_id(context, residual)?;
             state.insert_error(ErrorKind::NoInstanceFound { constraint });
         }
@@ -763,8 +766,12 @@ where
                 state.insert_error(ErrorKind::AmbiguousConstraint { constraint });
             });
         }
-        for constraint in errors.unsatisfied {
-            let constraint = state.pretty_constraint_id(context, constraint)?;
+        for residual in errors.unsatisfied {
+            state.with_error_crumb(ErrorCrumb::TermDeclaration(item_id), |state| {
+                let attached = state.canonical_errors.remove(&residual);
+                attached.into_iter().flatten().for_each(|error| state.insert_error(error));
+            });
+            let constraint = state.pretty_constraint_id(context, residual)?;
             state.with_error_crumb(ErrorCrumb::TermDeclaration(item_id), |state| {
                 state.insert_error(ErrorKind::NoInstanceFound { constraint });
             });

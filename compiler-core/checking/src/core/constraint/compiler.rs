@@ -273,7 +273,7 @@ where
             let Some(arguments) = canonical.expect_type_arguments::<2>() else {
                 return Ok(None);
             };
-            prim_coerce::match_coercible(state, context, &arguments)?
+            prim_coerce::match_coercible(state, context, wanted, &arguments)?
         } else {
             None
         }
