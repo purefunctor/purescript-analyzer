@@ -6,6 +6,8 @@ use std::{any, fmt, ops};
 use hashbrown::{Equivalent, HashTable};
 use rustc_hash::FxBuildHasher;
 
+pub mod parallel;
+
 pub struct Id<T> {
     pub(crate) id: NonZeroU32,
     phantom: PhantomData<fn() -> T>,
