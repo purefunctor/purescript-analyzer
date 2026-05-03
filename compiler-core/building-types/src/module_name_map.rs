@@ -1,3 +1,4 @@
+use parking_lot::Mutex;
 use rustc_hash::FxBuildHasher;
 use string_interner::backend::BucketBackend;
 use string_interner::symbol::SymbolU32;
@@ -17,20 +18,20 @@ impl Symbol for ModuleNameId {
     }
 }
 
-pub struct ModuleNameInterner(StringInterner<BucketBackend<ModuleNameId>, FxBuildHasher>);
+pub struct ModuleNameInterner(Mutex<StringInterner<BucketBackend<ModuleNameId>, FxBuildHasher>>);
 
 impl Default for ModuleNameInterner {
     fn default() -> ModuleNameInterner {
-        ModuleNameInterner(StringInterner::new())
+        ModuleNameInterner(Mutex::new(StringInterner::new()))
     }
 }
 
 impl ModuleNameInterner {
-    pub fn intern(&mut self, name: &str) -> ModuleNameId {
-        self.0.get_or_intern(name)
+    pub fn intern(&self, name: &str) -> ModuleNameId {
+        self.0.lock().get_or_intern(name)
     }
 
     pub fn lookup(&self, name: &str) -> Option<ModuleNameId> {
-        self.0.get(name)
+        self.0.lock().get(name)
     }
 }

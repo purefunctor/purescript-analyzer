@@ -27,6 +27,7 @@ mod promise;
 
 use std::cell::RefCell;
 use std::collections::hash_map::Entry;
+use std::hash::{BuildHasher, Hash};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU32, AtomicUsize, Ordering};
 
@@ -43,7 +44,7 @@ use parking_lot::{Mutex, RwLock, RwLockUpgradableReadGuard};
 use parsing::FullParsedModule;
 use promise::{Future, Promise};
 use resolving::ResolvedModule;
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::{FxBuildHasher, FxHashMap, FxHashSet};
 use stabilizing::StabilizedModule;
 use thread_local::ThreadLocal;
 
@@ -82,23 +83,47 @@ struct InputState<T> {
     changed: usize,
 }
 
+const SHARDS: usize = 16;
+const SHARD_MASK: usize = SHARDS - 1;
+
+/// A [`SHARDS`]-way sharded [`FxHashMap`] with individual [`RwLock`].
+struct Shards<K, V> {
+    inner: [RwLock<FxHashMap<K, V>>; SHARDS],
+}
+
+impl<K, V> Default for Shards<K, V> {
+    fn default() -> Shards<K, V> {
+        Shards { inner: std::array::from_fn(|_| RwLock::new(FxHashMap::default())) }
+    }
+}
+
+impl<K, V> Shards<K, V>
+where
+    K: Hash,
+{
+    fn shard(&self, key: &K) -> &RwLock<FxHashMap<K, V>> {
+        let hash = FxBuildHasher.hash_one(key);
+        &self.inner[(hash as usize) & SHARD_MASK]
+    }
+}
+
 #[derive(Default)]
 struct InputStorage {
-    content: FxHashMap<FileId, InputState<Arc<str>>>,
-    module: FxHashMap<ModuleNameId, InputState<FileId>>,
+    content: Shards<FileId, InputState<Arc<str>>>,
+    module: Shards<ModuleNameId, InputState<FileId>>,
 }
 
 #[derive(Default)]
 struct DerivedStorage {
-    parsed: FxHashMap<FileId, DerivedState<FullParsedModule>>,
-    stabilized: FxHashMap<FileId, DerivedState<Arc<StabilizedModule>>>,
-    indexed: FxHashMap<FileId, DerivedState<Arc<IndexedModule>>>,
-    lowered: FxHashMap<FileId, DerivedState<Arc<LoweredModule>>>,
-    grouped: FxHashMap<FileId, DerivedState<Arc<GroupedModule>>>,
-    resolved: FxHashMap<FileId, DerivedState<Arc<ResolvedModule>>>,
-    bracketed: FxHashMap<FileId, DerivedState<Arc<sugar::Bracketed>>>,
-    sectioned: FxHashMap<FileId, DerivedState<Arc<sugar::Sectioned>>>,
-    checked: FxHashMap<FileId, DerivedState<Arc<CheckedModule>>>,
+    parsed: Shards<FileId, DerivedState<FullParsedModule>>,
+    stabilized: Shards<FileId, DerivedState<Arc<StabilizedModule>>>,
+    indexed: Shards<FileId, DerivedState<Arc<IndexedModule>>>,
+    lowered: Shards<FileId, DerivedState<Arc<LoweredModule>>>,
+    grouped: Shards<FileId, DerivedState<Arc<GroupedModule>>>,
+    resolved: Shards<FileId, DerivedState<Arc<ResolvedModule>>>,
+    bracketed: Shards<FileId, DerivedState<Arc<sugar::Bracketed>>>,
+    sectioned: Shards<FileId, DerivedState<Arc<sugar::Sectioned>>>,
+    checked: Shards<FileId, DerivedState<Arc<CheckedModule>>>,
 }
 
 #[derive(Default)]
@@ -242,15 +267,10 @@ impl Default for QueryControl {
 }
 
 #[derive(Default)]
-struct QueryStorage {
-    input: InputStorage,
-    derived: DerivedStorage,
-    interned: InternedStorage,
-}
-
-#[derive(Default)]
 pub struct QueryEngine {
-    storage: Arc<RwLock<QueryStorage>>,
+    input: Arc<InputStorage>,
+    derived: Arc<DerivedStorage>,
+    interned: Arc<InternedStorage>,
     control: QueryControl,
 }
 
@@ -266,9 +286,11 @@ impl QueryEngine {
     ///
     /// [cancellation request]: QueryEngine::request_cancel
     pub fn snapshot(&self) -> QueryEngine {
-        let storage = self.storage.clone();
+        let input = self.input.clone();
+        let derived = self.derived.clone();
+        let interned = self.interned.clone();
         let control = self.control.snapshot();
-        QueryEngine { storage, control }
+        QueryEngine { input, derived, interned, control }
     }
 
     /// Creates a cancellation request for queries.
@@ -285,30 +307,31 @@ impl QueryEngine {
 }
 
 impl QueryEngine {
-    fn query<K, V, GetFn, GetMutFn, ComputeFn>(
+    fn query<K, V, ShardsFn, ComputeFn>(
         &self,
-        key: QueryKey,
-        get: GetFn,
-        get_mut: GetMutFn,
+        query: QueryKey,
+        key: K,
+        shards: ShardsFn,
         compute: ComputeFn,
     ) -> QueryResult<V>
     where
-        GetFn: Fn(&QueryStorage) -> Option<&DerivedState<V>>,
-        GetMutFn: Fn(&mut QueryStorage) -> Entry<K, DerivedState<V>>,
+        K: Hash + Eq + Copy,
+        ShardsFn: Fn(&DerivedStorage) -> &Shards<K, DerivedState<V>>,
         ComputeFn: Fn(&QueryEngine) -> QueryResult<V>,
         V: Eq + Clone,
     {
-        self.control.local.with_dependency(key);
-        self.control.local.with_current(key, || {
+        self.control.local.with_dependency(query);
+        self.control.local.with_current(query, || {
             // If query execution fails at any given point, clean up the state.
-            self.query_core(key, &get, &get_mut, &compute).inspect_err(|_| {
-                if self.control.local.is_in_progress(key) {
-                    let mut storage = self.storage.write();
-                    if let Entry::Occupied(o) = get_mut(&mut storage) {
+            self.query_core(query, key, &shards, &compute).inspect_err(|_| {
+                if self.control.local.is_in_progress(query) {
+                    let shard = shards(&self.derived).shard(&key);
+                    let mut guard = shard.write();
+                    if let Entry::Occupied(o) = guard.entry(key) {
                         if let DerivedState::InProgress { id, promises } = o.remove() {
                             let mut graph = self.control.global.graph.lock();
                             drop(promises);
-                            drop(storage);
+                            drop(guard);
                             graph.remove_edge(id);
                         } else {
                             unreachable!("invariant violated: expected InProgress");
@@ -321,18 +344,21 @@ impl QueryEngine {
 
     /// Fulfills the promises of an [`DerivedState::InProgress`] query and
     /// replaces it with a [`DerivedState::Computed`] result in the store.
-    fn fulfill_and_store<K, V, GetMutFn>(
+    fn fulfill_and_store<K, V, ShardsFn>(
         &self,
-        get_mut: &GetMutFn,
+        key: K,
+        shards: &ShardsFn,
         computed: V,
         trace: Trace,
         dependencies: Arc<[QueryKey]>,
     ) where
-        GetMutFn: Fn(&mut QueryStorage) -> Entry<K, DerivedState<V>>,
+        K: Hash + Eq + Copy,
+        ShardsFn: Fn(&DerivedStorage) -> &Shards<K, DerivedState<V>>,
         V: Clone,
     {
-        let mut storage = self.storage.write();
-        if let Entry::Occupied(o) = get_mut(&mut storage) {
+        let shard = shards(&self.derived).shard(&key);
+        let mut guard = shard.write();
+        if let Entry::Occupied(o) = guard.entry(key) {
             if let DerivedState::InProgress { id, promises } = o.remove() {
                 let mut graph = self.control.global.graph.lock();
                 let promises = promises.into_inner();
@@ -347,19 +373,21 @@ impl QueryEngine {
         }
 
         let state = DerivedState::Computed { computed, trace, dependencies };
-        get_mut(&mut storage).insert_entry(state);
+        guard.insert(key, state);
     }
 
-    fn compute_core<K, V, GetMutFn, ComputeFn>(
+    fn compute_core<K, V, ShardsFn, ComputeFn>(
         &self,
-        get_mut: &GetMutFn,
+        key: K,
+        shards: &ShardsFn,
         compute: &ComputeFn,
-        key: QueryKey,
+        query: QueryKey,
         revision: usize,
         previous: Option<(V, Trace)>,
     ) -> QueryResult<V>
     where
-        GetMutFn: Fn(&mut QueryStorage) -> Entry<K, DerivedState<V>>,
+        K: Hash + Eq + Copy,
+        ShardsFn: Fn(&DerivedStorage) -> &Shards<K, DerivedState<V>>,
         ComputeFn: Fn(&QueryEngine) -> QueryResult<V>,
         V: Eq + Clone,
     {
@@ -377,14 +405,14 @@ impl QueryEngine {
         match previous {
             Some((previous, trace)) if computed == previous => {
                 let trace = Trace { built: revision, changed: trace.changed };
-                let dependencies = self.control.local.dependencies(key);
-                self.fulfill_and_store(get_mut, V::clone(&previous), trace, dependencies);
+                let dependencies = self.control.local.dependencies(query);
+                self.fulfill_and_store(key, shards, V::clone(&previous), trace, dependencies);
                 Ok(previous)
             }
             _ => {
                 let trace = Trace { built: revision, changed: revision };
-                let dependencies = self.control.local.dependencies(key);
-                self.fulfill_and_store(get_mut, V::clone(&computed), trace, dependencies);
+                let dependencies = self.control.local.dependencies(query);
+                self.fulfill_and_store(key, shards, V::clone(&computed), trace, dependencies);
                 Ok(computed)
             }
         }
@@ -397,8 +425,8 @@ impl QueryEngine {
 
         macro_rules! input_changed {
             ($field:ident, $key:expr) => {{
-                let storage = self.storage.read();
-                if let Some(InputState { changed, .. }) = storage.input.$field.get($key) {
+                let shard = self.input.$field.shard($key).read();
+                if let Some(InputState { changed, .. }) = shard.get($key) {
                     latest = latest.max(*changed);
                 }
             }};
@@ -407,9 +435,8 @@ impl QueryEngine {
         macro_rules! derived_changed {
             ($field:ident, $key:expr) => {{
                 self.$field(*$key)?;
-                let storage = self.storage.read();
-                if let Some(DerivedState::Computed { trace, .. }) = storage.derived.$field.get($key)
-                {
+                let shard = self.derived.$field.shard($key).read();
+                if let Some(DerivedState::Computed { trace, .. }) = shard.get($key) {
                     latest = latest.max(trace.changed);
                 }
             }};
@@ -452,16 +479,16 @@ impl QueryEngine {
         Ok(future)
     }
 
-    fn query_core<K, V, GetFn, GetMutFn, ComputeFn>(
+    fn query_core<K, V, ShardsFn, ComputeFn>(
         &self,
-        key: QueryKey,
-        get: &GetFn,
-        get_mut: &GetMutFn,
+        query: QueryKey,
+        key: K,
+        shards: &ShardsFn,
         compute: &ComputeFn,
     ) -> QueryResult<V>
     where
-        GetFn: Fn(&QueryStorage) -> Option<&DerivedState<V>>,
-        GetMutFn: Fn(&mut QueryStorage) -> Entry<K, DerivedState<V>>,
+        K: Hash + Eq + Copy,
+        ShardsFn: Fn(&DerivedStorage) -> &Shards<K, DerivedState<V>>,
         ComputeFn: Fn(&QueryEngine) -> QueryResult<V>,
         V: Eq + Clone,
     {
@@ -470,6 +497,7 @@ impl QueryEngine {
         }
 
         let revision = self.control.global.revision.load(Ordering::Relaxed);
+        let shard = shards(&self.derived).shard(&key);
 
         // Certain query states can be checked with only a read lock, and this
         // is an extremely useful optimisation because it allows threads to
@@ -481,8 +509,8 @@ impl QueryEngine {
         // For in-progress queries, we can simply push to the internally mutable
         // vector of promises and then wait on the future.
         {
-            let storage = self.storage.read();
-            match get(&storage).unwrap_or(&DerivedState::NotComputed) {
+            let guard = shard.read();
+            match guard.get(&key).unwrap_or(&DerivedState::NotComputed) {
                 DerivedState::Computed { computed, trace, .. } if trace.built == revision => {
                     return Ok(V::clone(computed));
                 }
@@ -490,7 +518,7 @@ impl QueryEngine {
                     let future = self.create_future(*id, promises)?;
 
                     // Remember that Future::wait blocks the current thread!
-                    drop(storage);
+                    drop(guard);
 
                     return future.wait().ok_or(QueryError::Cancelled);
                 }
@@ -504,25 +532,24 @@ impl QueryEngine {
         // state for any given query while allowing read locks to be acquired for
         // the optimisation above.
         {
-            let storage = self.storage.upgradable_read();
-            match get(&storage).unwrap_or(&DerivedState::NotComputed) {
+            let guard = shard.upgradable_read();
+            match guard.get(&key).unwrap_or(&DerivedState::NotComputed) {
                 DerivedState::NotComputed => {
                     // At the end of this block, threads waiting to acquire the
                     // upgradable read lock should read that the query is InProgress.
                     {
-                        let mut storage = RwLockUpgradableReadGuard::upgrade(storage);
-                        get_mut(&mut storage)
-                            .insert_entry(DerivedState::in_progress(self.control.id));
-                        self.control.local.add_in_progress(key);
+                        let mut guard = RwLockUpgradableReadGuard::upgrade(guard);
+                        guard.insert(key, DerivedState::in_progress(self.control.id));
+                        self.control.local.add_in_progress(query);
                     }
 
-                    self.compute_core(get_mut, compute, key, revision, None)
+                    self.compute_core(key, shards, compute, query, revision, None)
                 }
                 DerivedState::InProgress { id, promises } => {
                     let future = self.create_future(*id, promises)?;
 
                     // Remember that Future::wait blocks the current thread!
-                    drop(storage);
+                    drop(guard);
 
                     future.wait().ok_or(QueryError::Cancelled)
                 }
@@ -540,10 +567,9 @@ impl QueryEngine {
 
                     // Same as NotComputed, see comment above.
                     {
-                        let mut storage = RwLockUpgradableReadGuard::upgrade(storage);
-                        get_mut(&mut storage)
-                            .insert_entry(DerivedState::in_progress(self.control.id));
-                        self.control.local.add_in_progress(key);
+                        let mut guard = RwLockUpgradableReadGuard::upgrade(guard);
+                        guard.insert(key, DerivedState::in_progress(self.control.id));
+                        self.control.local.add_in_progress(query);
                     }
 
                     let latest = self.verify_core(&dependencies)?;
@@ -554,76 +580,85 @@ impl QueryEngine {
                     // the fastest path if it's called in the same revision.
                     if trace.built >= latest {
                         let trace = Trace { built: revision, ..trace };
-                        self.fulfill_and_store(get_mut, V::clone(&computed), trace, dependencies);
+                        self.fulfill_and_store(
+                            key,
+                            shards,
+                            V::clone(&computed),
+                            trace,
+                            dependencies,
+                        );
                         return Ok(computed);
                     }
 
-                    self.compute_core(get_mut, compute, key, revision, Some((computed, trace)))
+                    self.compute_core(
+                        key,
+                        shards,
+                        compute,
+                        query,
+                        revision,
+                        Some((computed, trace)),
+                    )
                 }
             }
         }
     }
 
-    fn set_input<K, V, F>(&self, f: F, v: V)
+    fn set_input<K, V, F>(&self, key: K, shards: F, value: V)
     where
-        F: FnOnce(&mut QueryStorage) -> Entry<K, InputState<V>>,
+        K: Hash + Eq + Copy,
+        F: FnOnce(&InputStorage) -> &Shards<K, InputState<V>>,
     {
         self.control.global.cancelled.store(true, Ordering::Relaxed);
         let _query_lock = self.control.global.query_lock.write();
 
         let changed = self.control.global.revision.fetch_add(1, Ordering::Relaxed);
-        let state = InputState { value: v, changed: changed + 1 };
+        let state = InputState { value, changed: changed + 1 };
 
-        let mut storage = self.storage.write();
-        f(&mut storage).insert_entry(state);
+        let shard = shards(&self.input).shard(&key);
+        shard.write().insert(key, state);
 
         self.control.global.cancelled.store(false, Ordering::Relaxed);
     }
 
-    fn get_input<V, F>(&self, k: QueryKey, f: F) -> Option<V>
+    fn get_input<K, V, F>(&self, query: QueryKey, key: K, shards: F) -> Option<V>
     where
-        F: FnOnce(&QueryStorage) -> Option<&InputState<V>>,
+        K: Hash + Eq,
+        F: FnOnce(&InputStorage) -> &Shards<K, InputState<V>>,
         V: Clone,
     {
-        self.control.local.with_dependency(k);
-        let storage = self.storage.read();
-        f(&storage).map(|state| V::clone(&state.value))
+        self.control.local.with_dependency(query);
+        let shard = shards(&self.input).shard(&key);
+        let guard = shard.read();
+        guard.get(&key).map(|state| V::clone(&state.value))
     }
 }
 
 impl QueryEngine {
     pub fn set_content(&self, id: FileId, content: impl Into<Arc<str>>) {
-        self.set_input(|storage| storage.input.content.entry(id), content.into());
+        self.set_input(id, |input| &input.content, content.into());
     }
 
     pub fn content(&self, id: FileId) -> Arc<str> {
-        self.get_input(QueryKey::Content(id), |storage| storage.input.content.get(&id))
-            .unwrap_or_else(|| {
-                panic!("invariant violated: set_content({id:?}, ..)");
-            })
+        self.get_input(QueryKey::Content(id), id, |input| &input.content).unwrap_or_else(|| {
+            panic!("invariant violated: set_content({id:?}, ..)");
+        })
     }
 
     pub fn set_module_file(&self, name: &str, file_id: FileId) {
-        let id = {
-            let mut storage = self.storage.write();
-            storage.interned.module.intern(name)
-        };
-        self.set_input(|storage| storage.input.module.entry(id), file_id);
+        let id = self.interned.module.intern(name);
+        self.set_input(id, |input| &input.module, file_id);
     }
 
     pub fn module_file(&self, name: &str) -> Option<FileId> {
-        let id = {
-            let storage = self.storage.read();
-            storage.interned.module.lookup(name)?
-        };
-        self.get_input(QueryKey::Module(id), |storage| storage.input.module.get(&id))
+        let id = self.interned.module.lookup(name)?;
+        self.get_input(QueryKey::Module(id), id, |input| &input.module)
     }
 
     pub fn parsed(&self, id: FileId) -> QueryResult<FullParsedModule> {
         self.query(
             QueryKey::Parsed(id),
-            |storage| storage.derived.parsed.get(&id),
-            |storage| storage.derived.parsed.entry(id),
+            id,
+            |derived| &derived.parsed,
             |this| {
                 let content = this.content(id);
 
@@ -639,8 +674,8 @@ impl QueryEngine {
     pub fn stabilized(&self, id: FileId) -> QueryResult<Arc<StabilizedModule>> {
         self.query(
             QueryKey::Stabilized(id),
-            |storage| storage.derived.stabilized.get(&id),
-            |storage| storage.derived.stabilized.entry(id),
+            id,
+            |derived| &derived.stabilized,
             |this| {
                 let (parsed, _) = this.parsed(id)?;
                 let node = parsed.syntax_node();
@@ -652,8 +687,8 @@ impl QueryEngine {
     pub fn indexed(&self, id: FileId) -> QueryResult<Arc<IndexedModule>> {
         self.query(
             QueryKey::Indexed(id),
-            |storage| storage.derived.indexed.get(&id),
-            |storage| storage.derived.indexed.entry(id),
+            id,
+            |derived| &derived.indexed,
             |this| {
                 let (parsed, _) = this.parsed(id)?;
                 let stabilized = this.stabilized(id)?;
@@ -669,8 +704,8 @@ impl QueryEngine {
     pub fn lowered(&self, id: FileId) -> QueryResult<Arc<LoweredModule>> {
         self.query(
             QueryKey::Lowered(id),
-            |storage| storage.derived.lowered.get(&id),
-            |storage| storage.derived.lowered.entry(id),
+            id,
+            |derived| &derived.lowered,
             |this| {
                 let (parsed, _) = this.parsed(id)?;
 
@@ -695,8 +730,8 @@ impl QueryEngine {
     pub fn grouped(&self, id: FileId) -> QueryResult<Arc<GroupedModule>> {
         self.query(
             QueryKey::Grouped(id),
-            |storage| storage.derived.grouped.get(&id),
-            |storage| storage.derived.grouped.entry(id),
+            id,
+            |derived| &derived.grouped,
             |this| {
                 let lowered = this.lowered(id)?;
                 let indexed = this.indexed(id)?;
@@ -709,8 +744,8 @@ impl QueryEngine {
     pub fn resolved(&self, id: FileId) -> QueryResult<Arc<ResolvedModule>> {
         self.query(
             QueryKey::Resolved(id),
-            |storage| storage.derived.resolved.get(&id),
-            |storage| storage.derived.resolved.entry(id),
+            id,
+            |derived| &derived.resolved,
             |this| {
                 let resolved = resolving::resolve_module(this, id)?;
                 Ok(Arc::new(resolved))
@@ -721,8 +756,8 @@ impl QueryEngine {
     pub fn bracketed(&self, id: FileId) -> QueryResult<Arc<sugar::Bracketed>> {
         self.query(
             QueryKey::Bracketed(id),
-            |storage| storage.derived.bracketed.get(&id),
-            |storage| storage.derived.bracketed.entry(id),
+            id,
+            |derived| &derived.bracketed,
             |this| {
                 let lowered = this.lowered(id)?;
                 let bracketed = sugar::bracketed(this, &lowered)?;
@@ -734,8 +769,8 @@ impl QueryEngine {
     pub fn sectioned(&self, id: FileId) -> QueryResult<Arc<sugar::Sectioned>> {
         self.query(
             QueryKey::Sectioned(id),
-            |storage| storage.derived.sectioned.get(&id),
-            |storage| storage.derived.sectioned.entry(id),
+            id,
+            |derived| &derived.sectioned,
             |this| {
                 let lowered = this.lowered(id)?;
                 let sectioned = sugar::sectioned(&lowered);
@@ -747,8 +782,8 @@ impl QueryEngine {
     pub fn checked(&self, id: FileId) -> QueryResult<Arc<CheckedModule>> {
         self.query(
             QueryKey::Checked(id),
-            |storage| storage.derived.checked.get(&id),
-            |storage| storage.derived.checked.entry(id),
+            id,
+            |derived| &derived.checked,
             |this| {
                 let checked = checking::check_module(this, id)?;
                 Ok(Arc::new(checked))
@@ -827,49 +862,41 @@ impl checking::ExternalQueries for QueryEngine {
     }
 
     fn intern_type(&self, t: checking::Type) -> checking::TypeId {
-        let mut storage = self.storage.write();
-        storage.interned.checking.intern_type(t)
+        self.interned.checking.intern_type(t)
     }
 
     fn lookup_type(&self, id: checking::TypeId) -> checking::Type {
-        let storage = self.storage.read();
-        storage.interned.checking.lookup_type(id)
+        self.interned.checking.lookup_type(id)
     }
 
     fn intern_forall_binder(
         &self,
         binder: checking::core::ForallBinder,
     ) -> checking::core::ForallBinderId {
-        let mut storage = self.storage.write();
-        storage.interned.checking.intern_forall_binder(binder)
+        self.interned.checking.intern_forall_binder(binder)
     }
 
     fn lookup_forall_binder(
         &self,
         id: checking::core::ForallBinderId,
     ) -> checking::core::ForallBinder {
-        let storage = self.storage.read();
-        storage.interned.checking.lookup_forall_binder(id)
+        self.interned.checking.lookup_forall_binder(id)
     }
 
     fn intern_row_type(&self, row: checking::core::RowType) -> checking::core::RowTypeId {
-        let mut storage = self.storage.write();
-        storage.interned.checking.intern_row_type(row)
+        self.interned.checking.intern_row_type(row)
     }
 
     fn lookup_row_type(&self, id: checking::core::RowTypeId) -> checking::core::RowType {
-        let storage = self.storage.read();
-        storage.interned.checking.lookup_row_type(id)
+        self.interned.checking.lookup_row_type(id)
     }
 
     fn intern_smol_str(&self, s: smol_str::SmolStr) -> checking::core::SmolStrId {
-        let mut storage = self.storage.write();
-        storage.interned.checking.intern_smol_str(s)
+        self.interned.checking.intern_smol_str(s)
     }
 
     fn lookup_smol_str(&self, id: checking::core::SmolStrId) -> smol_str::SmolStr {
-        let storage = self.storage.read();
-        storage.interned.checking.lookup_smol_str(id)
+        self.interned.checking.lookup_smol_str(id)
     }
 }
 
@@ -960,9 +987,11 @@ mod tests {
         prim::configure(&mut engine, &mut files);
 
         macro_rules! assert_trace {
-            ($storage:expr, $field:ident($id:expr) => $trace:expr) => {
-                assert_eq!(ShowTrace($storage.derived.$field.get(&$id).unwrap()), $trace);
-            };
+            ($engine:expr, $field:ident($id:expr) => $trace:expr) => {{
+                let shard = $engine.derived.$field.shard(&$id);
+                let guard = shard.read();
+                assert_eq!(ShowTrace(guard.get(&$id).unwrap()), $trace);
+            }};
         }
 
         let id = files.insert("./src/Main.purs", "module Main where\n\nlife = 42");
@@ -973,24 +1002,21 @@ mod tests {
         let lowered_a = engine.lowered(id).unwrap();
         let resolved_a = engine.resolved(id).unwrap();
 
-        {
-            let storage = engine.storage.read();
-            assert_trace!(storage, parsed(id) => Trace {
-                built: 19,
-                changed: 19,
-                dependencies: &[QueryKey::Content(id)]
-            });
-            assert_trace!(storage, indexed(id) => Trace {
-                built: 19,
-                changed: 19,
-                dependencies: &[QueryKey::Parsed(id), QueryKey::Stabilized(id)]
-            });
-            assert_trace!(storage, resolved(id) => Trace {
-                built: 19,
-                changed: 19,
-                dependencies: &[QueryKey::Indexed(id)]
-            });
-        }
+        assert_trace!(engine, parsed(id) => Trace {
+            built: 19,
+            changed: 19,
+            dependencies: &[QueryKey::Content(id)]
+        });
+        assert_trace!(engine, indexed(id) => Trace {
+            built: 19,
+            changed: 19,
+            dependencies: &[QueryKey::Parsed(id), QueryKey::Stabilized(id)]
+        });
+        assert_trace!(engine, resolved(id) => Trace {
+            built: 19,
+            changed: 19,
+            dependencies: &[QueryKey::Indexed(id)]
+        });
 
         let id = files.insert("./src/Main.purs", "module Main where\n\n\n\nlife = 42");
         let content = files.content(id);
@@ -1000,24 +1026,21 @@ mod tests {
         let lowered_b = engine.lowered(id).unwrap();
         let resolved_b = engine.resolved(id).unwrap();
 
-        {
-            let storage = engine.storage.read();
-            assert_trace!(storage, parsed(id) => Trace {
-                built: 20,
-                changed: 20,
-                dependencies: &[QueryKey::Content(id)]
-            });
-            assert_trace!(storage, indexed(id) => Trace {
-                built: 20,
-                changed: 19,
-                dependencies: &[QueryKey::Parsed(id), QueryKey::Stabilized(id)]
-            });
-            assert_trace!(storage, resolved(id) => Trace {
-                built: 20,
-                changed: 19,
-                dependencies: &[QueryKey::Indexed(id)]
-            });
-        }
+        assert_trace!(engine, parsed(id) => Trace {
+            built: 20,
+            changed: 20,
+            dependencies: &[QueryKey::Content(id)]
+        });
+        assert_trace!(engine, indexed(id) => Trace {
+            built: 20,
+            changed: 19,
+            dependencies: &[QueryKey::Parsed(id), QueryKey::Stabilized(id)]
+        });
+        assert_trace!(engine, resolved(id) => Trace {
+            built: 20,
+            changed: 19,
+            dependencies: &[QueryKey::Indexed(id)]
+        });
 
         let id = files.insert("./src/Main.purs", "module Main where\n\n\n\nlife = 42\n\n");
         let content = files.content(id);
@@ -1027,24 +1050,21 @@ mod tests {
         let lowered_c = engine.lowered(id).unwrap();
         let resolved_c = engine.resolved(id).unwrap();
 
-        {
-            let storage = engine.storage.read();
-            assert_trace!(storage, parsed(id) => Trace {
-                built: 21,
-                changed: 21,
-                dependencies: &[QueryKey::Content(id)]
-            });
-            assert_trace!(storage, indexed(id) => Trace {
-                built: 21,
-                changed: 19,
-                dependencies: &[QueryKey::Parsed(id), QueryKey::Stabilized(id)]
-            });
-            assert_trace!(storage, resolved(id) => Trace {
-                built: 21,
-                changed: 19,
-                dependencies: &[QueryKey::Indexed(id)]
-            });
-        }
+        assert_trace!(engine, parsed(id) => Trace {
+            built: 21,
+            changed: 21,
+            dependencies: &[QueryKey::Content(id)]
+        });
+        assert_trace!(engine, indexed(id) => Trace {
+            built: 21,
+            changed: 19,
+            dependencies: &[QueryKey::Parsed(id), QueryKey::Stabilized(id)]
+        });
+        assert_trace!(engine, resolved(id) => Trace {
+            built: 21,
+            changed: 19,
+            dependencies: &[QueryKey::Indexed(id)]
+        });
 
         assert!(Arc::ptr_eq(&indexed_a, &indexed_b));
         assert!(Arc::ptr_eq(&indexed_b, &indexed_c));
@@ -1088,26 +1108,22 @@ mod tests {
 
         // Simulate the current thread starting a computation.
         {
-            let mut storage = engine.storage.write();
-            storage.derived.indexed.insert(id, DerivedState::in_progress(engine.control.id));
+            let shard = engine.derived.indexed.shard(&id);
+            shard.write().insert(id, DerivedState::in_progress(engine.control.id));
             engine.control.local.add_in_progress(key);
         }
 
         // Finally, enable cancellation and run the query on this thread.
         engine.control.global.cancelled.store(true, Ordering::Relaxed);
-        let result = engine.query(
-            key,
-            |storage| storage.derived.indexed.get(&id),
-            |storage| storage.derived.indexed.entry(id),
-            |_| unreachable!("impossible."),
-        );
+        let result =
+            engine.query(key, id, |derived| &derived.indexed, |_| unreachable!("impossible."));
 
         assert_eq!(result, Err(QueryError::Cancelled));
 
         // Observe that the storage has been edited.
         {
-            let storage = engine.storage.read();
-            assert!(!storage.derived.indexed.contains_key(&id));
+            let shard = engine.derived.indexed.shard(&id);
+            assert!(!shard.read().contains_key(&id));
         }
     }
 
@@ -1122,8 +1138,8 @@ mod tests {
 
         // Simulate the current thread starting a computation.
         {
-            let mut storage = engine.storage.write();
-            storage.derived.indexed.insert(id, DerivedState::in_progress(engine.control.id));
+            let shard = engine.derived.indexed.shard(&id);
+            shard.write().insert(id, DerivedState::in_progress(engine.control.id));
             engine.control.local.add_in_progress(key);
         }
 
@@ -1132,12 +1148,7 @@ mod tests {
         let result = std::thread::scope(|scope| {
             let runtime = engine.snapshot();
             let thread = scope.spawn(move || {
-                runtime.query(
-                    key,
-                    |storage| storage.derived.indexed.get(&id),
-                    |storage| storage.derived.indexed.entry(id),
-                    |_| unreachable!("impossible."),
-                )
+                runtime.query(key, id, |derived| &derived.indexed, |_| unreachable!("impossible."))
             });
             thread.join().unwrap()
         });
@@ -1146,23 +1157,19 @@ mod tests {
 
         // Observe that the storage is not edited.
         {
-            let storage = engine.storage.read();
-            assert!(storage.derived.indexed.contains_key(&id));
+            let shard = engine.derived.indexed.shard(&id);
+            assert!(shard.read().contains_key(&id));
         }
 
-        let result = engine.query(
-            key,
-            |storage| storage.derived.indexed.get(&id),
-            |storage| storage.derived.indexed.entry(id),
-            |_| unreachable!("impossible."),
-        );
+        let result =
+            engine.query(key, id, |derived| &derived.indexed, |_| unreachable!("impossible."));
 
         assert_eq!(result, Err(QueryError::Cancelled));
 
         // Finally, observe that the storage is edited.
         {
-            let storage = engine.storage.read();
-            assert!(!storage.derived.indexed.contains_key(&id));
+            let shard = engine.derived.indexed.shard(&id);
+            assert!(!shard.read().contains_key(&id));
         }
     }
 
@@ -1172,12 +1179,7 @@ mod tests {
         const KEY: QueryKey = QueryKey::Resolved(ID);
 
         fn fake_query_a(engine: &QueryEngine) -> QueryResult<Arc<ResolvedModule>> {
-            engine.query(
-                QueryKey::Resolved(ID),
-                |storage| storage.derived.resolved.get(&ID),
-                |storage| storage.derived.resolved.entry(ID),
-                fake_query_a,
-            )
+            engine.query(QueryKey::Resolved(ID), ID, |derived| &derived.resolved, fake_query_a)
         }
 
         let engine = QueryEngine::default();
@@ -1192,8 +1194,8 @@ mod tests {
         fn fake_query_a(engine: &QueryEngine) -> QueryResult<Arc<ResolvedModule>> {
             engine.query(
                 QueryKey::Resolved(ID),
-                |storage| storage.derived.resolved.get(&ID),
-                |storage| storage.derived.resolved.entry(ID),
+                ID,
+                |derived| &derived.resolved,
                 |engine| fake_query_a(engine).map_err(|_| QueryError::Cancelled),
             )
         }
@@ -1209,21 +1211,11 @@ mod tests {
         const ID_B: FileId = FileId::from_raw(RawIdx::from_u32(1));
 
         fn fake_query_a(engine: &QueryEngine) -> QueryResult<Arc<ResolvedModule>> {
-            engine.query(
-                QueryKey::Resolved(ID_A),
-                |storage| storage.derived.resolved.get(&ID_A),
-                |storage| storage.derived.resolved.entry(ID_A),
-                fake_query_b,
-            )
+            engine.query(QueryKey::Resolved(ID_A), ID_A, |derived| &derived.resolved, fake_query_b)
         }
 
         fn fake_query_b(engine: &QueryEngine) -> QueryResult<Arc<ResolvedModule>> {
-            engine.query(
-                QueryKey::Resolved(ID_B),
-                |storage| storage.derived.resolved.get(&ID_B),
-                |storage| storage.derived.resolved.entry(ID_B),
-                fake_query_a,
-            )
+            engine.query(QueryKey::Resolved(ID_B), ID_B, |derived| &derived.resolved, fake_query_a)
         }
 
         let engine = QueryEngine::default();
@@ -1253,8 +1245,8 @@ mod tests {
         fn fake_query_a(engine: &QueryEngine) -> QueryResult<Arc<ResolvedModule>> {
             engine.query(
                 QueryKey::Resolved(ID_A),
-                |storage| storage.derived.resolved.get(&ID_A),
-                |storage| storage.derived.resolved.entry(ID_A),
+                ID_A,
+                |derived| &derived.resolved,
                 |engine| fake_query_b(engine).map_err(|_| QueryError::Cancelled),
             )
         }
@@ -1262,8 +1254,8 @@ mod tests {
         fn fake_query_b(engine: &QueryEngine) -> QueryResult<Arc<ResolvedModule>> {
             engine.query(
                 QueryKey::Resolved(ID_B),
-                |storage| storage.derived.resolved.get(&ID_B),
-                |storage| storage.derived.resolved.entry(ID_B),
+                ID_B,
+                |derived| &derived.resolved,
                 |engine| fake_query_a(engine).map_err(|_| QueryError::Cancelled),
             )
         }

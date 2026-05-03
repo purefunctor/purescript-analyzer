@@ -55,7 +55,7 @@ impl WasmQueryEngine {
     pub fn new() -> Self {
         let mut files = Files::default();
         let mut input = InputStorage::default();
-        let mut interned = InternedStorage::default();
+        let interned = InternedStorage::default();
 
         // Load Prim modules
         let mut prim_id = None;
@@ -94,7 +94,7 @@ impl WasmQueryEngine {
         let (parsed, _) = self.parsed(id).ok()?;
         let module_name = parsed.module_name()?;
 
-        let name_id = self.interned.borrow_mut().module.intern(&module_name);
+        let name_id = self.interned.borrow().module.intern(&module_name);
         self.input.borrow_mut().module.insert(name_id, id);
 
         self.external_ids.push(id);
@@ -150,7 +150,7 @@ impl WasmQueryEngine {
             let id = self.files.borrow_mut().insert("user://localhost/Main.purs", source);
             self.user_id = Some(id);
 
-            let name_id = self.interned.borrow_mut().module.intern("Main");
+            let name_id = self.interned.borrow().module.intern("Main");
             self.input.borrow_mut().module.insert(name_id, id);
 
             id
@@ -317,7 +317,7 @@ impl checking::ExternalQueries for WasmQueryEngine {
     }
 
     fn intern_type(&self, t: checking::core::Type) -> checking::core::TypeId {
-        self.interned.borrow_mut().checking.intern_type(t)
+        self.interned.borrow().checking.intern_type(t)
     }
 
     fn lookup_type(&self, id: checking::core::TypeId) -> checking::core::Type {
@@ -328,7 +328,7 @@ impl checking::ExternalQueries for WasmQueryEngine {
         &self,
         binder: checking::core::ForallBinder,
     ) -> checking::core::ForallBinderId {
-        self.interned.borrow_mut().checking.intern_forall_binder(binder)
+        self.interned.borrow().checking.intern_forall_binder(binder)
     }
 
     fn lookup_forall_binder(
@@ -339,7 +339,7 @@ impl checking::ExternalQueries for WasmQueryEngine {
     }
 
     fn intern_row_type(&self, row: checking::core::RowType) -> checking::core::RowTypeId {
-        self.interned.borrow_mut().checking.intern_row_type(row)
+        self.interned.borrow().checking.intern_row_type(row)
     }
 
     fn lookup_row_type(&self, id: checking::core::RowTypeId) -> checking::core::RowType {
@@ -347,7 +347,7 @@ impl checking::ExternalQueries for WasmQueryEngine {
     }
 
     fn intern_smol_str(&self, s: smol_str::SmolStr) -> checking::core::SmolStrId {
-        self.interned.borrow_mut().checking.intern_smol_str(s)
+        self.interned.borrow().checking.intern_smol_str(s)
     }
 
     fn lookup_smol_str(&self, id: checking::core::SmolStrId) -> smol_str::SmolStr {

@@ -242,6 +242,7 @@ name = "building-types"
 version = "0.1.0"
 dependencies = [
  "files",
+ "parking_lot",
  "rustc-hash 2.1.1",
  "string-interner",
  "thiserror",
@@ -306,6 +307,7 @@ dependencies = [
  "interner",
  "itertools 0.14.0",
  "lowering",
+ "parking_lot",
  "parsing",
  "petgraph",
  "pretty",
