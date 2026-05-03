@@ -2,8 +2,7 @@ use std::collections::hash_map::Entry;
 use std::iter;
 
 use rowan::ast::AstNode;
-use rustc_hash::FxHashMap;
-use rustc_hash::FxHashSet;
+use rustc_hash::{FxHashMap, FxHashSet};
 use smol_str::{SmolStr, ToSmolStr};
 use stabilizing::{AstId, ExpectId, StabilizedModule};
 use syntax::{PureScript, SyntaxToken, cst};
@@ -750,7 +749,7 @@ fn merge_implicit_items(
         }
         (Some(ImplicitItems::Enumerated(existing)), Some(ImplicitItems::Enumerated(incoming))) => {
             let merged: FxHashSet<_> = iter::chain(existing, incoming).collect();
-            Some(ImplicitItems::Enumerated(Box::from_iter(merged.into_iter())))
+            Some(ImplicitItems::Enumerated(Box::from_iter(merged)))
         }
     }
 }

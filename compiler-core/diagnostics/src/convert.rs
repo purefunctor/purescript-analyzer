@@ -170,11 +170,10 @@ impl ToDiagnostics for IndexingError {
                 let mut diagnostic =
                     Diagnostic::warning("DuplicateImport", message, span, "indexing");
 
-                if let Some(existing_ptr) = ctx.stabilized.syntax_ptr(*existing) {
-                    if let Some(existing_span) = ctx.span_from_syntax_ptr(&existing_ptr) {
+                if let Some(existing_ptr) = ctx.stabilized.syntax_ptr(*existing)
+                    && let Some(existing_span) = ctx.span_from_syntax_ptr(&existing_ptr) {
                         diagnostic = diagnostic.with_related(existing_span, "First imported here");
                     }
-                }
 
                 vec![diagnostic]
             }
