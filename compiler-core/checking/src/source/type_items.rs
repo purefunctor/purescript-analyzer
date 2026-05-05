@@ -364,7 +364,7 @@ fn check_data_equation_check<Q>(
 where
     Q: ExternalQueries,
 {
-    let signature = signature::expect_signature_bindings(state, context, signature, bindings)?;
+    let signature = signature::expect_type_signature(state, context, signature, bindings)?;
     check_type_variable_bindings(state, context, bindings, &signature.arguments)
 }
 
@@ -663,12 +663,8 @@ fn check_synonym_equation_check<Q>(
 where
     Q: ExternalQueries,
 {
-    let signature = signature::expect_signature_bindings(
-        state,
-        context,
-        (signature_id, signature_kind),
-        bindings,
-    )?;
+    let signature =
+        signature::expect_type_signature(state, context, (signature_id, signature_kind), bindings)?;
     let parameters = check_type_variable_bindings(state, context, bindings, &signature.arguments)?;
     Ok((parameters, signature.result))
 }
@@ -763,7 +759,7 @@ fn check_class_equation_check<Q>(
 where
     Q: ExternalQueries,
 {
-    let signature = signature::expect_signature_bindings(state, context, signature, bindings)?;
+    let signature = signature::expect_type_signature(state, context, signature, bindings)?;
     check_type_variable_bindings(state, context, bindings, &signature.arguments)
 }
 

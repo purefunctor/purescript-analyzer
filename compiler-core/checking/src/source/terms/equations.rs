@@ -51,7 +51,7 @@ where
                 equations.iter().map(|equation| equation.binders.len()).max().unwrap_or(0);
 
             let signature::SkolemisedSignature { substitution, constraints, arguments, result } =
-                signature::expect_signature_patterns(state, context, expected_type, required)?;
+                signature::expect_term_signature(state, context, expected_type, required)?;
 
             for &constraint in &constraints {
                 if !constraint::is_type_error(state, context, constraint)? {

@@ -95,7 +95,7 @@ where
     }
 }
 
-pub fn expect_signature_bindings<Q>(
+pub fn expect_type_signature<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     (signature_id, signature_type): (lowering::TypeId, TypeId),
@@ -130,7 +130,7 @@ where
     })
 }
 
-pub fn expect_signature_patterns<Q>(
+pub fn expect_term_signature<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     signature_type: TypeId,
