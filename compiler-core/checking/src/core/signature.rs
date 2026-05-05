@@ -1,9 +1,10 @@
 use building_types::QueryResult;
+use itertools::Itertools;
 use lowering::TypeVariableBinding;
 
 use crate::context::CheckContext;
 use crate::core::substitute::{NameToType, SubstituteName};
-use crate::core::{ForallBinder, Type, TypeId, normalise};
+use crate::core::{ForallBinder, Type, TypeId, normalise, unification};
 use crate::error::ErrorKind;
 use crate::state::CheckState;
 use crate::{ExternalQueries, safe_loop};
@@ -146,10 +147,44 @@ where
         skolemise_decomposed_signature(state, context, signature)?;
 
     let mut remaining = arguments.into_iter();
-    let arguments = remaining.by_ref().take(required).collect();
-    let result = context.intern_function_iter(remaining, result);
+    let mut arguments = remaining.by_ref().take(required).collect_vec();
+
+    let mut result = context.intern_function_iter(remaining, result);
+    synthesise_functions(state, context, &mut arguments, &mut result, required)?;
 
     Ok(SkolemisedSignature { substitution, constraints, arguments, result })
+}
+
+fn synthesise_functions<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    arguments: &mut Vec<TypeId>,
+    result_type: &mut TypeId,
+    required: usize,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    while arguments.len() < required {
+        let current = normalise::expand(state, context, *result_type)?;
+
+        let Type::Unification(unification_id) = context.lookup_type(current) else {
+            break;
+        };
+
+        let argument = state.fresh_unification(context.queries, context.prim.t);
+        let result = state.fresh_unification(context.queries, context.prim.t);
+        let function = context.intern_function(argument, result);
+
+        if !unification::solve(state, context, current, unification_id, function)? {
+            break;
+        }
+
+        arguments.push(argument);
+        *result_type = result;
+    }
+
+    Ok(())
 }
 
 fn skolemise_decomposed_signature<Q>(
