@@ -498,8 +498,8 @@ where
 {
     for (item_id, PendingDataType { parameters, constructors, .. }) in mem::take(&mut scc.data) {
         // constructor_kind should have already been generalised by the
-        // finalise_binding_group function. the kind signature is used
-        // as the source of truth for constructing the kind applications
+        // finalise_binding_group function. The kind signature is used
+        // as the source of truth for constructing kind applications.
         let Some(constructor_kind) = state.checked.types.get(&item_id).copied() else {
             continue;
         };
@@ -529,7 +529,7 @@ where
         // For the following code, let's trace through the declaration:
         //
         //   newtype Tagged :: forall k. k -> Type -> Type
-
+        //
         let mut type_reference =
             context.queries.intern_type(Type::Constructor(context.id, item_id));
 
@@ -559,7 +559,6 @@ where
             // forall (a :: Type). a -> Tagged @k t a
             for (index, parameter) in parameters.iter().enumerate().rev() {
                 let kind = get_parameter_kind(index);
-
                 let binder = ForallBinder { kind, ..*parameter };
 
                 let binder_id = context.intern_forall_binder(binder);
@@ -568,7 +567,8 @@ where
 
             // forall (k :: Type) (t :: k) (a :: Type). a -> Tagged @k t a
             for binder in kind_binders.iter().rev() {
-                let binder_id = context.intern_forall_binder(*binder);
+                let binder = ForallBinder { visible: false, ..*binder };
+                let binder_id = context.intern_forall_binder(binder);
                 result = context.intern_forall(binder_id, result);
             }
 
