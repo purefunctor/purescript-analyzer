@@ -593,3 +593,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_283_coercible_via_newtype_superclass_main() { run_test("283_coercible_via_newtype_superclass", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_284_type_application_instantiation_main() { run_test("284_type_application_instantiation", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_285_kind_variable_visibility_main() { run_test("285_kind_variable_visibility", "Main"); }
