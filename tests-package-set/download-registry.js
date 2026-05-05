@@ -4,9 +4,10 @@ import axios from "axios";
 import * as tar from "tar";
 
 const PACKAGE_SET_URL =
-  "https://raw.githubusercontent.com/purescript/registry/refs/heads/main/package-sets/64.7.1.json";
+  "https://raw.githubusercontent.com/purescript/registry/refs/heads/main/package-sets/76.1.1.json";
 
 const CORE_PACKAGES_PATH = join(import.meta.dirname, "purescript-core.json");
+const ACME_PACKAGES_PATH = join(import.meta.dirname, "purescript-acme.json");
 const PACKAGE_TARBALLS = join(import.meta.dirname, "packages", "_downloads");
 
 const MAX_CONCURRENT_DOWNLOADS = 8;
@@ -26,26 +27,30 @@ async function downloadInBatches(items, batchSize, delayMs, downloadFn) {
   }
 }
 
-async function corePackages() {
-  // Read the list of core packages (with purescript- prefix)
+async function selectedPackages() {
+  // Read the lists of selected packages (with purescript- prefix)
   const coreList = JSON.parse(readFileSync(CORE_PACKAGES_PATH, "utf-8"));
-  const coreSet = new Set(coreList);
+  const acmeList = JSON.parse(readFileSync(ACME_PACKAGES_PATH, "utf-8"));
+  const wanted = new Set([...coreList, ...acmeList]);
 
   // Fetch the package set to get versions
   const response = await axios.get(PACKAGE_SET_URL);
   const allPackages = response.data.packages;
 
-  // Filter to only core packages (registry uses names without purescript- prefix)
+  // Filter to selected packages (registry uses names without purescript- prefix)
   const filtered = Object.entries(allPackages)
-    .filter(([name]) => coreSet.has(`purescript-${name}`))
+    .filter(([name]) => wanted.has(`purescript-${name}`))
     .map(([name, version]) => `${name}/${version}.tar.gz`);
 
-  console.log(`Found ${filtered.length} core packages out of ${Object.keys(allPackages).length} total`);
+  console.log(
+    `Found ${filtered.length} selected packages out of ${Object.keys(allPackages).length} total ` +
+      `(core: ${coreList.length}, acme: ${acmeList.length}, union: ${wanted.size})`
+  );
   return filtered;
 }
 
 async function downloadPackages() {
-  const corePackagesList = await corePackages();
+  const corePackagesList = await selectedPackages();
   mkdirSync(PACKAGE_TARBALLS, { recursive: true });
 
   const toDownload = corePackagesList.filter((registryPackage) => {

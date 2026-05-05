@@ -4,5 +4,8 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+boxcar = "0.2.14"
 hashbrown = "0.15.5"
+papaya = "0.2.4"
+parking_lot = "0.12.5"
 rustc-hash = "2.1.1"

@@ -7,14 +7,24 @@ edition = "2024"
 building = { version = "0.1.0", path = "../compiler-core/building" }
 criterion = { version = "0.6.0", features = ["html_reports"] }
 files = { version = "0.1.0", path = "../compiler-core/files" }
-glob = "0.3.3"
+globset = "0.4.18"
 indexing = { version = "0.1.0", path = "../compiler-core/indexing" }
 lexing = { version = "0.1.0", path = "../compiler-core/lexing" }
 parsing = { version = "0.1.0", path = "../compiler-core/parsing" }
 rayon = "1.11.0"
+serde_json = "1.0"
 stabilizing = { version = "0.1.0", path = "../compiler-core/stabilizing" }
 url = "2.5.7"
+walkdir = "2.5.0"
 
 [[bench]]
 name = "parsing"
+harness = false
+
+[[bench]]
+name = "checking_single_core"
+harness = false
+
+[[bench]]
+name = "checking_multi_core"
 harness = false
