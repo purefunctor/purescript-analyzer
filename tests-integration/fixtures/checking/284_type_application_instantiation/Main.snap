@@ -8,10 +8,11 @@ const :: forall (@a :: Type) (b :: Type). (a :: Type) -> (b :: Type) -> (a :: Ty
 Left :: forall (@a :: Type) (@b :: Type). (a :: Type) -> Either (a :: Type) (b :: Type)
 Right :: forall (@a :: Type) (@b :: Type). (b :: Type) -> Either (a :: Type) (b :: Type)
 forceSolve ::
-  { const :: forall (b :: Type). Int -> (b :: Type) -> Int
-  , left :: forall (@b :: Type). Int -> Either Int (b :: Type)
-  , right :: forall (@b :: Type). (b :: Type) -> Either Int (b :: Type)
-  }
+  forall (t8 :: Type) (t7 :: Type) (t6 :: Type).
+    { const :: Int -> (t8 :: Type) -> Int
+    , left :: Int -> Either Int (t7 :: Type)
+    , right :: (t6 :: Type) -> Either Int (t6 :: Type)
+    }
 
 Types
 Either :: Type -> Type -> Type
