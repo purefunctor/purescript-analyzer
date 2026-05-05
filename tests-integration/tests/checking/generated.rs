@@ -591,3 +591,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_282_lacks_empty_closed_row_skolem_main() { run_test("282_lacks_empty_closed_row_skolem", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_283_coercible_via_newtype_superclass_main() { run_test("283_coercible_via_newtype_superclass", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_284_type_application_instantiation_main() { run_test("284_type_application_instantiation", "Main"); }

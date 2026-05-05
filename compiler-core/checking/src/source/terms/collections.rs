@@ -29,12 +29,22 @@ where
 }
 
 fn should_instantiate_record_field(kind: &lowering::ExpressionKind) -> bool {
-    matches!(
+    if matches!(
         kind,
         lowering::ExpressionKind::Constructor { .. }
             | lowering::ExpressionKind::Variable { .. }
             | lowering::ExpressionKind::OperatorName { .. }
-    )
+    ) {
+        return true;
+    }
+
+    if let lowering::ExpressionKind::Application { arguments, .. } = kind
+        && let Some(lowering::ExpressionArgument::Type(_)) = arguments.iter().next()
+    {
+        return true;
+    }
+
+    false
 }
 
 fn instantiate_variable<Q>(
