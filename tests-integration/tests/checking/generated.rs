@@ -595,3 +595,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_284_type_application_instantiation_main() { run_test("284_type_application_instantiation", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_285_kind_variable_visibility_main() { run_test("285_kind_variable_visibility", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_286_wildcard_arity_main() { run_test("286_wildcard_arity", "Main"); }
