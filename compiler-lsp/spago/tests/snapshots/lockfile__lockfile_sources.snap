@@ -77,6 +77,8 @@ expression: sources
 .spago/p/gen-4.0.0/src
 .spago/p/gen-4.0.0/test
 .spago/p/graphql-client/fe24db5f0a79137edb1019b5757ce70d44efae10/src
+.spago/p/graphql-client/fe24db5f0a79137edb1019b5757ce70d44efae10/subpkg/src
+.spago/p/graphql-client/fe24db5f0a79137edb1019b5757ce70d44efae10/subpkg/test
 .spago/p/graphql-client/fe24db5f0a79137edb1019b5757ce70d44efae10/test
 .spago/p/halogen-subscriptions-2.0.0/src
 .spago/p/halogen-subscriptions-2.0.0/test

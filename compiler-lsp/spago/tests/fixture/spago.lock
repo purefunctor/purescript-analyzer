@@ -671,6 +671,7 @@
       "graphql-client": {
         "git": "https://github.com/OxfordAbstracts/purescript-graphql-client.git",
         "ref": "fe24db5f0a79137edb1019b5757ce70d44efae10",
+        "subdir": "subpkg",
         "dependencies": [
           "aff",
           "affjax",
