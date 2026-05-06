@@ -276,6 +276,7 @@ where
     };
 
     let expression_type = super::infer_expression(state, context, expression)?;
+    let expression_type = toolkit::instantiate_constrained(state, context, expression_type)?;
 
     let Some(binder) = guard.binder else {
         return Ok(());

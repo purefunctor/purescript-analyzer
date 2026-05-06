@@ -49,9 +49,9 @@ where
     };
 
     let expression_type = if binder::requires_instantiation(context, binder) {
-        toolkit::instantiate_unifications(state, context, expression_type)?
+        toolkit::instantiate_constrained(state, context, expression_type)?
     } else {
-        expression_type
+        toolkit::collect_wanteds(state, context, expression_type)?
     };
 
     let binder_type = binder::check_binder(state, context, binder, expression_type)?;
