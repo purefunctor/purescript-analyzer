@@ -107,6 +107,11 @@ fn is_safe_subdir(subdir: &Path) -> bool {
         return false;
     }
 
+    // Treat a lone current-directory path as invalid (same as "missing").
+    if subdir == Path::new(".") {
+        return false;
+    }
+
     // Treat lockfile paths as untrusted input: only allow "normal" relative paths.
     !subdir.components().any(|component| match component {
         Component::Prefix(_) | Component::RootDir | Component::ParentDir => true,

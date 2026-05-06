@@ -49,6 +49,42 @@ fn test_lockfile_sources_subdir_precedence_packages_over_workspace_extra_package
 }
 
 #[test]
+fn test_lockfile_sources_subdir_fallback_to_workspace_extra_packages() {
+    let lockfile = serde_json::from_str::<Lockfile>(
+        r#"{
+  "workspace": {
+    "packages": {},
+    "extra_packages": {
+      "foo": { "subdir": "from-workspace" }
+    }
+  },
+  "packages": {
+    "foo": { "type": "git", "rev": "abcd" }
+  }
+}"#,
+    )
+    .unwrap();
+
+    let sources = lockfile
+        .sources()
+        .filter_map(|source| source.to_str().map(|s| s.replace('\\', "/")))
+        .collect::<Vec<_>>();
+
+    assert!(
+        sources
+            .iter()
+            .any(|s| s == ".spago/p/foo/abcd/from-workspace/src"),
+        "sources: {sources:?}"
+    );
+    assert!(
+        sources
+            .iter()
+            .all(|s| s != ".spago/p/foo/abcd/from-packages/src"),
+        "sources: {sources:?}"
+    );
+}
+
+#[test]
 fn test_parse_lockfile_without_extra_packages() {
     let lockfile = serde_json::from_str::<Lockfile>(
         r#"{
