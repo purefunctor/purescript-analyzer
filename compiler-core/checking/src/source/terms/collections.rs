@@ -240,7 +240,12 @@ where
 
     let id = if let Some(expected_type) = expected_record_field(mode, &label) {
         let id = toolkit::lookup_term_variable(state, context, resolution)?;
-        unification::subtype(state, context, id, expected_type)?;
+
+        let checked_type = normalise::expand(state, context, expected_type)?;
+        let checked_type = toolkit::skolemise_forall(state, context, checked_type)?;
+        let checked_type = toolkit::collect_givens(state, context, checked_type)?;
+        unification::subtype(state, context, id, checked_type)?;
+
         expected_type
     } else {
         instantiate_variable(state, context, resolution)?
