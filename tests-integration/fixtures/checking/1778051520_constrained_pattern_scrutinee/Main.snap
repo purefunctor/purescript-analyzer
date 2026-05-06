@@ -1,0 +1,39 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Box :: forall (@a :: Type). (a :: Type) -> Box (a :: Type)
+method :: forall (@route :: Type). Route (route :: Type) => Box (route :: Type)
+routeCase :: forall (@route :: Type). Route (route :: Type) => (route :: Type)
+routeLet :: forall (@route :: Type). Route (route :: Type) => (route :: Type)
+routeGuard :: forall (@route :: Type). Route (route :: Type) => (route :: Type)
+
+Types
+Box :: Type -> Type
+Route :: Type -> Constraint
+
+Classes
+class forall (route :: Type). Route (route :: Type)
+  method :: forall (@route :: Type). Route (route :: Type) => Box (route :: Type)
+
+Roles
+Box = [Representational]
+
+Diagnostics
+error[CannotUnify]: Cannot unify 'Box ?3' with 'Route (route :: Type) => Box (route :: Type)'
+  --> 9:35..9:44
+  |
+9 | routeCase = case method @route of Box value -> value
+  |                                   ^~~~~~~~~
+error[CannotUnify]: Cannot unify 'Box ?5' with 'Route (route :: Type) => Box (route :: Type)'
+  --> 12:16..12:25
+   |
+12 | routeLet = let Box value = method @route in value
+   |                ^~~~~~~~~
+error[CannotUnify]: Cannot unify 'Box ?7' with 'Route (route :: Type) => Box (route :: Type)'
+  --> 15:14..15:23
+   |
+15 | routeGuard | Box value <- method @route = value
+   |              ^~~~~~~~~
