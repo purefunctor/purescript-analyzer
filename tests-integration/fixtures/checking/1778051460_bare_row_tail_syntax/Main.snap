@@ -1,0 +1,26 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+bareTail :: forall (t2 :: Type) (opts :: Row (t2 :: Type)). (opts :: Row (t2 :: Type)) -> Int
+plainTail :: forall (opts :: Type). (opts :: Type) -> Int
+recordTail :: forall (opts :: Row Type). {| (opts :: Row Type) } -> Int
+withBareTail :: Int
+withPlainTail :: Int
+withRecordTail :: Int
+
+Types
+
+Diagnostics
+error[CannotUnify]: Cannot unify 'Row ?1' with 'Type'
+  --> 3:26..3:36
+  |
+3 | bareTail :: forall opts. ( | opts ) -> Int
+  |                          ^~~~~~~~~~
+error[CannotUnify]: Cannot unify 'Row ?7' with 'Type'
+  --> 12:25..12:38
+   |
+12 | withBareTail = bareTail { option: 1 }
+   |                         ^~~~~~~~~~~~~
