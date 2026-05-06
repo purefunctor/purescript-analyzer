@@ -597,3 +597,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_285_kind_variable_visibility_main() { run_test("285_kind_variable_visibility", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_286_wildcard_arity_main() { run_test("286_wildcard_arity", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_287_record_pun_constrained_field_main() { run_test("287_record_pun_constrained_field", "Main"); }

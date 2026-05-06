@@ -1,0 +1,33 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+fetch ::
+  forall (m :: Type -> Type). Capability (m :: Type -> Type) => Int -> (m :: Type -> Type) Int
+test :: Setup
+
+Types
+Capability :: (Type -> Type) -> Constraint
+Setup :: Type
+
+Synonyms
+type Setup = { fetch ::
+    forall (m :: Type -> Type). Capability (m :: Type -> Type) => Int -> (m :: Type -> Type) Int
+}
+
+Classes
+class forall (m :: Type -> Type). Capability (m :: Type -> Type)
+
+Diagnostics
+error[CannotUnify]: Cannot unify 'Int -> ?4 Int' with 'Capability (m :: Type -> Type) => Int -> (m :: Type -> Type) Int'
+  --> 13:8..13:17
+   |
+13 | test = { fetch }
+   |        ^~~~~~~~~
+error[NoInstanceFound]: No instance found for: Capability ?4
+  --> 12:1..12:14
+   |
+12 | test :: Setup
+   | ^~~~~~~~~~~~~
