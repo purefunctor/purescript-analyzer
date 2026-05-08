@@ -7,7 +7,8 @@ Terms
 const :: forall (@a :: Type) (@b :: Type). (a :: Type) -> (b :: Type) -> (a :: Type)
 choose :: Int -> (forall (@a :: Type) (@b :: Type). (a :: Type) -> (b :: Type) -> (a :: Type))
 normal ::
-  { parenthesised :: forall (@a :: Type) (@b :: Type). (a :: Type) -> (b :: Type) -> (a :: Type) }
+  forall (t9 :: Type) (t8 :: Type).
+    { parenthesised :: (t9 :: Type) -> (t8 :: Type) -> (t9 :: Type) }
 prenex ::
   { application :: forall (@a :: Type) (@b :: Type). (a :: Type) -> (b :: Type) -> (a :: Type)
   , variable :: Int -> (forall (@a :: Type) (@b :: Type). (a :: Type) -> (b :: Type) -> (a :: Type))
