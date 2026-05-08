@@ -566,7 +566,7 @@ where
             Closed | Additional => Ok(MatchType::Apart),
             // we could potentially make progress by having the
             // wanted tail absorb the additional given fields
-            Open(wanted_tail) => blocking_type(state, context, wanted_tail),
+            Open(wanted_tail) => result.and_then(|| blocking_type(state, context, wanted_tail)),
         },
         // If the given row has a tail, match it against the
         // additional fields and tail from the wanted row
@@ -580,7 +580,7 @@ where
             // we cannot match it against fields in the wanted row
             Additional => Ok(MatchType::Apart),
             // we could make progress with an open wanted row
-            Open(wanted_tail) => blocking_type(state, context, wanted_tail),
+            Open(wanted_tail) => result.and_then(|| blocking_type(state, context, wanted_tail)),
             // we can match it directly with a closed wanted row
             Closed => Ok(result),
         },

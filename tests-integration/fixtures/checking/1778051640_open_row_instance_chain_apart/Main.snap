@@ -35,10 +35,3 @@ Roles
 Proxy = [Phantom]
 K1 = []
 Unit = []
-
-Diagnostics
-error[NoInstanceFound]: No instance found for: C (key :: Type) ( a :: String, b :: Boolean | ?14 )
-  --> 18:1..18:38
-   |
-18 | test :: forall key. Proxy key -> Unit
-   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
