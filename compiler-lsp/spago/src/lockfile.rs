@@ -28,6 +28,9 @@ pub struct WorkspacePackage {
 #[derive(Debug, Deserialize)]
 pub struct ExtraPackage {
     pub subdir: Option<PathBuf>,
+
+    /// Present in Spago lockfile schema for some extra-packages (e.g. local/path-based).
+    /// Not currently used by `Lockfile::sources()`.
     pub path: Option<PathBuf>,
 }
 
