@@ -35,6 +35,15 @@ fn test_lockfile_sources_subdir_precedence_packages_over_workspace_extra_package
         .collect::<Vec<_>>();
 
     assert!(
+        sources.iter().any(|s| s == ".spago/p/foo/abcd/src"),
+        "sources: {sources:?}"
+    );
+    assert!(
+        sources.iter().any(|s| s == ".spago/p/foo/abcd/test"),
+        "sources: {sources:?}"
+    );
+
+    assert!(
         sources
             .iter()
             .any(|s| s == ".spago/p/foo/abcd/from-packages/src"),
