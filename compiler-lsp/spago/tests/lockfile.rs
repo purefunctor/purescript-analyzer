@@ -34,37 +34,23 @@ fn test_lockfile_sources_subdir_precedence_packages_over_workspace_extra_package
         .filter_map(|source| source.to_str().map(|s| s.replace('\\', "/")))
         .collect::<Vec<_>>();
 
-    assert!(
-        sources.iter().any(|s| s == ".spago/p/foo/abcd/src"),
-        "sources: {sources:?}"
-    );
-    assert!(
-        sources.iter().any(|s| s == ".spago/p/foo/abcd/test"),
-        "sources: {sources:?}"
-    );
+    assert!(sources.iter().any(|s| s == ".spago/p/foo/abcd/src"), "sources: {sources:?}");
+    assert!(sources.iter().any(|s| s == ".spago/p/foo/abcd/test"), "sources: {sources:?}");
 
     assert!(
-        sources
-            .iter()
-            .any(|s| s == ".spago/p/foo/abcd/from-packages/src"),
+        sources.iter().any(|s| s == ".spago/p/foo/abcd/from-packages/src"),
         "sources: {sources:?}"
     );
     assert!(
-        sources
-            .iter()
-            .any(|s| s == ".spago/p/foo/abcd/from-packages/test"),
+        sources.iter().any(|s| s == ".spago/p/foo/abcd/from-packages/test"),
         "sources: {sources:?}"
     );
     assert!(
-        sources
-            .iter()
-            .all(|s| s != ".spago/p/foo/abcd/from-workspace/src"),
+        sources.iter().all(|s| s != ".spago/p/foo/abcd/from-workspace/src"),
         "sources: {sources:?}"
     );
     assert!(
-        sources
-            .iter()
-            .all(|s| s != ".spago/p/foo/abcd/from-workspace/test"),
+        sources.iter().all(|s| s != ".spago/p/foo/abcd/from-workspace/test"),
         "sources: {sources:?}"
     );
 }
@@ -92,27 +78,19 @@ fn test_lockfile_sources_subdir_fallback_to_workspace_extra_packages() {
         .collect::<Vec<_>>();
 
     assert!(
-        sources
-            .iter()
-            .any(|s| s == ".spago/p/deku-core/65d6e9d/deku-core/src"),
+        sources.iter().any(|s| s == ".spago/p/deku-core/65d6e9d/deku-core/src"),
         "sources: {sources:?}"
     );
     assert!(
-        sources
-            .iter()
-            .any(|s| s == ".spago/p/deku-core/65d6e9d/deku-core/test"),
+        sources.iter().any(|s| s == ".spago/p/deku-core/65d6e9d/deku-core/test"),
         "sources: {sources:?}"
     );
     assert!(
-        sources
-            .iter()
-            .all(|s| s != ".spago/p/deku-core/65d6e9d/from-packages/src"),
+        sources.iter().all(|s| s != ".spago/p/deku-core/65d6e9d/from-packages/src"),
         "sources: {sources:?}"
     );
     assert!(
-        sources
-            .iter()
-            .all(|s| s != ".spago/p/deku-core/65d6e9d/from-packages/test"),
+        sources.iter().all(|s| s != ".spago/p/deku-core/65d6e9d/from-packages/test"),
         "sources: {sources:?}"
     );
 }

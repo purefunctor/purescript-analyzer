@@ -44,8 +44,12 @@ pub enum PackageEntry {
         #[serde(default)]
         subdir: Option<PathBuf>,
     },
-    Local { path: SmolStr },
-    Registry { version: SmolStr },
+    Local {
+        path: SmolStr,
+    },
+    Registry {
+        version: SmolStr,
+    },
 }
 
 impl Lockfile {
