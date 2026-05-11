@@ -492,9 +492,9 @@ impl LoweringInfo {
         &self,
         equation: crate::source::LetBindingEquationId,
     ) -> Option<LetBindingNameGroupId> {
-        self.let_binding.iter().find_map(|(id, group)| {
-            group.equations.iter().any(|&eq| eq == equation).then_some(id)
-        })
+        self.let_binding
+            .iter()
+            .find_map(|(id, group)| group.equations.iter().any(|&eq| eq == equation).then_some(id))
     }
 
     pub fn get_let_binding(&self, id: LetBindingNameGroupId) -> Option<&LetBindingName> {
