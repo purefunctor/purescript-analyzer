@@ -3,6 +3,7 @@ package:
   dependencies:
     - console
     - effect
+    - deku-core
     - fixture-local
     - graphql-client
     - prelude

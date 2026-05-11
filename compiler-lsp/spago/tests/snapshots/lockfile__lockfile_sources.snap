@@ -1,5 +1,6 @@
 ---
 source: compiler-lsp/spago/tests/lockfile.rs
+assertion_line: 147
 expression: sources
 ---
 ./src
@@ -42,6 +43,10 @@ expression: sources
 .spago/p/datetime-6.1.0/test
 .spago/p/debug-6.0.2/src
 .spago/p/debug-6.0.2/test
+.spago/p/deku-core/65d6e9d289534d13d7d235fbe7f19e6e0bd17c72/deku-core/src
+.spago/p/deku-core/65d6e9d289534d13d7d235fbe7f19e6e0bd17c72/deku-core/test
+.spago/p/deku-core/65d6e9d289534d13d7d235fbe7f19e6e0bd17c72/src
+.spago/p/deku-core/65d6e9d289534d13d7d235fbe7f19e6e0bd17c72/test
 .spago/p/distributive-6.0.0/src
 .spago/p/distributive-6.0.0/test
 .spago/p/effect-4.0.0/src
@@ -56,6 +61,8 @@ expression: sources
 .spago/p/exists-6.0.0/test
 .spago/p/exitcodes-4.0.0/src
 .spago/p/exitcodes-4.0.0/test
+.spago/p/fast-vect-1.2.0/src
+.spago/p/fast-vect-1.2.0/test
 .spago/p/filterable-5.0.0/src
 .spago/p/filterable-5.0.0/test
 .spago/p/foldable-traversable-6.0.0/src
@@ -77,8 +84,6 @@ expression: sources
 .spago/p/gen-4.0.0/src
 .spago/p/gen-4.0.0/test
 .spago/p/graphql-client/fe24db5f0a79137edb1019b5757ce70d44efae10/src
-.spago/p/graphql-client/fe24db5f0a79137edb1019b5757ce70d44efae10/subpkg/src
-.spago/p/graphql-client/fe24db5f0a79137edb1019b5757ce70d44efae10/subpkg/test
 .spago/p/graphql-client/fe24db5f0a79137edb1019b5757ce70d44efae10/test
 .spago/p/halogen-subscriptions-2.0.0/src
 .spago/p/halogen-subscriptions-2.0.0/test
@@ -86,14 +91,20 @@ expression: sources
 .spago/p/heterogeneous-0.6.0/test
 .spago/p/http-methods-6.0.0/src
 .spago/p/http-methods-6.0.0/test
+.spago/p/hyrule-2.3.8/src
+.spago/p/hyrule-2.3.8/test
 .spago/p/identity-6.0.0/src
 .spago/p/identity-6.0.0/test
 .spago/p/integers-6.0.0/src
 .spago/p/integers-6.0.0/test
 .spago/p/invariant-6.0.0/src
 .spago/p/invariant-6.0.0/test
+.spago/p/js-bigints-2.2.1/src
+.spago/p/js-bigints-2.2.1/test
 .spago/p/js-date-8.0.0/src
 .spago/p/js-date-8.0.0/test
+.spago/p/js-timers-6.1.0/src
+.spago/p/js-timers-6.1.0/test
 .spago/p/js-uri-3.1.0/src
 .spago/p/js-uri-3.1.0/test
 .spago/p/lazy-6.0.0/src
@@ -102,6 +113,8 @@ expression: sources
 .spago/p/lcg-4.0.0/test
 .spago/p/lists-7.0.0/src
 .spago/p/lists-7.0.0/test
+.spago/p/literals-1.0.2/src
+.spago/p/literals-1.0.2/test
 .spago/p/maybe-6.0.0/src
 .spago/p/maybe-6.0.0/test
 .spago/p/media-types-6.0.0/src
@@ -174,8 +187,12 @@ expression: sources
 .spago/p/string-parsers-8.0.0/test
 .spago/p/strings-6.0.1/src
 .spago/p/strings-6.0.1/test
+.spago/p/stringutils-0.0.12/src
+.spago/p/stringutils-0.0.12/test
 .spago/p/tailrec-6.1.0/src
 .spago/p/tailrec-6.1.0/test
+.spago/p/tldr-0.0.0/src
+.spago/p/tldr-0.0.0/test
 .spago/p/transformers-6.1.0/src
 .spago/p/transformers-6.1.0/test
 .spago/p/tuples-7.0.0/src
@@ -196,10 +213,14 @@ expression: sources
 .spago/p/unsafe-coerce-6.0.0/test
 .spago/p/unsafe-reference-5.0.0/src
 .spago/p/unsafe-reference-5.0.0/test
+.spago/p/untagged-union-1.0.0/src
+.spago/p/untagged-union-1.0.0/test
 .spago/p/variant-8.0.0/src
 .spago/p/variant-8.0.0/test
 .spago/p/web-dom-6.0.0/src
 .spago/p/web-dom-6.0.0/test
+.spago/p/web-dom-parser-8.0.0/src
+.spago/p/web-dom-parser-8.0.0/test
 .spago/p/web-events-4.0.0/src
 .spago/p/web-events-4.0.0/test
 .spago/p/web-file-4.0.0/src
@@ -208,5 +229,11 @@ expression: sources
 .spago/p/web-html-4.1.0/test
 .spago/p/web-storage-5.0.0/src
 .spago/p/web-storage-5.0.0/test
+.spago/p/web-uievents-5.0.0/src
+.spago/p/web-uievents-5.0.0/test
 .spago/p/web-xhr-5.0.1/src
 .spago/p/web-xhr-5.0.1/test
+.spago/p/yoga-json-5.1.0/src
+.spago/p/yoga-json-5.1.0/test
+.spago/p/yoga-tree-1.0.0/src
+.spago/p/yoga-tree-1.0.0/test

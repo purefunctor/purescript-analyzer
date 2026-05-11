@@ -76,11 +76,11 @@ fn test_lockfile_sources_subdir_fallback_to_workspace_extra_packages() {
   "workspace": {
     "packages": {},
     "extra_packages": {
-      "foo": { "subdir": "from-workspace" }
+      "deku-core": { "subdir": "deku-core" }
     }
   },
   "packages": {
-    "foo": { "type": "git", "rev": "abcd" }
+    "deku-core": { "type": "git", "rev": "65d6e9d" }
   }
 }"#,
     )
@@ -94,25 +94,25 @@ fn test_lockfile_sources_subdir_fallback_to_workspace_extra_packages() {
     assert!(
         sources
             .iter()
-            .any(|s| s == ".spago/p/foo/abcd/from-workspace/src"),
+            .any(|s| s == ".spago/p/deku-core/65d6e9d/deku-core/src"),
         "sources: {sources:?}"
     );
     assert!(
         sources
             .iter()
-            .any(|s| s == ".spago/p/foo/abcd/from-workspace/test"),
+            .any(|s| s == ".spago/p/deku-core/65d6e9d/deku-core/test"),
         "sources: {sources:?}"
     );
     assert!(
         sources
             .iter()
-            .all(|s| s != ".spago/p/foo/abcd/from-packages/src"),
+            .all(|s| s != ".spago/p/deku-core/65d6e9d/from-packages/src"),
         "sources: {sources:?}"
     );
     assert!(
         sources
             .iter()
-            .all(|s| s != ".spago/p/foo/abcd/from-packages/test"),
+            .all(|s| s != ".spago/p/deku-core/65d6e9d/from-packages/test"),
         "sources: {sources:?}"
     );
 }
