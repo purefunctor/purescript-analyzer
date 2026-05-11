@@ -313,6 +313,7 @@ fn did_change(state: &mut State, p: DidChangeTextDocumentParams) -> Result<(), L
     }
 
     state.invalidate_workspace_symbols();
+    state.invalidate_suggestions_cache();
 
     if state.config.diagnostics_on_change {
         event::emit_collect_diagnostics(state, p.text_document.uri)?;
