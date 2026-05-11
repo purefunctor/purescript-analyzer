@@ -279,9 +279,39 @@ fn references_file_term(
 
         let content = engine.content(candidate_id);
         let (parsed, _) = engine.parsed(candidate_id)?;
+        let indexed = engine.indexed(candidate_id)?;
 
         let stabilized = engine.stabilized(candidate_id)?;
         let lowered = engine.lowered(candidate_id)?;
+
+        // Include the definition name (signature/equations) for same-file items.
+        if candidate_id == file_id {
+            if let indexing::TermItemKind::Value { signature, equations } =
+                &indexed.items[term_id].kind
+            {
+                let root = parsed.syntax_node();
+
+                if let Some(sig_id) = signature
+                    && let Some(ptr) = stabilized.ast_ptr(*sig_id)
+                    && let Some(node) = ptr.try_to_node(&root)
+                    && let Some(tok) = node.name_token()
+                    && let Some(range) = locate::text_range_to_range(&content, tok.text_range())
+                {
+                    locations.push(Location { uri: uri.clone(), range });
+                }
+
+                for eq_id in equations {
+                    if let Some(ptr) = stabilized.ast_ptr(*eq_id)
+                        && let Some(node) = ptr.try_to_node(&root)
+                        && let Some(tok) = node.name_token()
+                        && let Some(range) =
+                            locate::text_range_to_range(&content, tok.text_range())
+                    {
+                        locations.push(Location { uri: uri.clone(), range });
+                    }
+                }
+            }
+        }
 
         for (expr_id, expr_kind) in lowered.info.iter_expression() {
             if let ExpressionKind::Constructor { resolution: Some((f_id, t_id)) } = expr_kind
