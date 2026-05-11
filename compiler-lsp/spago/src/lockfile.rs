@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 
 use globset::Glob;
 use rustc_hash::FxHashMap;
@@ -15,6 +15,9 @@ pub struct Lockfile {
 #[derive(Debug, Deserialize)]
 pub struct Workspace {
     pub packages: FxHashMap<SmolStr, WorkspacePackage>,
+
+    #[serde(default)]
+    pub extra_packages: FxHashMap<SmolStr, ExtraPackage>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -22,14 +25,31 @@ pub struct WorkspacePackage {
     pub path: PathBuf,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct ExtraPackage {
+    pub subdir: Option<PathBuf>,
+
+    /// Present in Spago lockfile schema for some extra-packages (e.g. local/path-based).
+    /// Not currently used by `Lockfile::sources()`.
+    pub path: Option<PathBuf>,
+}
+
 pub type Packages = FxHashMap<SmolStr, PackageEntry>;
 
 #[derive(Debug, Deserialize)]
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum PackageEntry {
-    Git { rev: SmolStr },
-    Local { path: SmolStr },
-    Registry { version: SmolStr },
+    Git {
+        rev: SmolStr,
+        #[serde(default)]
+        subdir: Option<PathBuf>,
+    },
+    Local {
+        path: SmolStr,
+    },
+    Registry {
+        version: SmolStr,
+    },
 }
 
 impl Lockfile {
@@ -41,24 +61,40 @@ impl Lockfile {
         });
 
         let base = Path::new(".spago").join("p");
-        let packages = self.packages.iter().flat_map(move |(name, package)| match package {
-            PackageEntry::Git { rev } => {
-                let src = base.join(name).join(rev).join("src");
-                let test = base.join(name).join(rev).join("test");
-                [src, test]
+        let extra_packages = &self.workspace.extra_packages;
+
+        let packages = self.packages.iter().flat_map(move |(name, package)| {
+            let mut sources = Vec::new();
+            match package {
+                PackageEntry::Git { rev, subdir } => {
+                    sources.push(base.join(name).join(rev).join("src"));
+                    sources.push(base.join(name).join(rev).join("test"));
+
+                    let subdir = subdir.as_ref().or_else(|| {
+                        extra_packages
+                            .get(name)
+                            .and_then(|extra_package| extra_package.subdir.as_ref())
+                    });
+
+                    let subdir = subdir.filter(|subdir| is_safe_subdir(subdir));
+
+                    if let Some(subdir) = subdir {
+                        sources.push(base.join(name).join(rev).join(subdir).join("src"));
+                        sources.push(base.join(name).join(rev).join(subdir).join("test"));
+                    }
+                }
+                PackageEntry::Local { path } => {
+                    let base = Path::new(path);
+                    sources.push(base.join("src"));
+                    sources.push(base.join("test"));
+                }
+                PackageEntry::Registry { version } => {
+                    let name_version = format!("{name}-{version}");
+                    sources.push(base.join(&name_version).join("src"));
+                    sources.push(base.join(&name_version).join("test"));
+                }
             }
-            PackageEntry::Local { path } => {
-                let base = Path::new(path);
-                let src = base.join("src");
-                let test = base.join("test");
-                [src, test]
-            }
-            PackageEntry::Registry { version } => {
-                let name_version = format!("{name}-{version}");
-                let src = base.join(&name_version).join("src");
-                let test = base.join(&name_version).join("test");
-                [src, test]
-            }
+            sources
         });
 
         workspace.chain(packages)
@@ -71,6 +107,20 @@ impl Lockfile {
 
 fn with_root(root: impl AsRef<Path>) -> impl Fn(PathBuf) -> Option<PathBuf> {
     move |source| root.as_ref().join(source).canonicalize().ok()
+}
+
+fn is_safe_subdir(subdir: &Path) -> bool {
+    if subdir.as_os_str().is_empty() {
+        return false;
+    }
+
+    // Treat lockfile paths as untrusted input: only allow "normal" relative paths.
+    !subdir.components().any(|component| match component {
+        Component::Prefix(_) | Component::RootDir | Component::ParentDir | Component::CurDir => {
+            true
+        }
+        Component::Normal(_) => false,
+    })
 }
 
 fn find_purs_files(root: PathBuf) -> impl Iterator<Item = PathBuf> {
