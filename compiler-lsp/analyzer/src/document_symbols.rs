@@ -53,10 +53,12 @@ pub fn implementation(
         }
 
         let kind = match indexed.items[type_id].kind {
+            // Note: type classes are partitioned out of `iter_types()` and exposed via `iter_classes()`.
+            // Keep this arm for exhaustiveness in case that invariant changes.
             TypeItemKind::Class { .. } => SymbolKind::INTERFACE,
             TypeItemKind::Operator { .. } => SymbolKind::OPERATOR,
-            TypeItemKind::Data { .. }
-            | TypeItemKind::Newtype { .. }
+            TypeItemKind::Data { .. } => SymbolKind::ENUM,
+            TypeItemKind::Newtype { .. }
             | TypeItemKind::Synonym { .. }
             | TypeItemKind::Foreign { .. } => SymbolKind::STRUCT,
         };

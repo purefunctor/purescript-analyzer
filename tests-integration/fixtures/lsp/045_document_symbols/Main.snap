@@ -10,7 +10,7 @@ DocumentSymbols at Position { line: 1, character: 3 }
 -- !
 ```
 
-Bar :: Struct @ 4:0..6:11
+Bar :: Enum @ 4:0..6:11
 Baz :: Constructor @ 5:4..5:7
 Qux :: Constructor @ 6:4..6:11
 foo :: Function @ 8:0..9:7
