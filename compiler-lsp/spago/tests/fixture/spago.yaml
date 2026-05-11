@@ -67,3 +67,46 @@ workspace:
         - variant
       git: https://github.com/OxfordAbstracts/purescript-graphql-client.git
       ref: fe24db5f0a79137edb1019b5757ce70d44efae10
+    deku-core:
+      git: "https://github.com/mikesol/purescript-deku.git"
+      subdir: deku-core
+      ref: "65d6e9d"
+      dependencies:
+        - aff
+        - arrays
+        - catenable-lists
+        - control
+        - debug
+        - effect
+        - either
+        - fast-vect
+        - filterable
+        - foldable-traversable
+        - foreign-object
+        - free
+        - heterogeneous
+        - hyrule
+        - maybe
+        - newtype
+        - nullable
+        - ordered-collections
+        - prelude
+        - profunctor
+        - quickcheck
+        - record
+        - safe-coerce
+        - st
+        - strings
+        - stringutils
+        - tldr
+        - transformers
+        - typelevel-prelude
+        - tuples
+        - unsafe-coerce
+        - untagged-union
+        - web-dom
+        - web-dom-parser
+        - web-events
+        - web-html
+        - web-uievents
+        - yoga-json
