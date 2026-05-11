@@ -308,12 +308,35 @@ fn did_change(state: &mut State, p: DidChangeTextDocumentParams) -> Result<(), L
 
     state.invalidate_workspace_symbols();
 
+    if state.config.diagnostics_on_change {
+        event::emit_collect_diagnostics(state, p.text_document.uri)?;
+    }
+
+    Ok(())
+}
+
+fn did_open(state: &mut State, p: DidOpenTextDocumentParams) -> Result<(), LspError> {
+    let uri = p.text_document.uri.as_str();
+    let text = p.text_document.text.as_str();
+
+    on_change(state, uri, text)?;
+
+    state.invalidate_workspace_symbols();
+    state.invalidate_suggestions_cache();
+
+    if state.config.diagnostics_on_open {
+        event::emit_collect_diagnostics(state, p.text_document.uri)?;
+    }
+
     Ok(())
 }
 
 fn did_save(state: &mut State, p: DidSaveTextDocumentParams) -> Result<(), LspError> {
     state.invalidate_suggestions_cache();
-    event::emit_collect_diagnostics(state, p.text_document.uri)?;
+
+    if state.config.diagnostics_on_save {
+        event::emit_collect_diagnostics(state, p.text_document.uri)?;
+    }
     Ok(())
 }
 
@@ -399,11 +422,12 @@ pub async fn start(config: Arc<cli::Config>) {
             .request_snapshot::<request::References>(references)
             .request_snapshot::<request::WorkspaceSymbolRequest>(workspace_symbols)
             .notification_ext::<notification::Initialized>(initialized)
-            .notification_ext::<notification::DidOpenTextDocument>(|_, _| Ok(()))
+            .notification_ext::<notification::DidOpenTextDocument>(did_open)
             .notification_ext::<notification::DidSaveTextDocument>(did_save)
             .notification_ext::<notification::DidCloseTextDocument>(|_, _| Ok(()))
             .notification_ext::<notification::DidChangeConfiguration>(|_, _| Ok(()))
             .notification_ext::<notification::DidChangeTextDocument>(did_change)
+            .notification_ext::<notification::DidChangeWatchedFiles>(|_, _| Ok(()))
             .event_ext::<event::CollectDiagnostics>(event::collect_diagnostics);
 
         ServiceBuilder::new()
@@ -426,5 +450,8 @@ pub async fn start(config: Arc<cli::Config>) {
         tokio_util::compat::TokioAsyncWriteCompatExt::compat_write(tokio::io::stdout()),
     );
 
-    server.run_buffered(stdin, stdout).await.unwrap();
+    if let Err(error) = server.run_buffered(stdin, stdout).await {
+        tracing::error!(?error, "LSP main loop exited");
+        process::exit(1);
+    }
 }

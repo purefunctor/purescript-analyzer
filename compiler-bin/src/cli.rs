@@ -1,4 +1,4 @@
-use clap::Parser;
+use clap::{ArgAction, Parser};
 use tracing::level_filters::LevelFilter;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -37,4 +37,29 @@ pub struct Config {
         long_help("This argument also disables the spago.lock integration")
     )]
     pub source_command: Option<String>,
+
+    #[arg(
+        long,
+        help("Publish diagnostics on textDocument/didOpen"),
+        value_name("bool"),
+        action = ArgAction::Set,
+        default_value_t = true
+    )]
+    pub diagnostics_on_open: bool,
+
+    #[arg(
+        long,
+        help("Publish diagnostics on textDocument/didSave"),
+        value_name("bool"),
+        action = ArgAction::Set,
+        default_value_t = true
+    )]
+    pub diagnostics_on_save: bool,
+
+    #[arg(
+        long,
+        help("Publish diagnostics on textDocument/didChange (opt-in)"),
+        default_value_t = false
+    )]
+    pub diagnostics_on_change: bool,
 }
