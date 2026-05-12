@@ -1,2 +1,3 @@
-#[path = "resolving/generated.rs"]
-mod generated;
+mod generated {
+    include!(concat!(env!("OUT_DIR"), "/resolving_generated.rs"));
+}

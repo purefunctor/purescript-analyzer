@@ -1,2 +1,3 @@
-#[path = "lsp/generated.rs"]
-mod generated;
+mod generated {
+    include!(concat!(env!("OUT_DIR"), "/lsp_generated.rs"));
+}

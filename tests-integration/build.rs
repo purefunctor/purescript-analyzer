@@ -13,6 +13,12 @@ fn read_purs_files<'output>(path: &Path) -> impl Iterator<Item = PathBuf> + use<
     read_dir(path).filter(|p| p.extension().is_some_and(|ext| ext == "purs"))
 }
 
+fn generated_file(name: &str) -> fs::File {
+    let out_dir = std::env::var_os("OUT_DIR").expect("OUT_DIR should be set by Cargo");
+    let out_dir = PathBuf::from(out_dir);
+    fs::File::create(out_dir.join(name)).expect("failed to create generated tests file")
+}
+
 fn main() {
     println!("cargo::rerun-if-env-changed=LSP_FIXTURES_HASH");
     println!("cargo::rerun-if-env-changed=LOWERING_FIXTURES_HASH");
@@ -25,7 +31,7 @@ fn main() {
 }
 
 fn generate_lsp() {
-    let mut buffer = fs::File::create("./tests/lsp/generated.rs").unwrap();
+    let mut buffer = generated_file("lsp_generated.rs");
     writeln!(
         buffer,
         r#"// Do not edit! See build.rs
@@ -57,7 +63,7 @@ fn run_test(folder: &str, file: &str) {{
 }
 
 fn generate_lowering() {
-    let mut buffer = fs::File::create("./tests/lowering/generated.rs").unwrap();
+    let mut buffer = generated_file("lowering_generated.rs");
     writeln!(buffer, r#"// Do not edit! See build.rs
 
 #[rustfmt::skip]
@@ -90,7 +96,7 @@ fn run_test(folder: &str, file: &str) {{
 }
 
 fn generate_resolving() {
-    let mut buffer = fs::File::create("./tests/resolving/generated.rs").unwrap();
+    let mut buffer = generated_file("resolving_generated.rs");
     writeln!(buffer, r#"// Do not edit! See build.rs
 
 #[rustfmt::skip]
@@ -123,7 +129,7 @@ fn run_test(folder: &str, file: &str) {{
 }
 
 fn generate_checking() {
-    let mut buffer = fs::File::create("./tests/checking/generated.rs").unwrap();
+    let mut buffer = generated_file("checking_generated.rs");
     writeln!(buffer, r#"// Do not edit! See build.rs
 
 #[rustfmt::skip]
