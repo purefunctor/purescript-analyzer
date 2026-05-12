@@ -1,7 +1,8 @@
 use std::iter;
 
 use building_types::QueryResult;
-use rustc_hash::FxHashSet;
+use itertools::Itertools;
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
@@ -338,4 +339,27 @@ where
 
         (_, _) => Ok(MatchType::Apart),
     }
+}
+
+pub fn verify_substitution<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    bindings: Vec<(Name, TypeId)>,
+) -> QueryResult<MatchType>
+where
+    Q: ExternalQueries,
+{
+    let mut map: FxHashMap<_, Vec<_>> = FxHashMap::default();
+    for &(name, substitution) in &bindings {
+        map.entry(name).or_default().push(substitution);
+    }
+
+    let mut outcome = MatchType::Match { bindings };
+    for substitution in map.values() {
+        for (&left, &right) in substitution.iter().tuple_combinations() {
+            outcome = outcome.combine(types_equal(state, context, left, right)?);
+        }
+    }
+
+    Ok(outcome)
 }
