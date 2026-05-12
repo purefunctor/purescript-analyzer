@@ -479,6 +479,24 @@ impl LoweringInfo {
         &self.let_binding[id]
     }
 
+    pub fn let_binding_group_for_signature(
+        &self,
+        signature: crate::source::LetBindingSignatureId,
+    ) -> Option<LetBindingNameGroupId> {
+        self.let_binding
+            .iter()
+            .find_map(|(id, group)| (group.signature == Some(signature)).then_some(id))
+    }
+
+    pub fn let_binding_group_for_equation(
+        &self,
+        equation: crate::source::LetBindingEquationId,
+    ) -> Option<LetBindingNameGroupId> {
+        self.let_binding
+            .iter()
+            .find_map(|(id, group)| group.equations.contains(&equation).then_some(id))
+    }
+
     pub fn get_let_binding(&self, id: LetBindingNameGroupId) -> Option<&LetBindingName> {
         self.let_binding_name.get(id)
     }

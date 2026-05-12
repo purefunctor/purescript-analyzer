@@ -1,0 +1,14 @@
+---
+source: tests-integration/tests/lsp/generated.rs
+expression: report
+---
+DocumentHighlight at Position { line: 7, character: 18 }
+
+```
+foo = bar + bar + baz
+--                &
+```
+
+4:0..4:3
+5:0..5:3
+7:18..7:21

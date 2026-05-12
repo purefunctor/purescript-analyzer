@@ -279,7 +279,6 @@ fn references_file_term(
 
         let content = engine.content(candidate_id);
         let (parsed, _) = engine.parsed(candidate_id)?;
-
         let stabilized = engine.stabilized(candidate_id)?;
         let lowered = engine.lowered(candidate_id)?;
 
