@@ -5,7 +5,7 @@ use rustc_hash::FxHashSet;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::{Name, RowField, RowTypeId, Type, TypeId, normalise};
+use crate::core::{Name, RowField, RowTypeId, Type, TypeId, normalise, toolkit};
 use crate::state::CheckState;
 
 pub enum MatchType {
@@ -217,5 +217,125 @@ where
         }
     } else {
         compare(state, context, left_tail, right_tail)
+    }
+}
+
+pub fn types_equal<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    left: TypeId,
+    right: TypeId,
+) -> QueryResult<MatchType>
+where
+    Q: ExternalQueries,
+{
+    let left = normalise::expand(state, context, left)?;
+    let right = normalise::expand(state, context, right)?;
+
+    let left_core = context.lookup_type(left);
+    let right_core = context.lookup_type(right);
+
+    match (left_core, right_core) {
+        (Type::Kinded(left, _), _) => types_equal(state, context, left, right),
+        (_, Type::Kinded(right, _)) => types_equal(state, context, left, right),
+
+        (Type::Unification(left), Type::Unification(right)) => {
+            if left == right {
+                Ok(MatchType::Match { bindings: vec![] })
+            } else {
+                Ok(MatchType::Stuck { stuck: vec![left, right] })
+            }
+        }
+
+        (Type::Rigid(left, _, _), Type::Rigid(right, _, _)) => {
+            if left == right {
+                Ok(MatchType::Match { bindings: vec![] })
+            } else {
+                Ok(MatchType::Skolem)
+            }
+        }
+
+        (Type::Unification(left), _) => {
+            if toolkit::contains_unification(state, context, right, left)? {
+                Ok(MatchType::Apart)
+            } else {
+                Ok(MatchType::Stuck { stuck: vec![left] })
+            }
+        }
+
+        (_, Type::Unification(right)) => {
+            if toolkit::contains_unification(state, context, left, right)? {
+                Ok(MatchType::Apart)
+            } else {
+                Ok(MatchType::Stuck { stuck: vec![right] })
+            }
+        }
+
+        (Type::Rigid(left, _, _), _) => {
+            if toolkit::contains_rigid(state, context, right, left)? {
+                Ok(MatchType::Apart)
+            } else {
+                Ok(MatchType::Skolem)
+            }
+        }
+
+        (_, Type::Rigid(right, _, _)) => {
+            if toolkit::contains_rigid(state, context, left, right)? {
+                Ok(MatchType::Apart)
+            } else {
+                Ok(MatchType::Skolem)
+            }
+        }
+
+        (Type::Constructor(left_file, left_item), Type::Constructor(right_file, right_item))
+            if (left_file, left_item) == (right_file, right_item) =>
+        {
+            Ok(MatchType::Match { bindings: vec![] })
+        }
+
+        (Type::String(_, left), Type::String(_, right)) if left == right => {
+            Ok(MatchType::Match { bindings: vec![] })
+        }
+
+        (Type::Integer(left), Type::Integer(right)) if left == right => {
+            Ok(MatchType::Match { bindings: vec![] })
+        }
+
+        (
+            Type::Application(left_function, left_argument),
+            Type::Application(right_function, right_argument),
+        ) => {
+            let function = types_equal(state, context, left_function, right_function)?;
+            let argument = types_equal(state, context, left_argument, right_argument)?;
+            Ok(function.combine(argument))
+        }
+
+        (
+            Type::KindApplication(left_function, left_argument),
+            Type::KindApplication(right_function, right_argument),
+        ) => {
+            let function = types_equal(state, context, left_function, right_function)?;
+            let argument = types_equal(state, context, left_argument, right_argument)?;
+            Ok(function.combine(argument))
+        }
+
+        (
+            Type::Function(left_argument, left_result),
+            Type::Function(right_argument, right_result),
+        ) => {
+            let argument = types_equal(state, context, left_argument, right_argument)?;
+            let result = types_equal(state, context, left_result, right_result)?;
+            Ok(argument.combine(result))
+        }
+
+        (Type::Row(left), Type::Row(right)) => compare_row_types_with(
+            state,
+            context,
+            left,
+            right,
+            &mut |state, context, left, right| types_equal(state, context, left, right),
+        ),
+
+        (_, _) => Ok(MatchType::Apart),
     }
 }
