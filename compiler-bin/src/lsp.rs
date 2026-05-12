@@ -284,33 +284,28 @@ fn execute_command(
 ) -> std::future::Ready<Result<<request::ExecuteCommand as Request>::Result, ResponseError>> {
     use std::future;
 
-    let res = match p.command.as_str() {
-        // Implemented in later tasks; for now dispatch to events.
-        PS_ANALYZER_REFRESH => state
-            .client
-            .emit(event::AnalyzerRefresh)
-            .map(|_| None)
-            .map_err(|e| ResponseError::new(async_lsp::ErrorCode::REQUEST_FAILED, e.to_string())),
-        PS_RESET => state
-            .client
-            .emit(event::Reset)
-            .map(|_| None)
-            .map_err(|e| ResponseError::new(async_lsp::ErrorCode::REQUEST_FAILED, e.to_string())),
-        PS_CLEAN => state
-            .client
-            .emit(event::Clean)
-            .map(|_| None)
-            .map_err(|e| ResponseError::new(async_lsp::ErrorCode::REQUEST_FAILED, e.to_string())),
-        PS_BUILD => state
-            .client
-            .emit(build::Build)
-            .map(|_| None)
-            .map_err(|e| ResponseError::new(async_lsp::ErrorCode::REQUEST_FAILED, e.to_string())),
-        other => Err(ResponseError::new(
-            async_lsp::ErrorCode::INVALID_PARAMS,
-            format!("unsupported command: {other}"),
-        )),
-    };
+    let res =
+        match p.command.as_str() {
+            // Implemented in later tasks; for now dispatch to events.
+            PS_ANALYZER_REFRESH => {
+                state.client.emit(event::AnalyzerRefresh).map(|_| None).map_err(|e| {
+                    ResponseError::new(async_lsp::ErrorCode::REQUEST_FAILED, e.to_string())
+                })
+            }
+            PS_RESET => event::reset(state, event::Reset)
+                .map(|_| None)
+                .map_err(|e| ResponseError::new(async_lsp::ErrorCode::REQUEST_FAILED, e.to_string())),
+            PS_CLEAN => state.client.emit(event::Clean).map(|_| None).map_err(|e| {
+                ResponseError::new(async_lsp::ErrorCode::REQUEST_FAILED, e.to_string())
+            }),
+            PS_BUILD => state.client.emit(build::Build).map(|_| None).map_err(|e| {
+                ResponseError::new(async_lsp::ErrorCode::REQUEST_FAILED, e.to_string())
+            }),
+            other => Err(ResponseError::new(
+                async_lsp::ErrorCode::INVALID_PARAMS,
+                format!("unsupported command: {other}"),
+            )),
+        };
 
     future::ready(res)
 }

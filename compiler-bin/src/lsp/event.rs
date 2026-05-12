@@ -37,6 +37,9 @@ pub fn reset(state: &mut State, _: Reset) -> Result<(), LspError> {
     // Prevent in-flight build/diagnostics tasks from republishing stale diagnostics after reset.
     state.diagnostics_generation.fetch_add(1, Ordering::SeqCst);
 
+    // Capture a snapshot client for publishing after we mutate state.
+    let mut client = state.client.clone();
+
     // Clear any published diagnostics (build + analyzer).
     let mut uris_to_clear: Vec<Url> = {
         let build = state.build_diagnostics.read();
@@ -59,7 +62,7 @@ pub fn reset(state: &mut State, _: Reset) -> Result<(), LspError> {
     }
 
     for uri in uris_to_clear {
-        let _ = state.client.publish_diagnostics(PublishDiagnosticsParams {
+        let _ = client.publish_diagnostics(PublishDiagnosticsParams {
             uri,
             diagnostics: vec![],
             version: None,
@@ -72,7 +75,7 @@ pub fn reset(state: &mut State, _: Reset) -> Result<(), LspError> {
     state.invalidate_workspace_symbols();
     state.invalidate_suggestions_cache();
 
-    let _ = state.client.show_message(ShowMessageParams {
+    let _ = client.show_message(ShowMessageParams {
         typ: MessageType::INFO,
         message: "Reset complete".to_string(),
     });
