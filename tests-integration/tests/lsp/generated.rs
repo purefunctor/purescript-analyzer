@@ -88,8 +88,6 @@ fn run_test(folder: &str, file: &str) {
 
 #[rustfmt::skip] #[test] fn test_1777476360_definition_pun_main() { run_test("1777476360_definition_pun", "Main"); }
 
-#[rustfmt::skip] #[test] fn test_1777490040_hover_term_hole_main() { run_test("1777490040_hover_term_hole", "Main"); }
-
 #[rustfmt::skip] #[test] fn test_1777491240_hover_term_hole_filled_main() { run_test("1777491240_hover_term_hole_filled", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_1777491300_hover_term_let_main() { run_test("1777491300_hover_term_let", "Main"); }

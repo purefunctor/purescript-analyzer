@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/lowering.rs
+assertion_line: 111
 expression: "(terms, types)"
 ---
 (

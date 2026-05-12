@@ -1,6 +1,7 @@
 ---
 source: tests-integration/tests/lowering.rs
-expression: lowered.errors
+assertion_line: 137
+expression: groups.cycle_errors
 ---
 [
     RecursiveSynonym(

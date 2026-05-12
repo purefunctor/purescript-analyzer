@@ -1,5 +1,6 @@
 ---
 source: tests-integration/tests/lowering/generated.rs
+assertion_line: 12
 expression: report
 ---
 module Main
