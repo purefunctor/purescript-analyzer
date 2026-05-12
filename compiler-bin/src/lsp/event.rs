@@ -9,6 +9,7 @@ use rowan::TextSize;
 
 use crate::lsp::error::LspError;
 use crate::lsp::{State, StateSnapshot};
+use std::sync::atomic::Ordering;
 
 pub struct AnalyzerRefresh;
 
@@ -32,6 +33,9 @@ pub struct Reset;
 
 pub fn reset(state: &mut State, _: Reset) -> Result<(), LspError> {
     state.engine.request_cancel();
+
+    // Prevent in-flight build/diagnostics tasks from republishing stale diagnostics after reset.
+    state.diagnostics_generation.fetch_add(1, Ordering::SeqCst);
 
     // Clear any published diagnostics (build + analyzer).
     let mut uris_to_clear: Vec<Url> = {
@@ -205,6 +209,8 @@ fn collect_diagnostics_core(
     mut snapshot: StateSnapshot,
     CollectDiagnostics(id): CollectDiagnostics,
 ) -> Result<(), LspError> {
+    let generation = snapshot.diagnostics_generation.load(Ordering::SeqCst);
+
     let content = snapshot.engine.content(id);
 
     let (parsed, _) = snapshot.engine.parsed(id)?;
@@ -288,6 +294,9 @@ fn collect_diagnostics_core(
         .collect();
 
     // Store analyzer diagnostics then publish merged diagnostics (build + analyzer).
+    if snapshot.diagnostics_generation.load(Ordering::SeqCst) != generation {
+        return Ok(());
+    }
     {
         let mut map = snapshot.analyzer_diagnostics.write();
         if diagnostics.is_empty() {
@@ -298,6 +307,11 @@ fn collect_diagnostics_core(
     }
 
     let merged = snapshot.merged_diagnostics_for_uri(&uri);
+
+    if snapshot.diagnostics_generation.load(Ordering::SeqCst) != generation {
+        return Ok(());
+    }
+
     snapshot.client.publish_diagnostics(PublishDiagnosticsParams {
         uri,
         diagnostics: merged,

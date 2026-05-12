@@ -7,6 +7,7 @@ use std::borrow::BorrowMut;
 use std::ops::{ControlFlow, Deref};
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::sync::atomic::AtomicU64;
 use std::{env, fs, mem, process};
 use std::collections::HashMap;
 
@@ -52,6 +53,9 @@ pub struct State {
     pub build_diagnostics: Arc<RwLock<HashMap<Url, Vec<Diagnostic>>>>,
     pub analyzer_diagnostics: Arc<RwLock<HashMap<Url, Vec<Diagnostic>>>>,
 
+    // Bumped on reset to prevent in-flight tasks from republishing stale diagnostics.
+    pub diagnostics_generation: Arc<AtomicU64>,
+
     pub root: Option<PathBuf>,
 }
 
@@ -72,6 +76,8 @@ impl State {
         let build_diagnostics = Arc::new(RwLock::new(HashMap::new()));
         let analyzer_diagnostics = Arc::new(RwLock::new(HashMap::new()));
 
+        let diagnostics_generation = Arc::new(AtomicU64::new(0));
+
         let root = None;
 
         State {
@@ -83,6 +89,7 @@ impl State {
             suggestions_cache,
             build_diagnostics,
             analyzer_diagnostics,
+            diagnostics_generation,
             root,
         }
     }
@@ -99,6 +106,7 @@ impl State {
             suggestions_cache: Arc::clone(&self.suggestions_cache),
             build_diagnostics: Arc::clone(&self.build_diagnostics),
             analyzer_diagnostics: Arc::clone(&self.analyzer_diagnostics),
+            diagnostics_generation: Arc::clone(&self.diagnostics_generation),
             root: self.root.clone(),
         };
         task::spawn_blocking(move || f(snapshot))
@@ -123,6 +131,7 @@ struct StateSnapshot {
     suggestions_cache: Arc<RwLock<SuggestionsCache>>,
     build_diagnostics: Arc<RwLock<HashMap<Url, Vec<Diagnostic>>>>,
     analyzer_diagnostics: Arc<RwLock<HashMap<Url, Vec<Diagnostic>>>>,
+    diagnostics_generation: Arc<AtomicU64>,
     root: Option<PathBuf>,
 }
 
@@ -760,5 +769,4 @@ mod tests {
         let err = res.unwrap_err();
         assert_eq!(err.code, async_lsp::ErrorCode::REQUEST_FAILED);
     }
-
 }

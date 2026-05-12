@@ -24,6 +24,7 @@ pub fn build(state: &mut crate::lsp::State, _: Build) -> Result<(), LspError> {
 }
 
 fn build_core(mut snapshot: StateSnapshot) -> Result<(), LspError> {
+    let generation = snapshot.diagnostics_generation.load(std::sync::atomic::Ordering::SeqCst);
     // Clone to avoid holding an immutable borrow of snapshot across client calls.
     let root = snapshot.root.clone().ok_or(LspError::MissingRoot)?;
 
@@ -79,6 +80,11 @@ fn build_core(mut snapshot: StateSnapshot) -> Result<(), LspError> {
         }
     };
 
+    // If a reset happened while building, don't publish stale diagnostics.
+    if snapshot.diagnostics_generation.load(std::sync::atomic::Ordering::SeqCst) != generation {
+        return Ok(());
+    }
+
     // Update stored build diagnostics (file:// only).
     let mut affected: Vec<Url> = previously_published;
     {
@@ -98,6 +104,9 @@ fn build_core(mut snapshot: StateSnapshot) -> Result<(), LspError> {
     affected.dedup();
 
     for uri in affected {
+        if snapshot.diagnostics_generation.load(std::sync::atomic::Ordering::SeqCst) != generation {
+            return Ok(());
+        }
         let diagnostics = snapshot.merged_diagnostics_for_uri(&uri);
         let _ = snapshot.client.publish_diagnostics(PublishDiagnosticsParams {
             uri,
