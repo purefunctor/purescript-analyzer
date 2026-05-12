@@ -1,0 +1,17 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+const :: forall (@a :: Type) (@b :: Type). (a :: Type) -> (b :: Type) -> (a :: Type)
+choose :: Int -> (forall (@a :: Type) (@b :: Type). (a :: Type) -> (b :: Type) -> (a :: Type))
+normal ::
+  forall (t9 :: Type) (t8 :: Type).
+    { parenthesised :: (t9 :: Type) -> (t8 :: Type) -> (t9 :: Type) }
+prenex ::
+  { application :: forall (@a :: Type) (@b :: Type). (a :: Type) -> (b :: Type) -> (a :: Type)
+  , variable :: Int -> (forall (@a :: Type) (@b :: Type). (a :: Type) -> (b :: Type) -> (a :: Type))
+  }
+
+Types

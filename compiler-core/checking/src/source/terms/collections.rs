@@ -16,11 +16,7 @@ where
 {
     let id = super::infer_expression(state, context, expression)?;
 
-    let Some(kind) = context.lowered.info.get_expression_kind(expression) else {
-        return Ok(id);
-    };
-
-    if should_instantiate_record_field(kind) {
+    if should_instantiate_record_field(context, expression) {
         let id = toolkit::instantiate_unifications(state, context, id)?;
         toolkit::collect_wanteds(state, context, id)
     } else {
@@ -28,7 +24,17 @@ where
     }
 }
 
-fn should_instantiate_record_field(kind: &lowering::ExpressionKind) -> bool {
+fn should_instantiate_record_field<Q>(
+    context: &CheckContext<Q>,
+    expression: lowering::ExpressionId,
+) -> bool
+where
+    Q: ExternalQueries,
+{
+    let Some(kind) = context.lowered.info.get_expression_kind(expression) else {
+        return false;
+    };
+
     if matches!(
         kind,
         lowering::ExpressionKind::Constructor { .. }
@@ -38,10 +44,16 @@ fn should_instantiate_record_field(kind: &lowering::ExpressionKind) -> bool {
         return true;
     }
 
-    if let lowering::ExpressionKind::Application { arguments, .. } = kind
+    if let lowering::ExpressionKind::Typed { expression: Some(expression), .. }
+    | lowering::ExpressionKind::Parenthesized { parenthesized: Some(expression) } = kind
+    {
+        return should_instantiate_record_field(context, *expression);
+    }
+
+    if let lowering::ExpressionKind::Application { function: Some(function), arguments } = kind
         && let Some(lowering::ExpressionArgument::Type(_)) = arguments.iter().next()
     {
-        return true;
+        return should_instantiate_record_field(context, *function);
     }
 
     false
