@@ -1,12 +1,9 @@
-use std::sync::Arc;
-
-use analyzer::{Files, QueryEngine, common, locate, prim};
+use analyzer::{common, locate};
 use async_lsp::LanguageClient;
 use async_lsp::lsp_types::*;
 use diagnostics::{DiagnosticsContext, ToDiagnostics};
 use files::FileId;
 use itertools::Itertools;
-use parking_lot::RwLock;
 use path_absolutize::Absolutize;
 use rowan::TextSize;
 
@@ -63,23 +60,18 @@ pub fn reset(state: &mut State, _: Reset) -> Result<(), LspError> {
         });
     }
 
-    // Reset analyzer state.
-    let mut engine = QueryEngine::default();
-    let mut files = Files::default();
-    prim::configure(&mut engine, &mut files);
-    state.engine = engine;
-    state.files = Arc::new(RwLock::new(files));
-
+    // Fast reset: clear diagnostics + caches, keep current file contents.
+    // Full workspace reload is expensive on large projects; users can opt into
+    // recomputing diagnostics via purescript.analyzerRefresh or by running build.
     state.invalidate_workspace_symbols();
     state.invalidate_suggestions_cache();
 
-    // Reload workspace sources (same mechanism as initialization).
-    let config = Arc::clone(&state.config);
-    if let Some(command) = config.source_command.as_deref() {
-        super::initialized_manual(state, command)
-    } else {
-        super::initialized_spago(state)
-    }
+    let _ = state.client.show_message(ShowMessageParams {
+        typ: MessageType::INFO,
+        message: "Reset complete".to_string(),
+    });
+
+    Ok(())
 }
 
 pub struct Clean;

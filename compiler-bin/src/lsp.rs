@@ -668,6 +668,29 @@ mod tests {
         }
     }
 
+    #[test]
+    fn reset_clears_diagnostics_but_keeps_files() {
+        let mut state = mk_state_with(base_config());
+        on_change(&mut state, "file:///test/Main.purs", "module Main where\n").unwrap();
+
+        // Seed both diagnostic sources.
+        let uri = Url::parse("file:///test/Main.purs").unwrap();
+        state
+            .build_diagnostics
+            .write()
+            .insert(uri.clone(), vec![Diagnostic::default()]);
+        state
+            .analyzer_diagnostics
+            .write()
+            .insert(uri.clone(), vec![Diagnostic::default()]);
+
+        event::reset(&mut state, event::Reset).unwrap();
+
+        assert!(state.build_diagnostics.read().is_empty());
+        assert!(state.analyzer_diagnostics.read().is_empty());
+        assert!(state.files.read().id(uri.as_str()).is_some());
+    }
+
     #[tokio::test]
     async fn analyzer_refresh_handles_multiple_files() {
         let mut state = mk_state_with(base_config());
