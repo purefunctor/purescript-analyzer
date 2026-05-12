@@ -14,6 +14,7 @@ use std::collections::{HashMap, HashSet};
 use analyzer::completion::SuggestionsCache;
 use analyzer::symbols::WorkspaceSymbolsCache;
 use analyzer::{Files, QueryEngine, prim};
+use async_lsp::LanguageClient;
 use async_lsp::client_monitor::ClientProcessMonitorLayer;
 use async_lsp::concurrency::ConcurrencyLayer;
 use async_lsp::lsp_types::notification::Notification;
@@ -292,9 +293,23 @@ fn execute_command(
                     ResponseError::new(async_lsp::ErrorCode::REQUEST_FAILED, e.to_string())
                 })
             }
-            PS_RESET => event::reset(state, event::Reset)
-                .map(|_| None)
-                .map_err(|e| ResponseError::new(async_lsp::ErrorCode::REQUEST_FAILED, e.to_string())),
+            PS_RESET => {
+                // Debug breadcrumb: makes it obvious in client traces that reset was handled.
+                let _ = state.client.show_message(ShowMessageParams {
+                    typ: MessageType::INFO,
+                    message: "Reset requested".to_string(),
+                });
+
+                // Run reset in the background (same pattern as build/clean) so
+                // we publish diagnostics/messages from the main loop context.
+                state
+                    .client
+                    .emit(event::Reset)
+                    .map(|_| None)
+                    .map_err(|e| {
+                        ResponseError::new(async_lsp::ErrorCode::REQUEST_FAILED, e.to_string())
+                    })
+            }
             PS_CLEAN => state.client.emit(event::Clean).map(|_| None).map_err(|e| {
                 ResponseError::new(async_lsp::ErrorCode::REQUEST_FAILED, e.to_string())
             }),
