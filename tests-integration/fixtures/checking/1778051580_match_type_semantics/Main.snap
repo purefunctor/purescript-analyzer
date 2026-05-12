@@ -1,0 +1,53 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+isEq ::
+  forall (@a :: Type) (@b :: Type) (@o :: Type).
+    IsEq (a :: Type) (b :: Type) (o :: Type) => (a :: Type) -> (b :: Type) -> (o :: Type)
+Unit :: Unit
+Output :: Output
+testEqConcrete :: Output
+testSkolemRight :: forall (x :: Type). (x :: Type) -> Output
+testSkolemLeft :: forall (x :: Type). (x :: Type) -> Output
+testSkolemIsEq :: forall (x :: Type) (y :: Type). (x :: Type) -> (y :: Type) -> Output
+typeEquals ::
+  forall (t35 :: Type) (@a :: (t35 :: Type)) (@b :: (t35 :: Type)).
+    TypeEquals @(t35 :: Type) (a :: (t35 :: Type)) (b :: (t35 :: Type)) => Unit
+testOpenRows :: Unit
+rowSame ::
+  forall (k :: Type) (@a :: (k :: Type)) (@b :: (k :: Type)).
+    RowSame @(k :: Type) (a :: (k :: Type)) (b :: (k :: Type)) => Unit
+testOpenRowsNoFd :: Unit
+
+Types
+IsEq :: Type -> Type -> Type -> Constraint
+Unit :: Type
+Output :: Type
+TypeEquals :: forall (k :: Type). (k :: Type) -> (k :: Type) -> Constraint
+RowSame :: forall (k :: Type). (k :: Type) -> (k :: Type) -> Constraint
+
+Classes
+class forall (a :: Type) (b :: Type) (o :: Type). IsEq (a :: Type) (b :: Type) (o :: Type)
+  isEq ::
+  forall (@a :: Type) (@b :: Type) (@o :: Type).
+    IsEq (a :: Type) (b :: Type) (o :: Type) => (a :: Type) -> (b :: Type) -> (o :: Type)
+class forall (k :: Type) (a :: (k :: Type)) (b :: (k :: Type)). TypeEquals @(k :: Type) (a :: (k :: Type)) (b :: (k :: Type))
+class forall (k :: Type) (a :: (k :: Type)) (b :: (k :: Type)). RowSame @(k :: Type) (a :: (k :: Type)) (b :: (k :: Type))
+  rowSame ::
+  forall (k :: Type) (@a :: (k :: Type)) (@b :: (k :: Type)).
+    RowSame @(k :: Type) (a :: (k :: Type)) (b :: (k :: Type)) => Unit
+
+Instances
+instance forall (t9 :: Type). IsEq (t9 :: Type) (t9 :: Type) Output
+instance forall (t11 :: Type) (t12 :: Type). IsEq (t11 :: Type) (t12 :: Type) Output
+instance forall (t16 :: Type) (t15 :: (t16 :: Type)).
+  TypeEquals @(t16 :: Type) (t15 :: (t16 :: Type)) (t15 :: (t16 :: Type))
+instance forall (t20 :: Type) (t19 :: (t20 :: Type)).
+  RowSame @(t20 :: Type) (t19 :: (t20 :: Type)) (t19 :: (t20 :: Type))
+
+Roles
+Unit = []
+Output = []

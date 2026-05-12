@@ -1,0 +1,37 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Proxy :: forall (k :: Type) (@a :: (k :: Type)). Proxy @(k :: Type) (a :: (k :: Type))
+K1 :: K1
+Unit :: Unit
+c ::
+  forall (@key :: Type) (@row :: Row Type).
+    C (key :: Type) (row :: Row Type) =>
+    Proxy @Type (key :: Type) -> Proxy @(Row Type) (row :: Row Type) -> Unit
+test :: forall (key :: Type). Proxy @Type (key :: Type) -> Unit
+
+Types
+Proxy :: forall (k :: Type). (k :: Type) -> Type
+K1 :: Type
+Unit :: Type
+C :: Type -> Row Type -> Constraint
+
+Classes
+class forall (key :: Type) (row :: Row Type). C (key :: Type) (row :: Row Type)
+  c ::
+  forall (@key :: Type) (@row :: Row Type).
+    C (key :: Type) (row :: Row Type) =>
+    Proxy @Type (key :: Type) -> Proxy @(Row Type) (row :: Row Type) -> Unit
+
+Instances
+instance C K1 ( a :: Int, b :: Boolean )
+instance forall (t4 :: Type) (t5 :: Row Type).
+  C (t4 :: Type) ( a :: String, b :: Boolean | (t5 :: Row Type) )
+
+Roles
+Proxy = [Phantom]
+K1 = []
+Unit = []
