@@ -226,6 +226,7 @@ where
     let mut trunk_types = vec![];
     for trunk in trunk.iter() {
         let trunk_type = super::infer_expression(state, context, *trunk)?;
+        let trunk_type = toolkit::instantiate_constrained(state, context, trunk_type)?;
         trunk_types.push(trunk_type);
     }
 

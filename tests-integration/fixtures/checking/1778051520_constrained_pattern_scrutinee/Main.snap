@@ -1,0 +1,22 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Box :: forall (@a :: Type). (a :: Type) -> Box (a :: Type)
+method :: forall (@route :: Type). Route (route :: Type) => Box (route :: Type)
+routeCase :: forall (@route :: Type). Route (route :: Type) => (route :: Type)
+routeLet :: forall (@route :: Type). Route (route :: Type) => (route :: Type)
+routeGuard :: forall (@route :: Type). Route (route :: Type) => (route :: Type)
+
+Types
+Box :: Type -> Type
+Route :: Type -> Constraint
+
+Classes
+class forall (route :: Type). Route (route :: Type)
+  method :: forall (@route :: Type). Route (route :: Type) => Box (route :: Type)
+
+Roles
+Box = [Representational]
