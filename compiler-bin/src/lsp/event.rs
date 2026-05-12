@@ -9,6 +9,7 @@ use rowan::TextSize;
 
 use crate::lsp::error::LspError;
 use crate::lsp::{State, StateSnapshot};
+use std::path::{Component, Path};
 use std::sync::atomic::Ordering;
 
 pub struct AnalyzerRefresh;
@@ -17,16 +18,98 @@ pub fn analyzer_refresh(state: &mut State, _: AnalyzerRefresh) -> Result<(), Lsp
     // Best-effort: cancel in-flight queries so refresh work wins.
     state.engine.request_cancel();
 
-    let file_ids: Vec<FileId> = {
+    let (file_ids, mut excluded_uris): (Vec<FileId>, Vec<Url>) = {
         let files = state.files.read();
-        files.iter_id().collect()
+        files
+            .iter_id()
+            .filter_map(|file_id| {
+                let path = files.path(file_id);
+                let uri = Url::parse(path.as_ref()).ok()?;
+                if is_refreshable_workspace_source_uri(state.root.as_deref(), &uri) {
+                    Some((Some(file_id), None))
+                } else if uri.scheme() == "file" {
+                    Some((None, Some(uri)))
+                } else {
+                    None
+                }
+            })
+            .fold((vec![], vec![]), |(mut file_ids, mut excluded_uris), (file_id, uri)| {
+                if let Some(file_id) = file_id {
+                    file_ids.push(file_id);
+                }
+                if let Some(uri) = uri {
+                    excluded_uris.push(uri);
+                }
+                (file_ids, excluded_uris)
+            })
     };
+
+    {
+        let analyzer = state.analyzer_diagnostics.read();
+        excluded_uris.extend(
+            analyzer
+                .keys()
+                .filter(|uri| !is_refreshable_workspace_source_uri(state.root.as_deref(), uri))
+                .cloned(),
+        );
+    }
+
+    excluded_uris.sort();
+    excluded_uris.dedup();
+
+    let cleared_uris = {
+        let mut analyzer = state.analyzer_diagnostics.write();
+        excluded_uris.into_iter().filter(|uri| analyzer.remove(uri).is_some()).collect_vec()
+    };
+
+    for uri in cleared_uris {
+        let diagnostics = {
+            let build = state.build_diagnostics.read();
+            build.get(&uri).cloned().unwrap_or_default()
+        };
+        state.client.publish_diagnostics(PublishDiagnosticsParams {
+            uri,
+            diagnostics,
+            version: None,
+        })?;
+    }
 
     for file_id in file_ids {
         // Reuse existing per-file diagnostic computation.
         collect_diagnostics(state, CollectDiagnostics(file_id))?;
     }
     Ok(())
+}
+
+fn is_refreshable_workspace_source_uri(root: Option<&Path>, uri: &Url) -> bool {
+    if uri.scheme() != "file" {
+        return false;
+    }
+
+    let Ok(path) = uri.to_file_path() else {
+        return false;
+    };
+
+    if path.extension().and_then(|extension| extension.to_str()) != Some("purs") {
+        return false;
+    }
+
+    let path = path.absolutize().map(|path| path.to_path_buf()).unwrap_or(path);
+
+    if let Some(root) = root {
+        let root =
+            root.absolutize().map(|root| root.to_path_buf()).unwrap_or_else(|_| root.to_path_buf());
+        if !path.starts_with(root) {
+            return false;
+        }
+    }
+
+    !path.components().any(|component| match component {
+        Component::Normal(name) => {
+            matches!(name.to_str(), Some(".spago" | "output" | ".git" | "node_modules"))
+        }
+        _ => false,
+    })
 }
 
 pub struct Reset;
@@ -187,6 +270,27 @@ mod tests {
         let out = clean_output_dir(&root).unwrap();
         assert_eq!(out, CleanOutcome::Deleted);
         assert!(!root.join("output").exists());
+    }
+
+    #[test]
+    fn analyzer_refresh_only_targets_workspace_sources() {
+        let root = mk_tmp_dir("refresh-scope");
+        let source_uri = Url::from_file_path(root.join("src/Main.purs")).unwrap();
+        let test_uri = Url::from_file_path(root.join("test/Main.purs")).unwrap();
+        let dependency_uri =
+            Url::from_file_path(root.join(".spago/p/prelude/src/Prelude.purs")).unwrap();
+        let output_uri = Url::from_file_path(root.join("output/Main/index.js")).unwrap();
+        let external_uri = Url::from_file_path(root.with_file_name("external/Main.purs")).unwrap();
+        let generated_purs_uri = Url::from_file_path(root.join("output/Main.purs")).unwrap();
+        let prim_uri = Url::parse("prim://Prim.purs").unwrap();
+
+        assert!(is_refreshable_workspace_source_uri(Some(&root), &source_uri));
+        assert!(is_refreshable_workspace_source_uri(Some(&root), &test_uri));
+        assert!(!is_refreshable_workspace_source_uri(Some(&root), &dependency_uri));
+        assert!(!is_refreshable_workspace_source_uri(Some(&root), &output_uri));
+        assert!(!is_refreshable_workspace_source_uri(Some(&root), &external_uri));
+        assert!(!is_refreshable_workspace_source_uri(Some(&root), &generated_purs_uri));
+        assert!(!is_refreshable_workspace_source_uri(Some(&root), &prim_uri));
     }
 }
 
