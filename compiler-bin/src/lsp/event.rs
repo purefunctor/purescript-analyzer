@@ -41,9 +41,11 @@ pub fn reset(state: &mut State, _: Reset) -> Result<(), LspError> {
     let mut uris_to_clear: Vec<Url> = {
         let build = state.build_diagnostics.read();
         let analyzer = state.analyzer_diagnostics.read();
+        let open = state.open_uris.read();
         build
             .keys()
             .chain(analyzer.keys())
+            .chain(open.iter())
             .filter(|u| u.scheme() == "file")
             .cloned()
             .collect()

@@ -9,7 +9,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::atomic::AtomicU64;
 use std::{env, fs, mem, process};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use analyzer::completion::SuggestionsCache;
 use analyzer::symbols::WorkspaceSymbolsCache;
@@ -53,6 +53,9 @@ pub struct State {
     pub build_diagnostics: Arc<RwLock<HashMap<Url, Vec<Diagnostic>>>>,
     pub analyzer_diagnostics: Arc<RwLock<HashMap<Url, Vec<Diagnostic>>>>,
 
+    // URIs currently open in the client.
+    pub open_uris: Arc<RwLock<HashSet<Url>>>,
+
     // Bumped on reset to prevent in-flight tasks from republishing stale diagnostics.
     pub diagnostics_generation: Arc<AtomicU64>,
 
@@ -78,6 +81,8 @@ impl State {
 
         let diagnostics_generation = Arc::new(AtomicU64::new(0));
 
+        let open_uris = Arc::new(RwLock::new(HashSet::new()));
+
         let root = None;
 
         State {
@@ -90,6 +95,7 @@ impl State {
             build_diagnostics,
             analyzer_diagnostics,
             diagnostics_generation,
+            open_uris,
             root,
         }
     }
@@ -488,6 +494,11 @@ fn did_open(state: &mut State, p: DidOpenTextDocumentParams) -> Result<(), LspEr
     let uri = p.text_document.uri.as_str();
     let text = p.text_document.text.as_str();
 
+    {
+        let mut open = state.open_uris.write();
+        open.insert(p.text_document.uri.clone());
+    }
+
     on_change(state, uri, text)?;
 
     state.invalidate_workspace_symbols();
@@ -497,6 +508,12 @@ fn did_open(state: &mut State, p: DidOpenTextDocumentParams) -> Result<(), LspEr
         event::emit_collect_diagnostics(state, p.text_document.uri)?;
     }
 
+    Ok(())
+}
+
+fn did_close(state: &mut State, p: DidCloseTextDocumentParams) -> Result<(), LspError> {
+    let mut open = state.open_uris.write();
+    open.remove(&p.text_document.uri);
     Ok(())
 }
 
@@ -594,7 +611,7 @@ pub async fn start(config: Arc<cli::Config>) {
             .notification_ext::<notification::Initialized>(initialized)
             .notification_ext::<notification::DidOpenTextDocument>(did_open)
             .notification_ext::<notification::DidSaveTextDocument>(did_save)
-            .notification_ext::<notification::DidCloseTextDocument>(|_, _| Ok(()))
+            .notification_ext::<notification::DidCloseTextDocument>(did_close)
             .notification_ext::<notification::DidChangeConfiguration>(|_, _| Ok(()))
             .notification_ext::<notification::DidChangeTextDocument>(did_change)
             .notification_ext::<notification::DidChangeWatchedFiles>(|_, _| Ok(()))
