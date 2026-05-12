@@ -8,7 +8,7 @@ use std::ops::{ControlFlow, Deref};
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::{env, fs, mem, process};
-use std::collections::HashSet;
+use std::collections::HashMap;
 
 use analyzer::completion::SuggestionsCache;
 use analyzer::symbols::WorkspaceSymbolsCache;
@@ -47,9 +47,10 @@ pub struct State {
     pub workspace_symbols_cache: Arc<RwLock<WorkspaceSymbolsCache>>,
     pub suggestions_cache: Arc<RwLock<SuggestionsCache>>,
 
-    // URIs for which we last published build diagnostics.
-    // Used to clear only build diagnostics (avoids flooding clients).
-    pub build_diagnostics_uris: Arc<RwLock<HashSet<Url>>>,
+    // Last published diagnostics from different sources.
+    // We merge these per-URI when publishing to the client.
+    pub build_diagnostics: Arc<RwLock<HashMap<Url, Vec<Diagnostic>>>>,
+    pub analyzer_diagnostics: Arc<RwLock<HashMap<Url, Vec<Diagnostic>>>>,
 
     pub root: Option<PathBuf>,
 }
@@ -68,7 +69,8 @@ impl State {
         let suggestions_cache = SuggestionsCache::default();
         let suggestions_cache = Arc::new(RwLock::new(suggestions_cache));
 
-        let build_diagnostics_uris = Arc::new(RwLock::new(HashSet::new()));
+        let build_diagnostics = Arc::new(RwLock::new(HashMap::new()));
+        let analyzer_diagnostics = Arc::new(RwLock::new(HashMap::new()));
 
         let root = None;
 
@@ -79,7 +81,8 @@ impl State {
             files,
             workspace_symbols_cache,
             suggestions_cache,
-            build_diagnostics_uris,
+            build_diagnostics,
+            analyzer_diagnostics,
             root,
         }
     }
@@ -94,7 +97,8 @@ impl State {
             files: Arc::clone(&self.files),
             workspace_symbols_cache: Arc::clone(&self.workspace_symbols_cache),
             suggestions_cache: Arc::clone(&self.suggestions_cache),
-            build_diagnostics_uris: Arc::clone(&self.build_diagnostics_uris),
+            build_diagnostics: Arc::clone(&self.build_diagnostics),
+            analyzer_diagnostics: Arc::clone(&self.analyzer_diagnostics),
             root: self.root.clone(),
         };
         task::spawn_blocking(move || f(snapshot))
@@ -117,7 +121,8 @@ struct StateSnapshot {
     files: Arc<RwLock<Files>>,
     workspace_symbols_cache: Arc<RwLock<WorkspaceSymbolsCache>>,
     suggestions_cache: Arc<RwLock<SuggestionsCache>>,
-    build_diagnostics_uris: Arc<RwLock<HashSet<Url>>>,
+    build_diagnostics: Arc<RwLock<HashMap<Url, Vec<Diagnostic>>>>,
+    analyzer_diagnostics: Arc<RwLock<HashMap<Url, Vec<Diagnostic>>>>,
     root: Option<PathBuf>,
 }
 
@@ -125,6 +130,80 @@ impl StateSnapshot {
     fn files(&self) -> impl Deref<Target = Files> + use<'_> {
         self.files.read()
     }
+
+    fn merged_diagnostics_for_uri(&self, uri: &Url) -> Vec<Diagnostic> {
+        let build = {
+            let map = self.build_diagnostics.read();
+            map.get(uri).cloned().unwrap_or_default()
+        };
+        let analyzer = {
+            let map = self.analyzer_diagnostics.read();
+            map.get(uri).cloned().unwrap_or_default()
+        };
+        merge_diagnostics(&build, &analyzer)
+    }
+}
+
+fn merge_diagnostics(build: &[Diagnostic], analyzer: &[Diagnostic]) -> Vec<Diagnostic> {
+    use std::collections::HashSet;
+    use std::hash::{Hash, Hasher};
+
+    #[derive(Clone, Eq)]
+    struct Key(String);
+
+    impl PartialEq for Key {
+        fn eq(&self, other: &Self) -> bool {
+            self.0 == other.0
+        }
+    }
+
+    impl Hash for Key {
+        fn hash<H: Hasher>(&self, state: &mut H) {
+            self.0.hash(state)
+        }
+    }
+
+    fn key(d: &Diagnostic) -> Key {
+        let sev = d
+            .severity
+            .map(|s| match s {
+                DiagnosticSeverity::ERROR => 1u32,
+                DiagnosticSeverity::WARNING => 2u32,
+                DiagnosticSeverity::INFORMATION => 3u32,
+                DiagnosticSeverity::HINT => 4u32,
+                _ => 0u32,
+            })
+            .unwrap_or(0);
+        let code = match &d.code {
+            Some(NumberOrString::Number(n)) => format!("n:{n}"),
+            Some(NumberOrString::String(s)) => format!("s:{s}"),
+            None => "".to_string(),
+        };
+        let source = d.source.as_deref().unwrap_or("");
+        let r = &d.range;
+        Key(format!(
+            "{}:{}:{}:{}:{}|{}|{}|{}",
+            r.start.line,
+            r.start.character,
+            r.end.line,
+            r.end.character,
+            sev,
+            code,
+            source,
+            d.message
+        ))
+    }
+
+    let mut seen: HashSet<Key> = HashSet::new();
+    let mut out = Vec::with_capacity(build.len() + analyzer.len());
+
+    for d in build.iter().chain(analyzer.iter()) {
+        let k = key(d);
+        if seen.insert(k) {
+            out.push(d.clone());
+        }
+    }
+    out
 }
 
 fn initialize(

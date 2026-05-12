@@ -36,22 +36,31 @@ pub struct Reset;
 pub fn reset(state: &mut State, _: Reset) -> Result<(), LspError> {
     state.engine.request_cancel();
 
-    // Clear any published diagnostics (including build diagnostics).
+    // Clear any published diagnostics (build + analyzer).
+    let mut uris_to_clear: Vec<Url> = {
+        let build = state.build_diagnostics.read();
+        let analyzer = state.analyzer_diagnostics.read();
+        build
+            .keys()
+            .chain(analyzer.keys())
+            .filter(|u| u.scheme() == "file")
+            .cloned()
+            .collect()
+    };
+    uris_to_clear.sort();
+    uris_to_clear.dedup();
+
     {
-        let files = state.files.read();
-        for file_id in files.iter_id() {
-            let uri = Url::parse(files.path(file_id).as_ref())?;
-            // Some internal/stdlib files use non-file schemes (e.g. prim://...).
-            // Emacs lsp-mode assumes diagnostics are for file:// URIs.
-            if uri.scheme() != "file" {
-                continue;
-            }
-            let _ = state.client.publish_diagnostics(PublishDiagnosticsParams {
-                uri,
-                diagnostics: vec![],
-                version: None,
-            });
-        }
+        state.build_diagnostics.write().clear();
+        state.analyzer_diagnostics.write().clear();
+    }
+
+    for uri in uris_to_clear {
+        let _ = state.client.publish_diagnostics(PublishDiagnosticsParams {
+            uri,
+            diagnostics: vec![],
+            version: None,
+        });
     }
 
     // Reset analyzer state.
@@ -225,7 +234,7 @@ fn collect_diagnostics_core(
 
     let to_position = |offset: u32| locate::offset_to_position(&content, TextSize::from(offset));
 
-    let diagnostics = all_diagnostics
+    let diagnostics: Vec<Diagnostic> = all_diagnostics
         .iter()
         .filter_map(|diagnostic| {
             let start = to_position(diagnostic.primary.start)?;
@@ -266,9 +275,20 @@ fn collect_diagnostics_core(
         })
         .collect();
 
+    // Store analyzer diagnostics then publish merged diagnostics (build + analyzer).
+    {
+        let mut map = snapshot.analyzer_diagnostics.write();
+        if diagnostics.is_empty() {
+            map.remove(&uri);
+        } else {
+            map.insert(uri.clone(), diagnostics);
+        }
+    }
+
+    let merged = snapshot.merged_diagnostics_for_uri(&uri);
     snapshot.client.publish_diagnostics(PublishDiagnosticsParams {
         uri,
-        diagnostics,
+        diagnostics: merged,
         version: None,
     })?;
 

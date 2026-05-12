@@ -33,13 +33,12 @@ fn build_core(mut snapshot: StateSnapshot) -> Result<(), LspError> {
     let build_arg = snapshot.config.build_arg.clone();
     let source_command = snapshot.config.source_command.clone();
 
-    // Only clear diagnostics we previously published for builds.
-    // Publishing one empty-diagnostics notification per known file can freeze clients.
-    // Ensure the read guard is dropped before any client calls.
+    // Only update diagnostics for URIs we previously published build diagnostics for,
+    // plus any URIs reported by the current build. This avoids flooding clients.
     let previously_published: Vec<Url>;
     {
-        let set = snapshot.build_diagnostics_uris.read();
-        previously_published = set.iter().cloned().collect();
+        let map = snapshot.build_diagnostics.read();
+        previously_published = map.keys().cloned().collect();
     }
 
     let tool = match build_tool_cfg {
@@ -80,33 +79,31 @@ fn build_core(mut snapshot: StateSnapshot) -> Result<(), LspError> {
         }
     };
 
-    // Clear previous build diagnostics, then publish current build diagnostics.
-    for uri in previously_published.into_iter().filter(|u| u.scheme() == "file") {
+    // Update stored build diagnostics (file:// only).
+    let mut affected: Vec<Url> = previously_published;
+    {
+        let mut map = snapshot.build_diagnostics.write();
+        map.clear();
+        for (uri, diags) in &build_map {
+            if uri.scheme() != "file" {
+                continue;
+            }
+            map.insert(uri.clone(), diags.clone());
+        }
+    }
+
+    // Publish merged diagnostics for any URI touched by the previous or current build.
+    affected.extend(build_map.keys().filter(|u| u.scheme() == "file").cloned());
+    affected.sort();
+    affected.dedup();
+
+    for uri in affected {
+        let diagnostics = snapshot.merged_diagnostics_for_uri(&uri);
         let _ = snapshot.client.publish_diagnostics(PublishDiagnosticsParams {
             uri,
-            diagnostics: vec![],
+            diagnostics,
             version: None,
         });
-    }
-
-    for (uri, diagnostics) in &build_map {
-        // Some internal/stdlib files can show up with non-file schemes.
-        // Emacs lsp-mode expects diagnostics URIs to be file://.
-        if uri.scheme() != "file" {
-            continue;
-        }
-        let _ = snapshot.client.publish_diagnostics(PublishDiagnosticsParams {
-            uri: uri.clone(),
-            diagnostics: diagnostics.clone(),
-            version: None,
-        });
-    }
-
-    // Update the set of URIs we consider "build diagnostics".
-    {
-        let mut set = snapshot.build_diagnostics_uris.write();
-        set.clear();
-        set.extend(build_map.keys().filter(|u| u.scheme() == "file").cloned());
     }
 
     // We already materialized build_map; treat parse failures as "no build diagnostics".
