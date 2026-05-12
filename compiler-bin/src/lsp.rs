@@ -294,21 +294,49 @@ fn execute_command(
                 })
             }
             PS_RESET => {
-                // Debug breadcrumb: makes it obvious in client traces that reset was handled.
+                use std::sync::atomic::Ordering;
+
+                // Run reset inline so we synchronously publish diagnostic clears
+                // in response to the request.
+                state.engine.request_cancel();
+                state.diagnostics_generation.fetch_add(1, Ordering::SeqCst);
+
+                let mut uris_to_clear: Vec<Url> = {
+                    let build = state.build_diagnostics.read();
+                    let analyzer = state.analyzer_diagnostics.read();
+                    let open = state.open_uris.read();
+                    build
+                        .keys()
+                        .chain(analyzer.keys())
+                        .chain(open.iter())
+                        .filter(|u| u.scheme() == "file")
+                        .cloned()
+                        .collect()
+                };
+                uris_to_clear.sort();
+                uris_to_clear.dedup();
+
+                state.build_diagnostics.write().clear();
+                state.analyzer_diagnostics.write().clear();
+
+                for uri in uris_to_clear {
+                    let _ = state.client.publish_diagnostics(PublishDiagnosticsParams {
+                        uri,
+                        diagnostics: vec![],
+                        version: None,
+                    });
+                }
+
+                state.invalidate_workspace_symbols();
+                state.invalidate_suggestions_cache();
+
+                // Best-effort breadcrumb.
                 let _ = state.client.show_message(ShowMessageParams {
                     typ: MessageType::INFO,
-                    message: "Reset requested".to_string(),
+                    message: "Reset complete".to_string(),
                 });
 
-                // Run reset in the background (same pattern as build/clean) so
-                // we publish diagnostics/messages from the main loop context.
-                state
-                    .client
-                    .emit(event::Reset)
-                    .map(|_| None)
-                    .map_err(|e| {
-                        ResponseError::new(async_lsp::ErrorCode::REQUEST_FAILED, e.to_string())
-                    })
+                Ok(None)
             }
             PS_CLEAN => state.client.emit(event::Clean).map(|_| None).map_err(|e| {
                 ResponseError::new(async_lsp::ErrorCode::REQUEST_FAILED, e.to_string())
