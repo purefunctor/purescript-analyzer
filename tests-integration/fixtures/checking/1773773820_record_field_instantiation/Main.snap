@@ -1,0 +1,22 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Just :: forall (@a :: Type). (a :: Type) -> Maybe (a :: Type)
+Nothing :: forall (@a :: Type). Maybe (a :: Type)
+constructor ::
+  forall (t3 :: Type) (t2 :: Row Type) (t1 :: Type).
+    { example :: (t3 :: Type) | (t2 :: Row Type) } ->
+    { example :: Maybe (t1 :: Type) | (t2 :: Row Type) }
+variable ::
+  forall (t6 :: Type) (t5 :: Row Type) (t4 :: Type).
+    { example :: (t6 :: Type) | (t5 :: Row Type) } ->
+    { example :: Maybe (t4 :: Type) | (t5 :: Row Type) }
+
+Types
+Maybe :: Type -> Type
+
+Roles
+Maybe = [Representational]

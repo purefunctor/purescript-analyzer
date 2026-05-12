@@ -1,0 +1,23 @@
+---
+source: tests-integration/tests/lowering/generated.rs
+assertion_line: 12
+expression: report
+---
+module Main
+
+Expressions:
+
+y'equation@3:27
+  -> equation@3:5
+pure@4:33
+  -> top-level
+pure@4:16
+  -> top-level
+a'binder@3:38
+  -> binder@3:16
+x'notBinder@5:6
+  -> binder@3:47
+x'notBinder@4:21
+  -> top-level
+
+Types:

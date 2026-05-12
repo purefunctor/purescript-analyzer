@@ -1,0 +1,17 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Tuple ::
+  forall (@a :: Type) (@b :: Type). (a :: Type) -> (b :: Type) -> Tuple (a :: Type) (b :: Type)
+testBoth :: Int -> String -> Tuple Int String
+testLeft :: forall (t2 :: Type). Int -> (t2 :: Type) -> Tuple Int (t2 :: Type)
+testRight :: forall (t3 :: Type). (t3 :: Type) -> String -> Tuple (t3 :: Type) String
+
+Types
+Tuple :: Type -> Type -> Type
+
+Roles
+Tuple = [Representational, Representational]

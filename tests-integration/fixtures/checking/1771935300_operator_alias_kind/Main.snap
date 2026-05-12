@@ -1,0 +1,13 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+
+Types
+Add :: forall (t3 :: Type) (t2 :: Type). (t3 :: Type) -> (t2 :: Type) -> (t3 :: Type)
++ :: forall (t3 :: Type) (t2 :: Type). (t3 :: Type) -> (t2 :: Type) -> (t3 :: Type)
+
+Synonyms
+type Add a b = (a :: (t3 :: Type))

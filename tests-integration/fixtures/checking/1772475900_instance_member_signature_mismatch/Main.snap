@@ -1,0 +1,34 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+show :: forall (@a :: Type). Show (a :: Type) => (a :: Type) -> String
+
+Types
+Show :: Type -> Constraint
+
+Classes
+class forall (a :: Type). Show (a :: Type)
+  show :: forall (@a :: Type). Show (a :: Type) => (a :: Type) -> String
+
+Instances
+instance Show Int
+
+Diagnostics
+error[CannotUnify]: Cannot unify 'Int' with 'String'
+  --> 7:1..9:13
+  |
+7 | instance Show Int where
+  | ^~~~~~~~~~~~~~~~~~~~~~~
+error[CannotUnify]: Cannot unify 'Int -> Int' with 'Int -> String'
+  --> 7:1..9:13
+  |
+7 | instance Show Int where
+  | ^~~~~~~~~~~~~~~~~~~~~~~
+error[InstanceMemberTypeMismatch]: Instance member type mismatch: expected 'Int -> String', got 'Int -> Int'
+  --> 7:1..9:13
+  |
+7 | instance Show Int where
+  | ^~~~~~~~~~~~~~~~~~~~~~~

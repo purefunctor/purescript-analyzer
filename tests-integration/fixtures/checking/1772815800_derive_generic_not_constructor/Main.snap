@@ -1,0 +1,18 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+
+Types
+
+Derived
+derive forall (t0 :: Type). Generic (Int -> Int) (t0 :: Type)
+
+Diagnostics
+error[CannotDeriveForType]: Cannot derive for type: Int -> Int
+  --> 5:1..5:39
+  |
+5 | derive instance Generic (Int -> Int) _
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

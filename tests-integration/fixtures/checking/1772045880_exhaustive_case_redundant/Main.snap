@@ -1,0 +1,22 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Just :: forall (@a :: Type). (a :: Type) -> Maybe (a :: Type)
+Nothing :: forall (@a :: Type). Maybe (a :: Type)
+test :: forall (t1 :: Type). Maybe (t1 :: Type) -> Int
+
+Types
+Maybe :: Type -> Type
+
+Roles
+Maybe = [Representational]
+
+Diagnostics
+warning[RedundantPattern]: Pattern match has redundant patterns: Just _
+  --> 5:8..8:15
+  |
+5 | test = case _ of
+  |        ^~~~~~~~~

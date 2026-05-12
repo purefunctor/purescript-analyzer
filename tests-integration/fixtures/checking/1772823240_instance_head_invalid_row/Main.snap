@@ -1,0 +1,65 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Proxy :: forall (k :: Type) (@a :: (k :: Type)). Proxy @(k :: Type) (a :: (k :: Type))
+
+Types
+Proxy :: forall (k :: Type). (k :: Type) -> Type
+T :: forall (k :: Type). (k :: Type) -> Type
+
+Classes
+class forall (k :: Type) (a :: (k :: Type)). T @(k :: Type) (a :: (k :: Type))
+
+Instances
+instance T @(Row Type) ( a :: Int )
+instance T @Type { a :: Int }
+instance T @Type (Proxy @(Row Type) ( a :: Int ))
+instance T @Type (Proxy @Type { a :: Int })
+
+Roles
+Proxy = [Phantom]
+
+Diagnostics
+error[CannotUnify]: Cannot unify 'Type' with 'Constraint'
+  --> 1:1..12:32
+  |
+1 | module Main where
+  | ^~~~~~~~~~~~~~~~~
+error[InstanceHeadLabeledRow]: Instance argument at position 0 contains a labeled row, but this position is not determined by any functional dependency. Only the `( | r )` form is allowed. Got '( a :: Int )' instead.
+  --> 1:1..12:32
+  |
+1 | module Main where
+  | ^~~~~~~~~~~~~~~~~
+error[CannotUnify]: Cannot unify 'Type' with 'Constraint'
+  --> 1:1..12:32
+  |
+1 | module Main where
+  | ^~~~~~~~~~~~~~~~~
+error[InstanceHeadLabeledRow]: Instance argument at position 0 contains a labeled row, but this position is not determined by any functional dependency. Only the `( | r )` form is allowed. Got '{ a :: Int }' instead.
+  --> 1:1..12:32
+  |
+1 | module Main where
+  | ^~~~~~~~~~~~~~~~~
+error[CannotUnify]: Cannot unify 'Type' with 'Constraint'
+  --> 1:1..12:32
+  |
+1 | module Main where
+  | ^~~~~~~~~~~~~~~~~
+error[InstanceHeadLabeledRow]: Instance argument at position 0 contains a labeled row, but this position is not determined by any functional dependency. Only the `( | r )` form is allowed. Got 'Proxy @(Row Type) ( a :: Int )' instead.
+  --> 1:1..12:32
+  |
+1 | module Main where
+  | ^~~~~~~~~~~~~~~~~
+error[CannotUnify]: Cannot unify 'Type' with 'Constraint'
+  --> 1:1..12:32
+  |
+1 | module Main where
+  | ^~~~~~~~~~~~~~~~~
+error[InstanceHeadLabeledRow]: Instance argument at position 0 contains a labeled row, but this position is not determined by any functional dependency. Only the `( | r )` form is allowed. Got 'Proxy @Type { a :: Int }' instead.
+  --> 1:1..12:32
+  |
+1 | module Main where
+  | ^~~~~~~~~~~~~~~~~

@@ -1,0 +1,15 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Tagged ::
+  forall (t2 :: Type) (@t :: (t2 :: Type)) (@a :: Type).
+    (a :: Type) -> Tagged @(t2 :: Type) (t :: (t2 :: Type)) (a :: Type)
+
+Types
+Tagged :: forall (t2 :: Type). (t2 :: Type) -> Type -> Type
+
+Roles
+Tagged = [Phantom, Representational]

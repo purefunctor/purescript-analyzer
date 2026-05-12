@@ -12,34 +12,34 @@ fn run_test(folder: &str, file: &str) {
     settings.bind(|| insta::assert_snapshot!(file, report));
 }
 
-#[rustfmt::skip] #[test] fn test_001_ado_statement_recursion_main() { run_test("001_ado_statement_recursion", "Main"); }
+#[rustfmt::skip] #[test] fn test_1756058760_ado_statement_recursion_main() { run_test("1756058760_ado_statement_recursion", "Main"); }
 
-#[rustfmt::skip] #[test] fn test_002_class_equation_main() { run_test("002_class_equation", "Main"); }
+#[rustfmt::skip] #[test] fn test_1756058820_class_equation_main() { run_test("1756058820_class_equation", "Main"); }
 
-#[rustfmt::skip] #[test] fn test_003_data_equation_main() { run_test("003_data_equation", "Main"); }
+#[rustfmt::skip] #[test] fn test_1756058880_data_equation_main() { run_test("1756058880_data_equation", "Main"); }
 
-#[rustfmt::skip] #[test] fn test_004_derive_declaration_main() { run_test("004_derive_declaration", "Main"); }
+#[rustfmt::skip] #[test] fn test_1756058940_derive_declaration_main() { run_test("1756058940_derive_declaration", "Main"); }
 
-#[rustfmt::skip] #[test] fn test_005_do_statement_main() { run_test("005_do_statement", "Main"); }
+#[rustfmt::skip] #[test] fn test_1756059000_do_statement_main() { run_test("1756059000_do_statement", "Main"); }
 
-#[rustfmt::skip] #[test] fn test_006_do_statement_recursion_main() { run_test("006_do_statement_recursion", "Main"); }
+#[rustfmt::skip] #[test] fn test_1756059060_do_statement_recursion_main() { run_test("1756059060_do_statement_recursion", "Main"); }
 
-#[rustfmt::skip] #[test] fn test_007_instance_declaration_main() { run_test("007_instance_declaration", "Main"); }
+#[rustfmt::skip] #[test] fn test_1756059120_instance_declaration_main() { run_test("1756059120_instance_declaration", "Main"); }
 
-#[rustfmt::skip] #[test] fn test_008_newtype_equation_main() { run_test("008_newtype_equation", "Main"); }
+#[rustfmt::skip] #[test] fn test_1756059180_newtype_equation_main() { run_test("1756059180_newtype_equation", "Main"); }
 
-#[rustfmt::skip] #[test] fn test_009_signature_equation_main() { run_test("009_signature_equation", "Main"); }
+#[rustfmt::skip] #[test] fn test_1756059240_signature_equation_main() { run_test("1756059240_signature_equation", "Main"); }
 
-#[rustfmt::skip] #[test] fn test_010_value_equation_main() { run_test("010_value_equation", "Main"); }
+#[rustfmt::skip] #[test] fn test_1756059300_value_equation_main() { run_test("1756059300_value_equation", "Main"); }
 
-#[rustfmt::skip] #[test] fn test_011_case_after_let_main() { run_test("011_case_after_let", "Main"); }
+#[rustfmt::skip] #[test] fn test_1764310860_case_after_let_main() { run_test("1764310860_case_after_let", "Main"); }
 
-#[rustfmt::skip] #[test] fn test_012_recursive_synonym_main() { run_test("012_recursive_synonym", "Main"); }
+#[rustfmt::skip] #[test] fn test_1765566180_recursive_synonym_main() { run_test("1765566180_recursive_synonym", "Main"); }
 
-#[rustfmt::skip] #[test] fn test_013_ado_statement_let_main() { run_test("013_ado_statement_let", "Main"); }
+#[rustfmt::skip] #[test] fn test_1765970040_ado_statement_let_main() { run_test("1765970040_ado_statement_let", "Main"); }
 
-#[rustfmt::skip] #[test] fn test_014_ado_statement_binder_main() { run_test("014_ado_statement_binder", "Main"); }
+#[rustfmt::skip] #[test] fn test_1765970100_ado_statement_binder_main() { run_test("1765970100_ado_statement_binder", "Main"); }
 
-#[rustfmt::skip] #[test] fn test_015_instance_constraints_main() { run_test("015_instance_constraints", "Main"); }
+#[rustfmt::skip] #[test] fn test_1768582140_instance_constraints_main() { run_test("1768582140_instance_constraints", "Main"); }
 
-#[rustfmt::skip] #[test] fn test_016_derive_constraints_main() { run_test("016_derive_constraints", "Main"); }
+#[rustfmt::skip] #[test] fn test_1768582200_derive_constraints_main() { run_test("1768582200_derive_constraints", "Main"); }

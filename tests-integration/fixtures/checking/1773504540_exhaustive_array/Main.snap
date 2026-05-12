@@ -1,0 +1,23 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+testNonExhaustive :: Array Int -> Int
+testRedundant :: Array Int -> Int
+testExhaustive :: Array Int -> Int
+
+Types
+
+Diagnostics
+warning[MissingPatterns]: Pattern match is not exhaustive. Missing: _
+  --> 3:1..3:38
+  |
+3 | testNonExhaustive :: Array Int -> Int
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+warning[RedundantPattern]: Pattern match has redundant patterns: [_]
+  --> 7:1..7:34
+  |
+7 | testRedundant :: Array Int -> Int
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

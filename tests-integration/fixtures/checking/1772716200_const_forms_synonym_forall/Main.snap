@@ -1,0 +1,16 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+poly0 :: ConstPoly
+poly1 :: ConstPoly
+poly2 :: ConstPoly
+poly3 :: ConstPoly
+
+Types
+ConstPoly :: Type
+
+Synonyms
+type ConstPoly = forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type) -> (a :: Type)

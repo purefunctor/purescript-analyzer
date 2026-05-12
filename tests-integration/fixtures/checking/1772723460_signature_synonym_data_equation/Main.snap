@@ -1,0 +1,17 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Box :: forall (@a :: Type). (a :: Type) -> Box (a :: Type)
+
+Types
+UnaryKind :: Type
+Box :: UnaryKind
+
+Synonyms
+type UnaryKind = Type -> Type
+
+Roles
+Box = [Representational]

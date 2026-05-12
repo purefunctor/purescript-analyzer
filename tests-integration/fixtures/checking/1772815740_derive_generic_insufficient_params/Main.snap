@@ -1,0 +1,33 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Box :: Int -> Box
+
+Types
+Box :: Type
+
+Derived
+derive Generic Box
+
+Roles
+Box = []
+
+Diagnostics
+error[DeriveInvalidArity]: Invalid arity for derive: expected 2, got 1
+  --> 7:1..7:28
+  |
+7 | derive instance Generic Box
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[CannotUnify]: Cannot unify 'Type -> Constraint' with 'Constraint'
+  --> 7:1..7:28
+  |
+7 | derive instance Generic Box
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[DeriveInvalidArity]: Invalid arity for derive: expected 2, got 1
+  --> 7:1..7:28
+  |
+7 | derive instance Generic Box
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~

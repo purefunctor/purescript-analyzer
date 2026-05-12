@@ -1,0 +1,33 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+pure :: forall (a :: Type). (a :: Type) -> Effect (a :: Type)
+map ::
+  forall (a :: Type) (b :: Type).
+    ((a :: Type) -> (b :: Type)) -> Effect (a :: Type) -> Effect (b :: Type)
+apply ::
+  forall (a :: Type) (b :: Type).
+    Effect ((a :: Type) -> (b :: Type)) -> Effect (a :: Type) -> Effect (b :: Type)
+test1 :: ?[empty ado block]
+test2 :: Effect Int
+
+Types
+Effect :: Type -> Type
+
+Roles
+Effect = [Nominal]
+
+Diagnostics
+error[EmptyAdoBlock]: Empty ado block
+  --> 9:9..9:12
+  |
+9 | test1 = ado
+  |         ^~~
+error[CannotUnify]: Cannot unify 'Type' with '?[invalid kind]'
+  --> 9:1..9:12
+  |
+9 | test1 = ado
+  | ^~~~~~~~~~~

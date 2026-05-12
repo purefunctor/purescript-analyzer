@@ -1,0 +1,22 @@
+---
+source: tests-integration/tests/lowering/generated.rs
+assertion_line: 12
+expression: report
+---
+module Main
+
+Expressions:
+
+
+Types:
+
+a@4:22
+  -> forall@4:11
+k@6:23
+  -> forall@6:20
+k@7:16
+  -> forall@6:20
+b@4:32
+  -> forall@4:13
+a@2:19
+  -> forall@2:10

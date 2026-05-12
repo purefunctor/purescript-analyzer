@@ -1,0 +1,23 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Box :: Int -> Box
+
+Types
+Box :: Type
+
+Derived
+derive forall (t0 :: Type). Generic Box (t0 :: Type)
+
+Roles
+Box = []
+
+Diagnostics
+error[CannotDeriveClass]: Cannot derive this class
+  --> 7:1..7:30
+  |
+7 | derive instance Generic Box _
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -1,0 +1,27 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Identity :: forall (@a :: Type). (a :: Type) -> Identity (a :: Type)
+Const ::
+  forall (t3 :: Type) (@e :: Type) (@a :: (t3 :: Type)).
+    (e :: Type) -> Const @(t3 :: Type) (e :: Type) (a :: (t3 :: Type))
+Nothing :: forall (@a :: Type). Maybe (a :: Type)
+Just :: forall (@a :: Type). (a :: Type) -> Maybe (a :: Type)
+
+Types
+Identity :: Type -> Type
+Const :: forall (t3 :: Type). Type -> (t3 :: Type) -> Type
+Maybe :: Type -> Type
+
+Derived
+derive Functor Identity
+derive forall (t5 :: Type). Functor (Const @Type (t5 :: Type))
+derive Functor Maybe
+
+Roles
+Identity = [Representational]
+Const = [Representational, Phantom]
+Maybe = [Representational]

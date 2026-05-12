@@ -1,0 +1,24 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Just :: forall (@a :: Type). (a :: Type) -> Maybe (a :: Type)
+Nothing :: forall (@a :: Type). Maybe (a :: Type)
+
+Types
+Maybe :: Type -> Type
+NaturalTransformation :: forall (k :: Type). ((k :: Type) -> Type) -> ((k :: Type) -> Type) -> Type
+~> :: forall (k :: Type). ((k :: Type) -> Type) -> ((k :: Type) -> Type) -> Type
+Test1 :: Type
+Test2 :: Type
+
+Synonyms
+type NaturalTransformation f g = forall (a :: (k :: Type)).
+  (f :: (k :: Type) -> Type) (a :: (k :: Type)) -> (g :: (k :: Type) -> Type) (a :: (k :: Type))
+type Test1 = NaturalTransformation @Type Array Maybe
+type Test2 = NaturalTransformation @Type Array Maybe
+
+Roles
+Maybe = [Representational]

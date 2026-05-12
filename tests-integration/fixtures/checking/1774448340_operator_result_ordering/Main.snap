@@ -1,0 +1,52 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+$ :: forall (a :: Type) (b :: Type). ((a :: Type) -> (b :: Type)) -> (a :: Type) -> (b :: Type)
+apply :: forall (a :: Type) (b :: Type). ((a :: Type) -> (b :: Type)) -> (a :: Type) -> (b :: Type)
+identity :: forall (a :: Type). (a :: Type) -> (a :: Type)
+Wrap :: forall (@a :: Type). (a :: Type) -> Wrap (a :: Type)
+dimap ::
+  forall (@p :: Type -> Type -> Type) (a :: Type) (b :: Type) (c :: Type) (d :: Type).
+    Profunctor (p :: Type -> Type -> Type) =>
+    ((a :: Type) -> (b :: Type)) ->
+    ((c :: Type) -> (d :: Type)) ->
+    (p :: Type -> Type -> Type) (b :: Type) (c :: Type) ->
+    (p :: Type -> Type -> Type) (a :: Type) (d :: Type)
+lens ::
+  forall (s :: Type) (a :: Type).
+    ((a :: Type) -> (s :: Type)) -> ((s :: Type) -> (a :: Type)) -> Lens (s :: Type) (a :: Type)
+wrapped :: forall (a :: Type). Lens (Wrap (a :: Type)) (a :: Type)
+
+Types
+Wrap :: Type -> Type
+Profunctor :: (Type -> Type -> Type) -> Constraint
+Optic ::
+  forall (t9 :: Type).
+    ((t9 :: Type) -> (t9 :: Type) -> Type) -> (t9 :: Type) -> (t9 :: Type) -> Type
+Lens :: Type -> Type -> Type
+
+Synonyms
+type Optic p s a = (p :: (t9 :: Type) -> (t9 :: Type) -> Type) (a :: (t9 :: Type)) (a :: (t9 :: Type)) ->
+(p :: (t9 :: Type) -> (t9 :: Type) -> Type) (s :: (t9 :: Type)) (s :: (t9 :: Type))
+type Lens s a = forall (p :: Type -> Type -> Type).
+  Profunctor (p :: Type -> Type -> Type) =>
+  Optic @Type (p :: Type -> Type -> Type) (s :: Type) (a :: Type)
+
+Classes
+class forall (p :: Type -> Type -> Type). Profunctor (p :: Type -> Type -> Type)
+  dimap ::
+  forall (@p :: Type -> Type -> Type) (a :: Type) (b :: Type) (c :: Type) (d :: Type).
+    Profunctor (p :: Type -> Type -> Type) =>
+    ((a :: Type) -> (b :: Type)) ->
+    ((c :: Type) -> (d :: Type)) ->
+    (p :: Type -> Type -> Type) (b :: Type) (c :: Type) ->
+    (p :: Type -> Type -> Type) (a :: Type) (d :: Type)
+
+Instances
+instance Profunctor Function
+
+Roles
+Wrap = [Representational]

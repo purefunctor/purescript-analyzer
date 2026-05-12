@@ -1,0 +1,13 @@
+---
+source: tests-integration/tests/lsp/generated.rs
+assertion_line: 12
+expression: report
+---
+GotoDefinition at Position { line: 4, character: 15 }
+
+```
+main :: {- Annotation -} Test
+--             @
+```
+
+<empty>

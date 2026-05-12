@@ -1,0 +1,20 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+F ::
+  forall (k :: Type) (@a :: (k :: Type)).
+    G @(k :: Type) (a :: (k :: Type)) -> F @(k :: Type) (a :: (k :: Type))
+G ::
+  forall (k :: Type) (@a :: (k :: Type)).
+    F @(k :: Type) (a :: (k :: Type)) -> G @(k :: Type) (a :: (k :: Type))
+
+Types
+F :: forall (k :: Type). (k :: Type) -> Type
+G :: forall (k :: Type). (k :: Type) -> Type
+
+Roles
+F = [Representational]
+G = [Representational]

@@ -1,0 +1,21 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Tuple ::
+  forall (@a :: Type) (@b :: Type). (a :: Type) -> (b :: Type) -> Tuple (a :: Type) (b :: Type)
+test1 :: Identity @(Type -> Type) Array Int
+test2 :: Identity @(Type -> Type -> Type) Tuple Int String
+forceSolve :: { test1 :: Array Int, test2 :: Tuple Int String }
+
+Types
+Identity :: forall (k :: Type). (k :: Type) -> (k :: Type)
+Tuple :: Type -> Type -> Type
+
+Synonyms
+type Identity a = (a :: (k :: Type))
+
+Roles
+Tuple = [Representational, Representational]

@@ -1,0 +1,32 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+map ::
+  forall (@f :: Type -> Type) (a :: Type) (b :: Type).
+    Functor (f :: Type -> Type) =>
+    ((a :: Type) -> (b :: Type)) ->
+    (f :: Type -> Type) (a :: Type) ->
+    (f :: Type -> Type) (b :: Type)
+Box :: forall (@a :: Type). (a :: Type) -> Box (a :: Type)
+
+Types
+Functor :: (Type -> Type) -> Constraint
+Box :: Type -> Type
+
+Classes
+class forall (f :: Type -> Type). Functor (f :: Type -> Type)
+  map ::
+  forall (@f :: Type -> Type) (a :: Type) (b :: Type).
+    Functor (f :: Type -> Type) =>
+    ((a :: Type) -> (b :: Type)) ->
+    (f :: Type -> Type) (a :: Type) ->
+    (f :: Type -> Type) (b :: Type)
+
+Instances
+instance Functor Box
+
+Roles
+Box = [Representational]

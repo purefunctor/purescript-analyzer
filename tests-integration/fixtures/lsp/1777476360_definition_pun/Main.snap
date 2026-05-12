@@ -1,0 +1,13 @@
+---
+source: tests-integration/tests/lsp/generated.rs
+assertion_line: 12
+expression: report
+---
+GotoDefinition at Position { line: 2, character: 24 }
+
+```
+identity { argument } = argument
+--                      @
+```
+
+file:///tests-integration/fixtures/lsp/1777476360_definition_pun/Main.purs @ 2:11..2:19

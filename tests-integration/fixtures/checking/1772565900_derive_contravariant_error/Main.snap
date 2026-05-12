@@ -1,0 +1,32 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Identity :: forall (@a :: Type). (a :: Type) -> Identity (a :: Type)
+Producer :: forall (@a :: Type). (Int -> (a :: Type)) -> Producer (a :: Type)
+
+Types
+Identity :: Type -> Type
+Producer :: Type -> Type
+
+Derived
+derive Contravariant Identity
+derive Contravariant Producer
+
+Roles
+Identity = [Representational]
+Producer = [Representational]
+
+Diagnostics
+error[CovariantOccurrence]: Type variable occurs in covariant position: (t2 :: Type)
+  --> 6:1..6:39
+  |
+6 | derive instance Contravariant Identity
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+error[CovariantOccurrence]: Type variable occurs in covariant position: (t3 :: Type)
+  --> 9:1..9:39
+  |
+9 | derive instance Contravariant Producer
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

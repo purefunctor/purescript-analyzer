@@ -1,0 +1,22 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+identity :: forall (a :: Type). (a :: Type) -> (a :: Type)
+test :: ?[invalid visible type application]
+
+Types
+
+Diagnostics
+error[NoVisibleTypeVariable]: No visible type variable for type application in: forall (a :: Type). (a :: Type) -> (a :: Type)
+  --> 6:8..6:21
+  |
+6 | test = identity @Int
+  |        ^~~~~~~~~~~~~
+error[CannotUnify]: Cannot unify 'Type' with '?[invalid kind]'
+  --> 6:1..6:21
+  |
+6 | test = identity @Int
+  | ^~~~~~~~~~~~~~~~~~~~

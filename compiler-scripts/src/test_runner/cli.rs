@@ -22,7 +22,7 @@ pub struct RunArgs {
     #[arg(long)]
     pub reject: bool,
 
-    /// Test name or number filters (passed through to nextest)
+    /// Test name, timestamp, or slug filters (passed through to nextest)
     #[arg(num_args = 0..)]
     pub filters: Vec<String>,
 

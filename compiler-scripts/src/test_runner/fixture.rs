@@ -15,9 +15,9 @@ pub fn create_fixture(category: TestCategory, name: &str) -> anyhow::Result<Path
         bail!("fixtures directory '{}' does not exist", fixtures_dir.display());
     }
 
-    let next_number = next_fixture_number(&fixtures_dir)?;
+    let timestamp = current_unix_minute()?;
     let slug = slugify(name)?;
-    let folder_name = format!("{:03}_{}", next_number, slug);
+    let folder_name = format!("{timestamp}_{slug}");
     let folder_path = fixtures_dir.join(&folder_name);
 
     if folder_path.exists() {
@@ -37,10 +37,18 @@ pub fn create_fixture(category: TestCategory, name: &str) -> anyhow::Result<Path
     println!(
         "  {} {}",
         style("Next:").dim(),
-        style(format!("just t {} {:03}", category.as_str(), next_number)).cyan()
+        style(format!("just t {} {}", category.as_str(), folder_name)).cyan()
     );
 
     Ok(folder_path)
+}
+
+fn current_unix_minute() -> anyhow::Result<u64> {
+    let seconds = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .context("impossible: system clock is before UNIX_EPOCH")?
+        .as_secs();
+    Ok(seconds - (seconds % 60))
 }
 
 pub struct DeleteFixtureOutcome {
@@ -84,29 +92,6 @@ pub fn delete_fixture(
     }
 
     Ok(DeleteFixtureOutcome { fixture_paths, snapshot_paths, confirmed: confirm })
-}
-
-fn next_fixture_number(fixtures_dir: &Path) -> anyhow::Result<u32> {
-    let mut max_number = 0;
-    let entries = fs::read_dir(fixtures_dir)
-        .with_context(|| format!("failed to read '{}'", fixtures_dir.display()))?;
-
-    for entry in entries {
-        let entry = entry.context("failed to read entry")?;
-        let name = entry.file_name();
-        let name = name.to_string_lossy();
-        let Some((prefix, _)) = name.split_once('_') else {
-            continue;
-        };
-        if prefix.len() != 3 || !prefix.chars().all(|ch| ch.is_ascii_digit()) {
-            continue;
-        }
-        if let Ok(number) = prefix.parse::<u32>() {
-            max_number = max_number.max(number);
-        }
-    }
-
-    Ok(max_number + 1)
 }
 
 fn resolve_fixture_paths(fixtures_dir: &Path, name: &str) -> anyhow::Result<Vec<PathBuf>> {

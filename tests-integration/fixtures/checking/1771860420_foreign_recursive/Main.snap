@@ -1,0 +1,11 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+
+Types
+T :: ?[invalid recursive type]
+A :: ?[invalid recursive type]
+B :: ?[invalid recursive type]

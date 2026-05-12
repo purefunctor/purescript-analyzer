@@ -1,0 +1,10 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+f :: forall (t1 :: Type) (t0 :: Type). (t1 :: Type) -> (t0 :: Type)
+g :: forall (t1 :: Type) (t0 :: Type). (t1 :: Type) -> (t0 :: Type)
+
+Types
