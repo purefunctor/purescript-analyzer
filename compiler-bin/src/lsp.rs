@@ -221,7 +221,18 @@ fn merge_diagnostics(build: &[Diagnostic], analyzer: &[Diagnostic]) -> Vec<Diagn
     let mut seen: HashSet<Key> = HashSet::new();
     let mut out = Vec::with_capacity(build.len() + analyzer.len());
 
-    for d in build.iter().chain(analyzer.iter()) {
+    for d in build {
+        let k = key(d);
+        if seen.insert(k) {
+            out.push(d.clone());
+        }
+    }
+
+    for d in analyzer {
+        if build.iter().any(|build_diagnostic| build_diagnostic.range == d.range) {
+            continue;
+        }
+
         let k = key(d);
         if seen.insert(k) {
             out.push(d.clone());
@@ -544,6 +555,8 @@ fn did_change(state: &mut State, p: DidChangeTextDocumentParams) -> Result<(), L
         versions.insert(p.text_document.uri.clone(), p.text_document.version);
     }
 
+    invalidate_build_diagnostics_for_uri(state, &p.text_document.uri);
+
     state.invalidate_workspace_symbols();
     state.invalidate_suggestions_cache();
 
@@ -590,12 +603,18 @@ fn did_close(state: &mut State, p: DidCloseTextDocumentParams) -> Result<(), Lsp
 }
 
 fn did_save(state: &mut State, p: DidSaveTextDocumentParams) -> Result<(), LspError> {
+    invalidate_build_diagnostics_for_uri(state, &p.text_document.uri);
+
     state.invalidate_suggestions_cache();
 
     if state.config.diagnostics_on_save {
         event::emit_collect_diagnostics(state, p.text_document.uri)?;
     }
     Ok(())
+}
+
+fn invalidate_build_diagnostics_for_uri(state: &mut State, uri: &Url) {
+    state.build_diagnostics.write().remove(uri);
 }
 
 fn on_change(state: &mut State, uri: &str, content: &str) -> Result<(), LspError> {
@@ -781,6 +800,62 @@ mod tests {
         assert!(state.build_diagnostics.read().is_empty());
         assert!(state.analyzer_diagnostics.read().is_empty());
         assert!(state.files.read().id(uri.as_str()).is_some());
+    }
+
+    #[test]
+    fn merge_diagnostics_prefers_build_for_same_range() {
+        let range = Range::new(Position::new(38, 9), Position::new(38, 13));
+        let build = Diagnostic {
+            range,
+            source: Some("build/spago".to_string()),
+            message: "Could not match type String with type Int".to_string(),
+            ..Diagnostic::default()
+        };
+        let analyzer = Diagnostic {
+            range,
+            source: Some("analyzer/checking".to_string()),
+            message: "Cannot unify 'String' with 'Int'".to_string(),
+            ..Diagnostic::default()
+        };
+
+        let merged = merge_diagnostics(&[build.clone()], &[analyzer]);
+
+        assert_eq!(merged, vec![build]);
+    }
+
+    #[test]
+    fn merge_diagnostics_keeps_analyzer_for_distinct_range() {
+        let build = Diagnostic {
+            range: Range::new(Position::new(38, 9), Position::new(38, 13)),
+            source: Some("build/spago".to_string()),
+            message: "Could not match type String with type Int".to_string(),
+            ..Diagnostic::default()
+        };
+        let analyzer = Diagnostic {
+            range: Range::new(Position::new(40, 0), Position::new(40, 3)),
+            source: Some("analyzer/checking".to_string()),
+            message: "Cannot unify 'String' with 'Int'".to_string(),
+            ..Diagnostic::default()
+        };
+
+        let merged = merge_diagnostics(&[build.clone()], &[analyzer.clone()]);
+
+        assert_eq!(merged, vec![build, analyzer]);
+    }
+
+    #[test]
+    fn file_change_invalidates_build_diagnostics_for_uri() {
+        let mut state = mk_state_with(base_config(None));
+        let changed_uri = Url::parse("file:///test/Main.purs").unwrap();
+        let other_uri = Url::parse("file:///test/Other.purs").unwrap();
+        state.build_diagnostics.write().insert(changed_uri.clone(), vec![Diagnostic::default()]);
+        state.build_diagnostics.write().insert(other_uri.clone(), vec![Diagnostic::default()]);
+
+        invalidate_build_diagnostics_for_uri(&mut state, &changed_uri);
+
+        let build_diagnostics = state.build_diagnostics.read();
+        assert!(!build_diagnostics.contains_key(&changed_uri));
+        assert!(build_diagnostics.contains_key(&other_uri));
     }
 
     #[tokio::test]
