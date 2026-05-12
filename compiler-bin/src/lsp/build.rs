@@ -26,15 +26,17 @@ pub fn build(state: &mut crate::lsp::State, _: Build) -> Result<(), LspError> {
 }
 
 fn build_core(mut snapshot: StateSnapshot) -> Result<(), LspError> {
-    let root = snapshot.root.as_ref().ok_or(LspError::MissingRoot)?;
+    // Clone to avoid holding an immutable borrow of snapshot across client calls.
+    let root = snapshot.root.clone().ok_or(LspError::MissingRoot)?;
 
     let known_uris: Vec<Url> = {
         let files = snapshot.files.read();
-        files
+        let uris = files
             .iter_id()
             .map(|id| Url::parse(files.path(id).as_ref()))
-            .collect::<Result<Vec<_>, _>>()
-    }?;
+            .collect::<Result<Vec<_>, _>>()?;
+        filter_publishable_known_uris(uris)
+    };
 
     let tool = match snapshot.config.build_tool {
         cli::BuildTool::Spago => cli::BuildTool::Spago,
@@ -46,19 +48,20 @@ fn build_core(mut snapshot: StateSnapshot) -> Result<(), LspError> {
     };
 
     let output = match tool {
-        cli::BuildTool::Spago => run_spago(root, &snapshot.config.build_arg)?,
+        cli::BuildTool::Spago => run_spago(&root, &snapshot.config.build_arg)?,
         cli::BuildTool::Purs => {
-            let sources = workspace_sources(root, &snapshot.config)?;
-            run_purs(root, &sources, &snapshot.config.build_arg)?
+            let sources = workspace_sources(&root, &snapshot.config)?;
+            run_purs(&root, &sources, &snapshot.config.build_arg)?
         }
         cli::BuildTool::Auto => unreachable!(),
     };
 
     let stderr = String::from_utf8_lossy(&output.stderr);
     let stdout = String::from_utf8_lossy(&output.stdout);
-    let json_text = if stderr.contains('{') || stderr.contains('[') { stderr.as_ref() } else { stdout.as_ref() };
-
-    let diagnostics_by_uri = parse_purs_json_errors(json_text, tool);
+    // Spago/purs output varies by version: JSON may appear on stdout or stderr,
+    // and may be interleaved with other text. Parse both.
+    let combined = format!("{stderr}\n{stdout}");
+    let diagnostics_by_uri = parse_purs_json_errors(&combined, tool);
     let build_map = match &diagnostics_by_uri {
         Ok(map) => map,
         Err(_) => {
@@ -88,6 +91,33 @@ fn build_core(mut snapshot: StateSnapshot) -> Result<(), LspError> {
                     message: "Build completed".to_string(),
                 });
             } else {
+                if build_map.is_empty() {
+                    // Build failed but we didn't get any parseable JSON errors.
+                    // Surface the tool output for debugging.
+                    let mut msg = String::new();
+                    msg.push_str("Build failed (no JSON diagnostics parsed).\n");
+                    if !stderr.trim().is_empty() {
+                        msg.push_str("stderr:\n");
+                        msg.push_str(stderr.trim());
+                        msg.push('\n');
+                    }
+                    if !stdout.trim().is_empty() {
+                        msg.push_str("stdout:\n");
+                        msg.push_str(stdout.trim());
+                        msg.push('\n');
+                    }
+                    // Avoid sending extremely large messages.
+                    const LIMIT: usize = 8000;
+                    if msg.len() > LIMIT {
+                        msg.truncate(LIMIT);
+                        msg.push_str("\n…(truncated)…");
+                    }
+
+                    let _ = snapshot.client.show_message(ShowMessageParams {
+                        typ: MessageType::ERROR,
+                        message: msg,
+                    });
+                }
                 let _ = snapshot.client.show_message(ShowMessageParams {
                     typ: MessageType::ERROR,
                     message: "Build failed".to_string(),
@@ -124,13 +154,25 @@ fn build_publish_plan(
     plan
 }
 
+fn filter_publishable_known_uris(mut uris: Vec<Url>) -> Vec<Url> {
+    // Some internal/stdlib files use non-file schemes (e.g. prim://...).
+    // Emacs lsp-mode assumes diagnostics are for file:// URIs.
+    uris.retain(|uri| uri.scheme() == "file");
+    uris
+}
+
 fn run_spago(root: &Path, extra_args: &[String]) -> Result<process::Output, LspError> {
     let mut cmd = process::Command::new("spago");
     cmd.current_dir(root);
     cmd.arg("build");
-    cmd.arg("--purs-args");
+    // Spago has its own --json-errors flag; it must not be forwarded to purs.
     cmd.arg("--json-errors");
-    cmd.args(extra_args);
+
+    // Our config's build args are purs args; forward via --purs-args.
+    if !extra_args.is_empty() {
+        cmd.arg("--purs-args");
+        cmd.arg(extra_args.join(" "));
+    }
     Ok(cmd.output()?)
 }
 
@@ -362,5 +404,14 @@ mod tests {
 
         assert_eq!(plan[2].0, b);
         assert_eq!(plan[2].1.len(), 1);
+    }
+
+    #[test]
+    fn filter_known_uris_skips_non_file_schemes() {
+        let prim = Url::parse("prim://localhost/Prim.purs").unwrap();
+        let file = Url::parse("file:///test/A.purs").unwrap();
+
+        let uris = filter_publishable_known_uris(vec![prim, file.clone()]);
+        assert_eq!(uris, vec![file]);
     }
 }

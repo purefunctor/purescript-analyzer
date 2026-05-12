@@ -41,6 +41,11 @@ pub fn reset(state: &mut State, _: Reset) -> Result<(), LspError> {
         let files = state.files.read();
         for file_id in files.iter_id() {
             let uri = Url::parse(files.path(file_id).as_ref())?;
+            // Some internal/stdlib files use non-file schemes (e.g. prim://...).
+            // Emacs lsp-mode assumes diagnostics are for file:// URIs.
+            if uri.scheme() != "file" {
+                continue;
+            }
             let _ = state.client.publish_diagnostics(PublishDiagnosticsParams {
                 uri,
                 diagnostics: vec![],
@@ -194,6 +199,12 @@ fn collect_diagnostics_core(
         let files = snapshot.files.read();
         common::file_uri(&snapshot.engine, &files, id)?
     };
+
+    // Some internal/stdlib files use non-file schemes (e.g. prim://...).
+    // Emacs lsp-mode assumes diagnostics are for file:// URIs.
+    if uri.scheme() != "file" {
+        return Ok(());
+    }
 
     let context =
         DiagnosticsContext::new(&snapshot.engine, &content, &root, &stabilized, &indexed, &lowered);
