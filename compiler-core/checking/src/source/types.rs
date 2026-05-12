@@ -412,6 +412,12 @@ fn infer_row_kind<Q>(
 where
     Q: ExternalQueries,
 {
+    if items.is_empty()
+        && let Some(tail) = tail
+    {
+        return infer_kind(state, context, *tail);
+    }
+
     let field_kind = state.fresh_unification(context.queries, context.prim.t);
     let row_kind = context.intern_application(context.prim.row, field_kind);
 

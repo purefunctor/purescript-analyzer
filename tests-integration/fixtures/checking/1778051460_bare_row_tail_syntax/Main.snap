@@ -1,0 +1,14 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+bareTail :: forall (opts :: Type). (opts :: Type) -> Int
+plainTail :: forall (opts :: Type). (opts :: Type) -> Int
+recordTail :: forall (opts :: Row Type). {| (opts :: Row Type) } -> Int
+withBareTail :: Int
+withPlainTail :: Int
+withRecordTail :: Int
+
+Types

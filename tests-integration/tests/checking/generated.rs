@@ -599,3 +599,5 @@ fn run_test(folder: &str, file: &str) {
 #[rustfmt::skip] #[test] fn test_1778010840_wildcard_arity_main() { run_test("1778010840_wildcard_arity", "Main"); }
 
 #[rustfmt::skip] #[test] fn test_1778051400_record_pun_constrained_field_main() { run_test("1778051400_record_pun_constrained_field", "Main"); }
+
+#[rustfmt::skip] #[test] fn test_1778051460_bare_row_tail_syntax_main() { run_test("1778051460_bare_row_tail_syntax", "Main"); }
