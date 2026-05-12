@@ -277,23 +277,19 @@ pub fn implementation(
 
             if let Some(token) = token {
                 for node in token.parent_ancestors() {
-                    if let Some(eq) = cst::LetBindingEquation::cast(node.clone()) {
-                        if let Some(eq_id) = stabilized.lookup_cst(&eq)
-                            && let Some(group_id) =
-                                lowered.info.let_binding_group_for_equation(eq_id)
-                            && let Some(highlights) = highlight_let(engine, current_file, group_id)?
-                        {
-                            return Ok(Some(highlights));
-                        }
+                    if let Some(eq) = cst::LetBindingEquation::cast(node.clone())
+                        && let Some(eq_id) = stabilized.lookup_cst(&eq)
+                        && let Some(group_id) = lowered.info.let_binding_group_for_equation(eq_id)
+                        && let Some(highlights) = highlight_let(engine, current_file, group_id)?
+                    {
+                        return Ok(Some(highlights));
                     }
-                    if let Some(sig) = cst::LetBindingSignature::cast(node) {
-                        if let Some(sig_id) = stabilized.lookup_cst(&sig)
-                            && let Some(group_id) =
-                                lowered.info.let_binding_group_for_signature(sig_id)
-                            && let Some(highlights) = highlight_let(engine, current_file, group_id)?
-                        {
-                            return Ok(Some(highlights));
-                        }
+                    if let Some(sig) = cst::LetBindingSignature::cast(node)
+                        && let Some(sig_id) = stabilized.lookup_cst(&sig)
+                        && let Some(group_id) = lowered.info.let_binding_group_for_signature(sig_id)
+                        && let Some(highlights) = highlight_let(engine, current_file, group_id)?
+                    {
+                        return Ok(Some(highlights));
                     }
                 }
             }
