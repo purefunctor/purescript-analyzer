@@ -440,7 +440,7 @@ fn formatting(
         }
         if !stdout.is_empty() {
             if !details.is_empty() {
-                details.push_str("\n");
+                details.push('\n');
             }
             details.push_str(stdout);
         }
