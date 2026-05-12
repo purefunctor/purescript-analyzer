@@ -115,6 +115,7 @@ impl State {
     {
         let snapshot = StateSnapshot {
             client: self.client.clone(),
+            config: Arc::clone(&self.config),
             engine: self.engine.snapshot(),
             files: Arc::clone(&self.files),
             workspace_symbols_cache: Arc::clone(&self.workspace_symbols_cache),
@@ -140,6 +141,7 @@ impl State {
 
 struct StateSnapshot {
     client: ClientSocket,
+    config: Arc<cli::Config>,
     engine: QueryEngine,
     files: Arc<RwLock<Files>>,
     workspace_symbols_cache: Arc<RwLock<WorkspaceSymbolsCache>>,
@@ -845,7 +847,7 @@ mod tests {
 
     #[test]
     fn file_change_invalidates_build_diagnostics_for_uri() {
-        let mut state = mk_state_with(base_config(None));
+        let mut state = mk_state_with(base_config());
         let changed_uri = Url::parse("file:///test/Main.purs").unwrap();
         let other_uri = Url::parse("file:///test/Other.purs").unwrap();
         state.build_diagnostics.write().insert(changed_uri.clone(), vec![Diagnostic::default()]);
