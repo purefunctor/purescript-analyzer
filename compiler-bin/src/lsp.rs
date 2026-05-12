@@ -578,3 +578,201 @@ pub async fn start(config: Arc<cli::Config>) {
         process::exit(1);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use async_lsp::lsp_types::{
+        ClientCapabilities, DocumentFormattingParams, InitializeParams, Position,
+        TextDocumentIdentifier, Url, WorkspaceFolder,
+    };
+
+    fn mk_state_with(config: cli::Config) -> State {
+        // ClientSocket isn't used by initialize/formatting logic in tests.
+        let client = ClientSocket::new_closed();
+        State::new(Arc::new(config), client)
+    }
+
+    fn mk_init_params(root: &std::path::Path) -> InitializeParams {
+        InitializeParams {
+            process_id: None,
+            root_path: None,
+            root_uri: None,
+            initialization_options: None,
+            capabilities: ClientCapabilities::default(),
+            trace: None,
+            workspace_folders: Some(vec![WorkspaceFolder {
+                uri: Url::from_file_path(root).unwrap(),
+                name: "workspace".to_string(),
+            }]),
+            work_done_progress_params: WorkDoneProgressParams::default(),
+            client_info: None,
+            locale: None,
+        }
+    }
+
+    fn base_config(format_command: Option<String>) -> cli::Config {
+        cli::Config {
+            stdio: true,
+            log_file: false,
+            query_log: tracing::level_filters::LevelFilter::OFF,
+            lsp_log: tracing::level_filters::LevelFilter::INFO,
+            checking_log: tracing::level_filters::LevelFilter::OFF,
+            source_command: None,
+            format_command,
+            diagnostics_on_open: true,
+            diagnostics_on_save: true,
+            diagnostics_on_change: false,
+        }
+    }
+
+    #[tokio::test]
+    async fn formatting_capability_not_advertised_without_flag() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+        let mut state = mk_state_with(base_config(None));
+
+        let initialize_params = mk_init_params(root);
+        let res = initialize(
+            &mut state,
+            extension::CustomInitializeParams { initialize_params, work_done_token: None },
+        )
+        .await
+        .unwrap();
+
+        assert!(res.capabilities.document_formatting_provider.is_none());
+    }
+
+    #[tokio::test]
+    async fn formatting_capability_advertised_with_flag() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+        let mut state = mk_state_with(base_config(Some("/bin/cat".to_string())));
+
+        let initialize_params = mk_init_params(root);
+        let res = initialize(
+            &mut state,
+            extension::CustomInitializeParams { initialize_params, work_done_token: None },
+        )
+        .await
+        .unwrap();
+
+        assert!(res.capabilities.document_formatting_provider.is_some());
+    }
+
+    #[test]
+    fn formatting_returns_full_document_edit() {
+        let mut state = mk_state_with(base_config(Some("/usr/bin/tr a-z A-Z".to_string())));
+
+        let uri = Url::parse("file:///test/Main.purs").unwrap();
+        let input = "module Main where\nfoo = bar\n";
+        on_change(&mut state, uri.as_str(), input).unwrap();
+
+        let snapshot = StateSnapshot {
+            client: state.client.clone(),
+            config: Arc::clone(&state.config),
+            engine: state.engine.snapshot(),
+            files: Arc::clone(&state.files),
+            workspace_symbols_cache: Arc::clone(&state.workspace_symbols_cache),
+            suggestions_cache: Arc::clone(&state.suggestions_cache),
+        };
+
+        let p = DocumentFormattingParams {
+            text_document: TextDocumentIdentifier { uri: uri.clone() },
+            options: FormattingOptions {
+                tab_size: 2,
+                insert_spaces: true,
+                ..FormattingOptions::default()
+            },
+            work_done_progress_params: WorkDoneProgressParams::default(),
+        };
+
+        let edits = formatting(snapshot, p).unwrap().unwrap();
+        assert_eq!(edits.len(), 1);
+        assert_eq!(edits[0].new_text, "MODULE MAIN WHERE\nFOO = BAR\n");
+        assert_eq!(edits[0].range.start, Position::new(0, 0));
+    }
+
+    #[test]
+    fn formatting_noop_returns_empty_edits() {
+        let mut state = mk_state_with(base_config(Some("/bin/cat".to_string())));
+
+        let uri = Url::parse("file:///test/Main.purs").unwrap();
+        let input = "module Main where\nfoo = bar\n";
+        on_change(&mut state, uri.as_str(), input).unwrap();
+
+        let snapshot = StateSnapshot {
+            client: state.client.clone(),
+            config: Arc::clone(&state.config),
+            engine: state.engine.snapshot(),
+            files: Arc::clone(&state.files),
+            workspace_symbols_cache: Arc::clone(&state.workspace_symbols_cache),
+            suggestions_cache: Arc::clone(&state.suggestions_cache),
+        };
+
+        let p = DocumentFormattingParams {
+            text_document: TextDocumentIdentifier { uri },
+            options: FormattingOptions::default(),
+            work_done_progress_params: WorkDoneProgressParams::default(),
+        };
+
+        let edits = formatting(snapshot, p).unwrap().unwrap();
+        assert!(edits.is_empty());
+    }
+
+    #[test]
+    fn formatting_parses_quoted_args() {
+        let mut state = mk_state_with(base_config(Some("/usr/bin/tr 'a-z' 'A-Z'".to_string())));
+
+        let uri = Url::parse("file:///test/Main.purs").unwrap();
+        let input = "module Main where\nfoo = bar\n";
+        on_change(&mut state, uri.as_str(), input).unwrap();
+
+        let snapshot = StateSnapshot {
+            client: state.client.clone(),
+            config: Arc::clone(&state.config),
+            engine: state.engine.snapshot(),
+            files: Arc::clone(&state.files),
+            workspace_symbols_cache: Arc::clone(&state.workspace_symbols_cache),
+            suggestions_cache: Arc::clone(&state.suggestions_cache),
+        };
+
+        let p = DocumentFormattingParams {
+            text_document: TextDocumentIdentifier { uri },
+            options: FormattingOptions::default(),
+            work_done_progress_params: WorkDoneProgressParams::default(),
+        };
+
+        let edits = formatting(snapshot, p).unwrap().unwrap();
+        assert_eq!(edits.len(), 1);
+        assert_eq!(edits[0].new_text, "MODULE MAIN WHERE\nFOO = BAR\n");
+    }
+
+    #[test]
+    fn formatting_tolerates_outer_quoted_command_string() {
+        let mut state =
+            mk_state_with(base_config(Some("\"/usr/bin/tr a-z A-Z\"".to_string())));
+
+        let uri = Url::parse("file:///test/Main.purs").unwrap();
+        let input = "module Main where\nfoo = bar\n";
+        on_change(&mut state, uri.as_str(), input).unwrap();
+
+        let snapshot = StateSnapshot {
+            client: state.client.clone(),
+            config: Arc::clone(&state.config),
+            engine: state.engine.snapshot(),
+            files: Arc::clone(&state.files),
+            workspace_symbols_cache: Arc::clone(&state.workspace_symbols_cache),
+            suggestions_cache: Arc::clone(&state.suggestions_cache),
+        };
+
+        let p = DocumentFormattingParams {
+            text_document: TextDocumentIdentifier { uri },
+            options: FormattingOptions::default(),
+            work_done_progress_params: WorkDoneProgressParams::default(),
+        };
+
+        let edits = formatting(snapshot, p).unwrap().unwrap();
+        assert_eq!(edits.len(), 1);
+        assert_eq!(edits[0].new_text, "MODULE MAIN WHERE\nFOO = BAR\n");
+    }
+}
