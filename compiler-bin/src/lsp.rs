@@ -1,6 +1,7 @@
 pub mod error;
 pub mod event;
 pub mod extension;
+pub mod build;
 
 use std::borrow::BorrowMut;
 use std::ops::{ControlFlow, Deref};
@@ -29,6 +30,11 @@ use walkdir::WalkDir;
 
 use crate::cli;
 use crate::lsp::error::{AnalyzerResultExt, LspError};
+
+const PS_BUILD: &str = "purescript.build";
+const PS_CLEAN: &str = "purescript.clean";
+const PS_RESET: &str = "purescript.reset";
+const PS_ANALYZER_REFRESH: &str = "purescript.analyzerRefresh";
 
 pub struct State {
     pub config: Arc<cli::Config>,
@@ -72,6 +78,7 @@ impl State {
             files: Arc::clone(&self.files),
             workspace_symbols_cache: Arc::clone(&self.workspace_symbols_cache),
             suggestions_cache: Arc::clone(&self.suggestions_cache),
+            root: self.root.clone(),
         };
         task::spawn_blocking(move || f(snapshot))
     }
@@ -93,10 +100,11 @@ struct StateSnapshot {
     files: Arc<RwLock<Files>>,
     workspace_symbols_cache: Arc<RwLock<WorkspaceSymbolsCache>>,
     suggestions_cache: Arc<RwLock<SuggestionsCache>>,
+    root: Option<PathBuf>,
 }
 
 impl StateSnapshot {
-    fn files(&self) -> impl Deref<Target = Files> {
+    fn files(&self) -> impl Deref<Target = Files> + use<'_> {
         self.files.read()
     }
 }
@@ -117,6 +125,17 @@ fn initialize(
         Ok(InitializeResult {
             server_info: None,
             capabilities: ServerCapabilities {
+                execute_command_provider: Some(ExecuteCommandOptions {
+                    commands: vec![
+                        PS_BUILD.to_string(),
+                        PS_CLEAN.to_string(),
+                        PS_RESET.to_string(),
+                        PS_ANALYZER_REFRESH.to_string(),
+                    ],
+                    work_done_progress_options: WorkDoneProgressOptions {
+                        work_done_progress: None,
+                    },
+                }),
                 completion_provider: Some(CompletionOptions {
                     resolve_provider: Some(true),
                     trigger_characters: Some(vec![".".to_string()]),
@@ -145,6 +164,43 @@ fn initialize(
             },
         })
     }
+}
+
+fn execute_command(
+    state: &mut State,
+    p: ExecuteCommandParams,
+) -> std::future::Ready<Result<<request::ExecuteCommand as Request>::Result, ResponseError>> {
+    use std::future;
+
+    let res = match p.command.as_str() {
+        // Implemented in later tasks; for now dispatch to events.
+        PS_ANALYZER_REFRESH => state
+            .client
+            .emit(event::AnalyzerRefresh)
+            .map(|_| None)
+            .map_err(|e| ResponseError::new(async_lsp::ErrorCode::REQUEST_FAILED, e.to_string())),
+        PS_RESET => state
+            .client
+            .emit(event::Reset)
+            .map(|_| None)
+            .map_err(|e| ResponseError::new(async_lsp::ErrorCode::REQUEST_FAILED, e.to_string())),
+        PS_CLEAN => state
+            .client
+            .emit(event::Clean)
+            .map(|_| None)
+            .map_err(|e| ResponseError::new(async_lsp::ErrorCode::REQUEST_FAILED, e.to_string())),
+        PS_BUILD => state
+            .client
+            .emit(build::Build)
+            .map(|_| None)
+            .map_err(|e| ResponseError::new(async_lsp::ErrorCode::REQUEST_FAILED, e.to_string())),
+        other => Err(ResponseError::new(
+            async_lsp::ErrorCode::INVALID_PARAMS,
+            format!("unsupported command: {other}"),
+        )),
+    };
+
+    future::ready(res)
 }
 
 fn initialized(state: &mut State, _: InitializedParams) -> Result<(), LspError> {
@@ -422,6 +478,7 @@ pub async fn start(config: Arc<cli::Config>) {
 
         router
             .request::<extension::CustomInitialize, _>(initialize)
+            .request::<request::ExecuteCommand, _>(execute_command)
             .request_snapshot::<request::GotoDefinition>(definition)
             .request_snapshot::<request::HoverRequest>(hover)
             .request_snapshot::<request::Completion>(completion)
@@ -435,7 +492,11 @@ pub async fn start(config: Arc<cli::Config>) {
             .notification_ext::<notification::DidChangeConfiguration>(|_, _| Ok(()))
             .notification_ext::<notification::DidChangeTextDocument>(did_change)
             .notification_ext::<notification::DidChangeWatchedFiles>(|_, _| Ok(()))
-            .event_ext::<event::CollectDiagnostics>(event::collect_diagnostics);
+            .event_ext::<event::CollectDiagnostics>(event::collect_diagnostics)
+            .event_ext::<event::AnalyzerRefresh>(event::analyzer_refresh)
+            .event_ext::<event::Reset>(event::reset)
+            .event_ext::<event::Clean>(event::clean)
+            .event_ext::<build::Build>(build::build);
 
         ServiceBuilder::new()
             .layer(LifecycleLayer::default())
@@ -461,4 +522,123 @@ pub async fn start(config: Arc<cli::Config>) {
         tracing::error!(?error, "LSP main loop exited");
         process::exit(1);
     }
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use async_lsp::lsp_types::{
+        ClientCapabilities, ExecuteCommandParams, InitializeParams, Url, WorkspaceFolder,
+    };
+
+    fn mk_state_with(config: cli::Config) -> State {
+        // ClientSocket isn't used by initialize/formatting logic in tests.
+        let client = ClientSocket::new_closed();
+        State::new(Arc::new(config), client)
+    }
+
+    fn mk_init_params(root: &std::path::Path) -> InitializeParams {
+        InitializeParams {
+            process_id: None,
+            root_path: None,
+            root_uri: None,
+            initialization_options: None,
+            capabilities: ClientCapabilities::default(),
+            trace: None,
+            workspace_folders: Some(vec![WorkspaceFolder {
+                uri: Url::from_file_path(root).unwrap(),
+                name: "workspace".to_string(),
+            }]),
+            work_done_progress_params: WorkDoneProgressParams::default(),
+            client_info: None,
+            locale: None,
+        }
+    }
+
+    fn base_config() -> cli::Config {
+        cli::Config {
+            stdio: true,
+            log_file: false,
+            query_log: tracing::level_filters::LevelFilter::OFF,
+            lsp_log: tracing::level_filters::LevelFilter::INFO,
+            checking_log: tracing::level_filters::LevelFilter::OFF,
+            source_command: None,
+            diagnostics_on_open: true,
+            diagnostics_on_save: true,
+            diagnostics_on_change: false,
+            build_tool: cli::BuildTool::Auto,
+            build_arg: vec![],
+        }
+    }
+
+    #[tokio::test]
+    async fn analyzer_refresh_handles_multiple_files() {
+        let mut state = mk_state_with(base_config());
+        on_change(&mut state, "file:///test/A.purs", "module A where\n").unwrap();
+        on_change(&mut state, "file:///test/B.purs", "module B where\n").unwrap();
+
+        event::analyzer_refresh(&mut state, event::AnalyzerRefresh).unwrap();
+    }
+
+    #[tokio::test]
+    async fn execute_command_capability_advertised() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+        let mut state = mk_state_with(base_config());
+
+        let initialize_params = mk_init_params(root);
+        let res = initialize(
+            &mut state,
+            extension::CustomInitializeParams { initialize_params, work_done_token: None },
+        )
+        .await
+        .unwrap();
+
+        let provider = res.capabilities.execute_command_provider.unwrap();
+        assert_eq!(
+            provider.commands,
+            vec![
+                PS_BUILD.to_string(),
+                PS_CLEAN.to_string(),
+                PS_RESET.to_string(),
+                PS_ANALYZER_REFRESH.to_string(),
+            ]
+        );
+    }
+
+    #[tokio::test]
+    async fn execute_command_unknown_rejected() {
+        let mut state = mk_state_with(base_config());
+        let res = execute_command(
+            &mut state,
+            ExecuteCommandParams {
+                command: "purescript.nope".to_string(),
+                arguments: vec![],
+                work_done_progress_params: WorkDoneProgressParams::default(),
+            },
+        )
+        .await;
+
+        let err = res.unwrap_err();
+        assert_eq!(err.code, async_lsp::ErrorCode::INVALID_PARAMS);
+    }
+
+    #[tokio::test]
+    async fn execute_command_dispatches_via_events() {
+        // With a closed client socket, emitting an internal event will fail.
+        // This still verifies the executeCommand handler is wired to dispatch.
+        let mut state = mk_state_with(base_config());
+        let res = execute_command(
+            &mut state,
+            ExecuteCommandParams {
+                command: PS_ANALYZER_REFRESH.to_string(),
+                arguments: vec![],
+                work_done_progress_params: WorkDoneProgressParams::default(),
+            },
+        )
+        .await;
+
+        let err = res.unwrap_err();
+        assert_eq!(err.code, async_lsp::ErrorCode::REQUEST_FAILED);
+    }
+
 }

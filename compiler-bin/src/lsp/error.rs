@@ -6,6 +6,7 @@ use async_lsp::ErrorCode;
 use spago::LockfileGlobSetError;
 use thiserror::Error;
 use tokio::task;
+use url::ParseError;
 
 #[derive(Error, Debug)]
 pub enum LspError {
@@ -27,6 +28,10 @@ pub enum LspError {
     JoinError(#[from] task::JoinError),
     #[error("Utf8Error: {0}")]
     Utf8Error(#[from] str::Utf8Error),
+    #[error("UrlParseError: {0}")]
+    UrlParseError(#[from] ParseError),
+    #[error("Unsupported execute command: {0}")]
+    UnsupportedCommand(String),
     #[error("GlobSetError: {0}")]
     GlobSetError(#[from] globset::Error),
     #[error("async_lsp::Error: {0}")]
@@ -47,6 +52,10 @@ impl LspError {
         if let Some(QueryError::Cancelled) = self.as_query_error() {
             return ErrorCode::REQUEST_CANCELLED;
         }
+
+        if matches!(self, LspError::UnsupportedCommand(_)) {
+            return ErrorCode::INVALID_PARAMS;
+        }
         ErrorCode::REQUEST_FAILED
     }
 
@@ -54,7 +63,12 @@ impl LspError {
         if let Some(QueryError::Cancelled) = self.as_query_error() {
             return "Request cancelled";
         }
-        "Request failed"
+        // Prefer returning a concrete error message to the client so editors
+        // can show useful feedback.
+        match self {
+            LspError::UnsupportedCommand(message) => message,
+            _ => "Request failed",
+        }
     }
 
     pub fn emit_trace(&self) {

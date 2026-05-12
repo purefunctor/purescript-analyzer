@@ -1,4 +1,5 @@
 use clap::{ArgAction, Parser};
+use clap::ValueEnum;
 use tracing::level_filters::LevelFilter;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -62,4 +63,26 @@ pub struct Config {
         default_value_t = false
     )]
     pub diagnostics_on_change: bool,
+
+    #[arg(
+        long,
+        value_enum,
+        default_value_t = BuildTool::Auto,
+        help("Build tool used for purescript.build")
+    )]
+    pub build_tool: BuildTool,
+
+    #[arg(
+        long,
+        help("Extra args appended to the build command (repeatable)"),
+        value_name("arg")
+    )]
+    pub build_arg: Vec<String>,
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum)]
+pub enum BuildTool {
+    Auto,
+    Spago,
+    Purs,
 }

@@ -1,13 +1,158 @@
-use analyzer::{common, locate};
+use std::sync::Arc;
+
+use analyzer::{Files, QueryEngine, common, locate, prim};
 use async_lsp::LanguageClient;
 use async_lsp::lsp_types::*;
 use diagnostics::{DiagnosticsContext, ToDiagnostics};
 use files::FileId;
 use itertools::Itertools;
+use parking_lot::RwLock;
+use path_absolutize::Absolutize;
 use rowan::TextSize;
 
 use crate::lsp::error::LspError;
 use crate::lsp::{State, StateSnapshot};
+
+pub struct AnalyzerRefresh;
+
+pub fn analyzer_refresh(state: &mut State, _: AnalyzerRefresh) -> Result<(), LspError> {
+    // Best-effort: cancel in-flight queries so refresh work wins.
+    state.engine.request_cancel();
+
+    let file_ids: Vec<FileId> = {
+        let files = state.files.read();
+        files.iter_id().collect()
+    };
+
+    for file_id in file_ids {
+        // Reuse existing per-file diagnostic computation.
+        collect_diagnostics(state, CollectDiagnostics(file_id))?;
+    }
+    Ok(())
+}
+
+pub struct Reset;
+
+pub fn reset(state: &mut State, _: Reset) -> Result<(), LspError> {
+    state.engine.request_cancel();
+
+    // Clear any published diagnostics (including build diagnostics).
+    {
+        let files = state.files.read();
+        for file_id in files.iter_id() {
+            let uri = Url::parse(files.path(file_id).as_ref())?;
+            let _ = state.client.publish_diagnostics(PublishDiagnosticsParams {
+                uri,
+                diagnostics: vec![],
+                version: None,
+            });
+        }
+    }
+
+    // Reset analyzer state.
+    let mut engine = QueryEngine::default();
+    let mut files = Files::default();
+    prim::configure(&mut engine, &mut files);
+    state.engine = engine;
+    state.files = Arc::new(RwLock::new(files));
+
+    state.invalidate_workspace_symbols();
+    state.invalidate_suggestions_cache();
+
+    // Reload workspace sources (same mechanism as initialization).
+    let config = Arc::clone(&state.config);
+    if let Some(command) = config.source_command.as_deref() {
+        super::initialized_manual(state, command)
+    } else {
+        super::initialized_spago(state)
+    }
+}
+
+pub struct Clean;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum CleanOutcome {
+    Deleted,
+    NotFound,
+}
+
+pub(crate) fn clean_output_dir(root: &std::path::Path) -> Result<CleanOutcome, LspError> {
+    let root = root.absolutize()?.to_path_buf();
+    let output = root.join("output");
+
+    // Safety: only ever delete exactly <root>/output.
+    if output.parent() != Some(root.as_path()) {
+        return Err(LspError::IoError(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "refusing to delete non-workspace output directory",
+        )));
+    }
+
+    match std::fs::remove_dir_all(&output) {
+        Ok(()) => Ok(CleanOutcome::Deleted),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(CleanOutcome::NotFound),
+        Err(e) => Err(LspError::IoError(e)),
+    }
+}
+
+pub fn clean(state: &mut State, _: Clean) -> Result<(), LspError> {
+    state.spawn(|mut snapshot| {
+        let _span = tracing::info_span!("clean").entered();
+        let root = snapshot.root.as_ref().ok_or(LspError::MissingRoot)?;
+
+        let res: Result<(), LspError> = match clean_output_dir(root) {
+            Ok(CleanOutcome::Deleted) => {
+                let _ = snapshot.client.show_message(ShowMessageParams {
+                    typ: MessageType::INFO,
+                    message: "Deleted output/".to_string(),
+                });
+                Ok(())
+            }
+            Ok(CleanOutcome::NotFound) => {
+                let _ = snapshot.client.show_message(ShowMessageParams {
+                    typ: MessageType::INFO,
+                    message: "output/ did not exist".to_string(),
+                });
+                Ok(())
+            }
+            Err(e) => Err(e),
+        };
+
+        if let Err(e) = &res {
+            let _ = snapshot.client.show_message(ShowMessageParams {
+                typ: MessageType::ERROR,
+                message: format!("Failed to delete output/: {e}"),
+            });
+        }
+
+        res
+    });
+
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn mk_tmp_dir(name: &str) -> std::path::PathBuf {
+        let mut dir = std::env::temp_dir();
+        dir.push(format!("purescript-analyzer-{name}-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    #[test]
+    fn clean_deletes_output_dir() {
+        let root = mk_tmp_dir("clean");
+        std::fs::create_dir_all(root.join("output")).unwrap();
+
+        let out = clean_output_dir(&root).unwrap();
+        assert_eq!(out, CleanOutcome::Deleted);
+        assert!(!root.join("output").exists());
+    }
+}
 
 pub fn emit_collect_diagnostics(state: &mut State, uri: Url) -> Result<(), LspError> {
     let files = state.files.read();
