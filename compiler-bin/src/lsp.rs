@@ -116,7 +116,8 @@ fn initialize(
             folder.uri.to_file_path().ok()
         })
         .or_else(|| env::current_dir().ok());
-    let formatting_enabled = state.config.format_command.is_some();
+    let formatting_enabled =
+        state.config.format_command.as_deref().is_some_and(|s| !s.trim().is_empty());
     async move {
         Ok(InitializeResult {
             server_info: None,
@@ -319,6 +320,9 @@ fn formatting(
     let Some(format_command) = snapshot.config.format_command.as_deref() else {
         return Ok(None);
     };
+    if format_command.trim().is_empty() {
+        return Ok(None);
+    }
 
     let uri = p.text_document.uri;
     let current_file = {
@@ -370,9 +374,58 @@ fn formatting(
         })?;
     }
 
-    let output = child.wait_with_output().map_err(|e| {
-        LspError::FormattingFailed(format!("failed to wait for formatter: {e}"))
-    })?;
+    let output = {
+        use std::thread;
+        use std::time::{Duration, Instant};
+
+        // Avoid hanging indefinitely if the formatter never exits.
+        let timeout = Duration::from_secs(10);
+        let start = Instant::now();
+        loop {
+            match child.try_wait() {
+                Ok(Some(_status)) => {
+                    break child.wait_with_output().map_err(|e| {
+                        LspError::FormattingFailed(format!(
+                            "failed to wait for formatter '{format_command}': {e}"
+                        ))
+                    })?;
+                }
+                Ok(None) => {
+                    if start.elapsed() >= timeout {
+                        let kill_err = child.kill().err();
+                        let wait_err = child.wait().err();
+                        let mut details = format!(
+                            "formatter timed out after {timeout:?} (input {} bytes): {format_command}",
+                            input.len()
+                        );
+                        if let Some(e) = kill_err {
+                            details.push_str(&format!("; kill failed: {e}"));
+                        }
+                        if let Some(e) = wait_err {
+                            details.push_str(&format!("; wait failed: {e}"));
+                        }
+                        return Err(LspError::FormattingFailed(details));
+                    }
+                    thread::sleep(Duration::from_millis(10));
+                }
+                Err(e) => {
+                    let kill_err = child.kill().err();
+                    let wait_err = child.wait().err();
+                    let mut details = format!(
+                        "failed waiting for formatter '{format_command}' (input {} bytes): {e}",
+                        input.len()
+                    );
+                    if let Some(e) = kill_err {
+                        details.push_str(&format!("; kill failed: {e}"));
+                    }
+                    if let Some(e) = wait_err {
+                        details.push_str(&format!("; wait failed: {e}"));
+                    }
+                    return Err(LspError::FormattingFailed(details));
+                }
+            }
+        }
+    };
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
@@ -397,8 +450,7 @@ fn formatting(
 
         return Err(LspError::FormattingFailed(format!(
             "formatter exited with {}: {}",
-            output.status,
-            details
+            output.status, details
         )));
     }
 
@@ -409,11 +461,9 @@ fn formatting(
         return Ok(Some(vec![]));
     }
 
-    let end = analyzer::locate::offset_to_position(
-        input.as_ref(),
-        TextSize::from(input.len() as u32),
-    )
-        .unwrap_or(Position { line: 0, character: 0 });
+    let end =
+        analyzer::locate::offset_to_position(input.as_ref(), TextSize::from(input.len() as u32))
+            .unwrap_or(Position { line: 0, character: 0 });
     let range = Range { start: Position { line: 0, character: 0 }, end };
 
     Ok(Some(vec![TextEdit { range, new_text: formatted }]))
@@ -646,7 +696,8 @@ mod tests {
     #[tokio::test]
     async fn formatting_capability_advertised_with_flag() {
         let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
-        let mut state = mk_state_with(base_config(Some("/bin/cat".to_string())));
+        // Capability advertising doesn't execute the formatter; any non-empty value should enable it.
+        let mut state = mk_state_with(base_config(Some("purs-tidy".to_string())));
 
         let initialize_params = mk_init_params(root);
         let res = initialize(
@@ -659,9 +710,10 @@ mod tests {
         assert!(res.capabilities.document_formatting_provider.is_some());
     }
 
+    #[cfg(unix)]
     #[test]
     fn formatting_returns_full_document_edit() {
-        let mut state = mk_state_with(base_config(Some("/usr/bin/tr a-z A-Z".to_string())));
+        let mut state = mk_state_with(base_config(Some("tr a-z A-Z".to_string())));
 
         let uri = Url::parse("file:///test/Main.purs").unwrap();
         let input = "module Main where\nfoo = bar\n";
@@ -692,9 +744,10 @@ mod tests {
         assert_eq!(edits[0].range.start, Position::new(0, 0));
     }
 
+    #[cfg(unix)]
     #[test]
     fn formatting_noop_returns_empty_edits() {
-        let mut state = mk_state_with(base_config(Some("/bin/cat".to_string())));
+        let mut state = mk_state_with(base_config(Some("cat".to_string())));
 
         let uri = Url::parse("file:///test/Main.purs").unwrap();
         let input = "module Main where\nfoo = bar\n";
@@ -719,9 +772,10 @@ mod tests {
         assert!(edits.is_empty());
     }
 
+    #[cfg(unix)]
     #[test]
     fn formatting_parses_quoted_args() {
-        let mut state = mk_state_with(base_config(Some("/usr/bin/tr 'a-z' 'A-Z'".to_string())));
+        let mut state = mk_state_with(base_config(Some("tr 'a-z' 'A-Z'".to_string())));
 
         let uri = Url::parse("file:///test/Main.purs").unwrap();
         let input = "module Main where\nfoo = bar\n";
@@ -747,10 +801,10 @@ mod tests {
         assert_eq!(edits[0].new_text, "MODULE MAIN WHERE\nFOO = BAR\n");
     }
 
+    #[cfg(unix)]
     #[test]
     fn formatting_tolerates_outer_quoted_command_string() {
-        let mut state =
-            mk_state_with(base_config(Some("\"/usr/bin/tr a-z A-Z\"".to_string())));
+        let mut state = mk_state_with(base_config(Some("\"tr a-z A-Z\"".to_string())));
 
         let uri = Url::parse("file:///test/Main.purs").unwrap();
         let input = "module Main where\nfoo = bar\n";
