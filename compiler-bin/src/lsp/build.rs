@@ -10,8 +10,8 @@ use serde_json::Value;
 use walkdir::WalkDir;
 
 use crate::cli;
-use crate::lsp::error::LspError;
 use crate::lsp::StateSnapshot;
+use crate::lsp::error::LspError;
 
 pub struct Build;
 
@@ -269,11 +269,9 @@ fn extend_from_value(
 ) -> Result<(), LspError> {
     let errors: Vec<Value> = match value {
         Value::Array(arr) => arr,
-        Value::Object(obj) => obj
-            .get("errors")
-            .and_then(|v| v.as_array())
-            .cloned()
-            .unwrap_or_default(),
+        Value::Object(obj) => {
+            obj.get("errors").and_then(|v| v.as_array()).cloned().unwrap_or_default()
+        }
         _ => vec![],
     };
 
@@ -297,10 +295,8 @@ fn extend_from_value(
 
 fn error_to_diagnostic(err: &Value, tool: cli::BuildTool) -> Diagnostic {
     let message = extract_message(err);
-    let range = extract_range(err).unwrap_or(Range {
-        start: Position::new(0, 0),
-        end: Position::new(0, 0),
-    });
+    let range = extract_range(err)
+        .unwrap_or(Range { start: Position::new(0, 0), end: Position::new(0, 0) });
 
     let source = match tool {
         cli::BuildTool::Spago => "build/spago",
@@ -330,11 +326,8 @@ fn extract_message(err: &Value) -> String {
     if let Some(arr) = err.get("message").and_then(|v| v.as_array()) {
         let mut out = String::new();
         for part in arr {
-            let s = part
-                .get("text")
-                .and_then(|v| v.as_str())
-                .or_else(|| part.as_str())
-                .unwrap_or("");
+            let s =
+                part.get("text").and_then(|v| v.as_str()).or_else(|| part.as_str()).unwrap_or("");
             out.push_str(s);
         }
         if !out.is_empty() {
@@ -355,8 +348,10 @@ fn extract_range(err: &Value) -> Option<Range> {
     let end_col = obj.get("endColumn")?.as_u64()?;
 
     // purs positions are 1-based.
-    let start = Position::new((start_line.saturating_sub(1)) as u32, (start_col.saturating_sub(1)) as u32);
-    let end = Position::new((end_line.saturating_sub(1)) as u32, (end_col.saturating_sub(1)) as u32);
+    let start =
+        Position::new((start_line.saturating_sub(1)) as u32, (start_col.saturating_sub(1)) as u32);
+    let end =
+        Position::new((end_line.saturating_sub(1)) as u32, (end_col.saturating_sub(1)) as u32);
     Some(Range { start, end })
 }
 

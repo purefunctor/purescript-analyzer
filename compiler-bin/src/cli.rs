@@ -1,5 +1,5 @@
-use clap::{ArgAction, Parser};
 use clap::ValueEnum;
+use clap::{ArgAction, Parser};
 use tracing::level_filters::LevelFilter;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -72,11 +72,7 @@ pub struct Config {
     )]
     pub build_tool: BuildTool,
 
-    #[arg(
-        long,
-        help("Extra args appended to the build command (repeatable)"),
-        value_name("arg")
-    )]
+    #[arg(long, help("Extra args appended to the build command (repeatable)"), value_name("arg"))]
     pub build_arg: Vec<String>,
 }
 

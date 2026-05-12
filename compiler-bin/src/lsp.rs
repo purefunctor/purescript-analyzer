@@ -1,7 +1,7 @@
+pub mod build;
 pub mod error;
 pub mod event;
 pub mod extension;
-pub mod build;
 
 use std::borrow::BorrowMut;
 use std::collections::{HashMap, HashSet};
