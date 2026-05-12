@@ -330,7 +330,25 @@ fn formatting(
 
     let input = snapshot.engine.content(current_file);
 
-    let mut parts = format_command.split_whitespace();
+    let mut cmd_str = format_command.trim();
+
+    // Users sometimes include extra quoting in editor configs, e.g.
+    // `--format-command "\"purs-tidy format\""`. If the whole command is wrapped
+    // in a single pair of quotes, strip it and re-parse.
+    if cmd_str.len() >= 2 {
+        let bytes = cmd_str.as_bytes();
+        let first = bytes[0];
+        let last = bytes[bytes.len() - 1];
+        let is_wrapped = (first == b'"' && last == b'"') || (first == b'\'' && last == b'\'');
+        if is_wrapped {
+            cmd_str = &cmd_str[1..cmd_str.len() - 1];
+        }
+    }
+
+    let parts = shlex::split(cmd_str).ok_or_else(|| {
+        LspError::FormattingFailed(format!("failed to parse --format-command: {format_command}"))
+    })?;
+    let mut parts = parts.into_iter();
     let program = parts
         .next()
         .ok_or_else(|| LspError::FormattingFailed("--format-command is empty".to_string()))?;

@@ -42,7 +42,7 @@ pub struct Config {
         long,
         help("Command to use for textDocument/formatting"),
         long_help(
-            "If set, the LSP server advertises document formatting support and formats PureScript files by piping the full document contents to this command's stdin and reading formatted text from stdout. Example: --format-command \"purs-tidy format\""
+            "If set, the LSP server advertises document formatting support and formats PureScript files by piping the full document contents to this command's stdin and reading formatted text from stdout. Shell-style quoting is supported. Example: --format-command \"purs-tidy format --indent 2\""
         )
     )]
     pub format_command: Option<String>,
