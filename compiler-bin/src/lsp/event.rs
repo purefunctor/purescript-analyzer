@@ -106,6 +106,15 @@ pub fn clean(state: &mut State, _: Clean) -> Result<(), LspError> {
         let _span = tracing::info_span!("clean").entered();
         let root = snapshot.root.as_ref().ok_or(LspError::MissingRoot)?;
 
+        // Clearing output artifacts should also clear any build diagnostics, otherwise
+        // clients keep showing stale build-only errors after `purescript.clean`.
+        let mut build_uris: Vec<Url> = {
+            let map = snapshot.build_diagnostics.read();
+            map.keys().filter(|u| u.scheme() == "file").cloned().collect()
+        };
+        build_uris.sort();
+        build_uris.dedup();
+
         let res: Result<(), LspError> = match clean_output_dir(root) {
             Ok(CleanOutcome::Deleted) => {
                 let _ = snapshot.client.show_message(ShowMessageParams {
@@ -128,6 +137,17 @@ pub fn clean(state: &mut State, _: Clean) -> Result<(), LspError> {
             let _ = snapshot.client.show_message(ShowMessageParams {
                 typ: MessageType::ERROR,
                 message: format!("Failed to delete output/: {e}"),
+            });
+        }
+
+        // Drop build diagnostics and republish merged diagnostics for affected URIs.
+        snapshot.build_diagnostics.write().clear();
+        for uri in build_uris {
+            let diagnostics = snapshot.merged_diagnostics_for_uri(&uri);
+            let _ = snapshot.client.publish_diagnostics(PublishDiagnosticsParams {
+                uri,
+                diagnostics,
+                version: None,
             });
         }
 
