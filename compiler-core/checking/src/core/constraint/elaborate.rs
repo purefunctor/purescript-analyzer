@@ -13,7 +13,6 @@ use crate::core::constraint::canonical::CanonicalConstraint;
 use crate::core::constraint::matching::MatchInstance;
 use crate::core::constraint::{CanonicalConstraintId, canonical, compiler};
 use crate::core::substitute::{NameToType, SubstituteName};
-use crate::core::walk::{TypeWalker, WalkAction, walk_type};
 use crate::core::{CheckedClass, KindOrType, Name, Type, TypeId, normalise, toolkit};
 use crate::state::CheckState;
 use crate::{ExternalQueries, safe_loop};
@@ -275,7 +274,7 @@ where
         _ => {}
     }
 
-    if contains_rigid(state, context, replacement, name)? {
+    if toolkit::contains_rigid(state, context, replacement, name)? {
         return Ok(false);
     }
 
@@ -315,45 +314,4 @@ where
         }
         type_id = substituted;
     }
-}
-
-fn contains_rigid<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    type_id: TypeId,
-    target: Name,
-) -> QueryResult<bool>
-where
-    Q: ExternalQueries,
-{
-    struct ContainsRigid {
-        target: Name,
-        contains: bool,
-    }
-
-    impl TypeWalker for ContainsRigid {
-        fn visit<Q>(
-            &mut self,
-            _state: &mut CheckState,
-            _context: &CheckContext<Q>,
-            _id: TypeId,
-            t: &Type,
-        ) -> QueryResult<WalkAction>
-        where
-            Q: ExternalQueries,
-        {
-            if let Type::Rigid(name, _, _) = *t
-                && name == self.target
-            {
-                self.contains = true;
-                Ok(WalkAction::Stop)
-            } else {
-                Ok(WalkAction::Continue)
-            }
-        }
-    }
-
-    let mut walker = ContainsRigid { target, contains: false };
-    walk_type(state, context, type_id, &mut walker)?;
-    Ok(walker.contains)
 }

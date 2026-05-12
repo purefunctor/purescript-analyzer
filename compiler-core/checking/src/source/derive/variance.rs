@@ -176,7 +176,7 @@ where
                 check_variance_field(state, context, argument, variance, rigids)?;
             } else {
                 for parameter in rigids.iter() {
-                    if contains_rigid_name(state, context, argument, parameter.name)? {
+                    if toolkit::contains_rigid(state, context, argument, parameter.name)? {
                         emit_variance_error(state, context, type_id, variance, parameter.expected)?;
                         if variance == parameter.expected {
                             if let Some(class) = parameter.class {
@@ -230,42 +230,4 @@ where
         }
     }
     Ok(())
-}
-
-fn contains_rigid_name<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    type_id: TypeId,
-    name: Name,
-) -> QueryResult<bool>
-where
-    Q: ExternalQueries,
-{
-    let type_id = normalise::expand(state, context, type_id)?;
-    Ok(match context.lookup_type(type_id) {
-        Type::Application(function, argument) | Type::KindApplication(function, argument) => {
-            contains_rigid_name(state, context, function, name)?
-                || contains_rigid_name(state, context, argument, name)?
-        }
-        Type::Forall(_, inner) | Type::Constrained(_, inner) | Type::Kinded(inner, _) => {
-            contains_rigid_name(state, context, inner, name)?
-        }
-        Type::Function(argument, result) => {
-            contains_rigid_name(state, context, argument, name)?
-                || contains_rigid_name(state, context, result, name)?
-        }
-        Type::Row(row_id) => {
-            let row = context.lookup_row_type(row_id);
-            let mut contains = false;
-            for field in row.fields.iter() {
-                contains |= contains_rigid_name(state, context, field.id, name)?;
-            }
-            if let Some(tail) = row.tail {
-                contains |= contains_rigid_name(state, context, tail, name)?;
-            }
-            contains
-        }
-        Type::Rigid(rigid_name, _, _) => rigid_name == name,
-        _ => false,
-    })
 }
