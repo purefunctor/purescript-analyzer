@@ -27,14 +27,22 @@ fn build_core(mut snapshot: StateSnapshot) -> Result<(), LspError> {
     // Clone to avoid holding an immutable borrow of snapshot across client calls.
     let root = snapshot.root.clone().ok_or(LspError::MissingRoot)?;
 
+    // Copy out config we need so we don't keep an immutable borrow of `snapshot`
+    // alive while publishing diagnostics.
+    let build_tool_cfg = snapshot.config.build_tool;
+    let build_arg = snapshot.config.build_arg.clone();
+    let source_command = snapshot.config.source_command.clone();
+
     // Only clear diagnostics we previously published for builds.
     // Publishing one empty-diagnostics notification per known file can freeze clients.
-    let previously_published: Vec<Url> = {
+    // Ensure the read guard is dropped before any client calls.
+    let previously_published: Vec<Url>;
+    {
         let set = snapshot.build_diagnostics_uris.read();
-        set.iter().cloned().collect()
-    };
+        previously_published = set.iter().cloned().collect();
+    }
 
-    let tool = match snapshot.config.build_tool {
+    let tool = match build_tool_cfg {
         cli::BuildTool::Spago => cli::BuildTool::Spago,
         cli::BuildTool::Purs => cli::BuildTool::Purs,
         cli::BuildTool::Auto => {
@@ -44,10 +52,10 @@ fn build_core(mut snapshot: StateSnapshot) -> Result<(), LspError> {
     };
 
     let output = match tool {
-        cli::BuildTool::Spago => run_spago(&root, &snapshot.config.build_arg)?,
+        cli::BuildTool::Spago => run_spago(&root, &build_arg)?,
         cli::BuildTool::Purs => {
-            let sources = workspace_sources(&root, &snapshot.config)?;
-            run_purs(&root, &sources, &snapshot.config.build_arg)?
+            let sources = workspace_sources(&root, source_command.as_deref())?;
+            run_purs(&root, &sources, &build_arg)?
         }
         cli::BuildTool::Auto => unreachable!(),
     };
@@ -57,15 +65,23 @@ fn build_core(mut snapshot: StateSnapshot) -> Result<(), LspError> {
     // Spago/purs output varies by version: JSON may appear on stdout or stderr,
     // and may be interleaved with other text. Parse both.
     let combined = format!("{stderr}\n{stdout}");
-    let diagnostics_by_uri = parse_purs_json_errors(&combined, tool);
+    let diagnostics_by_uri = parse_purs_json_errors(&combined, tool, &root);
+
     // Use an owned map so we don't hold immutable borrows across client calls.
+    // If parsing fails, still proceed with build success/failure messaging.
     let build_map: HashMap<Url, Vec<Diagnostic>> = match diagnostics_by_uri {
         Ok(map) => map,
-        Err(_) => HashMap::new(),
+        Err(err) => {
+            let _ = snapshot.client.show_message(ShowMessageParams {
+                typ: MessageType::WARNING,
+                message: format!("Failed to parse build diagnostics JSON: {err}"),
+            });
+            HashMap::new()
+        }
     };
 
     // Clear previous build diagnostics, then publish current build diagnostics.
-    for uri in previously_published {
+    for uri in previously_published.into_iter().filter(|u| u.scheme() == "file") {
         let _ = snapshot.client.publish_diagnostics(PublishDiagnosticsParams {
             uri,
             diagnostics: vec![],
@@ -74,18 +90,23 @@ fn build_core(mut snapshot: StateSnapshot) -> Result<(), LspError> {
     }
 
     for (uri, diagnostics) in &build_map {
-            let _ = snapshot.client.publish_diagnostics(PublishDiagnosticsParams {
-                uri: uri.clone(),
-                diagnostics: diagnostics.clone(),
-                version: None,
-            });
+        // Some internal/stdlib files can show up with non-file schemes.
+        // Emacs lsp-mode expects diagnostics URIs to be file://.
+        if uri.scheme() != "file" {
+            continue;
+        }
+        let _ = snapshot.client.publish_diagnostics(PublishDiagnosticsParams {
+            uri: uri.clone(),
+            diagnostics: diagnostics.clone(),
+            version: None,
+        });
     }
 
     // Update the set of URIs we consider "build diagnostics".
     {
         let mut set = snapshot.build_diagnostics_uris.write();
         set.clear();
-        set.extend(build_map.keys().cloned());
+        set.extend(build_map.keys().filter(|u| u.scheme() == "file").cloned());
     }
 
     // We already materialized build_map; treat parse failures as "no build diagnostics".
@@ -162,8 +183,8 @@ fn run_purs(
     Ok(cmd.output()?)
 }
 
-fn workspace_sources(root: &Path, config: &cli::Config) -> Result<Vec<PathBuf>, LspError> {
-    if let Some(command) = config.source_command.as_deref() {
+fn workspace_sources(root: &Path, source_command: Option<&str>) -> Result<Vec<PathBuf>, LspError> {
+    if let Some(command) = source_command {
         sources_from_command(root, command)
     } else {
         Ok(spago::source_files(root).map_err(LspError::SpagoLock)?)
@@ -211,12 +232,13 @@ fn sources_from_command(root: &Path, command: &str) -> Result<Vec<PathBuf>, LspE
 fn parse_purs_json_errors(
     text: &str,
     tool: cli::BuildTool,
+    root: &Path,
 ) -> Result<HashMap<Url, Vec<Diagnostic>>, LspError> {
     let mut map: HashMap<Url, Vec<Diagnostic>> = HashMap::new();
 
     // Try whole-buffer parse first.
     if let Ok(value) = serde_json::from_str::<Value>(text.trim()) {
-        extend_from_value(&mut map, value, tool)?;
+        extend_from_value(&mut map, value, tool, root)?;
         return Ok(map);
     }
 
@@ -227,7 +249,7 @@ fn parse_purs_json_errors(
             continue;
         }
         if let Ok(value) = serde_json::from_str::<Value>(line) {
-            extend_from_value(&mut map, value, tool)?;
+            extend_from_value(&mut map, value, tool, root)?;
         }
     }
 
@@ -238,6 +260,7 @@ fn extend_from_value(
     map: &mut HashMap<Url, Vec<Diagnostic>>,
     value: Value,
     tool: cli::BuildTool,
+    root: &Path,
 ) -> Result<(), LspError> {
     let errors: Vec<Value> = match value {
         Value::Array(arr) => arr,
@@ -254,9 +277,10 @@ fn extend_from_value(
         let uri = if filename.starts_with("file://") {
             Url::parse(filename)?
         } else {
-            Url::from_file_path(filename).map_err(|_| {
-                LspError::PathParseFail(PathBuf::from(filename))
-            })?
+            // Spago emits relative paths like "src/Foo.purs". Make them absolute.
+            let path = Path::new(filename);
+            let abs = if path.is_absolute() { PathBuf::from(path) } else { root.join(path) };
+            Url::from_file_path(&abs).map_err(|_| LspError::PathParseFail(abs))?
         };
 
         let diagnostic = error_to_diagnostic(&err, tool);
@@ -338,7 +362,7 @@ mod tests {
     #[test]
     fn parse_accepts_errors_object() {
         let input = r#"{"errors":[{"filename":"file:///test/Main.purs","position":{"startLine":1,"startColumn":1,"endLine":1,"endColumn":4},"message":"nope"}]}"#;
-        let map = parse_purs_json_errors(input, cli::BuildTool::Purs).unwrap();
+        let map = parse_purs_json_errors(input, cli::BuildTool::Purs, Path::new("/")).unwrap();
         let (uri, diags) = map.into_iter().next().unwrap();
         assert_eq!(uri.as_str(), "file:///test/Main.purs");
         assert_eq!(diags.len(), 1);
