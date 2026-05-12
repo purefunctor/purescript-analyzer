@@ -23,6 +23,7 @@ use async_lsp::{ClientSocket, ResponseError};
 use globset::{Glob, GlobSetBuilder};
 use parking_lot::RwLock;
 use path_absolutize::Absolutize;
+use rowan::TextSize;
 use tokio::task;
 use tower::ServiceBuilder;
 use walkdir::WalkDir;
@@ -68,6 +69,7 @@ impl State {
     {
         let snapshot = StateSnapshot {
             client: self.client.clone(),
+            config: Arc::clone(&self.config),
             engine: self.engine.snapshot(),
             files: Arc::clone(&self.files),
             workspace_symbols_cache: Arc::clone(&self.workspace_symbols_cache),
@@ -89,6 +91,7 @@ impl State {
 
 struct StateSnapshot {
     client: ClientSocket,
+    config: Arc<cli::Config>,
     engine: QueryEngine,
     files: Arc<RwLock<Files>>,
     workspace_symbols_cache: Arc<RwLock<WorkspaceSymbolsCache>>,
@@ -113,6 +116,8 @@ fn initialize(
             folder.uri.to_file_path().ok()
         })
         .or_else(|| env::current_dir().ok());
+    let formatting_enabled =
+        state.config.format_command.as_deref().is_some_and(|s| !s.trim().is_empty());
     async move {
         Ok(InitializeResult {
             server_info: None,
@@ -132,6 +137,7 @@ fn initialize(
                 hover_provider: Some(HoverProviderCapability::Simple(true)),
                 references_provider: Some(OneOf::Left(true)),
                 workspace_symbol_provider: Some(OneOf::Left(true)),
+                document_formatting_provider: formatting_enabled.then_some(OneOf::Left(true)),
                 text_document_sync: Some(TextDocumentSyncCapability::Options(
                     TextDocumentSyncOptions {
                         open_close: Some(true),
@@ -304,6 +310,165 @@ fn workspace_symbols(
         .on_non_fatal(None)
 }
 
+fn formatting(
+    snapshot: StateSnapshot,
+    p: DocumentFormattingParams,
+) -> Result<Option<Vec<TextEdit>>, LspError> {
+    let _span = tracing::info_span!("formatting").entered();
+
+    // Formatting support is advertised conditionally in `initialize`.
+    let Some(format_command) = snapshot.config.format_command.as_deref() else {
+        return Ok(None);
+    };
+    if format_command.trim().is_empty() {
+        return Ok(None);
+    }
+
+    let uri = p.text_document.uri;
+    let current_file = {
+        let files = snapshot.files();
+        let uri = uri.as_str();
+        let Some(id) = files.id(uri) else { return Ok(None) };
+        id
+    };
+
+    let input = snapshot.engine.content(current_file);
+
+    let mut cmd_str = format_command.trim();
+
+    // Users sometimes include extra quoting in editor configs, e.g.
+    // `--format-command "\"purs-tidy format\""`. If the whole command is wrapped
+    // in a single pair of quotes, strip it and re-parse.
+    if cmd_str.len() >= 2 {
+        let bytes = cmd_str.as_bytes();
+        let first = bytes[0];
+        let last = bytes[bytes.len() - 1];
+        let is_wrapped = (first == b'"' && last == b'"') || (first == b'\'' && last == b'\'');
+        if is_wrapped {
+            cmd_str = &cmd_str[1..cmd_str.len() - 1];
+        }
+    }
+
+    let parts = shlex::split(cmd_str).ok_or_else(|| {
+        LspError::FormattingFailed(format!("failed to parse --format-command: {format_command}"))
+    })?;
+    let mut parts = parts.into_iter();
+    let program = parts
+        .next()
+        .ok_or_else(|| LspError::FormattingFailed("--format-command is empty".to_string()))?;
+
+    let mut cmd = process::Command::new(program);
+    cmd.args(parts);
+    cmd.stdin(process::Stdio::piped());
+    cmd.stdout(process::Stdio::piped());
+    cmd.stderr(process::Stdio::piped());
+
+    let mut child = cmd.spawn().map_err(|e| {
+        LspError::FormattingFailed(format!("failed to spawn formatter '{format_command}': {e}"))
+    })?;
+
+    if let Some(mut stdin) = child.stdin.take() {
+        use std::io::Write;
+        stdin.write_all(input.as_bytes()).map_err(|e| {
+            LspError::FormattingFailed(format!("failed writing to formatter stdin: {e}"))
+        })?;
+    }
+
+    let output = {
+        use std::thread;
+        use std::time::{Duration, Instant};
+
+        // Avoid hanging indefinitely if the formatter never exits.
+        let timeout = Duration::from_secs(10);
+        let start = Instant::now();
+        loop {
+            match child.try_wait() {
+                Ok(Some(_status)) => {
+                    break child.wait_with_output().map_err(|e| {
+                        LspError::FormattingFailed(format!(
+                            "failed to wait for formatter '{format_command}': {e}"
+                        ))
+                    })?;
+                }
+                Ok(None) => {
+                    if start.elapsed() >= timeout {
+                        let kill_err = child.kill().err();
+                        let wait_err = child.wait().err();
+                        let mut details = format!(
+                            "formatter timed out after {timeout:?} (input {} bytes): {format_command}",
+                            input.len()
+                        );
+                        if let Some(e) = kill_err {
+                            details.push_str(&format!("; kill failed: {e}"));
+                        }
+                        if let Some(e) = wait_err {
+                            details.push_str(&format!("; wait failed: {e}"));
+                        }
+                        return Err(LspError::FormattingFailed(details));
+                    }
+                    thread::sleep(Duration::from_millis(10));
+                }
+                Err(e) => {
+                    let kill_err = child.kill().err();
+                    let wait_err = child.wait().err();
+                    let mut details = format!(
+                        "failed waiting for formatter '{format_command}' (input {} bytes): {e}",
+                        input.len()
+                    );
+                    if let Some(e) = kill_err {
+                        details.push_str(&format!("; kill failed: {e}"));
+                    }
+                    if let Some(e) = wait_err {
+                        details.push_str(&format!("; wait failed: {e}"));
+                    }
+                    return Err(LspError::FormattingFailed(details));
+                }
+            }
+        }
+    };
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        let stdout = String::from_utf8_lossy(&output.stdout);
+
+        let stderr = stderr.trim();
+        let stdout = stdout.trim();
+
+        let mut details = String::new();
+        if !stderr.is_empty() {
+            details.push_str(stderr);
+        }
+        if !stdout.is_empty() {
+            if !details.is_empty() {
+                details.push('\n');
+            }
+            details.push_str(stdout);
+        }
+        if details.is_empty() {
+            details.push_str("<no output>");
+        }
+
+        return Err(LspError::FormattingFailed(format!(
+            "formatter exited with {}: {}",
+            output.status, details
+        )));
+    }
+
+    let formatted = String::from_utf8(output.stdout)
+        .map_err(|e| LspError::FormattingFailed(format!("formatter output was not utf-8: {e}")))?;
+
+    if formatted.as_str() == input.as_ref() {
+        return Ok(Some(vec![]));
+    }
+
+    let end =
+        analyzer::locate::offset_to_position(input.as_ref(), TextSize::from(input.len() as u32))
+            .unwrap_or(Position { line: 0, character: 0 });
+    let range = Range { start: Position { line: 0, character: 0 }, end };
+
+    Ok(Some(vec![TextEdit { range, new_text: formatted }]))
+}
+
 fn did_change(state: &mut State, p: DidChangeTextDocumentParams) -> Result<(), LspError> {
     let uri = p.text_document.uri.as_str();
 
@@ -428,6 +593,7 @@ pub async fn start(config: Arc<cli::Config>) {
             .request_snapshot::<request::ResolveCompletionItem>(resolve_completion_item)
             .request_snapshot::<request::References>(references)
             .request_snapshot::<request::WorkspaceSymbolRequest>(workspace_symbols)
+            .request_snapshot::<request::Formatting>(formatting)
             .notification_ext::<notification::Initialized>(initialized)
             .notification_ext::<notification::DidOpenTextDocument>(did_open)
             .notification_ext::<notification::DidSaveTextDocument>(did_save)
@@ -460,5 +626,207 @@ pub async fn start(config: Arc<cli::Config>) {
     if let Err(error) = server.run_buffered(stdin, stdout).await {
         tracing::error!(?error, "LSP main loop exited");
         process::exit(1);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use async_lsp::lsp_types::{
+        ClientCapabilities, DocumentFormattingParams, InitializeParams, Position,
+        TextDocumentIdentifier, Url, WorkspaceFolder,
+    };
+
+    fn mk_state_with(config: cli::Config) -> State {
+        // ClientSocket isn't used by initialize/formatting logic in tests.
+        let client = ClientSocket::new_closed();
+        State::new(Arc::new(config), client)
+    }
+
+    fn mk_init_params(root: &std::path::Path) -> InitializeParams {
+        InitializeParams {
+            process_id: None,
+            root_path: None,
+            root_uri: None,
+            initialization_options: None,
+            capabilities: ClientCapabilities::default(),
+            trace: None,
+            workspace_folders: Some(vec![WorkspaceFolder {
+                uri: Url::from_file_path(root).unwrap(),
+                name: "workspace".to_string(),
+            }]),
+            work_done_progress_params: WorkDoneProgressParams::default(),
+            client_info: None,
+            locale: None,
+        }
+    }
+
+    fn base_config(format_command: Option<String>) -> cli::Config {
+        cli::Config {
+            stdio: true,
+            log_file: false,
+            query_log: tracing::level_filters::LevelFilter::OFF,
+            lsp_log: tracing::level_filters::LevelFilter::INFO,
+            checking_log: tracing::level_filters::LevelFilter::OFF,
+            source_command: None,
+            format_command,
+            diagnostics_on_open: true,
+            diagnostics_on_save: true,
+            diagnostics_on_change: false,
+        }
+    }
+
+    #[tokio::test]
+    async fn formatting_capability_not_advertised_without_flag() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+        let mut state = mk_state_with(base_config(None));
+
+        let initialize_params = mk_init_params(root);
+        let res = initialize(
+            &mut state,
+            extension::CustomInitializeParams { initialize_params, work_done_token: None },
+        )
+        .await
+        .unwrap();
+
+        assert!(res.capabilities.document_formatting_provider.is_none());
+    }
+
+    #[tokio::test]
+    async fn formatting_capability_advertised_with_flag() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+        // Capability advertising doesn't execute the formatter; any non-empty value should enable it.
+        let mut state = mk_state_with(base_config(Some("purs-tidy".to_string())));
+
+        let initialize_params = mk_init_params(root);
+        let res = initialize(
+            &mut state,
+            extension::CustomInitializeParams { initialize_params, work_done_token: None },
+        )
+        .await
+        .unwrap();
+
+        assert!(res.capabilities.document_formatting_provider.is_some());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn formatting_returns_full_document_edit() {
+        let mut state = mk_state_with(base_config(Some("tr a-z A-Z".to_string())));
+
+        let uri = Url::parse("file:///test/Main.purs").unwrap();
+        let input = "module Main where\nfoo = bar\n";
+        on_change(&mut state, uri.as_str(), input).unwrap();
+
+        let snapshot = StateSnapshot {
+            client: state.client.clone(),
+            config: Arc::clone(&state.config),
+            engine: state.engine.snapshot(),
+            files: Arc::clone(&state.files),
+            workspace_symbols_cache: Arc::clone(&state.workspace_symbols_cache),
+            suggestions_cache: Arc::clone(&state.suggestions_cache),
+        };
+
+        let p = DocumentFormattingParams {
+            text_document: TextDocumentIdentifier { uri: uri.clone() },
+            options: FormattingOptions {
+                tab_size: 2,
+                insert_spaces: true,
+                ..FormattingOptions::default()
+            },
+            work_done_progress_params: WorkDoneProgressParams::default(),
+        };
+
+        let edits = formatting(snapshot, p).unwrap().unwrap();
+        assert_eq!(edits.len(), 1);
+        assert_eq!(edits[0].new_text, "MODULE MAIN WHERE\nFOO = BAR\n");
+        assert_eq!(edits[0].range.start, Position::new(0, 0));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn formatting_noop_returns_empty_edits() {
+        let mut state = mk_state_with(base_config(Some("cat".to_string())));
+
+        let uri = Url::parse("file:///test/Main.purs").unwrap();
+        let input = "module Main where\nfoo = bar\n";
+        on_change(&mut state, uri.as_str(), input).unwrap();
+
+        let snapshot = StateSnapshot {
+            client: state.client.clone(),
+            config: Arc::clone(&state.config),
+            engine: state.engine.snapshot(),
+            files: Arc::clone(&state.files),
+            workspace_symbols_cache: Arc::clone(&state.workspace_symbols_cache),
+            suggestions_cache: Arc::clone(&state.suggestions_cache),
+        };
+
+        let p = DocumentFormattingParams {
+            text_document: TextDocumentIdentifier { uri },
+            options: FormattingOptions::default(),
+            work_done_progress_params: WorkDoneProgressParams::default(),
+        };
+
+        let edits = formatting(snapshot, p).unwrap().unwrap();
+        assert!(edits.is_empty());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn formatting_parses_quoted_args() {
+        let mut state = mk_state_with(base_config(Some("tr 'a-z' 'A-Z'".to_string())));
+
+        let uri = Url::parse("file:///test/Main.purs").unwrap();
+        let input = "module Main where\nfoo = bar\n";
+        on_change(&mut state, uri.as_str(), input).unwrap();
+
+        let snapshot = StateSnapshot {
+            client: state.client.clone(),
+            config: Arc::clone(&state.config),
+            engine: state.engine.snapshot(),
+            files: Arc::clone(&state.files),
+            workspace_symbols_cache: Arc::clone(&state.workspace_symbols_cache),
+            suggestions_cache: Arc::clone(&state.suggestions_cache),
+        };
+
+        let p = DocumentFormattingParams {
+            text_document: TextDocumentIdentifier { uri },
+            options: FormattingOptions::default(),
+            work_done_progress_params: WorkDoneProgressParams::default(),
+        };
+
+        let edits = formatting(snapshot, p).unwrap().unwrap();
+        assert_eq!(edits.len(), 1);
+        assert_eq!(edits[0].new_text, "MODULE MAIN WHERE\nFOO = BAR\n");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn formatting_tolerates_outer_quoted_command_string() {
+        let mut state = mk_state_with(base_config(Some("\"tr a-z A-Z\"".to_string())));
+
+        let uri = Url::parse("file:///test/Main.purs").unwrap();
+        let input = "module Main where\nfoo = bar\n";
+        on_change(&mut state, uri.as_str(), input).unwrap();
+
+        let snapshot = StateSnapshot {
+            client: state.client.clone(),
+            config: Arc::clone(&state.config),
+            engine: state.engine.snapshot(),
+            files: Arc::clone(&state.files),
+            workspace_symbols_cache: Arc::clone(&state.workspace_symbols_cache),
+            suggestions_cache: Arc::clone(&state.suggestions_cache),
+        };
+
+        let p = DocumentFormattingParams {
+            text_document: TextDocumentIdentifier { uri },
+            options: FormattingOptions::default(),
+            work_done_progress_params: WorkDoneProgressParams::default(),
+        };
+
+        let edits = formatting(snapshot, p).unwrap().unwrap();
+        assert_eq!(edits.len(), 1);
+        assert_eq!(edits[0].new_text, "MODULE MAIN WHERE\nFOO = BAR\n");
     }
 }

@@ -1777,6 +1777,7 @@ dependencies = [
  "resolving",
  "rowan",
  "serde",
+ "shlex",
  "spago",
  "stabilizing",
  "syntax",
