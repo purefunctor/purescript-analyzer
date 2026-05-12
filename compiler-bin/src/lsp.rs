@@ -115,7 +115,10 @@ fn initialize(
         .or_else(|| env::current_dir().ok());
     async move {
         Ok(InitializeResult {
-            server_info: None,
+            server_info: Some(ServerInfo {
+                name: "purescript-analyzer".to_string(),
+                version: Some(env!("CARGO_PKG_VERSION").to_string()),
+            }),
             capabilities: ServerCapabilities {
                 completion_provider: Some(CompletionOptions {
                     resolve_provider: Some(true),
