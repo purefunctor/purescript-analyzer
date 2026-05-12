@@ -10,7 +10,7 @@ References at Position { line: 3, character: 3 }
 -- % @ $
 ```
 
-file:///tests-integration/fixtures/lsp/031_locate_class_member/Main.purs @ 6:7..6:15
+file:///tests-integration/fixtures/lsp/1758309900_locate_class_member/Main.purs @ 6:7..6:15
 
 
 GotoDefinition at Position { line: 3, character: 5 }
@@ -20,7 +20,7 @@ GotoDefinition at Position { line: 3, character: 5 }
 -- % @ $
 ```
 
-file:///tests-integration/fixtures/lsp/031_locate_class_member/Main.purs @ 3:2..3:31
+file:///tests-integration/fixtures/lsp/1758309900_locate_class_member/Main.purs @ 3:2..3:31
 
 
 Hover at Position { line: 3, character: 7 }
