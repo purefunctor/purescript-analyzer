@@ -8,6 +8,7 @@ use std::ops::{ControlFlow, Deref};
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::{env, fs, mem, process};
+use std::collections::HashSet;
 
 use analyzer::completion::SuggestionsCache;
 use analyzer::symbols::WorkspaceSymbolsCache;
@@ -46,6 +47,10 @@ pub struct State {
     pub workspace_symbols_cache: Arc<RwLock<WorkspaceSymbolsCache>>,
     pub suggestions_cache: Arc<RwLock<SuggestionsCache>>,
 
+    // URIs for which we last published build diagnostics.
+    // Used to clear only build diagnostics (avoids flooding clients).
+    pub build_diagnostics_uris: Arc<RwLock<HashSet<Url>>>,
+
     pub root: Option<PathBuf>,
 }
 
@@ -63,9 +68,20 @@ impl State {
         let suggestions_cache = SuggestionsCache::default();
         let suggestions_cache = Arc::new(RwLock::new(suggestions_cache));
 
+        let build_diagnostics_uris = Arc::new(RwLock::new(HashSet::new()));
+
         let root = None;
 
-        State { config, client, engine, files, workspace_symbols_cache, suggestions_cache, root }
+        State {
+            config,
+            client,
+            engine,
+            files,
+            workspace_symbols_cache,
+            suggestions_cache,
+            build_diagnostics_uris,
+            root,
+        }
     }
 
     fn spawn<T>(&self, f: impl FnOnce(StateSnapshot) -> T + Send + 'static) -> task::JoinHandle<T>
@@ -78,6 +94,7 @@ impl State {
             files: Arc::clone(&self.files),
             workspace_symbols_cache: Arc::clone(&self.workspace_symbols_cache),
             suggestions_cache: Arc::clone(&self.suggestions_cache),
+            build_diagnostics_uris: Arc::clone(&self.build_diagnostics_uris),
             root: self.root.clone(),
         };
         task::spawn_blocking(move || f(snapshot))
@@ -100,6 +117,7 @@ struct StateSnapshot {
     files: Arc<RwLock<Files>>,
     workspace_symbols_cache: Arc<RwLock<WorkspaceSymbolsCache>>,
     suggestions_cache: Arc<RwLock<SuggestionsCache>>,
+    build_diagnostics_uris: Arc<RwLock<HashSet<Url>>>,
     root: Option<PathBuf>,
 }
 
