@@ -69,16 +69,17 @@ pub fn reset(state: &mut State, _: Reset) -> Result<(), LspError> {
         });
     }
 
+    // Debug breadcrumb.
+    let _ = client.show_message(ShowMessageParams {
+        typ: MessageType::INFO,
+        message: "Reset complete".to_string(),
+    });
+
     // Fast reset: clear diagnostics + caches, keep current file contents.
     // Full workspace reload is expensive on large projects; users can opt into
     // recomputing diagnostics via purescript.analyzerRefresh or by running build.
     state.invalidate_workspace_symbols();
     state.invalidate_suggestions_cache();
-
-    let _ = client.show_message(ShowMessageParams {
-        typ: MessageType::INFO,
-        message: "Reset complete".to_string(),
-    });
 
     Ok(())
 }
