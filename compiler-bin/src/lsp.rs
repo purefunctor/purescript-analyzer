@@ -784,6 +784,9 @@ mod tests {
             diagnostics_on_change: false,
             build_tool: cli::BuildTool::Auto,
             build_arg: vec![],
+            analyzer_excluded_dir: [".spago", "output", ".git", "node_modules"]
+                .map(String::from)
+                .into(),
         }
     }
 

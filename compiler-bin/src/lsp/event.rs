@@ -25,7 +25,11 @@ pub fn analyzer_refresh(state: &mut State, _: AnalyzerRefresh) -> Result<(), Lsp
             .filter_map(|file_id| {
                 let path = files.path(file_id);
                 let uri = Url::parse(path.as_ref()).ok()?;
-                if is_refreshable_workspace_source_uri(state.root.as_deref(), &uri) {
+                if is_refreshable_workspace_source_uri(
+                    state.root.as_deref(),
+                    &state.config.analyzer_excluded_dir,
+                    &uri,
+                ) {
                     Some((Some(file_id), None))
                 } else if uri.scheme() == "file" {
                     Some((None, Some(uri)))
@@ -49,7 +53,13 @@ pub fn analyzer_refresh(state: &mut State, _: AnalyzerRefresh) -> Result<(), Lsp
         excluded_uris.extend(
             analyzer
                 .keys()
-                .filter(|uri| !is_refreshable_workspace_source_uri(state.root.as_deref(), uri))
+                .filter(|uri| {
+                    !is_refreshable_workspace_source_uri(
+                        state.root.as_deref(),
+                        &state.config.analyzer_excluded_dir,
+                        uri,
+                    )
+                })
                 .cloned(),
         );
     }
@@ -81,7 +91,11 @@ pub fn analyzer_refresh(state: &mut State, _: AnalyzerRefresh) -> Result<(), Lsp
     Ok(())
 }
 
-fn is_refreshable_workspace_source_uri(root: Option<&Path>, uri: &Url) -> bool {
+fn is_refreshable_workspace_source_uri(
+    root: Option<&Path>,
+    excluded_dirs: &[String],
+    uri: &Url,
+) -> bool {
     if uri.scheme() != "file" {
         return false;
     }
@@ -104,9 +118,13 @@ fn is_refreshable_workspace_source_uri(root: Option<&Path>, uri: &Url) -> bool {
         }
     }
 
-    !path.components().any(|component| match component {
+    !is_excluded_path(&path, excluded_dirs)
+}
+
+fn is_excluded_path(path: &Path, excluded_dirs: &[String]) -> bool {
+    path.components().any(|component| match component {
         Component::Normal(name) => {
-            matches!(name.to_str(), Some(".spago" | "output" | ".git" | "node_modules"))
+            name.to_str().is_some_and(|name| excluded_dirs.iter().any(|dir| dir == name))
         }
         _ => false,
     })
@@ -283,14 +301,19 @@ mod tests {
         let external_uri = Url::from_file_path(root.with_file_name("external/Main.purs")).unwrap();
         let generated_purs_uri = Url::from_file_path(root.join("output/Main.purs")).unwrap();
         let prim_uri = Url::parse("prim://Prim.purs").unwrap();
+        let excluded_dirs = [".spago", "output", ".git", "node_modules"].map(String::from);
 
-        assert!(is_refreshable_workspace_source_uri(Some(&root), &source_uri));
-        assert!(is_refreshable_workspace_source_uri(Some(&root), &test_uri));
-        assert!(!is_refreshable_workspace_source_uri(Some(&root), &dependency_uri));
-        assert!(!is_refreshable_workspace_source_uri(Some(&root), &output_uri));
-        assert!(!is_refreshable_workspace_source_uri(Some(&root), &external_uri));
-        assert!(!is_refreshable_workspace_source_uri(Some(&root), &generated_purs_uri));
-        assert!(!is_refreshable_workspace_source_uri(Some(&root), &prim_uri));
+        assert!(is_refreshable_workspace_source_uri(Some(&root), &excluded_dirs, &source_uri));
+        assert!(is_refreshable_workspace_source_uri(Some(&root), &excluded_dirs, &test_uri));
+        assert!(!is_refreshable_workspace_source_uri(Some(&root), &excluded_dirs, &dependency_uri));
+        assert!(!is_refreshable_workspace_source_uri(Some(&root), &excluded_dirs, &output_uri));
+        assert!(!is_refreshable_workspace_source_uri(Some(&root), &excluded_dirs, &external_uri));
+        assert!(!is_refreshable_workspace_source_uri(
+            Some(&root),
+            &excluded_dirs,
+            &generated_purs_uri
+        ));
+        assert!(!is_refreshable_workspace_source_uri(Some(&root), &excluded_dirs, &prim_uri));
     }
 }
 

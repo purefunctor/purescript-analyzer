@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use std::time::Duration;
 use std::{io, str};
 
 use analyzer::{AnalyzerError, QueryError};
@@ -24,6 +25,10 @@ pub enum LspError {
     SpagoLock(#[from] LockfileGlobSetError),
     #[error("IoError: {0}")]
     IoError(#[from] io::Error),
+    #[error("Build command `{command}` timed out after {timeout:?}")]
+    BuildTimeout { command: &'static str, timeout: Duration },
+    #[error("Build command missing {0} pipe")]
+    MissingProcessPipe(&'static str),
     #[error("JoinError: {0}")]
     JoinError(#[from] task::JoinError),
     #[error("Utf8Error: {0}")]

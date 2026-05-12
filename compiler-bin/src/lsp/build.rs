@@ -1,12 +1,16 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::process;
+use std::process::{self, Stdio};
+use std::time::Duration;
 
 use async_lsp::LanguageClient;
 use async_lsp::lsp_types::*;
 use globset::{Glob, GlobSetBuilder};
 use path_absolutize::Absolutize;
 use serde_json::Value;
+use tokio::io::AsyncReadExt;
+use tokio::process as tokio_process;
+use tokio::time;
 use walkdir::WalkDir;
 
 use crate::cli;
@@ -14,6 +18,8 @@ use crate::lsp::StateSnapshot;
 use crate::lsp::error::LspError;
 
 pub struct Build;
+
+const BUILD_COMMAND_TIMEOUT: Duration = Duration::from_secs(60 * 5);
 
 pub fn build(state: &mut crate::lsp::State, _: Build) -> Result<(), LspError> {
     state.spawn(|snapshot| {
@@ -52,10 +58,12 @@ fn build_core(mut snapshot: StateSnapshot) -> Result<(), LspError> {
     };
 
     let output = match tool {
-        cli::BuildTool::Spago => run_spago(&root, &build_arg)?,
+        cli::BuildTool::Spago => {
+            tokio::runtime::Handle::current().block_on(run_spago(&root, &build_arg))?
+        }
         cli::BuildTool::Purs => {
             let sources = workspace_sources(&root, source_command.as_deref())?;
-            run_purs(&root, &sources, &build_arg)?
+            tokio::runtime::Handle::current().block_on(run_purs(&root, &sources, &build_arg))?
         }
         cli::BuildTool::Auto => unreachable!(),
     };
@@ -159,8 +167,8 @@ fn build_core(mut snapshot: StateSnapshot) -> Result<(), LspError> {
     }
 }
 
-fn run_spago(root: &Path, extra_args: &[String]) -> Result<process::Output, LspError> {
-    let mut cmd = process::Command::new("spago");
+async fn run_spago(root: &Path, extra_args: &[String]) -> Result<process::Output, LspError> {
+    let mut cmd = tokio_process::Command::new("spago");
     cmd.current_dir(root);
     cmd.arg("build");
     // Spago has its own --json-errors flag; it must not be forwarded to purs.
@@ -171,21 +179,54 @@ fn run_spago(root: &Path, extra_args: &[String]) -> Result<process::Output, LspE
         cmd.arg("--purs-args");
         cmd.arg(extra_args.join(" "));
     }
-    Ok(cmd.output()?)
+    output_with_timeout(cmd, "spago build").await
 }
 
-fn run_purs(
+async fn run_purs(
     root: &Path,
     sources: &[PathBuf],
     extra_args: &[String],
 ) -> Result<process::Output, LspError> {
-    let mut cmd = process::Command::new("purs");
+    let mut cmd = tokio_process::Command::new("purs");
     cmd.current_dir(root);
     cmd.arg("compile");
     cmd.arg("--json-errors");
     cmd.args(extra_args);
     cmd.args(sources);
-    Ok(cmd.output()?)
+    output_with_timeout(cmd, "purs compile").await
+}
+
+async fn output_with_timeout(
+    mut cmd: tokio_process::Command,
+    command_name: &'static str,
+) -> Result<process::Output, LspError> {
+    cmd.stdout(Stdio::piped());
+    cmd.stderr(Stdio::piped());
+    let mut child = cmd.spawn()?;
+    let mut stdout = child.stdout.take().ok_or(LspError::MissingProcessPipe("stdout"))?;
+    let mut stderr = child.stderr.take().ok_or(LspError::MissingProcessPipe("stderr"))?;
+    let stdout_task = tokio::spawn(async move {
+        let mut buf = vec![];
+        stdout.read_to_end(&mut buf).await.map(|_| buf)
+    });
+    let stderr_task = tokio::spawn(async move {
+        let mut buf = vec![];
+        stderr.read_to_end(&mut buf).await.map(|_| buf)
+    });
+
+    let status = match time::timeout(BUILD_COMMAND_TIMEOUT, child.wait()).await {
+        Ok(status) => status?,
+        Err(_) => {
+            let _ = child.start_kill();
+            let _ = child.wait().await;
+            return Err(LspError::BuildTimeout {
+                command: command_name,
+                timeout: BUILD_COMMAND_TIMEOUT,
+            });
+        }
+    };
+
+    Ok(process::Output { status, stdout: stdout_task.await??, stderr: stderr_task.await?? })
 }
 
 fn workspace_sources(root: &Path, source_command: Option<&str>) -> Result<Vec<PathBuf>, LspError> {
@@ -267,15 +308,31 @@ fn extend_from_value(
     tool: cli::BuildTool,
     root: &Path,
 ) -> Result<(), LspError> {
-    let errors: Vec<Value> = match value {
-        Value::Array(arr) => arr,
+    let (errors, warnings): (Vec<Value>, Vec<Value>) = match value {
+        Value::Array(arr) => (arr, vec![]),
         Value::Object(obj) => {
-            obj.get("errors").and_then(|v| v.as_array()).cloned().unwrap_or_default()
+            let errors = obj.get("errors").and_then(|v| v.as_array()).cloned().unwrap_or_default();
+            let warnings =
+                obj.get("warnings").and_then(|v| v.as_array()).cloned().unwrap_or_default();
+            (errors, warnings)
         }
-        _ => vec![],
+        _ => (vec![], vec![]),
     };
 
-    for err in errors {
+    extend_diagnostics(map, errors, DiagnosticSeverity::ERROR, tool, root)?;
+    extend_diagnostics(map, warnings, DiagnosticSeverity::WARNING, tool, root)?;
+
+    Ok(())
+}
+
+fn extend_diagnostics(
+    map: &mut HashMap<Url, Vec<Diagnostic>>,
+    diagnostics: Vec<Value>,
+    severity: DiagnosticSeverity,
+    tool: cli::BuildTool,
+    root: &Path,
+) -> Result<(), LspError> {
+    for err in diagnostics {
         let Some(filename) = err.get("filename").and_then(|v| v.as_str()) else { continue };
         let uri = if filename.starts_with("file://") {
             Url::parse(filename)?
@@ -286,14 +343,18 @@ fn extend_from_value(
             Url::from_file_path(&abs).map_err(|_| LspError::PathParseFail(abs))?
         };
 
-        let diagnostic = error_to_diagnostic(&err, tool);
+        let diagnostic = error_to_diagnostic(&err, severity, tool);
         map.entry(uri).or_default().push(diagnostic);
     }
 
     Ok(())
 }
 
-fn error_to_diagnostic(err: &Value, tool: cli::BuildTool) -> Diagnostic {
+fn error_to_diagnostic(
+    err: &Value,
+    severity: DiagnosticSeverity,
+    tool: cli::BuildTool,
+) -> Diagnostic {
     let message = extract_message(err);
     let range = extract_range(err)
         .unwrap_or(Range { start: Position::new(0, 0), end: Position::new(0, 0) });
@@ -306,7 +367,7 @@ fn error_to_diagnostic(err: &Value, tool: cli::BuildTool) -> Diagnostic {
 
     Diagnostic {
         range,
-        severity: Some(DiagnosticSeverity::ERROR),
+        severity: Some(severity),
         code: None,
         code_description: None,
         source: Some(source.to_string()),
@@ -361,13 +422,16 @@ mod tests {
 
     #[test]
     fn parse_accepts_errors_object() {
-        let input = r#"{"errors":[{"filename":"file:///test/Main.purs","position":{"startLine":1,"startColumn":1,"endLine":1,"endColumn":4},"message":"nope"}]}"#;
+        let input = r#"{"errors":[{"filename":"file:///test/Main.purs","position":{"startLine":1,"startColumn":1,"endLine":1,"endColumn":4},"message":"nope"}],"warnings":[{"filename":"file:///test/Main.purs","position":{"startLine":2,"startColumn":1,"endLine":2,"endColumn":4},"message":"careful"}]}"#;
         let map = parse_purs_json_errors(input, cli::BuildTool::Purs, Path::new("/")).unwrap();
         let (uri, diags) = map.into_iter().next().unwrap();
         assert_eq!(uri.as_str(), "file:///test/Main.purs");
-        assert_eq!(diags.len(), 1);
+        assert_eq!(diags.len(), 2);
         assert_eq!(diags[0].message, "nope");
+        assert_eq!(diags[0].severity, Some(DiagnosticSeverity::ERROR));
         assert_eq!(diags[0].range.start, Position::new(0, 0));
+        assert_eq!(diags[1].message, "careful");
+        assert_eq!(diags[1].severity, Some(DiagnosticSeverity::WARNING));
     }
 
     // Note: build publishing behavior is tested indirectly via LSP integration/unit tests.

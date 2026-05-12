@@ -74,6 +74,15 @@ pub struct Config {
 
     #[arg(long, help("Extra args appended to the build command (repeatable)"), value_name("arg"))]
     pub build_arg: Vec<String>,
+
+    #[arg(
+        long,
+        help("Directory names excluded from analyzer refresh (repeatable or comma-separated)"),
+        value_name("dir"),
+        value_delimiter = ',',
+        default_values_t = [".spago", "output", ".git", "node_modules"].map(String::from)
+    )]
+    pub analyzer_excluded_dir: Vec<String>,
 }
 
 #[derive(Debug, Clone, Copy, ValueEnum)]
