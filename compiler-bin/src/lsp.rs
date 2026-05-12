@@ -23,6 +23,7 @@ use async_lsp::{ClientSocket, ResponseError};
 use globset::{Glob, GlobSetBuilder};
 use parking_lot::RwLock;
 use path_absolutize::Absolutize;
+use rowan::TextSize;
 use tokio::task;
 use tower::ServiceBuilder;
 use walkdir::WalkDir;
@@ -68,6 +69,7 @@ impl State {
     {
         let snapshot = StateSnapshot {
             client: self.client.clone(),
+            config: Arc::clone(&self.config),
             engine: self.engine.snapshot(),
             files: Arc::clone(&self.files),
             workspace_symbols_cache: Arc::clone(&self.workspace_symbols_cache),
@@ -89,6 +91,7 @@ impl State {
 
 struct StateSnapshot {
     client: ClientSocket,
+    config: Arc<cli::Config>,
     engine: QueryEngine,
     files: Arc<RwLock<Files>>,
     workspace_symbols_cache: Arc<RwLock<WorkspaceSymbolsCache>>,
@@ -113,6 +116,7 @@ fn initialize(
             folder.uri.to_file_path().ok()
         })
         .or_else(|| env::current_dir().ok());
+    let formatting_enabled = state.config.format_command.is_some();
     async move {
         Ok(InitializeResult {
             server_info: None,
@@ -132,6 +136,7 @@ fn initialize(
                 hover_provider: Some(HoverProviderCapability::Simple(true)),
                 references_provider: Some(OneOf::Left(true)),
                 workspace_symbol_provider: Some(OneOf::Left(true)),
+                document_formatting_provider: formatting_enabled.then_some(OneOf::Left(true)),
                 text_document_sync: Some(TextDocumentSyncCapability::Options(
                     TextDocumentSyncOptions {
                         open_close: Some(true),
@@ -304,6 +309,98 @@ fn workspace_symbols(
         .on_non_fatal(None)
 }
 
+fn formatting(
+    snapshot: StateSnapshot,
+    p: DocumentFormattingParams,
+) -> Result<Option<Vec<TextEdit>>, LspError> {
+    let _span = tracing::info_span!("formatting").entered();
+
+    // Formatting support is advertised conditionally in `initialize`.
+    let Some(format_command) = snapshot.config.format_command.as_deref() else {
+        return Ok(None);
+    };
+
+    let uri = p.text_document.uri;
+    let current_file = {
+        let files = snapshot.files();
+        let uri = uri.as_str();
+        let Some(id) = files.id(uri) else { return Ok(None) };
+        id
+    };
+
+    let input = snapshot.engine.content(current_file);
+
+    let mut parts = format_command.split_whitespace();
+    let program = parts
+        .next()
+        .ok_or_else(|| LspError::FormattingFailed("--format-command is empty".to_string()))?;
+
+    let mut cmd = process::Command::new(program);
+    cmd.args(parts);
+    cmd.stdin(process::Stdio::piped());
+    cmd.stdout(process::Stdio::piped());
+    cmd.stderr(process::Stdio::piped());
+
+    let mut child = cmd.spawn().map_err(|e| {
+        LspError::FormattingFailed(format!("failed to spawn formatter '{format_command}': {e}"))
+    })?;
+
+    if let Some(mut stdin) = child.stdin.take() {
+        use std::io::Write;
+        stdin.write_all(input.as_bytes()).map_err(|e| {
+            LspError::FormattingFailed(format!("failed writing to formatter stdin: {e}"))
+        })?;
+    }
+
+    let output = child.wait_with_output().map_err(|e| {
+        LspError::FormattingFailed(format!("failed to wait for formatter: {e}"))
+    })?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        let stdout = String::from_utf8_lossy(&output.stdout);
+
+        let stderr = stderr.trim();
+        let stdout = stdout.trim();
+
+        let mut details = String::new();
+        if !stderr.is_empty() {
+            details.push_str(stderr);
+        }
+        if !stdout.is_empty() {
+            if !details.is_empty() {
+                details.push_str("\n");
+            }
+            details.push_str(stdout);
+        }
+        if details.is_empty() {
+            details.push_str("<no output>");
+        }
+
+        return Err(LspError::FormattingFailed(format!(
+            "formatter exited with {}: {}",
+            output.status,
+            details
+        )));
+    }
+
+    let formatted = String::from_utf8(output.stdout)
+        .map_err(|e| LspError::FormattingFailed(format!("formatter output was not utf-8: {e}")))?;
+
+    if formatted.as_str() == input.as_ref() {
+        return Ok(Some(vec![]));
+    }
+
+    let end = analyzer::locate::offset_to_position(
+        input.as_ref(),
+        TextSize::from(input.len() as u32),
+    )
+        .unwrap_or(Position { line: 0, character: 0 });
+    let range = Range { start: Position { line: 0, character: 0 }, end };
+
+    Ok(Some(vec![TextEdit { range, new_text: formatted }]))
+}
+
 fn did_change(state: &mut State, p: DidChangeTextDocumentParams) -> Result<(), LspError> {
     let uri = p.text_document.uri.as_str();
 
@@ -428,6 +525,7 @@ pub async fn start(config: Arc<cli::Config>) {
             .request_snapshot::<request::ResolveCompletionItem>(resolve_completion_item)
             .request_snapshot::<request::References>(references)
             .request_snapshot::<request::WorkspaceSymbolRequest>(workspace_symbols)
+            .request_snapshot::<request::Formatting>(formatting)
             .notification_ext::<notification::Initialized>(initialized)
             .notification_ext::<notification::DidOpenTextDocument>(did_open)
             .notification_ext::<notification::DidSaveTextDocument>(did_save)
