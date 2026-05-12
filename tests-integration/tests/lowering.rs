@@ -1,5 +1,6 @@
-#[path = "lowering/generated.rs"]
-mod generated;
+mod generated {
+    include!(concat!(env!("OUT_DIR"), "/lowering_generated.rs"));
+}
 
 use std::iter;
 
