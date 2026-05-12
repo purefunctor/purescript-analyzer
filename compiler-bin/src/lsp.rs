@@ -4,12 +4,13 @@ pub mod extension;
 pub mod build;
 
 use std::borrow::BorrowMut;
+use std::collections::{HashMap, HashSet};
 use std::ops::{ControlFlow, Deref};
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::atomic::AtomicU64;
+use std::time::Duration;
 use std::{env, fs, mem, process};
-use std::collections::{HashMap, HashSet};
 
 use analyzer::completion::SuggestionsCache;
 use analyzer::symbols::WorkspaceSymbolsCache;
@@ -38,6 +39,7 @@ const PS_BUILD: &str = "purescript.build";
 const PS_CLEAN: &str = "purescript.clean";
 const PS_RESET: &str = "purescript.reset";
 const PS_ANALYZER_REFRESH: &str = "purescript.analyzerRefresh";
+const RESET_DIAGNOSTIC_CLEAR_DELAY: Duration = Duration::from_millis(50);
 
 pub struct State {
     pub config: Arc<cli::Config>,
@@ -56,6 +58,9 @@ pub struct State {
 
     // URIs currently open in the client.
     pub open_uris: Arc<RwLock<HashSet<Url>>>,
+
+    // Last seen textDocument version for open URIs.
+    pub open_versions: Arc<RwLock<HashMap<Url, i32>>>,
 
     // Bumped on reset to prevent in-flight tasks from republishing stale diagnostics.
     pub diagnostics_generation: Arc<AtomicU64>,
@@ -84,6 +89,8 @@ impl State {
 
         let open_uris = Arc::new(RwLock::new(HashSet::new()));
 
+        let open_versions = Arc::new(RwLock::new(HashMap::new()));
+
         let root = None;
 
         State {
@@ -97,6 +104,7 @@ impl State {
             analyzer_diagnostics,
             diagnostics_generation,
             open_uris,
+            open_versions,
             root,
         }
     }
@@ -296,8 +304,6 @@ fn execute_command(
             PS_RESET => {
                 use std::sync::atomic::Ordering;
 
-                // Run reset inline so we synchronously publish diagnostic clears
-                // in response to the request.
                 state.engine.request_cancel();
                 state.diagnostics_generation.fetch_add(1, Ordering::SeqCst);
 
@@ -319,24 +325,39 @@ fn execute_command(
                 state.build_diagnostics.write().clear();
                 state.analyzer_diagnostics.write().clear();
 
-                for uri in uris_to_clear {
-                    let _ = state.client.publish_diagnostics(PublishDiagnosticsParams {
-                        uri,
-                        diagnostics: vec![],
-                        version: None,
-                    });
+                let cleared = uris_to_clear.len();
+                let mut publish_jobs: Vec<(Url, Option<i32>)> = vec![];
+                for uri in uris_to_clear.iter() {
+                    let version = {
+                        let versions = state.open_versions.read();
+                        versions.get(&uri).copied()
+                    };
+                    publish_jobs.push((uri.clone(), version));
                 }
+
+                let mut client = state.client.clone();
+                std::thread::spawn(move || {
+                    // Queue diagnostic clears after the executeCommand response has been sent.
+                    // async-lsp can otherwise accept the notification without flushing it to
+                    // some clients before the request completes.
+                    std::thread::sleep(RESET_DIAGNOSTIC_CLEAR_DELAY);
+                    for (uri, version) in publish_jobs {
+                        let _ = client.publish_diagnostics(PublishDiagnosticsParams {
+                            uri,
+                            diagnostics: vec![],
+                            version,
+                        });
+                    }
+                });
 
                 state.invalidate_workspace_symbols();
                 state.invalidate_suggestions_cache();
 
-                // Best-effort breadcrumb.
-                let _ = state.client.show_message(ShowMessageParams {
-                    typ: MessageType::INFO,
-                    message: "Reset complete".to_string(),
+                let value = serde_json::json!({
+                    "reset": "ok",
+                    "cleared_file_uris": cleared,
                 });
-
-                Ok(None)
+                Ok(Some(value))
             }
             PS_CLEAN => state.client.emit(event::Clean).map(|_| None).map_err(|e| {
                 ResponseError::new(async_lsp::ErrorCode::REQUEST_FAILED, e.to_string())
@@ -518,6 +539,11 @@ fn did_change(state: &mut State, p: DidChangeTextDocumentParams) -> Result<(), L
         on_change(state, uri, text)?
     }
 
+    {
+        let mut versions = state.open_versions.write();
+        versions.insert(p.text_document.uri.clone(), p.text_document.version);
+    }
+
     state.invalidate_workspace_symbols();
     state.invalidate_suggestions_cache();
 
@@ -537,6 +563,11 @@ fn did_open(state: &mut State, p: DidOpenTextDocumentParams) -> Result<(), LspEr
         open.insert(p.text_document.uri.clone());
     }
 
+    {
+        let mut versions = state.open_versions.write();
+        versions.insert(p.text_document.uri.clone(), p.text_document.version);
+    }
+
     on_change(state, uri, text)?;
 
     state.invalidate_workspace_symbols();
@@ -552,6 +583,9 @@ fn did_open(state: &mut State, p: DidOpenTextDocumentParams) -> Result<(), LspEr
 fn did_close(state: &mut State, p: DidCloseTextDocumentParams) -> Result<(), LspError> {
     let mut open = state.open_uris.write();
     open.remove(&p.text_document.uri);
+
+    let mut versions = state.open_versions.write();
+    versions.remove(&p.text_document.uri);
     Ok(())
 }
 
@@ -739,14 +773,8 @@ mod tests {
 
         // Seed both diagnostic sources.
         let uri = Url::parse("file:///test/Main.purs").unwrap();
-        state
-            .build_diagnostics
-            .write()
-            .insert(uri.clone(), vec![Diagnostic::default()]);
-        state
-            .analyzer_diagnostics
-            .write()
-            .insert(uri.clone(), vec![Diagnostic::default()]);
+        state.build_diagnostics.write().insert(uri.clone(), vec![Diagnostic::default()]);
+        state.analyzer_diagnostics.write().insert(uri.clone(), vec![Diagnostic::default()]);
 
         event::reset(&mut state, event::Reset).unwrap();
 

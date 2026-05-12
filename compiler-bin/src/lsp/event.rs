@@ -61,7 +61,7 @@ pub fn reset(state: &mut State, _: Reset) -> Result<(), LspError> {
         state.analyzer_diagnostics.write().clear();
     }
 
-    for uri in uris_to_clear {
+    for uri in uris_to_clear.iter().cloned() {
         let _ = client.publish_diagnostics(PublishDiagnosticsParams {
             uri,
             diagnostics: vec![],

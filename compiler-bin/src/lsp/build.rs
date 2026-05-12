@@ -118,45 +118,44 @@ fn build_core(mut snapshot: StateSnapshot) -> Result<(), LspError> {
     // We already materialized build_map; treat parse failures as "no build diagnostics".
     // Still provide Build completed/failed based on exit status.
     {
-            if output.status.success() {
-                let _ = snapshot.client.show_message(ShowMessageParams {
-                    typ: MessageType::INFO,
-                    message: "Build completed".to_string(),
-                });
-            } else {
-                if build_map.is_empty() {
-                    // Build failed but we didn't get any parseable JSON errors.
-                    // Surface the tool output for debugging.
-                    let mut msg = String::new();
-                    msg.push_str("Build failed (no JSON diagnostics parsed).\n");
-                    if !stderr.trim().is_empty() {
-                        msg.push_str("stderr:\n");
-                        msg.push_str(stderr.trim());
-                        msg.push('\n');
-                    }
-                    if !stdout.trim().is_empty() {
-                        msg.push_str("stdout:\n");
-                        msg.push_str(stdout.trim());
-                        msg.push('\n');
-                    }
-                    // Avoid sending extremely large messages.
-                    const LIMIT: usize = 8000;
-                    if msg.len() > LIMIT {
-                        msg.truncate(LIMIT);
-                        msg.push_str("\n…(truncated)…");
-                    }
-
-                    let _ = snapshot.client.show_message(ShowMessageParams {
-                        typ: MessageType::ERROR,
-                        message: msg,
-                    });
+        if output.status.success() {
+            let _ = snapshot.client.show_message(ShowMessageParams {
+                typ: MessageType::INFO,
+                message: "Build completed".to_string(),
+            });
+        } else {
+            if build_map.is_empty() {
+                // Build failed but we didn't get any parseable JSON errors.
+                // Surface the tool output for debugging.
+                let mut msg = String::new();
+                msg.push_str("Build failed (no JSON diagnostics parsed).\n");
+                if !stderr.trim().is_empty() {
+                    msg.push_str("stderr:\n");
+                    msg.push_str(stderr.trim());
+                    msg.push('\n');
                 }
-                let _ = snapshot.client.show_message(ShowMessageParams {
-                    typ: MessageType::ERROR,
-                    message: "Build failed".to_string(),
-                });
+                if !stdout.trim().is_empty() {
+                    msg.push_str("stdout:\n");
+                    msg.push_str(stdout.trim());
+                    msg.push('\n');
+                }
+                // Avoid sending extremely large messages.
+                const LIMIT: usize = 8000;
+                if msg.len() > LIMIT {
+                    msg.truncate(LIMIT);
+                    msg.push_str("\n…(truncated)…");
+                }
+
+                let _ = snapshot
+                    .client
+                    .show_message(ShowMessageParams { typ: MessageType::ERROR, message: msg });
             }
-            Ok(())
+            let _ = snapshot.client.show_message(ShowMessageParams {
+                typ: MessageType::ERROR,
+                message: "Build failed".to_string(),
+            });
+        }
+        Ok(())
     }
 }
 
