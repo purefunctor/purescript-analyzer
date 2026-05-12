@@ -120,10 +120,10 @@ pub fn build_warmed_engine(sources: &[(String, String)]) -> WarmedEngine {
     }
 
     for &file_id in &candidates {
-        if let Ok((parsed, _)) = engine.parsed(file_id) {
-            if let Some(module_name) = parsed.module_name() {
-                engine.set_module_file(&module_name.to_string(), file_id);
-            }
+        if let Ok((parsed, _)) = engine.parsed(file_id)
+            && let Some(module_name) = parsed.module_name()
+        {
+            engine.set_module_file(module_name.as_ref(), file_id);
         }
     }
 
