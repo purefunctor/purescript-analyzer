@@ -6,9 +6,11 @@ use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
+use crate::core::fd::{Fd, compute_closure, get_all_determined};
 use crate::core::{Name, RowField, RowTypeId, Type, TypeId, normalise, toolkit};
 use crate::state::CheckState;
 
+#[derive(PartialEq, Eq)]
 pub enum MatchType {
     Match { bindings: Vec<(Name, TypeId)> },
     Apart,
@@ -35,6 +37,18 @@ impl MatchType {
 
             (MatchType::Skolem, _) | (_, MatchType::Skolem) => MatchType::Skolem,
         }
+    }
+
+    pub fn is_match(&self) -> bool {
+        matches!(self, MatchType::Match { .. })
+    }
+
+    pub fn is_apart(&self) -> bool {
+        matches!(self, MatchType::Apart)
+    }
+
+    pub fn is_unknown(&self) -> bool {
+        matches!(self, MatchType::Stuck { .. } | MatchType::Skolem)
     }
 }
 
@@ -362,4 +376,55 @@ where
     }
 
     Ok(outcome)
+}
+
+pub fn match_instance<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    patterns: &FxHashSet<Name>,
+    functional_dependencies: &[Fd],
+    wanted_arguments: &[TypeId],
+    given_arguments: &[TypeId],
+) -> QueryResult<MatchType>
+where
+    Q: ExternalQueries,
+{
+    let mut arguments = vec![];
+
+    for (&wanted, &given) in iter::zip(wanted_arguments, given_arguments) {
+        arguments.push(types_match(state, context, patterns, wanted, given)?);
+    }
+
+    if !covers(functional_dependencies, &arguments)? {
+        return Ok(combine_arguments(arguments));
+    }
+
+    let determined = get_all_determined(functional_dependencies);
+    let arguments = arguments.into_iter().enumerate().filter_map(|(index, argument)| {
+        let non_determined = !determined.contains(&index);
+        non_determined.then_some(argument)
+    });
+
+    let outcome = combine_arguments(arguments);
+    if let MatchType::Match { bindings } = outcome {
+        return verify_substitution(state, context, bindings);
+    }
+
+    Ok(outcome)
+}
+
+fn combine_arguments(arguments: impl IntoIterator<Item = MatchType>) -> MatchType {
+    let seed = MatchType::Match { bindings: vec![] };
+    arguments.into_iter().fold(seed, MatchType::combine)
+}
+
+fn covers(fd: &[Fd], types: &[MatchType]) -> QueryResult<bool> {
+    let match_indices: FxHashSet<_> = types
+        .iter()
+        .enumerate()
+        .filter_map(|(index, argument)| argument.is_match().then_some(index))
+        .collect();
+
+    let determined = compute_closure(fd, &match_indices);
+    Ok(types.iter().enumerate().all(|(index, _)| determined.contains(&index)))
 }
