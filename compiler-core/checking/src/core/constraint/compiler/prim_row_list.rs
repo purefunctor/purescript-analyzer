@@ -21,10 +21,20 @@ where
         return Ok(None);
     };
 
+    // If the row argument is a rigid variable, defer to instance matching
+    // so the rigid can be bound to a concrete row type first.
+    if matches!(context.lookup_type(row), Type::Rigid(_, _, _)) {
+        return Ok(None);
+    }
+
     let Some(row_value) = extract_row(state, context, row)? else {
         return Ok(Some(matching::blocking_constraint(state, context, &[row])?));
     };
     if let Some(tail) = row_value.tail() {
+        // If the tail is a rigid variable, defer to instance matching
+        if matches!(context.lookup_type(tail), Type::Rigid(_, _, _)) {
+            return Ok(None);
+        }
         return Ok(Some(matching::blocking_constraint(state, context, &[tail])?));
     }
 

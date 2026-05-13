@@ -223,6 +223,15 @@ where
     };
 
     let label_symbol = extract_symbol(state, context, label)?;
+
+    // If the row or tail argument is a rigid variable, defer to instance matching
+    // so the rigid can be bound to a concrete row type first.
+    if matches!(context.lookup_type(row), Type::Rigid(_, _, _))
+        || matches!(context.lookup_type(tail), Type::Rigid(_, _, _))
+    {
+        return Ok(None);
+    }
+
     let tail_row = extract_row(state, context, tail)?;
     let row_row = extract_row(state, context, row)?;
 

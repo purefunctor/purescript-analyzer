@@ -566,21 +566,37 @@ where
             Closed | Additional => Ok(MatchType::Apart),
             // we could potentially make progress by having the
             // wanted tail absorb the additional given fields
-            Open(wanted_tail) => result.and_then(|| blocking_type(state, context, wanted_tail)),
+            Open(wanted_tail) => {
+                if matches!(context.lookup_type(wanted_tail), Type::Rigid(_, _, _)) {
+                    Ok(result)
+                } else {
+                    result.and_then(|| blocking_type(state, context, wanted_tail))
+                }
+            }
         },
         // If the given row has a tail, match it against the
         // additional fields and tail from the wanted row
         Open(given_tail) => {
-            let fields = wanted_only.into_iter().cloned().collect_vec();
-            let row = context.intern_row(fields, wanted_row.tail);
-            result.and_then(|| recurse(state, context, row, given_tail))
+            if matches!(context.lookup_type(given_tail), Type::Rigid(_, _, _)) {
+                Ok(result)
+            } else {
+                let fields = wanted_only.into_iter().cloned().collect_vec();
+                let row = context.intern_row(fields, wanted_row.tail);
+                result.and_then(|| recurse(state, context, row, given_tail))
+            }
         }
         // If we have a closed given row
         Closed => match wanted_rest {
             // we cannot match it against fields in the wanted row
             Additional => Ok(MatchType::Apart),
             // we could make progress with an open wanted row
-            Open(wanted_tail) => result.and_then(|| blocking_type(state, context, wanted_tail)),
+            Open(wanted_tail) => {
+                if matches!(context.lookup_type(wanted_tail), Type::Rigid(_, _, _)) {
+                    Ok(result)
+                } else {
+                    result.and_then(|| blocking_type(state, context, wanted_tail))
+                }
+            }
             // we can match it directly with a closed wanted row
             Closed => Ok(result),
         },
