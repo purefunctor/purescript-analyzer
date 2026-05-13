@@ -61,12 +61,14 @@ where
             let given_substitution =
                 constraint::elaborate_given_substitution(state, context, &constraints)?;
             if !given_substitution.is_empty() {
+                let original_constraints = constraints.clone();
                 constraints = constraints
                     .into_iter()
                     .map(|constraint| {
                         SubstituteName::many(state, context, &given_substitution, constraint)
                     })
                     .collect::<QueryResult<Vec<_>>>()?;
+                constraints.extend(original_constraints);
                 arguments = arguments
                     .into_iter()
                     .map(|argument| {
