@@ -4,6 +4,7 @@ use building_types::QueryResult;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
+use crate::core::substitute::SubstituteName;
 use crate::core::{TypeId, constraint, exhaustive, signature, toolkit, unification};
 use crate::error::ErrorKind;
 use crate::source::terms::form_let;
@@ -50,8 +51,30 @@ where
             let required =
                 equations.iter().map(|equation| equation.binders.len()).max().unwrap_or(0);
 
-            let signature::SkolemisedSignature { substitution, constraints, arguments, result } =
-                signature::expect_term_signature(state, context, expected_type, required)?;
+            let signature::SkolemisedSignature {
+                substitution,
+                mut constraints,
+                mut arguments,
+                mut result,
+            } = signature::expect_term_signature(state, context, expected_type, required)?;
+
+            let given_substitution =
+                constraint::elaborate_given_substitution(state, context, &constraints)?;
+            if !given_substitution.is_empty() {
+                constraints = constraints
+                    .into_iter()
+                    .map(|constraint| {
+                        SubstituteName::many(state, context, &given_substitution, constraint)
+                    })
+                    .collect::<QueryResult<Vec<_>>>()?;
+                arguments = arguments
+                    .into_iter()
+                    .map(|argument| {
+                        SubstituteName::many(state, context, &given_substitution, argument)
+                    })
+                    .collect::<QueryResult<Vec<_>>>()?;
+                result = SubstituteName::many(state, context, &given_substitution, result)?;
+            }
 
             for &constraint in &constraints {
                 if !constraint::is_type_error(state, context, constraint)? {
