@@ -1,0 +1,35 @@
+---
+source: target/debug/build/tests-integration-35f6ccefceed9daa/out/checking_generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+ItemA :: Item
+NilItems :: Items
+ConsItems :: Item -> Items -> Items
+test :: Items
+test' :: Items
+
+Types
+ItemA :: Type
+ListTL :: Type
+NilTL :: ListTL
+ConsTL :: Type -> ListTL -> ListTL
+Item :: Type
+Items :: Type
+
+Instances
+instance Reflectable @Type ItemA Item
+instance Reflectable @ListTL NilTL Items
+instance forall (t0 :: Type) (t1 :: ListTL).
+  Reflectable @Type (t0 :: Type) Item =>
+  Reflectable @ListTL (t1 :: ListTL) Items =>
+  Reflectable @ListTL (ConsTL (t0 :: Type) (t1 :: ListTL)) Items
+
+Roles
+ItemA = []
+ListTL = []
+NilTL = []
+ConsTL = [Nominal, Nominal]
+Item = []
+Items = []
