@@ -42,13 +42,14 @@ where
         else {
             continue;
         };
+        let type_argument_offset = class.kind_binders.len();
 
         for dependency in class.functional_dependencies.iter() {
             let mut arguments = constraint.arguments.to_vec();
             let mut replacements = vec![];
 
             for &position in dependency.determined.iter() {
-                let position = position as usize;
+                let position = type_argument_offset + position as usize;
                 let Some(KindOrType::Type(argument)) = arguments.get_mut(position) else {
                     continue;
                 };
