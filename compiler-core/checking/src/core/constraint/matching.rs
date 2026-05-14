@@ -128,6 +128,16 @@ where
             Ok(function.combine(argument))
         }
 
+        (Type::Application(_, _), Type::Function(right_argument, right_result)) => {
+            let right = context.intern_function_application(right_argument, right_result);
+            types_match(state, context, pattern, left, right)
+        }
+
+        (Type::Function(left_argument, left_result), Type::Application(_, _)) => {
+            let left = context.intern_function_application(left_argument, left_result);
+            types_match(state, context, pattern, left, right)
+        }
+
         (
             Type::KindApplication(left_function, left_argument),
             Type::KindApplication(right_function, right_argument),
@@ -330,6 +340,16 @@ where
             let function = types_equal(state, context, left_function, right_function)?;
             let argument = types_equal(state, context, left_argument, right_argument)?;
             Ok(function.combine(argument))
+        }
+
+        (Type::Application(_, _), Type::Function(right_argument, right_result)) => {
+            let right = context.intern_function_application(right_argument, right_result);
+            types_equal(state, context, left, right)
+        }
+
+        (Type::Function(left_argument, left_result), Type::Application(_, _)) => {
+            let left = context.intern_function_application(left_argument, left_result);
+            types_equal(state, context, left, right)
         }
 
         (
