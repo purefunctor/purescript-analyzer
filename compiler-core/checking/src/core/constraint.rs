@@ -11,7 +11,7 @@ pub mod canonical;
 pub mod compiler;
 pub mod elaborate;
 pub mod instances;
-pub mod matching2;
+pub mod matching;
 
 pub use canonical::{CanonicalConstraint, CanonicalConstraintId, Canonicals};
 
@@ -187,52 +187,52 @@ where
         let mut blocked_on_skolem = false;
 
         for &provided in &given {
-            match matching2::match_provided(state, context, wanted, provided)? {
-                matching2::MatchInstance::Match { unifications, constraints } => {
+            match matching::match_provided(state, context, wanted, provided)? {
+                matching::MatchInstance::Match { unifications, constraints } => {
                     work.extend_from_parts(unifications, constraints);
                     continue 'work;
                 }
-                matching2::MatchInstance::Stuck { stuck } => {
+                matching::MatchInstance::Stuck { stuck } => {
                     blocked.extend(stuck);
                 }
-                matching2::MatchInstance::Skolem => {
+                matching::MatchInstance::Skolem => {
                     blocked_on_skolem = true;
                 }
-                matching2::MatchInstance::Apart => (),
+                matching::MatchInstance::Apart => (),
             }
         }
 
         match compiler::match_compiler_instance(state, context, wanted, &given)? {
-            Some(matching2::MatchInstance::Match { unifications, constraints }) => {
+            Some(matching::MatchInstance::Match { unifications, constraints }) => {
                 work.extend_from_parts(unifications, constraints);
                 continue 'work;
             }
-            Some(matching2::MatchInstance::Stuck { stuck }) => {
+            Some(matching::MatchInstance::Stuck { stuck }) => {
                 blocked.extend(stuck);
             }
-            Some(matching2::MatchInstance::Skolem) => {
+            Some(matching::MatchInstance::Skolem) => {
                 blocked_on_skolem = true;
             }
-            Some(matching2::MatchInstance::Apart) | None => (),
+            Some(matching::MatchInstance::Apart) | None => (),
         }
 
         let search = instances::collect_instance_chains(state, context, wanted)?;
         'chain: for chain in search.chains {
             for candidate in chain {
-                match matching2::match_declared(state, context, wanted, candidate)? {
-                    matching2::MatchInstance::Match { unifications, constraints } => {
+                match matching::match_declared(state, context, wanted, candidate)? {
+                    matching::MatchInstance::Match { unifications, constraints } => {
                         work.extend_from_parts(unifications, constraints);
                         continue 'work;
                     }
-                    matching2::MatchInstance::Stuck { stuck } => {
+                    matching::MatchInstance::Stuck { stuck } => {
                         blocked.extend(stuck);
                         continue 'chain;
                     }
-                    matching2::MatchInstance::Skolem => {
+                    matching::MatchInstance::Skolem => {
                         blocked_on_skolem = true;
                         continue 'chain;
                     }
-                    matching2::MatchInstance::Apart => (),
+                    matching::MatchInstance::Apart => (),
                 }
             }
         }

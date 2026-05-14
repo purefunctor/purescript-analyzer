@@ -7,7 +7,7 @@ use itertools::{Itertools, izip};
 
 use crate::context::CheckContext;
 use crate::core::constraint::canonical;
-use crate::core::constraint::matching2::MatchInstance;
+use crate::core::constraint::matching::MatchInstance;
 use crate::core::substitute::SubstituteName;
 use crate::core::unification::{CanUnify, can_unify, unify};
 use crate::core::{Role, Type, TypeId, normalise, toolkit};

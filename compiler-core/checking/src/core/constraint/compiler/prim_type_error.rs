@@ -4,7 +4,7 @@ use smol_str::{SmolStr, format_smolstr};
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::constraint::matching2::{self, MatchInstance};
+use crate::core::constraint::matching::{self, MatchInstance};
 use crate::core::pretty::Pretty;
 use crate::core::{Type, TypeId, normalise, toolkit, zonk};
 use crate::error::ErrorKind;
@@ -18,7 +18,7 @@ fn first_blocking_unification<Q>(
 where
     Q: ExternalQueries,
 {
-    let blocking = matching2::collect_blocking(state, context, &[id])?;
+    let blocking = matching::collect_blocking(state, context, &[id])?;
     Ok(blocking.into_iter().next())
 }
 

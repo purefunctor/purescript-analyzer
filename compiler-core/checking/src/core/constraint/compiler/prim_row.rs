@@ -8,7 +8,7 @@ use smol_str::SmolStr;
 use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::constraint::canonical;
-use crate::core::constraint::matching2::{self, MatchInstance};
+use crate::core::constraint::matching::{self, MatchInstance};
 use crate::core::{RowField, Type, TypeId, normalise};
 use crate::source::types;
 use crate::state::CheckState;
@@ -203,7 +203,7 @@ where
             Ok(Some(MatchInstance::from_parts(vec![(union, result)], constraints)))
         }
 
-        _ => Ok(Some(matching2::blocking_constraint(state, context, &[left, right, union])?)),
+        _ => Ok(Some(matching::blocking_constraint(state, context, &[left, right, union])?)),
     }
 }
 
@@ -254,7 +254,7 @@ where
                 Ok(Some(MatchInstance::Apart))
             }
         }
-        _ => Ok(Some(matching2::blocking_constraint(state, context, &[label, tail, row])?)),
+        _ => Ok(Some(matching::blocking_constraint(state, context, &[label, tail, row])?)),
     }
 }
 
@@ -271,7 +271,7 @@ where
     };
 
     let Some(row_row) = extract_row(state, context, row)? else {
-        return Ok(Some(matching2::blocking_constraint(state, context, &[row])?));
+        return Ok(Some(matching::blocking_constraint(state, context, &[row])?));
     };
 
     if let RowView::Closed { fields } = &row_row
@@ -281,7 +281,7 @@ where
     }
 
     let Some(label_value) = extract_symbol(state, context, label)? else {
-        return Ok(Some(matching2::blocking_constraint(state, context, &[label])?));
+        return Ok(Some(matching::blocking_constraint(state, context, &[label])?));
     };
 
     match row_row {
@@ -294,7 +294,7 @@ where
             }
         }
         RowView::EmptyOpen { tail } => {
-            Ok(Some(matching2::blocking_constraint(state, context, &[tail])?))
+            Ok(Some(matching::blocking_constraint(state, context, &[tail])?))
         }
         RowView::Open { fields, tail } => {
             let has_label = fields.iter().any(|field| field.label == label_value);
@@ -326,7 +326,7 @@ where
     };
 
     let Some(original_row) = extract_closed_row(state, context, original)? else {
-        return Ok(Some(matching2::blocking_constraint(state, context, &[original])?));
+        return Ok(Some(matching::blocking_constraint(state, context, &[original])?));
     };
 
     let mut seen = FxHashSet::default();

@@ -2,7 +2,7 @@ use building_types::QueryResult;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::constraint::matching2::{self, MatchInstance};
+use crate::core::constraint::matching::{self, MatchInstance};
 use crate::core::{RowField, Type, TypeId, normalise};
 use crate::source::types;
 use crate::state::CheckState;
@@ -22,10 +22,10 @@ where
     };
 
     let Some(row_value) = extract_row(state, context, row)? else {
-        return Ok(Some(matching2::blocking_constraint(state, context, &[row])?));
+        return Ok(Some(matching::blocking_constraint(state, context, &[row])?));
     };
     if let Some(tail) = row_value.tail() {
-        return Ok(Some(matching2::blocking_constraint(state, context, &[tail])?));
+        return Ok(Some(matching::blocking_constraint(state, context, &[tail])?));
     }
 
     let element_kind = row_element_kind(state, context, &row_value)?;

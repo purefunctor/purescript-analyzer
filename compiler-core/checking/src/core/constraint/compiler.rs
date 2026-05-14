@@ -19,7 +19,7 @@ use crate::state::CheckState;
 use crate::{ExternalQueries, safe_loop};
 
 use super::CanonicalConstraintId;
-use super::matching2::MatchInstance;
+use super::matching::MatchInstance;
 
 #[derive(Clone)]
 pub enum RowView {

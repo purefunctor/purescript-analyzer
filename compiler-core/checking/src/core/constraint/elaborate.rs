@@ -10,7 +10,7 @@ use rustc_hash::FxHashSet;
 
 use crate::context::CheckContext;
 use crate::core::constraint::canonical::CanonicalConstraint;
-use crate::core::constraint::matching2::MatchInstance;
+use crate::core::constraint::matching::MatchInstance;
 use crate::core::constraint::{CanonicalConstraintId, canonical, compiler};
 use crate::core::substitute::{NameToType, SubstituteName};
 use crate::core::{CheckedClass, KindOrType, Name, Type, TypeId, normalise, toolkit};

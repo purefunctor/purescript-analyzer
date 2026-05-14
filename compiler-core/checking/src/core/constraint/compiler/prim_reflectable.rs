@@ -2,7 +2,7 @@ use building_types::QueryResult;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::constraint::matching2::MatchInstance;
+use crate::core::constraint::matching::MatchInstance;
 use crate::core::unification::{CanUnify, can_unify};
 use crate::core::{Type, TypeId, normalise};
 use crate::state::CheckState;
