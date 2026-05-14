@@ -1,0 +1,53 @@
+---
+source: target/debug/build/tests-integration-35f6ccefceed9daa/out/checking_generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+$ :: forall (a :: Type) (b :: Type). ((a :: Type) -> (b :: Type)) -> (a :: Type) -> (b :: Type)
+apply :: forall (a :: Type) (b :: Type). ((a :: Type) -> (b :: Type)) -> (a :: Type) -> (b :: Type)
+Proxy :: forall (k :: Type) (@a :: (k :: Type)). Proxy @(k :: Type) (a :: (k :: Type))
+Initial :: Initial
+Env :: forall (t9 :: Type) (@a :: (t9 :: Type)). Env @(t9 :: Type) (a :: (t9 :: Type))
+envGeneric ::
+  forall (t24 :: Type) (a :: Type) (m :: Type -> (t24 :: Type)).
+    (a :: Type) ->
+    (MonadEffect @(Type -> (t24 :: Type)) (m :: Type -> (t24 :: Type)) =>
+    (m :: Type -> (t24 :: Type)) (Env @Type (a :: Type)))
+testDirect ::
+  forall (r :: Row (Type -> Type)). Run (EFFECT (r :: Row (Type -> Type))) (Env @Type Initial)
+testDollar ::
+  forall (r :: Row (Type -> Type)). Run (EFFECT (r :: Row (Type -> Type))) (Env @Type Initial)
+
+Types
+Proxy :: forall (k :: Type). (k :: Type) -> Type
+TypeEquals :: forall (k :: Type). (k :: Type) -> (k :: Type) -> Constraint
+Effect :: Type -> Type
+Run :: Row (Type -> Type) -> Type -> Type
+EFFECT :: Row (Type -> Type) -> Row (Type -> Type)
+MonadEffect :: forall (t7 :: Type). (t7 :: Type) -> Constraint
+Initial :: Type
+Env :: forall (t9 :: Type). (t9 :: Type) -> Type
+
+Synonyms
+type EFFECT r = ( effect :: Effect | (r :: Row (Type -> Type)) )
+
+Classes
+class forall (k :: Type) (a :: (k :: Type)) (b :: (k :: Type)). TypeEquals @(k :: Type) (a :: (k :: Type)) (b :: (k :: Type))
+class forall (t7 :: Type) (m :: (t7 :: Type)). MonadEffect @(t7 :: Type) (m :: (t7 :: Type))
+
+Instances
+instance forall (t11 :: Type) (t10 :: (t11 :: Type)).
+  TypeEquals @(t11 :: Type) (t10 :: (t11 :: Type)) (t10 :: (t11 :: Type))
+instance forall (t14 :: Row (Type -> Type)) (t15 :: Row (Type -> Type)).
+  TypeEquals @Type
+    (Proxy @(Row (Type -> Type)) (t14 :: Row (Type -> Type)))
+    (Proxy @(Row (Type -> Type)) (EFFECT (t15 :: Row (Type -> Type)))) =>
+  MonadEffect @(Type -> Type) (Run (t14 :: Row (Type -> Type)))
+
+Roles
+Proxy = [Phantom]
+Effect = [Nominal]
+Run = [Nominal, Nominal]
+Initial = []
+Env = [Phantom]

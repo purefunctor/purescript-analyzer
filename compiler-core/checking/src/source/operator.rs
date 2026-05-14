@@ -172,10 +172,12 @@ where
             signature::DecomposeSignatureMode::Full,
         )?;
         let expected_type = normalise::expand(state, context, expected_type)?;
+        let result_type_expanded = normalise::expand(state, context, result_type)?;
         if signature.binders.is_empty()
             && signature.constraints.is_empty()
             && signature.arguments.is_empty()
             && !matches!(context.lookup_type(expected_type), Type::Constrained(_, _))
+            && !matches!(context.lookup_type(result_type_expanded), Type::Unification(_))
         {
             let expected_type = toolkit::collect_givens(state, context, expected_type)?;
             let _ = unification::subtype(state, context, result_type, expected_type)?;
