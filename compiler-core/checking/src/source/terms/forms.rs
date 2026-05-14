@@ -2,7 +2,8 @@ use building_types::QueryResult;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::{TypeId, exhaustive, toolkit, unification};
+use crate::core::substitute::SubstituteName;
+use crate::core::{TypeId, constraint, exhaustive, signature, toolkit, unification};
 use crate::source::terms::{equations, form_let};
 use crate::source::{binder, terms};
 use crate::state::CheckState;
@@ -126,24 +127,41 @@ pub fn check_lambda<Q>(
 where
     Q: ExternalQueries,
 {
-    let mut arguments = vec![];
-    let mut remaining = expected;
+    let signature::SkolemisedSignature { substitution, mut constraints, arguments, mut result } =
+        signature::expect_term_signature(state, context, expected, binders.len())?;
 
-    for &binder_id in binders.iter() {
-        let decomposed = toolkit::decompose_function(state, context, remaining)?;
-        if let Some((argument, result)) = decomposed {
-            binder::check_binder(state, context, binder_id, argument)?;
-            arguments.push(argument);
-            remaining = result;
-        } else {
-            let argument_type = state.fresh_unification(context.queries, context.prim.t);
-            binder::check_binder(state, context, binder_id, argument_type)?;
-            arguments.push(argument_type);
+    let given_substitution =
+        constraint::elaborate_given_substitution(state, context, &constraints)?;
+    let arguments = if given_substitution.is_empty() {
+        arguments
+    } else {
+        let original_constraints = constraints.clone();
+        constraints = constraints
+            .into_iter()
+            .map(|constraint| SubstituteName::many(state, context, &given_substitution, constraint))
+            .collect::<QueryResult<Vec<_>>>()?;
+        constraints.extend(original_constraints);
+        result = SubstituteName::many(state, context, &given_substitution, result)?;
+        arguments
+            .into_iter()
+            .map(|argument| SubstituteName::many(state, context, &given_substitution, argument))
+            .collect::<QueryResult<Vec<_>>>()?
+    };
+
+    for &constraint in &constraints {
+        if !constraint::is_type_error(state, context, constraint)? {
+            state.push_given(constraint);
         }
     }
 
+    for (&binder_id, &argument) in binders.iter().zip(&arguments) {
+        binder::check_binder(state, context, binder_id, argument)?;
+    }
+
     let result_type = if let Some(body) = expression {
-        super::check_expression(state, context, body, remaining)?
+        state.with_implicit(context, &substitution, |state| {
+            super::check_expression(state, context, body, result)
+        })?
     } else {
         state.fresh_unification(context.queries, context.prim.t)
     };

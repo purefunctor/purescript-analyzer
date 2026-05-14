@@ -1,0 +1,95 @@
+---
+source: target/debug/build/tests-integration-35f6ccefceed9daa/out/checking_generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Interpreter ::
+  forall (@r1 :: Row Type) (@r2 :: Row Type).
+    NaturalTransformation @Type (Run (r1 :: Row Type)) (Run (r2 :: Row Type)) ->
+    Interpreter (r1 :: Row Type) (r2 :: Row Type)
+unInterpreter ::
+  forall (r1 :: Row Type) (r2 :: Row Type).
+    Interpreter (r1 :: Row Type) (r2 :: Row Type) ->
+    NaturalTransformation @Type (Run (r1 :: Row Type)) (Run (r2 :: Row Type))
+composeInterpreter ::
+  forall (r1 :: Row Type) (r2 :: Row Type) (r3 :: Row Type).
+    Interpreter (r1 :: Row Type) (r2 :: Row Type) ->
+    Interpreter (r2 :: Row Type) (r3 :: Row Type) ->
+    Interpreter (r1 :: Row Type) (r3 :: Row Type)
+>>> ::
+  forall (r1 :: Row Type) (r2 :: Row Type) (r3 :: Row Type).
+    Interpreter (r1 :: Row Type) (r2 :: Row Type) ->
+    Interpreter (r2 :: Row Type) (r3 :: Row Type) ->
+    Interpreter (r1 :: Row Type) (r3 :: Row Type)
+applyFlipped ::
+  forall (a :: Type) (b :: Type). (a :: Type) -> ((a :: Type) -> (b :: Type)) -> (b :: Type)
+# :: forall (a :: Type) (b :: Type). (a :: Type) -> ((a :: Type) -> (b :: Type)) -> (b :: Type)
+identity :: forall (a :: Type). (a :: Type) -> (a :: Type)
+TestWithName :: ComputationType
+hoistSpec ::
+  forall (m' :: Type -> Type) (m :: Type -> Type) (i :: Type) (a :: Type -> Type)
+    (b :: Type -> Type).
+    NaturalTransformation @Type (m :: Type -> Type) (m' :: Type -> Type) ->
+    (ComputationType -> NaturalTransformation @Type (a :: Type -> Type) (b :: Type -> Type)) ->
+    NaturalTransformation @Type
+      (SpecT (a :: Type -> Type) (i :: Type) (m :: Type -> Type))
+      (SpecT (b :: Type -> Type) (i :: Type) (m' :: Type -> Type))
+interpreter ::
+  forall (r1 :: Row Type) (r2 :: Row Type). Interpreter (r1 :: Row Type) (r2 :: Row Type)
+Eff :: (forall (r :: Row Type). Interpreter (R1 (r :: Row Type)) (R2 (r :: Row Type))) -> Eff
+unEff :: Eff -> (forall (r :: Row Type). Interpreter (R1 (r :: Row Type)) (R2 (r :: Row Type)))
+eff :: Eff
+Env :: (forall (r :: Row Type). Interpreter (R2 (r :: Row Type)) (R3 (r :: Row Type))) -> Env
+unEnv :: Env -> (forall (r :: Row Type). Interpreter (R2 (r :: Row Type)) (R3 (r :: Row Type)))
+env :: Env
+Aff ::
+  (forall (r :: Row Type). Interpreter (R3 (r :: Row Type)) (R4 @(Row Type) (r :: Row Type))) -> Aff
+unAff ::
+  Aff -> (forall (r :: Row Type). Interpreter (R3 (r :: Row Type)) (R4 @(Row Type) (r :: Row Type)))
+aff :: Aff
+base :: SpecT (Run (R1 ())) Unit Identity Unit
+test :: SpecT (Run (R4 @(Row Type) ())) Unit Identity Unit
+
+Types
+Unit :: Type
+Identity :: Type -> Type
+Run :: Row Type -> Type -> Type
+NaturalTransformation ::
+  forall (t3 :: Type). ((t3 :: Type) -> Type) -> ((t3 :: Type) -> Type) -> Type
+~> :: forall (t3 :: Type). ((t3 :: Type) -> Type) -> ((t3 :: Type) -> Type) -> Type
+Interpreter :: Row Type -> Row Type -> Type
+ComputationType :: Type
+SpecT :: (Type -> Type) -> Type -> (Type -> Type) -> Type -> Type
+A :: Type
+B :: Type
+C :: Type
+R1 :: Row Type -> Row Type
+R2 :: Row Type -> Row Type
+R3 :: Row Type -> Row Type
+R4 :: forall (t10 :: Type). (t10 :: Type) -> (t10 :: Type)
+Eff :: Type
+Env :: Type
+Aff :: Type
+
+Synonyms
+type NaturalTransformation f g = forall (a :: (t3 :: Type)).
+  (f :: (t3 :: Type) -> Type) (a :: (t3 :: Type)) -> (g :: (t3 :: Type) -> Type) (a :: (t3 :: Type))
+type R1 r = ( a :: A, b :: B, c :: C | (r :: Row Type) )
+type R2 r = ( b :: B, c :: C | (r :: Row Type) )
+type R3 r = ( c :: C | (r :: Row Type) )
+type R4 r = (r :: (t10 :: Type))
+
+Roles
+Unit = []
+Identity = [Nominal]
+Run = [Nominal, Nominal]
+Interpreter = [Representational, Representational]
+ComputationType = []
+SpecT = [Nominal, Nominal, Nominal, Nominal]
+A = []
+B = []
+C = []
+Eff = []
+Env = []
+Aff = []
