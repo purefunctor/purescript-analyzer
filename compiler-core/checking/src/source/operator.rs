@@ -8,7 +8,7 @@ use sugar::OperatorTree;
 use sugar::bracketing::BracketingResult;
 
 use crate::context::CheckContext;
-use crate::core::{Type, TypeId, normalise, toolkit, unification};
+use crate::core::{Type, TypeId, normalise, signature, toolkit, unification};
 use crate::source::types::application;
 use crate::source::{binder, synonym, terms, types};
 use crate::state::CheckState;
@@ -160,6 +160,29 @@ where
 
     E::record_branch_types(state, operator_id, left_type, right_type, result_type);
 
+    let mut checked_result = false;
+    if let OperatorKindMode::Check { expected_type } = mode {
+        // Simple expected results can guide operand checking. Higher-rank or
+        // constrained results are left until after operands to avoid premature
+        // skolemisation or dictionary placement.
+        let signature = signature::decompose_signature(
+            state,
+            context,
+            expected_type,
+            signature::DecomposeSignatureMode::Full,
+        )?;
+        let expected_type = normalise::expand(state, context, expected_type)?;
+        if signature.binders.is_empty()
+            && signature.constraints.is_empty()
+            && signature.arguments.is_empty()
+            && !matches!(context.lookup_type(expected_type), Type::Constrained(_, _))
+        {
+            let expected_type = toolkit::collect_givens(state, context, expected_type)?;
+            let _ = unification::subtype(state, context, result_type, expected_type)?;
+            checked_result = true;
+        }
+    }
+
     let check_left_right = |state: &mut CheckState| {
         let [left_tree, right_tree] = children;
 
@@ -186,9 +209,11 @@ where
         check_left_right(state)?
     };
 
-    if let OperatorKindMode::Check { expected_type } = mode {
-        // Peel constraints from the expected type as givens,
-        // so operator result constraints can be discharged.
+    if let OperatorKindMode::Check { expected_type } = mode
+        && !checked_result
+    {
+        // Higher-rank expected results are checked after operands to avoid
+        // skolemising them before operand types have contributed information.
         let expected_type = toolkit::collect_givens(state, context, expected_type)?;
         let _ = unification::subtype(state, context, result_type, expected_type)?;
     }
