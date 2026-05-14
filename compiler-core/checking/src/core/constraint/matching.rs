@@ -467,8 +467,12 @@ where
         get_all_determined(&get_functional_dependencies(state, context, file_id, type_id)?);
     let mut ids = vec![];
 
-    for &(index, wanted, _, _) in results {
+    for &(index, wanted, _, result) in results {
         if determined.contains(&index) {
+            continue;
+        }
+
+        if !result.is_unknown() {
             continue;
         }
 
