@@ -4,7 +4,7 @@ use smol_str::{SmolStr, format_smolstr};
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::constraint::matching::{self, InstanceMatch, MatchInstance};
+use crate::core::constraint::matching2::{self, MatchInstance};
 use crate::core::pretty::Pretty;
 use crate::core::{Type, TypeId, normalise, toolkit, zonk};
 use crate::error::ErrorKind;
@@ -18,7 +18,7 @@ fn first_blocking_unification<Q>(
 where
     Q: ExternalQueries,
 {
-    let blocking = matching::collect_blocking(state, context, &[id])?;
+    let blocking = matching2::collect_blocking(state, context, &[id])?;
     Ok(blocking.into_iter().next())
 }
 
@@ -163,15 +163,15 @@ where
 
     let message = match render_doc(state, context, doc) {
         Ok(Some(message)) => message,
-        Ok(None) => return Ok(Some(MatchInstance::Stuck(vec![]))),
-        Err(RenderStuck::Blocked(u)) => return Ok(Some(MatchInstance::Stuck(vec![u]))),
+        Ok(None) => return Ok(Some(MatchInstance::Stuck { stuck: vec![] })),
+        Err(RenderStuck::Blocked(u)) => return Ok(Some(MatchInstance::Stuck { stuck: vec![u] })),
         Err(RenderStuck::Query(cycle)) => return Err(cycle),
     };
 
     let message_id = context.queries.intern_smol_str(message);
     state.insert_error(ErrorKind::CustomWarning { message_id });
 
-    Ok(Some(MatchInstance::Match(InstanceMatch::empty())))
+    Ok(Some(MatchInstance::empty()))
 }
 
 pub fn match_fail<Q>(
@@ -186,13 +186,13 @@ where
 
     let message = match render_doc(state, context, doc) {
         Ok(Some(message)) => message,
-        Ok(None) => return Ok(Some(MatchInstance::Stuck(vec![]))),
-        Err(RenderStuck::Blocked(u)) => return Ok(Some(MatchInstance::Stuck(vec![u]))),
+        Ok(None) => return Ok(Some(MatchInstance::Stuck { stuck: vec![] })),
+        Err(RenderStuck::Blocked(u)) => return Ok(Some(MatchInstance::Stuck { stuck: vec![u] })),
         Err(RenderStuck::Query(cycle)) => return Err(cycle),
     };
 
     let message_id = context.queries.intern_smol_str(message);
     state.insert_error(ErrorKind::CustomFailure { message_id });
 
-    Ok(Some(MatchInstance::Match(InstanceMatch::empty())))
+    Ok(Some(MatchInstance::empty()))
 }

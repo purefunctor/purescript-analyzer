@@ -7,7 +7,7 @@ use petgraph::prelude::DiGraphMap;
 use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::constraint::CanonicalConstraintId;
-use crate::core::constraint::matching::{self, MatchInstance};
+use crate::core::constraint::matching2::{self, MatchInstance};
 use crate::core::{TypeId, normalise};
 use crate::state::CheckState;
 
@@ -42,7 +42,7 @@ where
             let result = intern_integer(context, sum_value - right);
             match_equality(state, context, left, result)?
         }
-        _ => matching::blocking_constraint(state, context, &[left, right, sum])?,
+        _ => matching2::blocking_constraint(state, context, &[left, right, sum])?,
     };
 
     Ok(Some(matched))
@@ -61,10 +61,10 @@ where
     };
 
     let Some(left_int) = extract_integer(state, context, left)? else {
-        return Ok(Some(matching::blocking_constraint(state, context, &[left])?));
+        return Ok(Some(matching2::blocking_constraint(state, context, &[left])?));
     };
     let Some(right_int) = extract_integer(state, context, right)? else {
-        return Ok(Some(matching::blocking_constraint(state, context, &[right])?));
+        return Ok(Some(matching2::blocking_constraint(state, context, &[right])?));
     };
 
     let result = intern_integer(context, left_int * right_int);
@@ -105,7 +105,7 @@ where
         return Ok(Some(result));
     }
 
-    Ok(Some(matching::blocking_constraint(state, context, &[left, right])?))
+    Ok(Some(matching2::blocking_constraint(state, context, &[left, right])?))
 }
 
 fn match_compare_transitive<Q>(
@@ -194,7 +194,7 @@ where
     };
 
     let Some(value) = extract_integer(state, context, int)? else {
-        return Ok(Some(matching::blocking_constraint(state, context, &[int])?));
+        return Ok(Some(matching2::blocking_constraint(state, context, &[int])?));
     };
 
     let result = intern_symbol(context, &value.to_string());

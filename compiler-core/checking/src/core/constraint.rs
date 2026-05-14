@@ -16,8 +16,6 @@ pub mod matching2;
 
 pub use canonical::{CanonicalConstraint, CanonicalConstraintId, Canonicals};
 
-use matching::{InstanceMatch, MatchInstance};
-
 use std::collections::VecDeque;
 use std::{iter, mem};
 
@@ -100,11 +98,6 @@ pub struct WorkList {
 }
 
 impl WorkList {
-    pub fn extend_from_match(&mut self, instance: InstanceMatch) {
-        self.unifications.extend(instance.unifications);
-        self.constraints.extend(instance.constraints);
-    }
-
     pub fn extend_from_parts(
         &mut self,
         unifications: Vec<(TypeId, TypeId)>,
@@ -211,14 +204,17 @@ where
         }
 
         match compiler::match_compiler_instance(state, context, wanted, &given)? {
-            Some(MatchInstance::Match(instance)) => {
-                work.extend_from_match(instance);
+            Some(matching2::MatchInstance::Match { unifications, constraints }) => {
+                work.extend_from_parts(unifications, constraints);
                 continue 'work;
             }
-            Some(MatchInstance::Stuck(id)) => {
-                blocked.extend(id);
+            Some(matching2::MatchInstance::Stuck { stuck }) => {
+                blocked.extend(stuck);
             }
-            Some(MatchInstance::Apart) | None => (),
+            Some(matching2::MatchInstance::Skolem) => {
+                blocked_on_skolem = true;
+            }
+            Some(matching2::MatchInstance::Apart) | None => (),
         }
 
         let search = instances::collect_instance_chains(state, context, wanted)?;

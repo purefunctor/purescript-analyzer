@@ -7,7 +7,7 @@ use itertools::{Itertools, izip};
 
 use crate::context::CheckContext;
 use crate::core::constraint::canonical;
-use crate::core::constraint::matching::{InstanceMatch, MatchInstance};
+use crate::core::constraint::matching2::MatchInstance;
 use crate::core::substitute::SubstituteName;
 use crate::core::unification::{CanUnify, can_unify, unify};
 use crate::core::{Role, Type, TypeId, normalise, toolkit};
@@ -39,19 +39,19 @@ where
     let right = normalise::expand(state, context, right)?;
 
     if left == right {
-        return Ok(Some(MatchInstance::Match(InstanceMatch::empty())));
+        return Ok(Some(MatchInstance::empty()));
     }
 
     if let Some(stuck) = unification_head(state, context, left)? {
-        return Ok(Some(MatchInstance::Stuck(vec![stuck])));
+        return Ok(Some(MatchInstance::Stuck { stuck: vec![stuck] }));
     }
 
     if let Some(stuck) = unification_head(state, context, right)? {
-        return Ok(Some(MatchInstance::Stuck(vec![stuck])));
+        return Ok(Some(MatchInstance::Stuck { stuck: vec![stuck] }));
     }
 
     if try_refl(state, context, left, right)? {
-        return Ok(Some(MatchInstance::Match(InstanceMatch::empty())));
+        return Ok(Some(MatchInstance::empty()));
     }
 
     let newtype_result = try_newtype_coercion(state, context, left, right)?;
@@ -149,8 +149,9 @@ where
                 let canonical = canonical::canonicalise(state, context, constraint)?;
                 let constraints = canonical.into_iter().collect_vec();
 
-                let instance = InstanceMatch::from_constraints(constraints);
-                return Ok(NewtypeCoercionResult::Success(MatchInstance::Match(instance)));
+                return Ok(NewtypeCoercionResult::Success(MatchInstance::from_constraints(
+                    constraints,
+                )));
             }
         }
     }
@@ -224,7 +225,7 @@ where
         }
     }
 
-    Ok(Some(MatchInstance::Match(InstanceMatch { unifications, constraints })))
+    Ok(Some(MatchInstance::from_parts(unifications, constraints)))
 }
 
 fn try_function_coercion<Q>(
@@ -257,7 +258,7 @@ where
         constraints.push(canonical_id);
     }
 
-    Ok(Some(MatchInstance::Match(InstanceMatch::from_constraints(constraints))))
+    Ok(Some(MatchInstance::from_constraints(constraints)))
 }
 
 fn decompose_function_simple<Q>(
@@ -332,7 +333,7 @@ where
         }
     }
 
-    Ok(Some(MatchInstance::Match(InstanceMatch::from_constraints(constraints))))
+    Ok(Some(MatchInstance::from_constraints(constraints)))
 }
 
 fn try_higher_kinded_coercion<Q>(
@@ -370,7 +371,7 @@ where
 
     let constraints = canonical::canonicalise(state, context, constraint)?.into_iter().collect();
 
-    Ok(Some(MatchInstance::Match(InstanceMatch::from_constraints(constraints))))
+    Ok(Some(MatchInstance::from_constraints(constraints)))
 }
 
 fn decompose_kind_for_coercion<Q>(

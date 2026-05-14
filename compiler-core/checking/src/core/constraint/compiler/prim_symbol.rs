@@ -4,7 +4,7 @@ use building_types::QueryResult;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::constraint::matching::{self, InstanceMatch, MatchInstance};
+use crate::core::constraint::matching2::{self, MatchInstance};
 use crate::core::{Type, TypeId, normalise};
 use crate::state::CheckState;
 
@@ -47,7 +47,7 @@ where
             let result = intern_symbol(context, right_value);
             match_equality(state, context, right, result)?
         }
-        _ => matching::blocking_constraint(state, context, &[left, right, appended])?,
+        _ => matching2::blocking_constraint(state, context, &[left, right, appended])?,
     };
 
     Ok(Some(matched))
@@ -66,10 +66,10 @@ where
     };
 
     let Some(left_symbol) = extract_symbol(state, context, left)? else {
-        return Ok(Some(matching::blocking_constraint(state, context, &[left])?));
+        return Ok(Some(matching2::blocking_constraint(state, context, &[left])?));
     };
     let Some(right_symbol) = extract_symbol(state, context, right)? else {
-        return Ok(Some(matching::blocking_constraint(state, context, &[right])?));
+        return Ok(Some(matching2::blocking_constraint(state, context, &[right])?));
     };
 
     let result = match left_symbol.cmp(&right_symbol) {
@@ -122,12 +122,9 @@ where
 
             let head_result = intern_symbol(context, &head_char.to_string());
             let tail_result = intern_symbol(context, chars.as_str());
-            MatchInstance::Match(InstanceMatch::from_unifications(vec![
-                (head, head_result),
-                (tail, tail_result),
-            ]))
+            MatchInstance::from_unifications(vec![(head, head_result), (tail, tail_result)])
         }
-        _ => matching::blocking_constraint(state, context, &[head, tail, symbol])?,
+        _ => matching2::blocking_constraint(state, context, &[head, tail, symbol])?,
     };
 
     Ok(Some(matched))
@@ -148,9 +145,9 @@ where
     let symbol = normalise::expand(state, context, symbol)?;
 
     let matched = if extract_symbol(state, context, symbol)?.is_some() {
-        MatchInstance::Match(InstanceMatch::empty())
+        MatchInstance::empty()
     } else if let Type::Unification(id) = context.lookup_type(symbol) {
-        MatchInstance::Stuck(vec![id])
+        MatchInstance::Stuck { stuck: vec![id] }
     } else {
         MatchInstance::Apart
     };

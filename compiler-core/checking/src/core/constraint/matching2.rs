@@ -13,6 +13,7 @@ use crate::core::constraint::instances::InstanceCandidate;
 use crate::core::constraint::{CanonicalConstraintId, canonical};
 use crate::core::fd::{Fd, compute_closure, get_all_determined};
 use crate::core::substitute::SubstituteName;
+use crate::core::walk::{TypeWalker, WalkAction, walk_type};
 use crate::core::{KindOrType, Name, RowField, RowTypeId, Type, TypeId, normalise, toolkit};
 use crate::state::CheckState;
 
@@ -440,6 +441,75 @@ pub enum MatchInstance {
     Apart,
     Stuck { stuck: Vec<u32> },
     Skolem,
+}
+
+impl MatchInstance {
+    pub fn empty() -> MatchInstance {
+        MatchInstance::Match { unifications: vec![], constraints: vec![] }
+    }
+
+    pub fn from_unifications(unifications: Vec<(TypeId, TypeId)>) -> MatchInstance {
+        MatchInstance::Match { unifications, constraints: vec![] }
+    }
+
+    pub fn from_constraints(constraints: Vec<CanonicalConstraintId>) -> MatchInstance {
+        MatchInstance::Match { unifications: vec![], constraints }
+    }
+
+    pub fn from_parts(
+        unifications: Vec<(TypeId, TypeId)>,
+        constraints: Vec<CanonicalConstraintId>,
+    ) -> MatchInstance {
+        MatchInstance::Match { unifications, constraints }
+    }
+}
+
+struct CollectBlocking {
+    blocking: Vec<u32>,
+}
+
+impl TypeWalker for CollectBlocking {
+    fn visit<Q: ExternalQueries>(
+        &mut self,
+        _state: &mut CheckState,
+        _context: &CheckContext<Q>,
+        _id: TypeId,
+        t: &Type,
+    ) -> QueryResult<WalkAction> {
+        if let Type::Unification(id) = t {
+            self.blocking.push(*id);
+        }
+        Ok(WalkAction::Continue)
+    }
+}
+
+pub fn collect_blocking<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    id: &[TypeId],
+) -> QueryResult<Vec<u32>>
+where
+    Q: ExternalQueries,
+{
+    let mut walker = CollectBlocking { blocking: vec![] };
+
+    for &id in id {
+        walk_type(state, context, id, &mut walker)?;
+    }
+
+    Ok(walker.blocking)
+}
+
+pub fn blocking_constraint<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    id: &[TypeId],
+) -> QueryResult<MatchInstance>
+where
+    Q: ExternalQueries,
+{
+    let stuck = collect_blocking(state, context, id)?;
+    if !stuck.is_empty() { Ok(MatchInstance::Stuck { stuck }) } else { Ok(MatchInstance::Apart) }
 }
 
 pub fn match_provided<Q>(

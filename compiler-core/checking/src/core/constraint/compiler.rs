@@ -19,7 +19,7 @@ use crate::state::CheckState;
 use crate::{ExternalQueries, safe_loop};
 
 use super::CanonicalConstraintId;
-use super::matching::{InstanceMatch, MatchInstance};
+use super::matching2::MatchInstance;
 
 #[derive(Clone)]
 pub enum RowView {
@@ -174,7 +174,7 @@ where
     Ok(match can_unify(state, context, actual, expected)? {
         CanUnify::Apart => MatchInstance::Apart,
         CanUnify::Equal | CanUnify::Unify => {
-            MatchInstance::Match(InstanceMatch::from_unifications(vec![(actual, expected)]))
+            MatchInstance::from_unifications(vec![(actual, expected)])
         }
     })
 }
