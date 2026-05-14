@@ -11,7 +11,6 @@ pub mod canonical;
 pub mod compiler;
 pub mod elaborate;
 pub mod instances;
-pub mod matching;
 pub mod matching2;
 
 pub use canonical::{CanonicalConstraint, CanonicalConstraintId, Canonicals};
