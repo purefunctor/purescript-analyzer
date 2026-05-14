@@ -16,7 +16,7 @@ pub mod matching2;
 
 pub use canonical::{CanonicalConstraint, CanonicalConstraintId, Canonicals};
 
-use matching::{InstanceMatch, MatchInstance, match_given_instance, match_instance_chain};
+use matching::{InstanceMatch, MatchInstance};
 
 use std::collections::VecDeque;
 use std::{iter, mem};
@@ -104,10 +104,20 @@ impl WorkList {
         self.unifications.extend(instance.unifications);
         self.constraints.extend(instance.constraints);
     }
+
+    pub fn extend_from_parts(
+        &mut self,
+        unifications: Vec<(TypeId, TypeId)>,
+        constraints: Vec<CanonicalConstraintId>,
+    ) {
+        self.unifications.extend(unifications);
+        self.constraints.extend(constraints);
+    }
 }
 
 type Stuck = FxHashMap<u32, Vec<CanonicalConstraintId>>;
 type Awake = IndexSet<CanonicalConstraintId, FxBuildHasher>;
+type Skolem = Vec<CanonicalConstraintId>;
 
 fn wake_constraints(work: &mut WorkList, stuck: &mut Stuck, state: &CheckState) {
     let mut awake = Awake::default();
@@ -163,6 +173,7 @@ where
 
     let mut work = WorkList { unifications: vec![], constraints: wanted };
     let mut stuck = Stuck::default();
+    let mut skolem = Skolem::default();
     let mut residuals = vec![];
 
     'work: loop {
@@ -173,6 +184,7 @@ where
 
         if has_unification {
             wake_constraints(&mut work, &mut stuck, state);
+            work.constraints.extend(mem::take(&mut skolem));
         }
 
         let Some(wanted) = work.constraints.pop_front() else {
@@ -180,16 +192,22 @@ where
         };
 
         let mut blocked = FxHashSet::default();
+        let mut blocked_on_skolem = false;
 
-        match match_given_instance(state, context, wanted, &given)? {
-            MatchInstance::Match(instance) => {
-                work.extend_from_match(instance);
-                continue 'work;
+        for &provided in &given {
+            match matching2::match_provided(state, context, wanted, provided)? {
+                matching2::MatchInstance::Match { unifications, constraints } => {
+                    work.extend_from_parts(unifications, constraints);
+                    continue 'work;
+                }
+                matching2::MatchInstance::Stuck { stuck } => {
+                    blocked.extend(stuck);
+                }
+                matching2::MatchInstance::Skolem => {
+                    blocked_on_skolem = true;
+                }
+                matching2::MatchInstance::Apart => (),
             }
-            MatchInstance::Stuck(id) => {
-                blocked.extend(id);
-            }
-            MatchInstance::Apart => (),
         }
 
         match compiler::match_compiler_instance(state, context, wanted, &given)? {
@@ -205,17 +223,21 @@ where
 
         let search = instances::collect_instance_chains(state, context, wanted)?;
         'chain: for chain in search.chains {
-            match match_instance_chain(state, context, wanted, &chain)? {
-                MatchInstance::Match(instance) => {
-                    work.extend_from_match(instance);
-                    continue 'work;
-                }
-                MatchInstance::Stuck(id) => {
-                    blocked.extend(id);
-                    continue 'chain;
-                }
-                MatchInstance::Apart => {
-                    continue 'chain;
+            for candidate in chain {
+                match matching2::match_declared(state, context, wanted, candidate)? {
+                    matching2::MatchInstance::Match { unifications, constraints } => {
+                        work.extend_from_parts(unifications, constraints);
+                        continue 'work;
+                    }
+                    matching2::MatchInstance::Stuck { stuck } => {
+                        blocked.extend(stuck);
+                        continue 'chain;
+                    }
+                    matching2::MatchInstance::Skolem => {
+                        blocked_on_skolem = true;
+                        continue 'chain;
+                    }
+                    matching2::MatchInstance::Apart => (),
                 }
             }
         }
@@ -225,7 +247,11 @@ where
         blocked.extend(search.blocking);
 
         if blocked.is_empty() {
-            residuals.push(wanted);
+            if blocked_on_skolem {
+                skolem.push(wanted);
+            } else {
+                residuals.push(wanted);
+            }
         } else {
             for id in blocked {
                 stuck.entry(id).or_default().push(wanted);
@@ -233,11 +259,15 @@ where
         }
     }
 
-    for (_, constraints) in stuck {
-        residuals.extend(constraints);
-    }
+    let mut unique_residuals = Awake::default();
+    unique_residuals.extend(residuals);
 
-    Ok(residuals)
+    for (_, constraints) in stuck {
+        unique_residuals.extend(constraints);
+    }
+    unique_residuals.extend(skolem);
+
+    Ok(unique_residuals.into_iter().collect())
 }
 
 pub fn is_type_error<Q>(
