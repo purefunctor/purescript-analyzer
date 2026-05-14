@@ -1,0 +1,27 @@
+---
+source: target/debug/build/tests-integration-6275ac7a2b26d932/out/checking_generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+disj :: forall (@a :: Type). HeytingAlgebra (a :: Type) => (a :: Type) -> (a :: Type) -> (a :: Type)
+test :: Function Char Boolean -> Function Char Boolean -> Function Char Boolean
+
+Types
+HeytingAlgebra :: Type -> Constraint
+
+Classes
+class forall (a :: Type). HeytingAlgebra (a :: Type)
+  disj :: forall (@a :: Type). HeytingAlgebra (a :: Type) => (a :: Type) -> (a :: Type) -> (a :: Type)
+
+Instances
+instance HeytingAlgebra Boolean
+instance forall (t2 :: Type) (t1 :: Type).
+  HeytingAlgebra (t2 :: Type) => HeytingAlgebra ((t1 :: Type) -> (t2 :: Type))
+
+Diagnostics
+error[NoInstanceFound]: No instance found for: HeytingAlgebra (Function Char Boolean)
+  --> 12:1..12:80
+   |
+12 | test :: Function Char Boolean -> Function Char Boolean -> Function Char Boolean
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
