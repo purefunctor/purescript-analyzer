@@ -1,0 +1,12 @@
+---
+source: target/debug/build/tests-integration-35f6ccefceed9daa/out/checking_generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+++ :: forall (a :: Type). Array (a :: Type) -> Array (a :: Type) -> Array (a :: Type)
+prepend :: forall (a :: Type). Array (a :: Type) -> Array (a :: Type) -> Array (a :: Type)
+chain :: Array Int -> Array Int -> Array Int
+nested :: Array Int -> Array Int -> Array Int
+
+Types
