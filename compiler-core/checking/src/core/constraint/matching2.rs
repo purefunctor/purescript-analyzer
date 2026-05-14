@@ -1,13 +1,19 @@
 use std::iter;
 
 use building_types::QueryResult;
+use files::FileId;
+use indexing::TypeItemId;
 use itertools::Itertools;
+use lowering::TypeItemIr;
 use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
+use crate::core::constraint::instances::InstanceCandidate;
+use crate::core::constraint::{CanonicalConstraintId, canonical};
 use crate::core::fd::{Fd, compute_closure, get_all_determined};
-use crate::core::{Name, RowField, RowTypeId, Type, TypeId, normalise, toolkit};
+use crate::core::substitute::SubstituteName;
+use crate::core::{KindOrType, Name, RowField, RowTypeId, Type, TypeId, normalise, toolkit};
 use crate::state::CheckState;
 
 #[derive(PartialEq, Eq)]
@@ -427,4 +433,183 @@ fn covers(fd: &[Fd], types: &[MatchType]) -> QueryResult<bool> {
 
     let determined = compute_closure(fd, &match_indices);
     Ok(types.iter().enumerate().all(|(index, _)| determined.contains(&index)))
+}
+
+pub enum MatchInstance {
+    Match { unifications: Vec<(TypeId, TypeId)>, constraints: Vec<CanonicalConstraintId> },
+    Apart,
+    Stuck { stuck: Vec<u32> },
+    Skolem,
+}
+
+pub fn match_provided<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    wanted: CanonicalConstraintId,
+    provided: CanonicalConstraintId,
+) -> QueryResult<MatchInstance>
+where
+    Q: ExternalQueries,
+{
+    let wanted = &state.canonicals[wanted];
+    let provided = &state.canonicals[provided];
+
+    if (wanted.file_id, wanted.type_id) != (provided.file_id, provided.type_id)
+        || wanted.arguments.len() != provided.arguments.len()
+    {
+        return Ok(MatchInstance::Apart);
+    }
+
+    let wanted = wanted.clone();
+    let provided = provided.clone();
+
+    let pattern_variables = FxHashSet::default();
+
+    let functional_dependencies =
+        get_functional_dependencies(context, wanted.file_id, wanted.type_id)?;
+
+    let wanted_arguments = wanted
+        .arguments
+        .iter()
+        .filter_map(|argument| if let KindOrType::Type(id) = argument { Some(*id) } else { None })
+        .collect_vec();
+
+    let provided_arguments = provided
+        .arguments
+        .iter()
+        .filter_map(|argument| if let KindOrType::Type(id) = argument { Some(*id) } else { None })
+        .collect_vec();
+
+    match match_instance(
+        state,
+        context,
+        &pattern_variables,
+        &functional_dependencies,
+        &wanted_arguments,
+        &provided_arguments,
+    )? {
+        MatchType::Match { .. } => {
+            let unifications = iter::zip(wanted_arguments, provided_arguments).collect_vec();
+            Ok(MatchInstance::Match { unifications, constraints: vec![] })
+        }
+        MatchType::Apart => Ok(MatchInstance::Apart),
+        MatchType::Stuck { stuck } => Ok(MatchInstance::Stuck { stuck }),
+        MatchType::Skolem => Ok(MatchInstance::Skolem),
+    }
+}
+
+pub fn match_declared<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    wanted: CanonicalConstraintId,
+    candidate: InstanceCandidate,
+) -> QueryResult<MatchInstance>
+where
+    Q: ExternalQueries,
+{
+    let Some(declared) = toolkit::instance_info(
+        state,
+        context,
+        candidate.instance.matchable,
+        candidate.instance.resolution,
+    )?
+    else {
+        return Ok(MatchInstance::Apart);
+    };
+
+    let wanted = state.canonicals[wanted].clone();
+
+    let pattern_variables: FxHashSet<Name> =
+        declared.binders.iter().map(|binder| binder.name).collect();
+
+    let functional_dependencies =
+        get_functional_dependencies(context, wanted.file_id, wanted.type_id)?;
+
+    let wanted_arguments = wanted
+        .arguments
+        .iter()
+        .filter_map(|argument| if let KindOrType::Type(id) = argument { Some(*id) } else { None })
+        .collect_vec();
+
+    let declared_arguments = declared
+        .arguments
+        .iter()
+        .filter_map(|argument| if let KindOrType::Type(id) = argument { Some(*id) } else { None })
+        .collect_vec();
+
+    match match_instance(
+        state,
+        context,
+        &pattern_variables,
+        &functional_dependencies,
+        &wanted_arguments,
+        &declared_arguments,
+    )? {
+        MatchType::Match { bindings } => {
+            let mut substitution = FxHashMap::default();
+            for &(name, bound) in &bindings {
+                substitution.entry(name).or_insert(bound);
+            }
+
+            for binder in &declared.binders {
+                if substitution.contains_key(&binder.name) {
+                    continue;
+                }
+                let binder_kind = SubstituteName::many(state, context, &substitution, binder.kind)?;
+                let binder_type = state.fresh_unification(context.queries, binder_kind);
+                substitution.insert(binder.name, binder_type);
+            }
+
+            let mut unifications = vec![];
+            for (wanted, declared) in iter::zip(wanted_arguments, declared_arguments) {
+                let wanted = SubstituteName::many(state, context, &substitution, wanted)?;
+                let declared = SubstituteName::many(state, context, &substitution, declared)?;
+                unifications.push((wanted, declared));
+            }
+
+            let mut constraints = vec![];
+            for constraint in declared.constraints {
+                let constraint = SubstituteName::many(state, context, &substitution, constraint)?;
+                if let Some(constraint) = canonical::canonicalise(state, context, constraint)? {
+                    constraints.push(constraint);
+                }
+            }
+
+            Ok(MatchInstance::Match { unifications, constraints })
+        }
+        MatchType::Apart => Ok(MatchInstance::Apart),
+        MatchType::Stuck { stuck } => Ok(MatchInstance::Stuck { stuck }),
+        MatchType::Skolem => Ok(MatchInstance::Skolem),
+    }
+}
+
+fn get_functional_dependencies<Q>(
+    context: &CheckContext<Q>,
+    file_id: FileId,
+    type_id: TypeItemId,
+) -> QueryResult<Vec<Fd>>
+where
+    Q: ExternalQueries,
+{
+    fn extract(type_item: Option<&TypeItemIr>) -> Vec<Fd> {
+        let Some(TypeItemIr::ClassGroup { class: Some(class), .. }) = type_item else {
+            return vec![];
+        };
+
+        let fd = class.functional_dependencies.iter().map(|functional_dependency| {
+            Fd::new(
+                functional_dependency.determiners.iter().map(|&x| x as usize),
+                functional_dependency.determined.iter().map(|&x| x as usize),
+            )
+        });
+
+        fd.collect_vec()
+    }
+
+    if file_id == context.id {
+        Ok(extract(context.lowered.info.get_type_item(type_id)))
+    } else {
+        let lowered = context.queries.lowered(file_id)?;
+        Ok(extract(lowered.info.get_type_item(type_id)))
+    }
 }
