@@ -1,5 +1,6 @@
 //! Implements matching functions for constraints.
 
+use std::collections::VecDeque;
 use std::iter;
 
 use building_types::QueryResult;
@@ -354,6 +355,7 @@ where
         for (&wanted_argument, &given_argument) in
             iter::zip(wanted.arguments.iter(), given.arguments.iter())
         {
+            let unification_start = unifications.len();
             let match_result =
                 if let (KindOrType::Kind(wanted_argument), KindOrType::Kind(given_argument))
                 | (KindOrType::Type(wanted_argument), KindOrType::Type(given_argument)) =
@@ -383,11 +385,18 @@ where
             if let (KindOrType::Type(wanted_argument), KindOrType::Type(given_argument)) =
                 (wanted_argument, given_argument)
             {
-                results.push((results.len(), wanted_argument, given_argument, match_result));
+                let argument_unifications = unifications[unification_start..].to_vec();
+                results.push((
+                    results.len(),
+                    wanted_argument,
+                    given_argument,
+                    match_result,
+                    argument_unifications,
+                ));
             }
         }
 
-        let match_results = results.iter().map(|(_, _, _, result)| *result).collect_vec();
+        let match_results = results.iter().map(|(_, _, _, result, _)| *result).collect_vec();
 
         if !can_determine_stuck(state, context, wanted.file_id, wanted.type_id, &match_results)? {
             return Ok(MatchInstance::Stuck(stuck));
@@ -403,7 +412,7 @@ where
             bindings.insert(binder.name, binder_type);
         }
 
-        for (_, wanted, given, result) in &results {
+        for (_, wanted, given, result, _) in &results {
             if matches!(result, MatchType::Stuck(_)) {
                 let given = SubstituteName::many(state, context, &bindings, *given)?;
                 unifications.push((*wanted, given));
@@ -447,10 +456,51 @@ where
             }
         }
 
+        if chain.len() > 1 && candidate_constraints_are_unsatisfiable(state, context, &constraints)?
+        {
+            continue 'chain;
+        }
+
         return Ok(MatchInstance::Match(InstanceMatch { unifications, constraints }));
     }
 
     Ok(MatchInstance::Apart)
+}
+
+fn candidate_constraints_are_unsatisfiable<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    constraints: &[CanonicalConstraintId],
+) -> QueryResult<bool>
+where
+    Q: ExternalQueries,
+{
+    if constraints.is_empty() {
+        return Ok(false);
+    }
+
+    let checkpoint = state.checkpoint();
+    let result = (|| {
+        let wanted = VecDeque::from_iter(constraints.iter().copied());
+        let residuals = super::solve_constraints(state, context, wanted, &[])?;
+
+        for residual in residuals {
+            if state.canonical_errors.contains_key(&residual) {
+                return Ok(true);
+            }
+
+            if let Some(MatchInstance::Apart) =
+                compiler::match_compiler_instance(state, context, residual, &[])?
+            {
+                return Ok(true);
+            }
+        }
+
+        Ok(false)
+    })();
+
+    state.restore(checkpoint);
+    result
 }
 
 fn non_determined_unification_ids<Q>(
@@ -458,7 +508,7 @@ fn non_determined_unification_ids<Q>(
     context: &CheckContext<Q>,
     file_id: FileId,
     type_id: TypeItemId,
-    results: &[(usize, TypeId, TypeId, MatchType)],
+    results: &[(usize, TypeId, TypeId, MatchType, Vec<(TypeId, TypeId)>)],
 ) -> QueryResult<Vec<u32>>
 where
     Q: ExternalQueries,
@@ -467,16 +517,18 @@ where
         get_all_determined(&get_functional_dependencies(state, context, file_id, type_id)?);
     let mut ids = vec![];
 
-    for &(index, wanted, _, result) in results {
+    for (index, wanted, _, result, unifications) in results {
         if determined.contains(&index) {
             continue;
         }
 
-        if !result.is_unknown() {
-            continue;
+        if result.is_unknown() {
+            ids.extend(collect_blocking(state, context, &[*wanted])?);
         }
 
-        ids.extend(collect_blocking(state, context, &[wanted])?);
+        for &(left, right) in unifications {
+            ids.extend(collect_blocking(state, context, &[left, right])?);
+        }
     }
 
     ids.sort_unstable();

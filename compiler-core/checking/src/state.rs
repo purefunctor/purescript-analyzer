@@ -8,7 +8,7 @@ use files::FileId;
 use rustc_hash::FxHashMap;
 
 use crate::context::CheckContext;
-use crate::core::constraint::{CanonicalConstraintId, Canonicals};
+use crate::core::constraint::{CanonicalConstraintId, Canonicals, canonical::CanonicalsCheckpoint};
 use crate::core::exhaustive::{
     ExhaustivenessReport, Pattern, PatternConstructor, PatternId, PatternInterner, PatternKind,
 };
@@ -56,6 +56,12 @@ pub struct Unifications {
     unique: u32,
 }
 
+#[derive(Debug)]
+struct UnificationsCheckpoint {
+    entries: Vec<UnificationEntry>,
+    unique: u32,
+}
+
 impl Unifications {
     pub fn fresh(&mut self, depth: Depth, kind: TypeId) -> u32 {
         let unique = self.unique;
@@ -81,6 +87,22 @@ impl Unifications {
     pub fn iter(&self) -> impl Iterator<Item = &UnificationEntry> {
         self.entries.iter()
     }
+
+    fn checkpoint(&self) -> UnificationsCheckpoint {
+        UnificationsCheckpoint { entries: self.entries.clone(), unique: self.unique }
+    }
+
+    fn restore(&mut self, checkpoint: UnificationsCheckpoint) {
+        self.entries = checkpoint.entries;
+        self.unique = checkpoint.unique;
+    }
+}
+
+pub(crate) struct CheckStateCheckpoint {
+    unifications: UnificationsCheckpoint,
+    canonicals: CanonicalsCheckpoint,
+    canonical_errors: FxHashMap<CanonicalConstraintId, Vec<ErrorKind>>,
+    error_count: usize,
 }
 
 /// Tracks type variable bindings during kind inference.
@@ -252,6 +274,22 @@ impl CheckState {
         let result = f(self);
         self.crumbs.pop();
         result
+    }
+
+    pub(crate) fn checkpoint(&self) -> CheckStateCheckpoint {
+        CheckStateCheckpoint {
+            unifications: self.unifications.checkpoint(),
+            canonicals: self.canonicals.checkpoint(),
+            canonical_errors: self.canonical_errors.clone(),
+            error_count: self.checked.errors.len(),
+        }
+    }
+
+    pub(crate) fn restore(&mut self, checkpoint: CheckStateCheckpoint) {
+        self.unifications.restore(checkpoint.unifications);
+        self.canonicals.restore(checkpoint.canonicals);
+        self.canonical_errors = checkpoint.canonical_errors;
+        self.checked.errors.truncate(checkpoint.error_count);
     }
 
     pub fn fresh_unification(&mut self, queries: &impl ExternalQueries, kind: TypeId) -> TypeId {
