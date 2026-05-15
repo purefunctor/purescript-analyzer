@@ -74,6 +74,10 @@ where
             });
             let wanted = VecDeque::from([wanted]);
             let error_count = state.checked.errors.len();
+            // Pass an empty slice for "given" so probe solving only uses instance-based
+            // improvements (e.g. fundep derivations from instances) and does not include
+            // the original given constraints, preventing circular improvement where a
+            // given might improve itself.
             super::solve_constraints(state, context, wanted, &[])?;
             state.checked.errors.truncate(error_count);
 
