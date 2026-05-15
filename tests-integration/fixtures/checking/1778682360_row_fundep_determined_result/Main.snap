@@ -1,0 +1,65 @@
+---
+source: target/debug/build/tests-integration-35f6ccefceed9daa/out/checking_generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Nothing :: forall (@a :: Type). Maybe (a :: Type)
+Just :: forall (@a :: Type). (a :: Type) -> Maybe (a :: Type)
+test :: forall (row :: Row Type). StripColumns Columns (row :: Row Type) => {| (row :: Row Type) }
+bad :: forall (row :: Row Type). StripColumns Columns (row :: Row Type) => {| (row :: Row Type) }
+
+Types
+Maybe :: Type -> Type
+Nullable :: forall (t2 :: Type). (t2 :: Type) -> Type
+ExtractType :: forall (t6 :: Type) (t5 :: Type). (t6 :: Type) -> (t5 :: Type) -> Constraint
+StripColumnsRL :: RowList Type -> RowList Type -> Constraint
+ListToRow :: RowList Type -> Row Type -> Constraint
+StripColumns :: Row Type -> Row Type -> Constraint
+Columns :: Row Type
+
+Synonyms
+type Columns = ( account_guid :: Nullable @Type String )
+
+Classes
+class forall (t6 :: Type) (t5 :: Type) (entry :: (t6 :: Type)) (typ :: (t5 :: Type)). ExtractType @(t6 :: Type) @(t5 :: Type) (entry :: (t6 :: Type)) (typ :: (t5 :: Type))
+class forall (rl :: RowList Type) (out :: RowList Type). StripColumnsRL (rl :: RowList Type) (out :: RowList Type)
+class forall (list :: RowList Type) (row :: Row Type). ListToRow (list :: RowList Type) (row :: Row Type)
+class forall (columns :: Row Type) (row :: Row Type). StripColumns (columns :: Row Type) (row :: Row Type)
+
+Instances
+instance ExtractType @Type @Type String String
+instance forall (t13 :: Type). ExtractType @Type @Type (Nullable @Type (t13 :: Type)) (Maybe (t13 :: Type))
+instance StripColumnsRL (Nil @Type) (Nil @Type)
+instance forall (t16 :: Type) (t18 :: Type) (t17 :: RowList Type) (t19 :: RowList Type) (t15 :: Symbol).
+  ExtractType @Type @Type (t16 :: Type) (t18 :: Type) =>
+  StripColumnsRL (t17 :: RowList Type) (t19 :: RowList Type) =>
+  StripColumnsRL
+    (Cons @Type (t15 :: Symbol) (t16 :: Type) (t17 :: RowList Type))
+    (Cons @Type (t15 :: Symbol) (t18 :: Type) (t19 :: RowList Type))
+instance ListToRow (Nil @Type) ()
+instance forall (t25 :: Symbol) (t26 :: Type) (t29 :: Row Type) (t28 :: Row Type) (t27 :: RowList Type).
+  Cons @Type (t25 :: Symbol) (t26 :: Type) (t29 :: Row Type) (t28 :: Row Type) =>
+  ListToRow (t27 :: RowList Type) (t29 :: Row Type) =>
+  ListToRow (Cons @Type (t25 :: Symbol) (t26 :: Type) (t27 :: RowList Type)) (t28 :: Row Type)
+instance forall (t35 :: Row Type) (t37 :: RowList Type) (t38 :: RowList Type) (t36 :: Row Type).
+  RowToList @Type (t35 :: Row Type) (t37 :: RowList Type) =>
+  StripColumnsRL (t37 :: RowList Type) (t38 :: RowList Type) =>
+  ListToRow (t38 :: RowList Type) (t36 :: Row Type) =>
+  StripColumns (t35 :: Row Type) (t36 :: Row Type)
+
+Roles
+Maybe = [Representational]
+Nullable = [Phantom]
+
+Diagnostics
+error[PropertyIsMissing]: Missing required properties: account_guid
+  --> 39:7..39:24
+   |
+39 | bad = { other: "acct" }
+   |       ^~~~~~~~~~~~~~~~~
+error[AdditionalProperty]: Additional properties not allowed: other
+  --> 39:7..39:24
+   |
+39 | bad = { other: "acct" }
+   |       ^~~~~~~~~~~~~~~~~

@@ -44,15 +44,31 @@ Proxy = [Phantom]
 
 Diagnostics
 warning[CustomWarning]: This function is deprecated
+  --> 8:1..8:75
+  |
+8 | warnBasic :: forall a. Warn (Text "This function is deprecated") => a -> a
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+warning[CustomWarning]: This function is deprecated
   --> 11:1..11:20
    |
 11 | useWarnBasic :: Int
    | ^~~~~~~~~~~~~~~~~~~
 warning[CustomWarning]: Left Right
+  --> 14:1..14:78
+   |
+14 | warnBeside :: forall a. Warn (Beside (Text "Left ") (Text "Right")) => a -> a
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+warning[CustomWarning]: Left Right
   --> 17:1..17:21
    |
 17 | useWarnBeside :: Int
    | ^~~~~~~~~~~~~~~~~~~~
+warning[CustomWarning]: Line 1
+Line 2
+  --> 20:1..20:78
+   |
+20 | warnAbove :: forall a. Warn (Above (Text "Line 1") (Text "Line 2")) => a -> a
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 warning[CustomWarning]: Line 1
 Line 2
   --> 23:1..23:20
@@ -65,20 +81,40 @@ warning[CustomWarning]: Got type: Int
 29 | useWarnQuote :: Proxy Int
    | ^~~~~~~~~~~~~~~~~~~~~~~~~
 warning[CustomWarning]: Label: myField
+  --> 32:1..32:92
+   |
+32 | warnQuoteLabel :: forall a. Warn (Beside (Text "Label: ") (QuoteLabel "myField")) => a -> a
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+warning[CustomWarning]: Label: myField
   --> 35:1..35:25
    |
 35 | useWarnQuoteLabel :: Int
    | ^~~~~~~~~~~~~~~~~~~~~~~~
+warning[CustomWarning]: Label: "h e l l o"
+  --> 38:1..38:100
+   |
+38 | warnQuoteLabelSpaces :: forall a. Warn (Beside (Text "Label: ") (QuoteLabel "h e l l o")) => a -> a
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 warning[CustomWarning]: Label: "h e l l o"
   --> 41:1..41:31
    |
 41 | useWarnQuoteLabelSpaces :: Int
    | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 warning[CustomWarning]: Label: "hel\"lo"
+  --> 44:1..44:97
+   |
+44 | warnQuoteLabelQuote :: forall a. Warn (Beside (Text "Label: ") (QuoteLabel "hel\"lo")) => a -> a
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+warning[CustomWarning]: Label: "hel\"lo"
   --> 47:1..47:30
    |
 47 | useWarnQuoteLabelQuote :: Int
    | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+warning[CustomWarning]: Label: """raw\nstring"""
+  --> 50:1..50:103
+   |
+50 | warnQuoteLabelRaw :: forall a. Warn (Beside (Text "Label: ") (QuoteLabel """raw\nstring""")) => a -> a
+   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 warning[CustomWarning]: Label: """raw\nstring"""
   --> 53:1..53:28
    |

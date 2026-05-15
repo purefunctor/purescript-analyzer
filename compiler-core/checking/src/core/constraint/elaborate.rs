@@ -3,6 +3,7 @@
 pub mod improvements;
 
 use std::collections::VecDeque;
+use std::sync::Arc;
 
 use building_types::QueryResult;
 use itertools::Itertools;
@@ -14,13 +15,87 @@ use crate::core::constraint::matching::MatchInstance;
 use crate::core::constraint::{CanonicalConstraintId, canonical, compiler};
 use crate::core::substitute::{NameToType, SubstituteName};
 use crate::core::walk::{TypeWalker, WalkAction, walk_type};
-use crate::core::{CheckedClass, KindOrType, Name, Type, TypeId, normalise, toolkit};
+use crate::core::{CheckedClass, KindOrType, Name, Type, TypeId, normalise, toolkit, zonk};
 use crate::state::CheckState;
 use crate::{ExternalQueries, safe_loop};
 
 pub struct ElaboratedGiven {
     pub given: Vec<CanonicalConstraintId>,
     pub substitution: NameToType,
+}
+
+pub fn elaborate_given_substitution<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    given: &[CanonicalConstraintId],
+) -> QueryResult<NameToType>
+where
+    Q: ExternalQueries,
+{
+    let mut substitution = elaborate_given(state, context, given)?.substitution;
+    let mut conflicts = FxHashSet::default();
+
+    for &constraint_id in given {
+        let constraint = state.canonicals[constraint_id].clone();
+        let Some(class) =
+            toolkit::lookup_file_class(state, context, constraint.file_id, constraint.type_id)?
+        else {
+            continue;
+        };
+        let type_argument_offset = class.kind_binders.len();
+
+        for dependency in class.functional_dependencies.iter() {
+            let mut arguments = constraint.arguments.to_vec();
+            let mut replacements = vec![];
+
+            for &position in dependency.determined.iter() {
+                let position = type_argument_offset + position as usize;
+                let Some(KindOrType::Type(argument)) = arguments.get_mut(position) else {
+                    continue;
+                };
+
+                let expanded = normalise::expand(state, context, *argument)?;
+                let Type::Rigid(name, _, kind) = context.lookup_type(expanded) else {
+                    continue;
+                };
+
+                let fresh = state.fresh_unification(context.queries, kind);
+                *argument = fresh;
+                replacements.push((name, fresh));
+            }
+
+            if replacements.is_empty() {
+                continue;
+            }
+
+            let wanted = state.canonicals.intern(CanonicalConstraint {
+                arguments: Arc::from(arguments),
+                ..constraint.clone()
+            });
+            let wanted = VecDeque::from([wanted]);
+            let error_count = state.checked.errors.len();
+            // Pass an empty slice for "given" so probe solving only uses instance-based
+            // improvements (e.g. fundep derivations from instances) and does not include
+            // the original given constraints, preventing circular improvement where a
+            // given might improve itself.
+            super::solve_constraints(state, context, wanted, &[])?;
+            state.checked.errors.truncate(error_count);
+
+            for (name, fresh) in replacements {
+                let replacement = zonk::zonk(state, context, fresh)?;
+                register_improvement(
+                    state,
+                    context,
+                    &mut substitution,
+                    &mut conflicts,
+                    name,
+                    replacement,
+                )?;
+            }
+        }
+    }
+
+    Ok(substitution)
 }
 
 /// Entrypoint for elaborating given [`CanonicalConstraint`].
