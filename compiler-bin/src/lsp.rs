@@ -443,6 +443,11 @@ fn execute_command(
 
                 state.build_diagnostics.write().clear();
                 state.analyzer_diagnostics.write().clear();
+                let mut published = state.published_diagnostics.write();
+                for uri in &uris_to_clear {
+                    published.remove(uri);
+                }
+                drop(published);
 
                 let cleared = uris_to_clear.len();
                 let mut publish_jobs: Vec<(Url, Option<i32>)> = vec![];
@@ -455,12 +460,17 @@ fn execute_command(
                 }
 
                 let mut client = state.client.clone();
+                let published_diagnostics = std::sync::Arc::clone(&state.published_diagnostics);
                 std::thread::spawn(move || {
                     // Queue diagnostic clears after the executeCommand response has been sent.
                     // async-lsp can otherwise accept the notification without flushing it to
                     // some clients before the request completes.
                     std::thread::sleep(RESET_DIAGNOSTIC_CLEAR_DELAY);
                     for (uri, version) in publish_jobs {
+                        let published = published_diagnostics.write();
+                        if published.contains_key(&uri) {
+                            continue;
+                        }
                         let _ = client.publish_diagnostics(PublishDiagnosticsParams {
                             uri,
                             diagnostics: vec![],

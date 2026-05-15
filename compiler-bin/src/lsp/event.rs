@@ -176,7 +176,7 @@ fn normalized_path_key(path: &Path) -> String {
 }
 
 fn publish_uri_if_changed(state: &mut State, uri: Url) -> Result<(), LspError> {
-    let snapshot = StateSnapshot {
+    let mut snapshot = StateSnapshot {
         client: state.client.clone(),
         config: std::sync::Arc::clone(&state.config),
         engine: state.engine.snapshot(),
@@ -189,7 +189,6 @@ fn publish_uri_if_changed(state: &mut State, uri: Url) -> Result<(), LspError> {
         diagnostics_generation: std::sync::Arc::clone(&state.diagnostics_generation),
         root: state.root.clone(),
     };
-    let mut snapshot = snapshot;
     snapshot.publish_merged_diagnostics_if_changed(uri)
 }
 
@@ -644,8 +643,11 @@ pub(super) fn collect_diagnostics_core(
 }
 
 pub(crate) fn rebuild_workspace_graph(state: &mut State) -> Result<(), LspError> {
-    state.workspace_graph.write().imports.clear();
-    state.workspace_graph.write().dependants.clear();
+    {
+        let mut wg = state.workspace_graph.write();
+        wg.imports.clear();
+        wg.dependants.clear();
+    }
 
     let file_ids = {
         let files = state.files.read();

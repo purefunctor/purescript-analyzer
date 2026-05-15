@@ -49,12 +49,11 @@ fn build_core(mut snapshot: StateSnapshot) -> Result<(), LspError> {
     }
 
     let tool = match build_tool_cfg {
-        cli::BuildTool::Spago => cli::BuildTool::Spago,
-        cli::BuildTool::Purs => cli::BuildTool::Purs,
         cli::BuildTool::Auto => {
             let has_lock = root.join("spago.lock").exists();
             if has_lock { cli::BuildTool::Spago } else { cli::BuildTool::Purs }
         }
+        other => other,
     };
 
     let output = match tool {
@@ -201,11 +200,11 @@ async fn output_with_timeout(
     let mut child = cmd.spawn()?;
     let mut stdout = child.stdout.take().ok_or(LspError::MissingProcessPipe("stdout"))?;
     let mut stderr = child.stderr.take().ok_or(LspError::MissingProcessPipe("stderr"))?;
-    let stdout_task = tokio::spawn(async move {
+    let mut stdout_task = tokio::spawn(async move {
         let mut buf = vec![];
         stdout.read_to_end(&mut buf).await.map(|_| buf)
     });
-    let stderr_task = tokio::spawn(async move {
+    let mut stderr_task = tokio::spawn(async move {
         let mut buf = vec![];
         stderr.read_to_end(&mut buf).await.map(|_| buf)
     });
@@ -214,7 +213,11 @@ async fn output_with_timeout(
         Ok(status) => status?,
         Err(_) => {
             let _ = child.start_kill();
+            stdout_task.abort();
+            stderr_task.abort();
             let _ = child.wait().await;
+            let _ = time::timeout(Duration::from_millis(500), &mut stdout_task).await;
+            let _ = time::timeout(Duration::from_millis(500), &mut stderr_task).await;
             return Err(LspError::BuildTimeout {
                 command: command_name,
                 timeout: BUILD_COMMAND_TIMEOUT,
@@ -222,7 +225,38 @@ async fn output_with_timeout(
         }
     };
 
-    Ok(process::Output { status, stdout: stdout_task.await??, stderr: stderr_task.await?? })
+    let stdout = match time::timeout(Duration::from_millis(500), &mut stdout_task).await {
+        Ok(Ok(v)) => v?,
+        Ok(Err(e)) => {
+            stderr_task.abort();
+            let _ = time::timeout(Duration::from_millis(500), &mut stderr_task).await;
+            return Err(e.into());
+        }
+        Err(_) => {
+            stdout_task.abort();
+            stderr_task.abort();
+            let _ = time::timeout(Duration::from_millis(500), stdout_task).await;
+            let _ = time::timeout(Duration::from_millis(500), &mut stderr_task).await;
+            return Err(LspError::BuildTimeout {
+                command: command_name,
+                timeout: Duration::from_millis(500),
+            })
+        }
+    };
+    let stderr = match time::timeout(Duration::from_millis(500), &mut stderr_task).await {
+        Ok(Ok(v)) => v?,
+        Ok(Err(e)) => return Err(e.into()),
+        Err(_) => {
+            stderr_task.abort();
+            let _ = time::timeout(Duration::from_millis(500), stderr_task).await;
+            return Err(LspError::BuildTimeout {
+                command: command_name,
+                timeout: Duration::from_millis(500),
+            })
+        }
+    };
+
+    Ok(process::Output { status, stdout, stderr })
 }
 
 fn workspace_sources(root: &Path, source_command: Option<&str>) -> Result<Vec<PathBuf>, LspError> {
@@ -234,12 +268,13 @@ fn workspace_sources(root: &Path, source_command: Option<&str>) -> Result<Vec<Pa
 }
 
 fn sources_from_command(root: &Path, command: &str) -> Result<Vec<PathBuf>, LspError> {
-    let mut parts = command.split(' ');
-    let program = parts.next().ok_or(LspError::InvalidSourceCommand)?;
+    let parts = shell_words::split(command).map_err(|_| LspError::InvalidSourceCommand)?;
+    let mut iter = parts.into_iter();
+    let program = iter.next().ok_or(LspError::InvalidSourceCommand)?;
 
     let mut cmd = process::Command::new(program);
     cmd.current_dir(root);
-    cmd.args(parts);
+    cmd.args(iter);
 
     let output = cmd.output()?;
     let output = std::str::from_utf8(&output.stdout)?;
@@ -358,7 +393,7 @@ fn error_to_diagnostic(
     let source = match tool {
         cli::BuildTool::Spago => "build/spago",
         cli::BuildTool::Purs => "build/purs",
-        cli::BuildTool::Auto => "build",
+        cli::BuildTool::Auto => unreachable!("BuildTool::Auto should be resolved in build_core"),
     };
 
     Diagnostic {
