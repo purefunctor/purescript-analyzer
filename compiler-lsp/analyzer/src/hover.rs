@@ -216,6 +216,11 @@ fn hover_expression(
             let (f_id, t_id) = resolution.as_ref().ok_or(AnalyzerError::NonFatal)?;
             hover_file_term(engine, *f_id, *t_id)
         }
+        ExpressionKind::String => hover_simple_type("String"),
+        ExpressionKind::Char => hover_simple_type("Char"),
+        ExpressionKind::Boolean { .. } => hover_simple_type("Boolean"),
+        ExpressionKind::Integer => hover_simple_type("Int"),
+        ExpressionKind::Number => hover_simple_type("Number"),
         _ => {
             let checked = engine.checked(current_file)?;
 
@@ -275,6 +280,14 @@ fn hover_checked_type(
     let value = pretty.render(type_id).to_string();
     let value = MarkedString::from_language_code("purescript".to_string(), value);
 
+    let contents = HoverContents::Scalar(value);
+    let range = None;
+
+    Ok(Some(Hover { contents, range }))
+}
+
+fn hover_simple_type(name: &str) -> Result<Option<Hover>, AnalyzerError> {
+    let value = MarkedString::from_language_code("purescript".to_string(), name.to_string());
     let contents = HoverContents::Scalar(value);
     let range = None;
 
