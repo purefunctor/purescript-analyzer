@@ -1,0 +1,201 @@
+---
+source: target/debug/build/tests-integration-35f6ccefceed9daa/out/checking_generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Unit :: Unit
+unit :: Unit
+pure ::
+  forall (r :: Row (Type -> Type)) (a :: Type).
+    (a :: Type) -> Run (r :: Row (Type -> Type)) (a :: Type)
+bindRun ::
+  forall (r :: Row (Type -> Type)) (a :: Type) (b :: Type).
+    Run (r :: Row (Type -> Type)) (a :: Type) ->
+    ((a :: Type) -> Run (r :: Row (Type -> Type)) (b :: Type)) ->
+    Run (r :: Row (Type -> Type)) (b :: Type)
+unsafeCoerce :: forall (a :: Type) (b :: Type). (a :: Type) -> (b :: Type)
+expand ::
+  forall (r1 :: Row (Type -> Type)) (@r2 :: Row (Type -> Type)) (r3 :: Row (Type -> Type)).
+    SafeUnion @(Type -> Type)
+      (r1 :: Row (Type -> Type))
+      (r2 :: Row (Type -> Type))
+      (r3 :: Row (Type -> Type)) =>
+    NaturalTransformation @Type (Run (r1 :: Row (Type -> Type))) (Run (r3 :: Row (Type -> Type)))
+composeFlipped ::
+  forall (r1 :: Row (Type -> Type)) (r2 :: Row (Type -> Type)) (r3 :: Row (Type -> Type))
+    (a :: Type) (b :: Type) (c :: Type).
+    SafeUnion @(Type -> Type)
+      (r1 :: Row (Type -> Type))
+      (r2 :: Row (Type -> Type))
+      (r3 :: Row (Type -> Type)) =>
+    SafeUnion @(Type -> Type)
+      (r2 :: Row (Type -> Type))
+      (r1 :: Row (Type -> Type))
+      (r3 :: Row (Type -> Type)) =>
+    ((a :: Type) -> Run (r1 :: Row (Type -> Type)) (b :: Type)) ->
+    ((b :: Type) -> Run (r2 :: Row (Type -> Type)) (c :: Type)) ->
+    (a :: Type) ->
+    Run (r3 :: Row (Type -> Type)) (c :: Type)
+>+> ::
+  forall (r1 :: Row (Type -> Type)) (r2 :: Row (Type -> Type)) (r3 :: Row (Type -> Type))
+    (a :: Type) (b :: Type) (c :: Type).
+    SafeUnion @(Type -> Type)
+      (r1 :: Row (Type -> Type))
+      (r2 :: Row (Type -> Type))
+      (r3 :: Row (Type -> Type)) =>
+    SafeUnion @(Type -> Type)
+      (r2 :: Row (Type -> Type))
+      (r1 :: Row (Type -> Type))
+      (r3 :: Row (Type -> Type)) =>
+    ((a :: Type) -> Run (r1 :: Row (Type -> Type)) (b :: Type)) ->
+    ((b :: Type) -> Run (r2 :: Row (Type -> Type)) (c :: Type)) ->
+    (a :: Type) ->
+    Run (r3 :: Row (Type -> Type)) (c :: Type)
+computation1 :: String -> Run (EFFECT ()) Int
+computation2 ::
+  Int -> Run (RowApply @(Type -> Type) EFFECT (RowApply @(Type -> Type) (STATE String) ())) String
+computation3 ::
+  String ->
+  Run (RowApply @(Type -> Type) (STATE String) (RowApply @(Type -> Type) (READER Boolean) ())) Unit
+composeFlippedThree ::
+  String ->
+  Run
+    (RowApply @(Type -> Type)
+      EFFECT
+      (RowApply @(Type -> Type) (STATE String) (RowApply @(Type -> Type) (READER Boolean) ())))
+    Unit
+
+Types
+Run :: Row (Type -> Type) -> Type -> Type
+NaturalTransformation ::
+  forall (t3 :: Type). ((t3 :: Type) -> Type) -> ((t3 :: Type) -> Type) -> Type
+~> :: forall (t3 :: Type). ((t3 :: Type) -> Type) -> ((t3 :: Type) -> Type) -> Type
+Unit :: Type
+Effect :: Type -> Type
+State :: Type -> Type -> Type
+Reader :: Type -> Type -> Type
+RowApply ::
+  forall (k :: Type). (Row (k :: Type) -> Row (k :: Type)) -> Row (k :: Type) -> Row (k :: Type)
++ :: forall (k :: Type). (Row (k :: Type) -> Row (k :: Type)) -> Row (k :: Type) -> Row (k :: Type)
+EFFECT :: Row (Type -> Type) -> Row (Type -> Type)
+STATE :: Type -> Row (Type -> Type) -> Row (Type -> Type)
+READER :: Type -> Row (Type -> Type) -> Row (Type -> Type)
+SafeUnion :: forall (k :: Type). Row (k :: Type) -> Row (k :: Type) -> Row (k :: Type) -> Constraint
+TypeExpr :: Type -> Type
+Eval :: forall (k :: Type). TypeExpr (k :: Type) -> (k :: Type) -> Constraint
+FromRow :: forall (k :: Type). Row (k :: Type) -> TypeExpr (RowList (k :: Type))
+ListToRow :: forall (k :: Type). RowList (k :: Type) -> Row (k :: Type) -> Constraint
+ToRow :: forall (k :: Type). RowList (k :: Type) -> TypeExpr (Row (k :: Type))
+Union :: forall (k :: Type). Row (k :: Type) -> Row (k :: Type) -> TypeExpr (Row (k :: Type))
+Nub :: forall (k :: Type). Row (k :: Type) -> TypeExpr (Row (k :: Type))
+UnionAndNubRowLists ::
+  forall (k :: Type). RowList (k :: Type) -> RowList (k :: Type) -> TypeExpr (RowList (k :: Type))
+
+Synonyms
+type NaturalTransformation f g = forall (a :: (t3 :: Type)).
+  (f :: (t3 :: Type) -> Type) (a :: (t3 :: Type)) -> (g :: (t3 :: Type) -> Type) (a :: (t3 :: Type))
+type RowApply f a = (f :: Row (k :: Type) -> Row (k :: Type)) (a :: Row (k :: Type))
+type EFFECT r = ( effect :: Effect | (r :: Row (Type -> Type)) )
+type STATE s r = ( state :: State (s :: Type) | (r :: Row (Type -> Type)) )
+type READER a r = ( reader :: Reader (a :: Type) | (r :: Row (Type -> Type)) )
+
+Classes
+class forall (k :: Type) (a :: Row (k :: Type)) (b :: Row (k :: Type)) (c :: Row (k :: Type)). SafeUnion @(k :: Type) (a :: Row (k :: Type)) (b :: Row (k :: Type)) (c :: Row (k :: Type))
+class forall (k :: Type) (expr :: TypeExpr (k :: Type)) (result :: (k :: Type)). Eval @(k :: Type) (expr :: TypeExpr (k :: Type)) (result :: (k :: Type))
+class forall (k :: Type) (list :: RowList (k :: Type)) (row :: Row (k :: Type)). ListToRow @(k :: Type) (list :: RowList (k :: Type)) (row :: Row (k :: Type))
+
+Instances
+instance forall (t29 :: Type) (t27 :: Row (t29 :: Type)) (t28 :: RowList (t29 :: Type)).
+  RowToList @(t29 :: Type) (t27 :: Row (t29 :: Type)) (t28 :: RowList (t29 :: Type)) =>
+  Eval @(RowList (t29 :: Type))
+    (FromRow @(t29 :: Type) (t27 :: Row (t29 :: Type)))
+    (t28 :: RowList (t29 :: Type))
+instance forall (t33 :: Type). ListToRow @(t33 :: Type) (Nil @(t33 :: Type)) ()
+instance forall (t40 :: Type) (t35 :: Symbol) (t36 :: (t40 :: Type)) (t39 :: Row (t40 :: Type))
+  (t38 :: Row (t40 :: Type)) (t37 :: RowList (t40 :: Type)).
+  Cons @(t40 :: Type)
+    (t35 :: Symbol)
+    (t36 :: (t40 :: Type))
+    (t39 :: Row (t40 :: Type))
+    (t38 :: Row (t40 :: Type)) =>
+  ListToRow @(t40 :: Type) (t37 :: RowList (t40 :: Type)) (t39 :: Row (t40 :: Type)) =>
+  ListToRow @(t40 :: Type)
+    (Cons @(t40 :: Type) (t35 :: Symbol) (t36 :: (t40 :: Type)) (t37 :: RowList (t40 :: Type)))
+    (t38 :: Row (t40 :: Type))
+instance forall (t49 :: Type) (t47 :: RowList (t49 :: Type)) (t48 :: Row (t49 :: Type)).
+  ListToRow @(t49 :: Type) (t47 :: RowList (t49 :: Type)) (t48 :: Row (t49 :: Type)) =>
+  Eval @(Row (t49 :: Type))
+    (ToRow @(t49 :: Type) (t47 :: RowList (t49 :: Type)))
+    (t48 :: Row (t49 :: Type))
+instance forall (t56 :: Type) (t53 :: Row (t56 :: Type)) (t54 :: Row (t56 :: Type))
+  (t55 :: Row (t56 :: Type)).
+  Union @(t56 :: Type)
+    (t53 :: Row (t56 :: Type))
+    (t54 :: Row (t56 :: Type))
+    (t55 :: Row (t56 :: Type)) =>
+  Eval @(Row (t56 :: Type))
+    (Union @(t56 :: Type) (t53 :: Row (t56 :: Type)) (t54 :: Row (t56 :: Type)))
+    (t55 :: Row (t56 :: Type))
+instance forall (t63 :: Type) (t61 :: Row (t63 :: Type)) (t62 :: Row (t63 :: Type)).
+  Nub @(t63 :: Type) (t61 :: Row (t63 :: Type)) (t62 :: Row (t63 :: Type)) =>
+  Eval @(Row (t63 :: Type))
+    (Nub @(t63 :: Type) (t61 :: Row (t63 :: Type)))
+    (t62 :: Row (t63 :: Type))
+instance forall (t74 :: Type) (t67 :: RowList (t74 :: Type)) (t70 :: Row (t74 :: Type))
+  (t68 :: RowList (t74 :: Type)) (t71 :: Row (t74 :: Type)) (t72 :: Row (t74 :: Type))
+  (t73 :: Row (t74 :: Type)) (t69 :: RowList (t74 :: Type)).
+  Eval @(Row (t74 :: Type))
+    (ToRow @(t74 :: Type) (t67 :: RowList (t74 :: Type)))
+    (t70 :: Row (t74 :: Type)) =>
+  Eval @(Row (t74 :: Type))
+    (ToRow @(t74 :: Type) (t68 :: RowList (t74 :: Type)))
+    (t71 :: Row (t74 :: Type)) =>
+  Eval @(Row (t74 :: Type))
+    (Union @(t74 :: Type) (t70 :: Row (t74 :: Type)) (t71 :: Row (t74 :: Type)))
+    (t72 :: Row (t74 :: Type)) =>
+  Eval @(Row (t74 :: Type))
+    (Nub @(t74 :: Type) (t72 :: Row (t74 :: Type)))
+    (t73 :: Row (t74 :: Type)) =>
+  Eval @(RowList (t74 :: Type))
+    (FromRow @(t74 :: Type) (t73 :: Row (t74 :: Type)))
+    (t69 :: RowList (t74 :: Type)) =>
+  Eval @(RowList (t74 :: Type))
+    (UnionAndNubRowLists @(t74 :: Type)
+      (t67 :: RowList (t74 :: Type))
+      (t68 :: RowList (t74 :: Type)))
+    (t69 :: RowList (t74 :: Type))
+instance forall (t89 :: Type) (t83 :: Row (t89 :: Type)) (t86 :: RowList (t89 :: Type))
+  (t84 :: Row (t89 :: Type)) (t87 :: RowList (t89 :: Type)) (t88 :: RowList (t89 :: Type))
+  (t85 :: Row (t89 :: Type)).
+  Eval @(RowList (t89 :: Type))
+    (FromRow @(t89 :: Type) (t83 :: Row (t89 :: Type)))
+    (t86 :: RowList (t89 :: Type)) =>
+  Eval @(RowList (t89 :: Type))
+    (FromRow @(t89 :: Type) (t84 :: Row (t89 :: Type)))
+    (t87 :: RowList (t89 :: Type)) =>
+  Eval @(RowList (t89 :: Type))
+    (UnionAndNubRowLists @(t89 :: Type)
+      (t86 :: RowList (t89 :: Type))
+      (t87 :: RowList (t89 :: Type)))
+    (t88 :: RowList (t89 :: Type)) =>
+  Eval @(Row (t89 :: Type))
+    (ToRow @(t89 :: Type) (t88 :: RowList (t89 :: Type)))
+    (t85 :: Row (t89 :: Type)) =>
+  SafeUnion @(t89 :: Type)
+    (t83 :: Row (t89 :: Type))
+    (t84 :: Row (t89 :: Type))
+    (t85 :: Row (t89 :: Type))
+
+Roles
+Run = [Nominal, Nominal]
+Unit = []
+Effect = [Nominal]
+State = [Nominal, Nominal]
+Reader = [Nominal, Nominal]
+TypeExpr = [Nominal]
+FromRow = [Nominal]
+ToRow = [Nominal]
+Union = [Nominal, Nominal]
+Nub = [Nominal]
+UnionAndNubRowLists = [Nominal, Nominal]

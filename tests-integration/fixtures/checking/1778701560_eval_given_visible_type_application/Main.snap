@@ -1,0 +1,32 @@
+---
+source: target/debug/build/tests-integration-35f6ccefceed9daa/out/checking_generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+reflectBoolean ::
+  forall (bool :: Boolean).
+    IsBoolean (bool :: Boolean) => Proxy @Boolean (bool :: Boolean) -> Boolean
+test ::
+  forall (x :: Boolean).
+    IsBoolean (x :: Boolean) => Eval @Boolean (NotEq False True) (x :: Boolean) => Boolean
+
+Types
+TypeExpr :: forall (k :: Type). (k :: Type) -> Type
+NotEq :: Boolean -> Boolean -> TypeExpr @Type Boolean
+Eval :: forall (k :: Type). TypeExpr @Type (k :: Type) -> (k :: Type) -> Constraint
+IsBoolean :: Boolean -> Constraint
+
+Classes
+class forall (k :: Type) (expr :: TypeExpr @Type (k :: Type)) (result :: (k :: Type)). Eval @(k :: Type) (expr :: TypeExpr @Type (k :: Type)) (result :: (k :: Type))
+class forall (bool :: Boolean). IsBoolean (bool :: Boolean)
+
+Instances
+instance forall (t5 :: Boolean). Eval @Boolean (NotEq (t5 :: Boolean) (t5 :: Boolean)) False
+instance forall (t7 :: Boolean) (t8 :: Boolean). Eval @Boolean (NotEq (t7 :: Boolean) (t8 :: Boolean)) True
+instance IsBoolean True
+instance IsBoolean False
+
+Roles
+TypeExpr = [Nominal]
+NotEq = [Nominal, Nominal]

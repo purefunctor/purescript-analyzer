@@ -8,3 +8,10 @@ boom :: Fail (Text "top-level Fail was checked") => Int
 test :: Int
 
 Types
+
+Diagnostics
+error[CustomFailure]: top-level Fail was checked
+  --> 5:1..5:56
+  |
+5 | boom :: Fail (Text "top-level Fail was checked") => Int
+  | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
