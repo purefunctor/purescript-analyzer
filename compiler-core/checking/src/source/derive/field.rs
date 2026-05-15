@@ -132,5 +132,5 @@ where
         _ => return Ok(false),
     };
 
-    Ok(normalise::normalise(state, context, kind)? == context.prim.type_to_type)
+    Ok(normalise::expand(state, context, kind)? == context.prim.type_to_type)
 }
