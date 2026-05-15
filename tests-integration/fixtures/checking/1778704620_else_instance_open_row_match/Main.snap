@@ -1,0 +1,31 @@
+---
+source: tests-integration/tests/checking/generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Unit :: Unit
+matchRow ::
+  forall (@key :: Type) (@row :: Type).
+    MatchRow (key :: Type) (row :: Type) =>
+    Proxy @Type (key :: Type) -> Proxy @Type (row :: Type) -> Unit
+test :: MatchRow Unit { a :: Int, b :: String } => Proxy @Type Unit
+
+Types
+Unit :: Type
+MatchRow :: Type -> Type -> Constraint
+
+Classes
+class forall (key :: Type) (row :: Type). MatchRow (key :: Type) (row :: Type)
+  matchRow ::
+  forall (@key :: Type) (@row :: Type).
+    MatchRow (key :: Type) (row :: Type) =>
+    Proxy @Type (key :: Type) -> Proxy @Type (row :: Type) -> Unit
+
+Instances
+instance forall (t2 :: Type). MatchRow Unit (t2 :: Type)
+instance forall (t4 :: Row Type) (t5 :: RowList Type).
+  RowToList @Type (t4 :: Row Type) (t5 :: RowList Type) => MatchRow Unit {| (t4 :: Row Type) }
+
+Roles
+Unit = []
