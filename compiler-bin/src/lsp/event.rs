@@ -471,7 +471,7 @@ fn schedule_diagnostics(
                     break;
                 }
                 let started = started.fetch_add(1, Ordering::SeqCst) + 1;
-                if show_summary && (started <= 8 || started % REFRESH_PROGRESS_INTERVAL == 0) {
+                if show_summary && (started <= 8 || started.is_multiple_of(REFRESH_PROGRESS_INTERVAL)) {
                     let uri = {
                         let files = snapshot.files.read();
                         common::file_uri(&snapshot.engine, &files, file_id).ok()
@@ -498,7 +498,7 @@ fn schedule_diagnostics(
                     Ok(count) => {
                         let completed = checked.fetch_add(1, Ordering::SeqCst) + 1;
                         diagnostic_count.fetch_add(count, Ordering::SeqCst);
-                        if show_summary && (completed <= 8 || completed % REFRESH_PROGRESS_INTERVAL == 0) {
+                        if show_summary && (completed <= 8 || completed.is_multiple_of(REFRESH_PROGRESS_INTERVAL)) {
                             let _ = snapshot.client.show_message(ShowMessageParams {
                                 typ: MessageType::INFO,
                                 message: format!(

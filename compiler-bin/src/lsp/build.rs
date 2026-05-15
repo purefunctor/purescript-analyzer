@@ -240,7 +240,7 @@ async fn output_with_timeout(
             return Err(LspError::BuildTimeout {
                 command: command_name,
                 timeout: Duration::from_millis(500),
-            })
+            });
         }
     };
     let stderr = match time::timeout(Duration::from_millis(500), &mut stderr_task).await {
@@ -252,7 +252,7 @@ async fn output_with_timeout(
             return Err(LspError::BuildTimeout {
                 command: command_name,
                 timeout: Duration::from_millis(500),
-            })
+            });
         }
     };
 

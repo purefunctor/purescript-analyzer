@@ -454,7 +454,7 @@ fn execute_command(
                 for uri in uris_to_clear.iter() {
                     let version = {
                         let versions = state.open_versions.read();
-                        versions.get(&uri).copied()
+                        versions.get(uri).copied()
                     };
                     publish_jobs.push((uri.clone(), version));
                 }
