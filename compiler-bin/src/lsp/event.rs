@@ -22,14 +22,16 @@ pub fn analyzer_refresh(state: &mut State, _: AnalyzerRefresh) -> Result<(), Lsp
     // Best-effort: cancel in-flight queries so refresh work wins.
     state.engine.request_cancel();
 
+    let mut refresh_root = state.root.as_deref();
     let (mut file_ids, mut excluded_uris) =
-        refreshable_file_ids_and_excluded_uris(state, state.root.as_deref());
+        refreshable_file_ids_and_excluded_uris(state, refresh_root);
 
     if file_ids.is_empty() && state.root.is_some() {
         // Some clients initialize the LSP with a root that does not contain the
         // loaded source file paths. Fall back to loaded file:// .purs files while
         // still honoring excluded directory names.
-        (file_ids, excluded_uris) = refreshable_file_ids_and_excluded_uris(state, None);
+        refresh_root = None;
+        (file_ids, excluded_uris) = refreshable_file_ids_and_excluded_uris(state, refresh_root);
     }
 
     {
@@ -39,7 +41,7 @@ pub fn analyzer_refresh(state: &mut State, _: AnalyzerRefresh) -> Result<(), Lsp
                 .keys()
                 .filter(|uri| {
                     !is_refreshable_workspace_source_uri(
-                        state.root.as_deref(),
+                        refresh_root,
                         &state.config.analyzer_excluded_dir,
                         uri,
                     )
@@ -323,10 +325,12 @@ pub fn clean(state: &mut State, _: Clean) -> Result<(), LspError> {
             });
         }
 
-        // Drop build diagnostics and republish merged diagnostics for affected URIs.
-        snapshot.build_diagnostics.write().clear();
-        for uri in build_uris {
-            let _ = snapshot.publish_merged_diagnostics_if_changed(uri);
+        if res.is_ok() {
+            // Drop build diagnostics and republish merged diagnostics for affected URIs.
+            snapshot.build_diagnostics.write().clear();
+            for uri in build_uris {
+                let _ = snapshot.publish_merged_diagnostics_if_changed(uri);
+            }
         }
 
         res
