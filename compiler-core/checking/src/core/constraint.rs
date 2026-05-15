@@ -279,13 +279,14 @@ where
 
         if !state.candidate_constraint_probes.is_empty() {
             let wanted_probe = probe_key(state, context, wanted);
-            if state
-                .candidate_constraint_probes
-                .iter()
-                .any(|probe| probe.iter().any(|active| active == &wanted_probe))
-            {
-                residuals.push(wanted);
-                continue 'work;
+            if let Some((_, ancestors)) = state.candidate_constraint_probes.split_last() {
+                if ancestors
+                    .iter()
+                    .any(|probe| probe.iter().any(|active| active == &wanted_probe))
+                {
+                    residuals.push(wanted);
+                    continue 'work;
+                }
             }
         }
 

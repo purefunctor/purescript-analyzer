@@ -105,6 +105,7 @@ pub(crate) struct CheckStateCheckpoint {
     canonicals: CanonicalsCheckpoint,
     canonical_errors: FxHashMap<CanonicalConstraintId, Vec<ErrorKind>>,
     error_count: usize,
+    candidate_constraint_probe_cache: FxHashMap<Vec<ProbeKey>, bool>,
 }
 
 /// Tracks type variable bindings during kind inference.
@@ -288,6 +289,7 @@ impl CheckState {
             canonicals: self.canonicals.checkpoint(),
             canonical_errors: self.canonical_errors.clone(),
             error_count: self.checked.errors.len(),
+            candidate_constraint_probe_cache: self.candidate_constraint_probe_cache.clone(),
         }
     }
 
@@ -296,6 +298,7 @@ impl CheckState {
         self.canonicals.restore(checkpoint.canonicals);
         self.canonical_errors = checkpoint.canonical_errors;
         self.checked.errors.truncate(checkpoint.error_count);
+        self.candidate_constraint_probe_cache = checkpoint.candidate_constraint_probe_cache;
     }
 
     pub fn fresh_unification(&mut self, queries: &impl ExternalQueries, kind: TypeId) -> TypeId {
