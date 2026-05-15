@@ -1,0 +1,21 @@
+---
+source: target/debug/build/tests-integration-6275ac7a2b26d932/out/checking_generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+test :: JSX -> JSX
+
+Types
+
+Diagnostics
+error[CannotUnify]: Cannot unify '{ className :: String }' with 'Numberish'
+  --> 7:12..7:35
+  |
+7 | test = div { className: "header" }
+  |            ^~~~~~~~~~~~~~~~~~~~~~~
+error[CannotUnify]: Cannot unify 'JSX' with 'Numberish'
+  --> 7:8..7:35
+  |
+7 | test = div { className: "header" }
+  |        ^~~~~~~~~~~~~~~~~~~~~~~~~~~
