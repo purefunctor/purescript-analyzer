@@ -23,25 +23,3 @@ Roles
 Aff = [Nominal]
 Z3 = [Phantom, Phantom, Representational]
 Box = [Representational]
-
-Diagnostics
-error[CannotUnify]: Cannot unify '?5' with '(mode :: Type)'
-  --> 9:5..9:11
-  |
-9 | run (Z3 m) = m
-  |     ^~~~~~
-error[CannotUnify]: Cannot unify 'Z3 (r :: Type) ?5' with 'Z3 (r :: Type) (mode :: Type)'
-  --> 9:5..9:11
-  |
-9 | run (Z3 m) = m
-  |     ^~~~~~
-error[CannotUnify]: Cannot unify 'Z3 (r :: Type) ?5 ?6' with 'Z3 (r :: Type) (mode :: Type) (a :: Type)'
-  --> 9:5..9:11
-  |
-9 | run (Z3 m) = m
-  |     ^~~~~~
-error[CannotUnify]: Cannot unify '(a :: Type)' with '(a :: Type)'
-  --> 14:17..14:18
-   |
-14 | unbox (Box x) = x
-   |                 ^

@@ -132,6 +132,11 @@ where
     for &binder_id in binders.iter() {
         let decomposed = toolkit::decompose_function(state, context, remaining)?;
         if let Some((argument, result)) = decomposed {
+            let argument = if binder::requires_instantiation(context, binder_id) {
+                toolkit::instantiate_unifications(state, context, argument)?
+            } else {
+                argument
+            };
             binder::check_binder(state, context, binder_id, argument)?;
             arguments.push(argument);
             remaining = result;

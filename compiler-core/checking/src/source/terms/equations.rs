@@ -33,7 +33,28 @@ enum WhereExpressionMode {
 }
 
 pub struct EquationSet {
-    pub arguments: Vec<TypeId>,
+    pub pattern_arguments: Vec<TypeId>,
+}
+
+fn instantiate_pattern_arguments<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    pattern_arguments: &mut [TypeId],
+    equations: &[lowering::Equation],
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    for (position, argument_type) in pattern_arguments.iter_mut().enumerate() {
+        let should_instantiate = equations.iter().any(|equation| {
+            let binder = equation.binders.get(position);
+            binder.is_some_and(|&binder_id| binder::requires_instantiation(context, binder_id))
+        });
+        if should_instantiate {
+            *argument_type = toolkit::instantiate_unifications(state, context, *argument_type)?;
+        }
+    }
+    Ok(())
 }
 
 pub fn analyse_equation_set<Q>(
@@ -50,8 +71,12 @@ where
             let required =
                 equations.iter().map(|equation| equation.binders.len()).max().unwrap_or(0);
 
-            let signature::SkolemisedSignature { substitution, constraints, arguments, result } =
-                signature::expect_term_signature(state, context, expected_type, required)?;
+            let signature::SkolemisedSignature {
+                substitution,
+                constraints,
+                arguments: signature_arguments,
+                result,
+            } = signature::expect_term_signature(state, context, expected_type, required)?;
 
             for &constraint in &constraints {
                 if !constraint::is_type_error(state, context, constraint)? {
@@ -59,14 +84,24 @@ where
                 }
             }
 
-            let function = context.intern_function_list(&arguments, result);
+            let mut pattern_arguments = signature_arguments.clone();
+            instantiate_pattern_arguments(state, context, &mut pattern_arguments, equations)?;
+
+            let function = context.intern_function_list(&signature_arguments, result);
             state.with_implicit(context, &substitution, |state| {
                 check_equations_core(
-                    state, context, origin, &arguments, result, function, equations,
+                    state,
+                    context,
+                    origin,
+                    &signature_arguments,
+                    &pattern_arguments,
+                    result,
+                    function,
+                    equations,
                 )
             })?;
 
-            Ok(EquationSet { arguments })
+            Ok(EquationSet { pattern_arguments })
         }
         EquationMode::Infer { group_type } => {
             infer_equation_set(state, context, group_type, equations)
@@ -83,7 +118,7 @@ pub fn compute_equation_exhaustiveness<Q>(
 where
     Q: ExternalQueries,
 {
-    exhaustive::check_equation_patterns(state, context, &set.arguments, equations)
+    exhaustive::check_equation_patterns(state, context, &set.pattern_arguments, equations)
 }
 
 /// Infers the type of value group equations.
@@ -104,16 +139,16 @@ where
         equations.iter().map(|equation| equation.binders.len()).min().unwrap_or(0);
 
     for equation in equations {
-        let mut argument_types = vec![];
+        let mut inferred_argument_types = vec![];
         for &binder_id in equation.binders.iter() {
             let argument_type = binder::infer_binder(state, context, binder_id)?;
-            argument_types.push(argument_type);
+            inferred_argument_types.push(argument_type);
         }
 
         let result_type = state.fresh_unification(context.queries, context.prim.t);
 
-        let argument_types = &argument_types[..minimum_equation_arity];
-        let equation_type = context.intern_function_list(argument_types, result_type);
+        let inferred_argument_types = &inferred_argument_types[..minimum_equation_arity];
+        let equation_type = context.intern_function_list(inferred_argument_types, result_type);
         unification::subtype(state, context, equation_type, group_type)?;
 
         if let Some(guarded) = &equation.guarded {
@@ -122,22 +157,23 @@ where
         }
     }
 
-    let toolkit::InspectFunction { arguments, .. } =
+    let toolkit::InspectFunction { arguments: pattern_arguments, .. } =
         toolkit::inspect_function(state, context, group_type)?;
 
-    Ok(EquationSet { arguments })
+    Ok(EquationSet { pattern_arguments })
 }
 
 /// Checks value group equations against a signature.
 ///
-/// For each equation: check binders against signature arguments, compute
-/// expected result type based on equation arity vs signature arity, then
+/// For each equation: check binders against pattern arguments, compute
+/// expected result type from the original signature arguments, then
 /// check the guarded expression.
 pub fn check_equations_core<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     origin: EquationTypeOrigin,
-    arguments: &[TypeId],
+    signature_arguments: &[TypeId],
+    pattern_arguments: &[TypeId],
     result: TypeId,
     function: TypeId,
     equations: &[lowering::Equation],
@@ -145,7 +181,7 @@ pub fn check_equations_core<Q>(
 where
     Q: ExternalQueries,
 {
-    let expected_arity = arguments.len();
+    let expected_arity = signature_arguments.len();
 
     for equation in equations {
         let equation_arity = equation.binders.len();
@@ -161,7 +197,7 @@ where
             });
         }
 
-        for (&binder_id, &argument_type) in equation.binders.iter().zip(arguments) {
+        for (&binder_id, &argument_type) in equation.binders.iter().zip(pattern_arguments) {
             binder::check_argument_binder(state, context, binder_id, argument_type)?;
         }
 
@@ -176,7 +212,7 @@ where
         } else if equation_arity >= expected_arity {
             result
         } else {
-            let remaining = &arguments[equation_arity..];
+            let remaining = &signature_arguments[equation_arity..];
             context.intern_function_list(remaining, result)
         };
 
