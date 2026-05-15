@@ -116,7 +116,7 @@ fn initialize(
     async move {
         Ok(InitializeResult {
             server_info: Some(ServerInfo {
-                name: "purescript-analyzer".to_string(),
+                name: env!("CARGO_PKG_NAME").to_string(),
                 version: Some(env!("CARGO_PKG_VERSION").to_string()),
             }),
             capabilities: ServerCapabilities {
