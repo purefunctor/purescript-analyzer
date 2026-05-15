@@ -62,6 +62,14 @@ pub struct ResolvedModule {
 }
 
 impl ResolvedModule {
+    fn visible_import_priority(kind: ImportKind) -> Option<u8> {
+        match kind {
+            ImportKind::Explicit => Some(0),
+            ImportKind::Implicit => Some(1),
+            ImportKind::Hidden => None,
+        }
+    }
+
     fn lookup_qualified<ItemId, LookupFn, DefaultFn>(
         &self,
         qualifier: &str,
@@ -73,10 +81,14 @@ impl ResolvedModule {
         DefaultFn: FnOnce() -> Option<(FileId, ItemId)>,
     {
         if let Some(imports) = self.qualified.get(qualifier) {
-            let (file_id, item_id, _) = imports
+            let (_, file_id, item_id) = imports
                 .iter()
-                .filter_map(&lookup)
-                .find(|(_, _, kind)| !matches!(kind, ImportKind::Hidden))?;
+                .filter_map(|import| {
+                    let (file_id, item_id, kind) = lookup(import)?;
+                    let priority = ResolvedModule::visible_import_priority(kind)?;
+                    Some((priority, file_id, item_id))
+                })
+                .min_by_key(|(priority, _, _)| *priority)?;
             Some((file_id, item_id))
         } else if qualifier == "Prim" {
             default()
@@ -89,13 +101,16 @@ impl ResolvedModule {
     where
         LookupFn: Fn(&ResolvedImport) -> Option<(FileId, ItemId, ImportKind)>,
     {
-        // Collect candidates first then match the first non-Hidden.
-        let (file_id, item_id, _) = self
+        let (_, file_id, item_id) = self
             .unqualified
             .values()
             .flatten()
-            .filter_map(lookup)
-            .find(|(_, _, kind)| !matches!(kind, ImportKind::Hidden))?;
+            .filter_map(|import| {
+                let (file_id, item_id, kind) = lookup(import)?;
+                let priority = ResolvedModule::visible_import_priority(kind)?;
+                Some((priority, file_id, item_id))
+            })
+            .min_by_key(|(priority, _, _)| *priority)?;
         Some((file_id, item_id))
     }
 
@@ -109,10 +124,14 @@ impl ResolvedModule {
         DefaultFn: FnOnce() -> Option<(FileId, ItemId)>,
     {
         if let Some(prim) = self.unqualified.get("Prim") {
-            let (file_id, item_id, _) = prim
+            let (_, file_id, item_id) = prim
                 .iter()
-                .filter_map(lookup)
-                .find(|(_, _, kind)| !matches!(kind, ImportKind::Hidden))?;
+                .filter_map(|import| {
+                    let (file_id, item_id, kind) = lookup(import)?;
+                    let priority = ResolvedModule::visible_import_priority(kind)?;
+                    Some((priority, file_id, item_id))
+                })
+                .min_by_key(|(priority, _, _)| *priority)?;
             Some((file_id, item_id))
         } else {
             default()

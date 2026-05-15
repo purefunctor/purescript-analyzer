@@ -7,15 +7,3 @@ Terms
 test :: JSX -> JSX
 
 Types
-
-Diagnostics
-error[CannotUnify]: Cannot unify '{ className :: String }' with 'Numberish'
-  --> 7:12..7:35
-  |
-7 | test = div { className: "header" }
-  |            ^~~~~~~~~~~~~~~~~~~~~~~
-error[CannotUnify]: Cannot unify 'JSX' with 'Numberish'
-  --> 7:8..7:35
-  |
-7 | test = div { className: "header" }
-  |        ^~~~~~~~~~~~~~~~~~~~~~~~~~~
