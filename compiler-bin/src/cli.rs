@@ -1,3 +1,4 @@
+use clap::ValueEnum;
 use clap::{ArgAction, Parser};
 use tracing::level_filters::LevelFilter;
 
@@ -62,4 +63,31 @@ pub struct Config {
         default_value_t = false
     )]
     pub diagnostics_on_change: bool,
+
+    #[arg(
+        long,
+        value_enum,
+        default_value_t = BuildTool::Auto,
+        help("Build tool used for purescript.build")
+    )]
+    pub build_tool: BuildTool,
+
+    #[arg(long, help("Extra args appended to the build command (repeatable)"), value_name("arg"))]
+    pub build_arg: Vec<String>,
+
+    #[arg(
+        long,
+        help("Directory names excluded from analyzer refresh (repeatable or comma-separated)"),
+        value_name("dir"),
+        value_delimiter = ',',
+        default_values_t = [".spago", "output", ".git", "node_modules"].map(String::from)
+    )]
+    pub analyzer_excluded_dir: Vec<String>,
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum)]
+pub enum BuildTool {
+    Auto,
+    Spago,
+    Purs,
 }
