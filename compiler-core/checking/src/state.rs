@@ -8,7 +8,9 @@ use files::FileId;
 use rustc_hash::FxHashMap;
 
 use crate::context::CheckContext;
-use crate::core::constraint::{CanonicalConstraintId, Canonicals, canonical::CanonicalsCheckpoint};
+use crate::core::constraint::{
+    CanonicalConstraintId, Canonicals, ProbeKey, canonical::CanonicalsCheckpoint,
+};
 use crate::core::exhaustive::{
     ExhaustivenessReport, Pattern, PatternConstructor, PatternId, PatternInterner, PatternKind,
 };
@@ -227,6 +229,8 @@ pub struct CheckState {
     pub canonical_errors: FxHashMap<CanonicalConstraintId, Vec<ErrorKind>>,
 
     pub defer_expansion: bool,
+    pub candidate_constraint_probes: Vec<Vec<ProbeKey>>,
+    pub candidate_constraint_probe_cache: FxHashMap<Vec<ProbeKey>, bool>,
     pub depth: Depth,
 
     pub crumbs: Vec<ErrorCrumb>,
@@ -244,6 +248,8 @@ impl CheckState {
             canonicals: Default::default(),
             canonical_errors: Default::default(),
             defer_expansion: Default::default(),
+            candidate_constraint_probes: Default::default(),
+            candidate_constraint_probe_cache: Default::default(),
             depth: Depth(0),
             crumbs: Default::default(),
         }

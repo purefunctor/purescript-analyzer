@@ -1,0 +1,25 @@
+---
+source: target/debug/build/tests-integration-35f6ccefceed9daa/out/checking_generated.rs
+expression: report
+---
+Terms
+Proxy :: forall (k :: Type) (@a :: (k :: Type)). Proxy @(k :: Type) (a :: (k :: Type))
+Unit :: Unit
+resolve :: forall (@a :: Type). Resolve (a :: Type) => Proxy @Type (a :: Type) -> Unit
+
+Types
+Proxy :: forall (k :: Type). (k :: Type) -> Type
+Unit :: Type
+Resolve :: Type -> Constraint
+
+Classes
+class forall (a :: Type). Resolve (a :: Type)
+  resolve :: forall (@a :: Type). Resolve (a :: Type) => Proxy @Type (a :: Type) -> Unit
+
+Instances
+instance forall (t3 :: Type). Resolve (t3 :: Type) => Resolve (t3 :: Type)
+instance Resolve Int
+
+Roles
+Proxy = [Phantom]
+Unit = []

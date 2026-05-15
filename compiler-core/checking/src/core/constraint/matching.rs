@@ -13,7 +13,7 @@ use rustc_hash::{FxHashMap, FxHashSet};
 use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::constraint::instances::InstanceCandidate;
-use crate::core::constraint::{CanonicalConstraintId, canonical, compiler};
+use crate::core::constraint::{CanonicalConstraintId, canonical, compiler, probe_key};
 use crate::core::fd::{Fd, compute_closure, get_all_determined};
 use crate::core::fold::{FoldAction, TypeFold, fold_type};
 use crate::core::substitute::SubstituteName;
@@ -479,7 +479,19 @@ where
         return Ok(false);
     }
 
+    let probe = constraints.iter().map(|&id| probe_key(state, context, id)).collect_vec();
+    if let Some(&cached) = state.candidate_constraint_probe_cache.get(&probe) {
+        return Ok(cached);
+    }
+
+    if state.candidate_constraint_probes.iter().any(|previous| previous == &probe)
+        || state.candidate_constraint_probes.len() >= 2
+    {
+        return Ok(false);
+    }
+
     let checkpoint = state.checkpoint();
+    state.candidate_constraint_probes.push(probe.clone());
     let result = (|| {
         let wanted = VecDeque::from_iter(constraints.iter().copied());
         let residuals = super::solve_constraints(state, context, wanted, &[])?;
@@ -498,8 +510,12 @@ where
 
         Ok(false)
     })();
+    state.candidate_constraint_probes.pop();
 
     state.restore(checkpoint);
+    if let Ok(&result) = result.as_ref() {
+        state.candidate_constraint_probe_cache.insert(probe, result);
+    }
     result
 }
 
