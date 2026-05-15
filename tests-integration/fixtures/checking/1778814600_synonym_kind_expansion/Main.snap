@@ -1,0 +1,26 @@
+---
+source: target/debug/build/tests-integration-6275ac7a2b26d932/out/checking_generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+
+Types
+TypeToType :: Type
+ApplyAliasKind :: TypeToType -> Type
+
+Synonyms
+type TypeToType = Type -> Type
+type ApplyAliasKind f = (f :: TypeToType) Int
+
+Diagnostics
+error[InvalidTypeApplication]: Cannot apply type '(f :: TypeToType)' to 'Int'. '(f :: TypeToType)' has kind 'TypeToType', which is not a function kind.
+  --> 6:25..6:30
+  |
+6 | type ApplyAliasKind f = f Int
+  |                         ^~~~~
+error[CannotUnify]: Cannot unify '?[cannot apply function type]' with 'Type'
+  --> 6:25..6:30
+  |
+6 | type ApplyAliasKind f = f Int
+  |                         ^~~~~
