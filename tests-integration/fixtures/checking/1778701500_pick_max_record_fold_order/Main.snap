@@ -1,0 +1,204 @@
+---
+source: target/debug/build/tests-integration-35f6ccefceed9daa/out/checking_generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+BuildO :: BuildO
+build ::
+  forall (t185 :: Type) (config :: Type) (args :: (t185 :: Type)).
+    Build @Type @(t185 :: Type) (config :: Type) (args :: (t185 :: Type)) =>
+    (config :: Type) -> Proxy @(t185 :: Type) (args :: (t185 :: Type))
+test :: Proxy @Type (O Opts (CA (Doc Base64) NoKeys))
+testInferred :: Proxy @Type (O Opts (CA (Doc Base64) NoKeys))
+
+Types
+TypeExpr :: forall (k :: Type). (k :: Type) -> Type
+Eq :: forall (a :: Type). (a :: Type) -> (a :: Type) -> TypeExpr @Type Boolean
+== :: forall (a :: Type). (a :: Type) -> (a :: Type) -> TypeExpr @Type Boolean
+Eval :: forall (k :: Type). TypeExpr @Type (k :: Type) -> (k :: Type) -> Constraint
+If :: forall (k :: Type). Boolean -> (k :: Type) -> (k :: Type) -> (k :: Type) -> Constraint
+CodecsArgsKind :: Type
+CA :: DocKind -> KeysKind -> CodecsArgsKind
+DocKind :: Type
+NoDoc :: DocKind
+Doc :: AttachmentKind -> DocKind
+AttachmentKind :: Type
+Stub :: AttachmentKind
+Base64 :: AttachmentKind
+KeysKind :: Type
+NoKeys :: KeysKind
+O :: Type -> CodecsArgsKind -> Type
+Opts :: Type
+IntOf :: forall (k :: Type). (k :: Type) -> Int -> Constraint
+PickMax :: forall (k :: Type). (k :: Type) -> (k :: Type) -> (k :: Type) -> Constraint
+BuildO :: Type
+FoldingWithIndex ::
+  forall (t26 :: Type) (t25 :: Type) (t24 :: Type) (t23 :: Type) (t22 :: Type).
+    (t26 :: Type) -> (t25 :: Type) -> (t24 :: Type) -> (t23 :: Type) -> (t22 :: Type) -> Constraint
+HFoldlWithIndex ::
+  forall (t34 :: Type) (t33 :: Type) (t32 :: Type) (t31 :: Type).
+    (t34 :: Type) -> (t33 :: Type) -> (t32 :: Type) -> (t31 :: Type) -> Constraint
+FoldlRecord ::
+  forall (t42 :: Type) (t41 :: Type) (t40 :: Type).
+    (t42 :: Type) -> (t41 :: Type) -> RowList Type -> Row Type -> (t40 :: Type) -> Constraint
+Build :: forall (t46 :: Type) (t45 :: Type). (t46 :: Type) -> (t45 :: Type) -> Constraint
+
+Classes
+class forall (k :: Type) (expr :: TypeExpr @Type (k :: Type)) (result :: (k :: Type)). Eval @(k :: Type) (expr :: TypeExpr @Type (k :: Type)) (result :: (k :: Type))
+class forall (k :: Type) (bool :: Boolean) (onTrue :: (k :: Type)) (onFalse :: (k :: Type)) (output :: (k :: Type)). If @(k :: Type)
+  (bool :: Boolean)
+  (onTrue :: (k :: Type))
+  (onFalse :: (k :: Type))
+  (output :: (k :: Type))
+class forall (k :: Type) (k :: (k :: Type)) (int :: Int). IntOf @(k :: Type) (k :: (k :: Type)) (int :: Int)
+class forall (k :: Type) (a :: (k :: Type)) (b :: (k :: Type)) (c :: (k :: Type)). PickMax @(k :: Type) (a :: (k :: Type)) (b :: (k :: Type)) (c :: (k :: Type))
+class forall (t26 :: Type) (t25 :: Type) (t24 :: Type) (t23 :: Type) (t22 :: Type) (f :: (t26 :: Type)) (i :: (t25 :: Type)) (x :: (t24 :: Type)) (y :: (t23 :: Type)) (z :: (t22 :: Type)). FoldingWithIndex @(t26 :: Type) @(t25 :: Type) @(t24 :: Type) @(t23 :: Type) @(t22 :: Type)
+  (f :: (t26 :: Type))
+  (i :: (t25 :: Type))
+  (x :: (t24 :: Type))
+  (y :: (t23 :: Type))
+  (z :: (t22 :: Type))
+class forall (t34 :: Type) (t33 :: Type) (t32 :: Type) (t31 :: Type) (f :: (t34 :: Type)) (x :: (t33 :: Type)) (a :: (t32 :: Type)) (b :: (t31 :: Type)). HFoldlWithIndex @(t34 :: Type) @(t33 :: Type) @(t32 :: Type) @(t31 :: Type)
+  (f :: (t34 :: Type))
+  (x :: (t33 :: Type))
+  (a :: (t32 :: Type))
+  (b :: (t31 :: Type))
+class forall (t42 :: Type) (t41 :: Type) (t40 :: Type) (f :: (t42 :: Type)) (x :: (t41 :: Type)) (rl :: RowList Type) (r :: Row Type) (b :: (t40 :: Type)). FoldlRecord @(t42 :: Type) @(t41 :: Type) @(t40 :: Type)
+  (f :: (t42 :: Type))
+  (x :: (t41 :: Type))
+  (rl :: RowList Type)
+  (r :: Row Type)
+  (b :: (t40 :: Type))
+class forall (t46 :: Type) (t45 :: Type) (config :: (t46 :: Type)) (args :: (t45 :: Type)). Build @(t46 :: Type) @(t45 :: Type) (config :: (t46 :: Type)) (args :: (t45 :: Type))
+
+Instances
+instance forall (t48 :: Type) (t47 :: (t48 :: Type)).
+  Eval @Boolean (Eq @(t48 :: Type) (t47 :: (t48 :: Type)) (t47 :: (t48 :: Type))) True
+instance forall (t53 :: Type) (t51 :: (t53 :: Type)) (t52 :: (t53 :: Type)).
+  Eval @Boolean (Eq @(t53 :: Type) (t51 :: (t53 :: Type)) (t52 :: (t53 :: Type))) False
+instance forall (t59 :: Type) (t57 :: (t59 :: Type)) (t58 :: (t59 :: Type)).
+  If @(t59 :: Type) True (t57 :: (t59 :: Type)) (t58 :: (t59 :: Type)) (t57 :: (t59 :: Type))
+instance forall (t65 :: Type) (t63 :: (t65 :: Type)) (t64 :: (t65 :: Type)).
+  If @(t65 :: Type) False (t63 :: (t65 :: Type)) (t64 :: (t65 :: Type)) (t64 :: (t65 :: Type))
+instance IntOf @DocKind NoDoc 0
+instance IntOf @AttachmentKind Stub 0
+instance IntOf @AttachmentKind Base64 1
+instance forall (t69 :: AttachmentKind) (t71 :: Int) (t70 :: Int).
+  IntOf @AttachmentKind (t69 :: AttachmentKind) (t71 :: Int) =>
+  Add 1 (t71 :: Int) (t70 :: Int) =>
+  IntOf @DocKind (Doc (t69 :: AttachmentKind)) (t70 :: Int)
+instance forall (t82 :: Type) (t75 :: (t82 :: Type)) (t78 :: Int) (t76 :: (t82 :: Type)) (t79 :: Int)
+  (t80 :: Ordering) (t81 :: Boolean) (t77 :: (t82 :: Type)).
+  IntOf @(t82 :: Type) (t75 :: (t82 :: Type)) (t78 :: Int) =>
+  IntOf @(t82 :: Type) (t76 :: (t82 :: Type)) (t79 :: Int) =>
+  Compare (t78 :: Int) (t79 :: Int) (t80 :: Ordering) =>
+  Eval @Boolean (Eq @Ordering LT (t80 :: Ordering)) (t81 :: Boolean) =>
+  If @(t82 :: Type)
+    (t81 :: Boolean)
+    (t76 :: (t82 :: Type))
+    (t75 :: (t82 :: Type))
+    (t77 :: (t82 :: Type)) =>
+  PickMax @(t82 :: Type) (t75 :: (t82 :: Type)) (t76 :: (t82 :: Type)) (t77 :: (t82 :: Type))
+instance forall (t91 :: DocKind) (t93 :: DocKind) (t92 :: KeysKind).
+  PickMax @DocKind (t91 :: DocKind) (Doc Base64) (t93 :: DocKind) =>
+  FoldingWithIndex @Type @Type @Type @Type @Type
+    BuildO
+    (Proxy @Symbol "attachments")
+    (O Opts (CA (t91 :: DocKind) (t92 :: KeysKind)))
+    (Proxy @Boolean True)
+    (O Opts (CA (t93 :: DocKind) (t92 :: KeysKind)))
+instance forall (t97 :: DocKind) (t99 :: DocKind) (t98 :: KeysKind).
+  PickMax @DocKind (t97 :: DocKind) (Doc Stub) (t99 :: DocKind) =>
+  FoldingWithIndex @Type @Type @Type @Type @Type
+    BuildO
+    (Proxy @Symbol "includeDocs")
+    (O Opts (CA (t97 :: DocKind) (t98 :: KeysKind)))
+    (Proxy @Boolean True)
+    (O Opts (CA (t99 :: DocKind) (t98 :: KeysKind)))
+instance forall (t114 :: Type) (t113 :: Type) (t112 :: Type) (t103 :: (t114 :: Type)) (t105 :: Symbol)
+  (t104 :: (t113 :: Type)) (t111 :: Type) (t106 :: (t111 :: Type)) (t109 :: (t112 :: Type))
+  (t110 :: Type) (t107 :: RowList (t111 :: Type)) (t108 :: (t110 :: Type)).
+  FoldingWithIndex @(t114 :: Type) @Type @(t113 :: Type) @Type @(t112 :: Type)
+    (t103 :: (t114 :: Type))
+    (Proxy @Symbol (t105 :: Symbol))
+    (t104 :: (t113 :: Type))
+    (Proxy @(t111 :: Type) (t106 :: (t111 :: Type)))
+    (t109 :: (t112 :: Type)) =>
+  HFoldlWithIndex @(t114 :: Type) @(t112 :: Type) @Type @(t110 :: Type)
+    (t103 :: (t114 :: Type))
+    (t109 :: (t112 :: Type))
+    (Proxy @(RowList (t111 :: Type)) (t107 :: RowList (t111 :: Type)))
+    (t108 :: (t110 :: Type)) =>
+  HFoldlWithIndex @(t114 :: Type) @(t113 :: Type) @Type @(t110 :: Type)
+    (t103 :: (t114 :: Type))
+    (t104 :: (t113 :: Type))
+    (Proxy @(RowList (t111 :: Type))
+      (Cons @(t111 :: Type)
+        (t105 :: Symbol)
+        (t106 :: (t111 :: Type))
+        (t107 :: RowList (t111 :: Type))))
+    (t108 :: (t110 :: Type))
+instance forall (t131 :: Type) (t130 :: Type) (t127 :: (t131 :: Type)) (t128 :: (t130 :: Type))
+  (t129 :: Type).
+  HFoldlWithIndex @(t131 :: Type) @(t130 :: Type) @Type @(t130 :: Type)
+    (t127 :: (t131 :: Type))
+    (t128 :: (t130 :: Type))
+    (Proxy @(RowList (t129 :: Type)) (Nil @(t129 :: Type)))
+    (t128 :: (t130 :: Type))
+instance forall (t139 :: Symbol) (t140 :: Type) (t144 :: Row Type) (t142 :: Row Type) (t149 :: Type)
+  (t148 :: Type) (t147 :: Type) (t137 :: (t149 :: Type)) (t138 :: (t148 :: Type))
+  (t145 :: (t147 :: Type)) (t146 :: Type) (t141 :: RowList Type) (t143 :: (t146 :: Type)).
+  Cons @Type (t139 :: Symbol) (t140 :: Type) (t144 :: Row Type) (t142 :: Row Type) =>
+  FoldingWithIndex @(t149 :: Type) @Type @(t148 :: Type) @Type @(t147 :: Type)
+    (t137 :: (t149 :: Type))
+    (Proxy @Symbol (t139 :: Symbol))
+    (t138 :: (t148 :: Type))
+    (t140 :: Type)
+    (t145 :: (t147 :: Type)) =>
+  FoldlRecord @(t149 :: Type) @(t147 :: Type) @(t146 :: Type)
+    (t137 :: (t149 :: Type))
+    (t145 :: (t147 :: Type))
+    (t141 :: RowList Type)
+    (t142 :: Row Type)
+    (t143 :: (t146 :: Type)) =>
+  FoldlRecord @(t149 :: Type) @(t148 :: Type) @(t146 :: Type)
+    (t137 :: (t149 :: Type))
+    (t138 :: (t148 :: Type))
+    (Cons @Type (t139 :: Symbol) (t140 :: Type) (t141 :: RowList Type))
+    (t142 :: Row Type)
+    (t143 :: (t146 :: Type))
+instance forall (t167 :: Type) (t166 :: Type) (t163 :: (t167 :: Type)) (t164 :: (t166 :: Type))
+  (t165 :: Row Type).
+  FoldlRecord @(t167 :: Type) @(t166 :: Type) @(t166 :: Type)
+    (t163 :: (t167 :: Type))
+    (t164 :: (t166 :: Type))
+    (Nil @Type)
+    (t165 :: Row Type)
+    (t164 :: (t166 :: Type))
+instance forall (t173 :: Row Type) (t175 :: RowList Type) (t176 :: Type) (t174 :: (t176 :: Type)).
+  RowToList @Type (t173 :: Row Type) (t175 :: RowList Type) =>
+  FoldlRecord @Type @Type @(t176 :: Type)
+    BuildO
+    (O Opts (CA NoDoc NoKeys))
+    (t175 :: RowList Type)
+    (t173 :: Row Type)
+    (t174 :: (t176 :: Type)) =>
+  Build @Type @(t176 :: Type) {| (t173 :: Row Type) } (t174 :: (t176 :: Type))
+
+Roles
+TypeExpr = [Nominal]
+Eq = [Nominal, Nominal]
+CodecsArgsKind = []
+CA = [Nominal, Nominal]
+DocKind = []
+NoDoc = []
+Doc = [Nominal]
+AttachmentKind = []
+Stub = []
+Base64 = []
+KeysKind = []
+NoKeys = []
+O = [Nominal, Nominal]
+Opts = []
+BuildO = []

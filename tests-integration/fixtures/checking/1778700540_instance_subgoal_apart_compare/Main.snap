@@ -1,0 +1,22 @@
+---
+source: target/debug/build/tests-integration-35f6ccefceed9daa/out/checking_generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+pick ::
+  forall (index :: Int) (result :: Type).
+    Pick (index :: Int) (result :: Type) =>
+    Proxy @Int (index :: Int) -> Proxy @Type (result :: Type)
+test :: Proxy @Type Int
+testInferred :: Proxy @Type Int
+
+Types
+Pick :: Int -> Type -> Constraint
+
+Classes
+class forall (index :: Int) (result :: Type). Pick (index :: Int) (result :: Type)
+
+Instances
+instance forall (t2 :: Int). Compare (t2 :: Int) 1 LT => Pick (t2 :: Int) String
+instance forall (t4 :: Int). Compare (t4 :: Int) 1 GT => Pick (t4 :: Int) Int
