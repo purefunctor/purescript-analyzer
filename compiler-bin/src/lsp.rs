@@ -4,7 +4,7 @@ pub mod event;
 pub mod extension;
 
 use std::borrow::BorrowMut;
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::ops::{ControlFlow, Deref};
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -55,6 +55,9 @@ pub struct State {
     // We merge these per-URI when publishing to the client.
     pub build_diagnostics: Arc<RwLock<HashMap<Url, Vec<Diagnostic>>>>,
     pub analyzer_diagnostics: Arc<RwLock<HashMap<Url, Vec<Diagnostic>>>>,
+    pub published_diagnostics: Arc<RwLock<HashMap<Url, Vec<Diagnostic>>>>,
+
+    pub workspace_graph: Arc<RwLock<WorkspaceGraph>>,
 
     // URIs currently open in the client.
     pub open_uris: Arc<RwLock<HashSet<Url>>>,
@@ -84,6 +87,8 @@ impl State {
 
         let build_diagnostics = Arc::new(RwLock::new(HashMap::new()));
         let analyzer_diagnostics = Arc::new(RwLock::new(HashMap::new()));
+        let published_diagnostics = Arc::new(RwLock::new(HashMap::new()));
+        let workspace_graph = Arc::new(RwLock::new(WorkspaceGraph::default()));
 
         let diagnostics_generation = Arc::new(AtomicU64::new(0));
 
@@ -102,6 +107,8 @@ impl State {
             suggestions_cache,
             build_diagnostics,
             analyzer_diagnostics,
+            published_diagnostics,
+            workspace_graph,
             diagnostics_generation,
             open_uris,
             open_versions,
@@ -122,6 +129,7 @@ impl State {
             suggestions_cache: Arc::clone(&self.suggestions_cache),
             build_diagnostics: Arc::clone(&self.build_diagnostics),
             analyzer_diagnostics: Arc::clone(&self.analyzer_diagnostics),
+            published_diagnostics: Arc::clone(&self.published_diagnostics),
             diagnostics_generation: Arc::clone(&self.diagnostics_generation),
             root: self.root.clone(),
         };
@@ -148,8 +156,76 @@ struct StateSnapshot {
     suggestions_cache: Arc<RwLock<SuggestionsCache>>,
     build_diagnostics: Arc<RwLock<HashMap<Url, Vec<Diagnostic>>>>,
     analyzer_diagnostics: Arc<RwLock<HashMap<Url, Vec<Diagnostic>>>>,
+    published_diagnostics: Arc<RwLock<HashMap<Url, Vec<Diagnostic>>>>,
     diagnostics_generation: Arc<AtomicU64>,
     root: Option<PathBuf>,
+}
+
+#[derive(Debug, Default)]
+pub struct WorkspaceGraph {
+    imports: HashMap<files::FileId, HashSet<files::FileId>>,
+    dependants: HashMap<files::FileId, HashSet<files::FileId>>,
+}
+
+impl WorkspaceGraph {
+    pub fn replace_imports(&mut self, file_id: files::FileId, imports: HashSet<files::FileId>) {
+        if let Some(old_imports) = self.imports.remove(&file_id) {
+            for imported in old_imports {
+                if let Some(dependants) = self.dependants.get_mut(&imported) {
+                    dependants.remove(&file_id);
+                    if dependants.is_empty() {
+                        self.dependants.remove(&imported);
+                    }
+                }
+            }
+        }
+
+        for &imported in &imports {
+            self.dependants.entry(imported).or_default().insert(file_id);
+        }
+
+        if imports.is_empty() {
+            self.imports.remove(&file_id);
+        } else {
+            self.imports.insert(file_id, imports);
+        }
+    }
+
+    pub fn remove_file(&mut self, file_id: files::FileId) {
+        self.replace_imports(file_id, HashSet::new());
+        if let Some(dependants) = self.dependants.remove(&file_id) {
+            for dependant in dependants {
+                if let Some(imports) = self.imports.get_mut(&dependant) {
+                    imports.remove(&file_id);
+                }
+            }
+        }
+    }
+
+    pub fn direct_dependants(&self, file_id: files::FileId) -> HashSet<files::FileId> {
+        self.dependants.get(&file_id).cloned().unwrap_or_default()
+    }
+
+    pub fn transitive_dependants(&self, file_id: files::FileId) -> HashSet<files::FileId> {
+        let mut seen = HashSet::new();
+        let mut queue = VecDeque::new();
+
+        if let Some(dependants) = self.dependants.get(&file_id) {
+            queue.extend(dependants.iter().copied());
+        }
+
+        while let Some(current) = queue.pop_front() {
+            if !seen.insert(current) {
+                continue;
+            }
+            if let Some(dependants) = self.dependants.get(&current) {
+                queue.extend(dependants.iter().copied());
+            }
+        }
+
+        seen.remove(&file_id);
+        seen
+    }
 }
 
 impl StateSnapshot {
@@ -167,6 +243,36 @@ impl StateSnapshot {
             map.get(uri).cloned().unwrap_or_default()
         };
         merge_diagnostics(&build, &analyzer)
+    }
+
+    pub(crate) fn publish_merged_diagnostics_if_changed(
+        &mut self,
+        uri: Url,
+    ) -> Result<(), LspError> {
+        self.publish_merged_diagnostics(uri).map(|_| ())
+    }
+
+    fn publish_merged_diagnostics(&mut self, uri: Url) -> Result<bool, LspError> {
+        let diagnostics = self.merged_diagnostics_for_uri(&uri);
+        {
+            let mut published = self.published_diagnostics.write();
+            if published.get(&uri) == Some(&diagnostics) {
+                return Ok(false);
+            }
+            if diagnostics.is_empty() {
+                published.remove(&uri);
+            } else {
+                published.insert(uri.clone(), diagnostics.clone());
+            }
+        }
+
+        self.client.publish_diagnostics(PublishDiagnosticsParams {
+            uri,
+            diagnostics,
+            version: None,
+        })?;
+
+        Ok(true)
     }
 }
 
@@ -439,6 +545,7 @@ fn initialized_manual(state: &mut State, command: &str) -> Result<(), LspError> 
 
     files.extend(files_from_glob);
     load_files(state, &files)?;
+    event::rebuild_workspace_graph(state)?;
 
     Ok(())
 }
@@ -450,6 +557,7 @@ fn initialized_spago(state: &mut State) -> Result<(), LspError> {
 
     let files = spago::source_files(root).map_err(LspError::SpagoLock)?;
     load_files(state, &files)?;
+    event::rebuild_workspace_graph(state)?;
 
     Ok(())
 }
@@ -610,7 +718,12 @@ fn did_save(state: &mut State, p: DidSaveTextDocumentParams) -> Result<(), LspEr
     state.invalidate_suggestions_cache();
 
     if state.config.diagnostics_on_save {
-        event::emit_collect_diagnostics(state, p.text_document.uri)?;
+        let files = state.files.read();
+        let file_id = files.id(p.text_document.uri.as_str());
+        drop(files);
+        if let Some(file_id) = file_id {
+            event::schedule_dependant_diagnostics(state, file_id);
+        }
     }
     Ok(())
 }
@@ -627,6 +740,7 @@ fn on_change(state: &mut State, uri: &str, content: &str) -> Result<(), LspError
 
     let mut files = state.files.write();
     let id = files.insert(uri, content);
+    drop(files);
 
     state.engine.set_content(id, content);
 
@@ -635,6 +749,8 @@ fn on_change(state: &mut State, uri: &str, content: &str) -> Result<(), LspError
     if let Some(name) = parsed.module_name() {
         state.engine.set_module_file(&name, id);
     }
+
+    event::update_workspace_graph_for_file(state, id)?;
 
     Ok(())
 }
@@ -863,6 +979,282 @@ mod tests {
         assert!(build_diagnostics.contains_key(&other_uri));
     }
 
+    #[test]
+    fn workspace_graph_tracks_dependants() {
+        let root =
+            std::env::temp_dir().join(format!("purescript-analyzer-graph-{}", std::process::id()));
+        let mut state = mk_state_with(base_config());
+        state.root = Some(root.clone());
+
+        let a = Url::from_file_path(root.join("src/A.purs")).unwrap();
+        let b = Url::from_file_path(root.join("src/B.purs")).unwrap();
+        let c = Url::from_file_path(root.join("src/C.purs")).unwrap();
+        let d = Url::from_file_path(root.join("src/D.purs")).unwrap();
+
+        on_change(&mut state, a.as_str(), "module A where\na = 1\n").unwrap();
+        on_change(&mut state, b.as_str(), "module B where\nimport A\nb = a\n").unwrap();
+        on_change(&mut state, c.as_str(), "module C where\nimport B\nc = b\n").unwrap();
+        on_change(&mut state, d.as_str(), "module D where\nd = 1\n").unwrap();
+
+        let files = state.files.read();
+        let a_id = files.id(a.as_str()).unwrap();
+        let b_id = files.id(b.as_str()).unwrap();
+        let c_id = files.id(c.as_str()).unwrap();
+        let d_id = files.id(d.as_str()).unwrap();
+        drop(files);
+
+        let graph = state.workspace_graph.read();
+        assert_eq!(graph.direct_dependants(a_id), HashSet::from([b_id]));
+        let transitive = graph.transitive_dependants(a_id);
+        assert!(transitive.contains(&b_id));
+        assert!(transitive.contains(&c_id));
+        assert!(!transitive.contains(&d_id));
+    }
+
+    #[test]
+    fn workspace_graph_removes_stale_import_edges() {
+        let root = std::env::temp_dir()
+            .join(format!("purescript-analyzer-graph-stale-{}", std::process::id()));
+        let mut state = mk_state_with(base_config());
+        state.root = Some(root.clone());
+
+        let a = Url::from_file_path(root.join("src/A.purs")).unwrap();
+        let b = Url::from_file_path(root.join("src/B.purs")).unwrap();
+
+        on_change(&mut state, a.as_str(), "module A where\na = 1\n").unwrap();
+        on_change(&mut state, b.as_str(), "module B where\nimport A\nb = a\n").unwrap();
+        on_change(&mut state, b.as_str(), "module B where\nb = 1\n").unwrap();
+
+        let files = state.files.read();
+        let a_id = files.id(a.as_str()).unwrap();
+        drop(files);
+
+        assert!(state.workspace_graph.read().direct_dependants(a_id).is_empty());
+    }
+
+    #[test]
+    fn workspace_graph_excludes_dependency_sources() {
+        let root = std::env::temp_dir()
+            .join(format!("purescript-analyzer-graph-excluded-{}", std::process::id()));
+        let mut state = mk_state_with(base_config());
+        state.root = Some(root.clone());
+
+        let dep = Url::from_file_path(root.join(".spago/p/dep/src/Dep.purs")).unwrap();
+        let a = Url::from_file_path(root.join("src/A.purs")).unwrap();
+
+        on_change(&mut state, dep.as_str(), "module Dep where\ndep = 1\n").unwrap();
+        on_change(&mut state, a.as_str(), "module A where\nimport Dep\na = dep\n").unwrap();
+
+        let files = state.files.read();
+        let a_id = files.id(a.as_str()).unwrap();
+        drop(files);
+
+        let graph = state.workspace_graph.read();
+        assert!(graph.imports.get(&a_id).is_none_or(HashSet::is_empty));
+    }
+
+    #[test]
+    fn dependant_diagnostics_prioritize_open_files() {
+        let root = std::env::temp_dir()
+            .join(format!("purescript-analyzer-priority-{}", std::process::id()));
+        let mut state = mk_state_with(base_config());
+        state.root = Some(root.clone());
+
+        let a = Url::from_file_path(root.join("src/A.purs")).unwrap();
+        let b = Url::from_file_path(root.join("src/B.purs")).unwrap();
+        let c = Url::from_file_path(root.join("src/C.purs")).unwrap();
+        let d = Url::from_file_path(root.join("src/D.purs")).unwrap();
+
+        on_change(&mut state, a.as_str(), "module A where\na = 1\n").unwrap();
+        on_change(&mut state, b.as_str(), "module B where\nimport A\nb = a\n").unwrap();
+        on_change(&mut state, c.as_str(), "module C where\nimport B\nc = b\n").unwrap();
+        on_change(&mut state, d.as_str(), "module D where\nimport A\nd = a\n").unwrap();
+
+        state.open_uris.write().insert(b.clone());
+        state.open_uris.write().insert(c.clone());
+
+        let files = state.files.read();
+        let a_id = files.id(a.as_str()).unwrap();
+        let b_id = files.id(b.as_str()).unwrap();
+        let c_id = files.id(c.as_str()).unwrap();
+        let d_id = files.id(d.as_str()).unwrap();
+        drop(files);
+
+        let ordered = event::ordered_dependant_diagnostics(&state, a_id);
+        assert_eq!(ordered, vec![a_id, b_id, c_id, d_id]);
+    }
+
+    #[test]
+    fn saved_rename_can_collect_dependant_unknown_name_diagnostic() {
+        let root = std::env::temp_dir()
+            .join(format!("purescript-analyzer-rename-diagnostics-{}", std::process::id()));
+        let mut state = mk_state_with(base_config());
+        state.root = Some(root.clone());
+
+        let a = Url::from_file_path(root.join("src/A.purs")).unwrap();
+        let b = Url::from_file_path(root.join("src/B.purs")).unwrap();
+
+        on_change(&mut state, a.as_str(), "module A where\nfoo = 1\n").unwrap();
+        on_change(&mut state, b.as_str(), "module B where\nimport A\nbar = foo\n").unwrap();
+        on_change(&mut state, a.as_str(), "module A where\nrenamed = 1\n").unwrap();
+
+        let files = state.files.read();
+        let a_id = files.id(a.as_str()).unwrap();
+        let b_id = files.id(b.as_str()).unwrap();
+        drop(files);
+
+        let ordered = event::ordered_dependant_diagnostics(&state, a_id);
+        assert!(ordered.contains(&b_id));
+
+        let generation = state.diagnostics_generation.load(std::sync::atomic::Ordering::SeqCst);
+        let mut snapshot = StateSnapshot {
+            client: state.client.clone(),
+            config: Arc::clone(&state.config),
+            engine: state.engine.snapshot(),
+            files: Arc::clone(&state.files),
+            workspace_symbols_cache: Arc::clone(&state.workspace_symbols_cache),
+            suggestions_cache: Arc::clone(&state.suggestions_cache),
+            build_diagnostics: Arc::clone(&state.build_diagnostics),
+            analyzer_diagnostics: Arc::clone(&state.analyzer_diagnostics),
+            published_diagnostics: Arc::clone(&state.published_diagnostics),
+            diagnostics_generation: Arc::clone(&state.diagnostics_generation),
+            root: state.root.clone(),
+        };
+
+        let _ = event::collect_diagnostics_core(
+            &mut snapshot,
+            event::CollectDiagnostics(b_id),
+            generation,
+            event::PublishMode::ChangedOnly,
+        );
+
+        let diagnostics = state.analyzer_diagnostics.read();
+        let dependant_diagnostics = diagnostics.get(&b).cloned().unwrap_or_default();
+        assert!(dependant_diagnostics.iter().any(|diagnostic| diagnostic.message.contains("foo")));
+    }
+
+    #[tokio::test]
+    async fn did_save_refreshes_dependant_unknown_name_diagnostic() {
+        let root = std::env::temp_dir()
+            .join(format!("purescript-analyzer-save-diagnostics-{}", std::process::id()));
+        let mut state = mk_state_with(base_config());
+        state.root = Some(root.clone());
+
+        let a = Url::from_file_path(root.join("src/A.purs")).unwrap();
+        let b = Url::from_file_path(root.join("src/B.purs")).unwrap();
+
+        on_change(&mut state, a.as_str(), "module A where\nfoo = 1\n").unwrap();
+        on_change(&mut state, b.as_str(), "module B where\nimport A\nbar = foo\n").unwrap();
+        on_change(&mut state, a.as_str(), "module A where\nrenamed = 1\n").unwrap();
+
+        did_save(
+            &mut state,
+            DidSaveTextDocumentParams {
+                text_document: TextDocumentIdentifier { uri: a },
+                text: None,
+            },
+        )
+        .unwrap();
+
+        let mut diagnostics = vec![];
+        for _ in 0..50 {
+            diagnostics = state.analyzer_diagnostics.read().get(&b).cloned().unwrap_or_default();
+            if diagnostics.iter().any(|diagnostic| diagnostic.message.contains("foo")) {
+                break;
+            }
+            tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+        }
+
+        assert!(diagnostics.iter().any(|diagnostic| diagnostic.message.contains("foo")));
+    }
+
+    #[test]
+    fn unchanged_published_diagnostics_are_not_republished() {
+        let state = mk_state_with(base_config());
+        let uri = Url::parse("file:///test/Main.purs").unwrap();
+        let diagnostic = Diagnostic {
+            range: Range::new(Position::new(0, 0), Position::new(0, 1)),
+            message: "same".to_string(),
+            ..Diagnostic::default()
+        };
+        state.analyzer_diagnostics.write().insert(uri.clone(), vec![diagnostic.clone()]);
+        state.published_diagnostics.write().insert(uri.clone(), vec![diagnostic]);
+
+        let mut snapshot = StateSnapshot {
+            client: state.client.clone(),
+            config: Arc::clone(&state.config),
+            engine: state.engine.snapshot(),
+            files: Arc::clone(&state.files),
+            workspace_symbols_cache: Arc::clone(&state.workspace_symbols_cache),
+            suggestions_cache: Arc::clone(&state.suggestions_cache),
+            build_diagnostics: Arc::clone(&state.build_diagnostics),
+            analyzer_diagnostics: Arc::clone(&state.analyzer_diagnostics),
+            published_diagnostics: Arc::clone(&state.published_diagnostics),
+            diagnostics_generation: Arc::clone(&state.diagnostics_generation),
+            root: state.root.clone(),
+        };
+
+        assert!(snapshot.publish_merged_diagnostics_if_changed(uri).is_ok());
+    }
+
+    #[test]
+    fn analyzer_refresh_skips_non_empty_unchanged_diagnostics() {
+        let state = mk_state_with(base_config());
+        let uri = Url::parse("file:///test/Main.purs").unwrap();
+        let diagnostic = Diagnostic {
+            range: Range::new(Position::new(0, 0), Position::new(0, 1)),
+            message: "same".to_string(),
+            ..Diagnostic::default()
+        };
+        state.analyzer_diagnostics.write().insert(uri.clone(), vec![diagnostic.clone()]);
+        state.published_diagnostics.write().insert(uri.clone(), vec![diagnostic]);
+
+        let mut snapshot = StateSnapshot {
+            client: state.client.clone(),
+            config: Arc::clone(&state.config),
+            engine: state.engine.snapshot(),
+            files: Arc::clone(&state.files),
+            workspace_symbols_cache: Arc::clone(&state.workspace_symbols_cache),
+            suggestions_cache: Arc::clone(&state.suggestions_cache),
+            build_diagnostics: Arc::clone(&state.build_diagnostics),
+            analyzer_diagnostics: Arc::clone(&state.analyzer_diagnostics),
+            published_diagnostics: Arc::clone(&state.published_diagnostics),
+            diagnostics_generation: Arc::clone(&state.diagnostics_generation),
+            root: state.root.clone(),
+        };
+
+        assert_eq!(snapshot.publish_merged_diagnostics(uri).unwrap(), false);
+    }
+
+    #[test]
+    fn clearing_published_diagnostics_updates_cache() {
+        let state = mk_state_with(base_config());
+        let uri = Url::parse("file:///test/Main.purs").unwrap();
+        let diagnostic = Diagnostic {
+            range: Range::new(Position::new(0, 0), Position::new(0, 1)),
+            message: "stale".to_string(),
+            ..Diagnostic::default()
+        };
+        state.published_diagnostics.write().insert(uri.clone(), vec![diagnostic]);
+
+        let mut snapshot = StateSnapshot {
+            client: state.client.clone(),
+            config: Arc::clone(&state.config),
+            engine: state.engine.snapshot(),
+            files: Arc::clone(&state.files),
+            workspace_symbols_cache: Arc::clone(&state.workspace_symbols_cache),
+            suggestions_cache: Arc::clone(&state.suggestions_cache),
+            build_diagnostics: Arc::clone(&state.build_diagnostics),
+            analyzer_diagnostics: Arc::clone(&state.analyzer_diagnostics),
+            published_diagnostics: Arc::clone(&state.published_diagnostics),
+            diagnostics_generation: Arc::clone(&state.diagnostics_generation),
+            root: state.root.clone(),
+        };
+
+        let _ = snapshot.publish_merged_diagnostics_if_changed(uri.clone());
+        assert!(!state.published_diagnostics.read().contains_key(&uri));
+    }
+
     #[tokio::test]
     async fn analyzer_refresh_handles_multiple_files() {
         let mut state = mk_state_with(base_config());
@@ -870,6 +1262,55 @@ mod tests {
         on_change(&mut state, "file:///test/B.purs", "module B where\n").unwrap();
 
         event::analyzer_refresh(&mut state, event::AnalyzerRefresh).unwrap();
+    }
+    #[tokio::test]
+    async fn analyzer_refresh_collects_diagnostics() {
+        let root = std::env::temp_dir()
+            .join(format!("purescript-analyzer-refresh-diagnostics-{}", std::process::id()));
+        let mut state = mk_state_with(base_config());
+        state.root = Some(root.clone());
+
+        let uri = Url::from_file_path(root.join("src/Main.purs")).unwrap();
+        on_change(&mut state, uri.as_str(), "module Main where\nmain = missing\n").unwrap();
+
+        event::analyzer_refresh(&mut state, event::AnalyzerRefresh).unwrap();
+
+        let mut diagnostics = vec![];
+        for _ in 0..50 {
+            diagnostics = state.analyzer_diagnostics.read().get(&uri).cloned().unwrap_or_default();
+            if !diagnostics.is_empty() {
+                break;
+            }
+            tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+        }
+
+        assert!(diagnostics.iter().any(|diagnostic| diagnostic.message.contains("missing")));
+    }
+
+    #[tokio::test]
+    async fn analyzer_refresh_falls_back_when_root_does_not_match_loaded_files() {
+        let source_root = std::env::temp_dir()
+            .join(format!("purescript-analyzer-refresh-source-{}", std::process::id()));
+        let wrong_root = std::env::temp_dir()
+            .join(format!("purescript-analyzer-refresh-wrong-root-{}", std::process::id()));
+        let mut state = mk_state_with(base_config());
+        state.root = Some(wrong_root);
+
+        let uri = Url::from_file_path(source_root.join("src/Main.purs")).unwrap();
+        on_change(&mut state, uri.as_str(), "module Main where\nmain = missing\n").unwrap();
+
+        event::analyzer_refresh(&mut state, event::AnalyzerRefresh).unwrap();
+
+        let mut diagnostics = vec![];
+        for _ in 0..50 {
+            diagnostics = state.analyzer_diagnostics.read().get(&uri).cloned().unwrap_or_default();
+            if !diagnostics.is_empty() {
+                break;
+            }
+            tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+        }
+
+        assert!(diagnostics.iter().any(|diagnostic| diagnostic.message.contains("missing")));
     }
 
     #[tokio::test]

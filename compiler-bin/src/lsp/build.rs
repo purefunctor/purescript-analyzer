@@ -115,12 +115,7 @@ fn build_core(mut snapshot: StateSnapshot) -> Result<(), LspError> {
         if snapshot.diagnostics_generation.load(std::sync::atomic::Ordering::SeqCst) != generation {
             return Ok(());
         }
-        let diagnostics = snapshot.merged_diagnostics_for_uri(&uri);
-        let _ = snapshot.client.publish_diagnostics(PublishDiagnosticsParams {
-            uri,
-            diagnostics,
-            version: None,
-        });
+        let _ = snapshot.publish_merged_diagnostics_if_changed(uri);
     }
 
     // We already materialized build_map; treat parse failures as "no build diagnostics".
