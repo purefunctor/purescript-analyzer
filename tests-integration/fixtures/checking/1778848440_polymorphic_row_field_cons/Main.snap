@@ -34,39 +34,3 @@ Roles
 Proxy = [Phantom]
 Slot = [Phantom, Phantom, Phantom]
 Html = [Phantom]
-
-Diagnostics
-error[CannotUnify]: Cannot unify '?20' with '(output :: Type)'
-  --> 29:1..29:44
-   |
-29 | test :: forall key. key -> Html (Slots key)
-   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-error[CannotUnify]: Cannot unify 'Slot (query :: Type -> Type) (output :: Type)' with 'Slot (query :: Type -> Type) ?20'
-  --> 29:1..29:44
-   |
-29 | test :: forall key. key -> Html (Slots key)
-   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-error[CannotUnify]: Cannot unify 'Slot (query :: Type -> Type) (output :: Type) (key :: Type)' with 'Slot (query :: Type -> Type) ?20 (key :: Type)'
-  --> 29:1..29:44
-   |
-29 | test :: forall key. key -> Html (Slots key)
-   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-error[CannotUnify]: Cannot unify 'forall (output :: Type). Slot (query :: Type -> Type) (output :: Type) (key :: Type)' with 'Slot (query :: Type -> Type) ?20 (key :: Type)'
-  --> 29:1..29:44
-   |
-29 | test :: forall key. key -> Html (Slots key)
-   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-error[CannotUnify]: Cannot unify 'forall (query :: Type -> Type) (output :: Type).
-  Slot (query :: Type -> Type) (output :: Type) (key :: Type)' with 'Slot (query :: Type -> Type) ?20 (key :: Type)'
-  --> 29:1..29:44
-   |
-29 | test :: forall key. key -> Html (Slots key)
-   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-error[CannotUnify]: Cannot unify '( child ::
-    forall (query :: Type -> Type) (output :: Type).
-      Slot (query :: Type -> Type) (output :: Type) (key :: Type)
-)' with '( child :: Slot (query :: Type -> Type) ?20 (key :: Type) | ?24 )'
-  --> 29:1..29:44
-   |
-29 | test :: forall key. key -> Html (Slots key)
-   | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
