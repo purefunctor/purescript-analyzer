@@ -157,11 +157,12 @@ fn build_core(mut snapshot: StateSnapshot) -> Result<(), LspError> {
                 let _ = snapshot
                     .client
                     .show_message(ShowMessageParams { typ: MessageType::ERROR, message: msg });
+            } else {
+                let _ = snapshot.client.show_message(ShowMessageParams {
+                    typ: MessageType::ERROR,
+                    message: "Build failed".to_string(),
+                });
             }
-            let _ = snapshot.client.show_message(ShowMessageParams {
-                typ: MessageType::ERROR,
-                message: "Build failed".to_string(),
-            });
         }
         Ok(())
     }
