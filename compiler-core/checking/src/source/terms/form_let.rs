@@ -4,7 +4,7 @@ use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::{Type, exhaustive, normalise, toolkit, unification};
 use crate::error::ErrorCrumb;
-use crate::source::terms::equations;
+use crate::source::terms::{equations, guarded};
 use crate::source::{binder, types};
 use crate::state::CheckState;
 
@@ -42,7 +42,7 @@ where
         return Ok(());
     };
 
-    let expression_type = equations::infer_where_expression(state, context, where_expression)?;
+    let expression_type = guarded::infer_where_expression(state, context, where_expression)?;
 
     let Some(binder) = *binder else {
         return Ok(());
@@ -139,20 +139,17 @@ where
     };
 
     if let Some(signature_id) = name.signature {
-        let equation_set = equations::analyse_equation_set(
+        let equation_patterns = equations::check_value_equations(
             state,
             context,
-            equations::EquationMode::Check {
-                origin: equations::EquationTypeOrigin::Explicit(signature_id),
-                expected_type: name_type,
-            },
+            equations::EquationTypeOrigin::Explicit(signature_id),
+            name_type,
             &name.equations,
         )?;
-
-        let exhaustiveness = equations::compute_equation_exhaustiveness(
+        let exhaustiveness = exhaustive::check_equation_patterns(
             state,
             context,
-            &equation_set,
+            &equation_patterns,
             &name.equations,
         )?;
         state.report_exhaustiveness(context, exhaustiveness);
@@ -161,7 +158,7 @@ where
             && equation.binders.is_empty()
             && let Some(guarded) = &equation.guarded
         {
-            let inferred_type = equations::infer_guarded_expression(state, context, guarded)?;
+            let inferred_type = guarded::infer_guarded_expression(state, context, guarded)?;
             // Keep simple let bindings e.g. `appendLocal = append` polymorphic.
             let name_type = normalise::expand(state, context, name_type)?;
             if let Type::Unification(unification_id) = context.lookup_type(name_type) {
@@ -170,16 +167,12 @@ where
                 unification::subtype(state, context, inferred_type, name_type)?;
             }
         } else {
-            let equation_set = equations::analyse_equation_set(
+            let equation_patterns =
+                equations::infer_value_equations(state, context, name_type, &name.equations)?;
+            let exhaustiveness = exhaustive::check_equation_patterns(
                 state,
                 context,
-                equations::EquationMode::Infer { group_type: name_type },
-                &name.equations,
-            )?;
-            let exhaustiveness = equations::compute_equation_exhaustiveness(
-                state,
-                context,
-                &equation_set,
+                &equation_patterns,
                 &name.equations,
             )?;
             state.report_exhaustiveness(context, exhaustiveness);
