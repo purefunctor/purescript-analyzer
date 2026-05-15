@@ -47,7 +47,7 @@ where
         return Ok(Some(MatchInstance::Stuck(vec![id])));
     }
 
-    Ok(Some(MatchInstance::Apart))
+    Ok(None)
 }
 
 fn match_expected<Q>(
