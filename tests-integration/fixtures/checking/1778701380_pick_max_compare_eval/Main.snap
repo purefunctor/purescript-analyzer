@@ -1,0 +1,70 @@
+---
+source: target/debug/build/tests-integration-35f6ccefceed9daa/out/checking_generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+pickMax ::
+  forall (t61 :: Type) (a :: (t61 :: Type)) (b :: (t61 :: Type)) (c :: (t61 :: Type)).
+    PickMax @(t61 :: Type) (a :: (t61 :: Type)) (b :: (t61 :: Type)) (c :: (t61 :: Type)) =>
+    Proxy @(t61 :: Type) (a :: (t61 :: Type)) ->
+    Proxy @(t61 :: Type) (b :: (t61 :: Type)) ->
+    Proxy @(t61 :: Type) (c :: (t61 :: Type))
+test :: Proxy @Type (Doc Base64)
+testInferred :: Proxy @Type (Doc Base64)
+
+Types
+TypeExpr :: forall (k :: Type). (k :: Type) -> Type
+Eq :: forall (a :: Type). (a :: Type) -> (a :: Type) -> TypeExpr @Type Boolean
+== :: forall (a :: Type). (a :: Type) -> (a :: Type) -> TypeExpr @Type Boolean
+Eval :: forall (k :: Type). TypeExpr @Type (k :: Type) -> (k :: Type) -> Constraint
+If :: forall (k :: Type). Boolean -> (k :: Type) -> (k :: Type) -> (k :: Type) -> Constraint
+NoDoc :: Type
+Doc :: Type -> Type
+Stub :: Type
+Base64 :: Type
+IntOf :: forall (k :: Type). (k :: Type) -> Int -> Constraint
+PickMax :: forall (k :: Type). (k :: Type) -> (k :: Type) -> (k :: Type) -> Constraint
+
+Classes
+class forall (k :: Type) (expr :: TypeExpr @Type (k :: Type)) (result :: (k :: Type)). Eval @(k :: Type) (expr :: TypeExpr @Type (k :: Type)) (result :: (k :: Type))
+class forall (k :: Type) (bool :: Boolean) (onTrue :: (k :: Type)) (onFalse :: (k :: Type)) (output :: (k :: Type)). If @(k :: Type)
+  (bool :: Boolean)
+  (onTrue :: (k :: Type))
+  (onFalse :: (k :: Type))
+  (output :: (k :: Type))
+class forall (k :: Type) (k :: (k :: Type)) (int :: Int). IntOf @(k :: Type) (k :: (k :: Type)) (int :: Int)
+class forall (k :: Type) (a :: (k :: Type)) (b :: (k :: Type)) (c :: (k :: Type)). PickMax @(k :: Type) (a :: (k :: Type)) (b :: (k :: Type)) (c :: (k :: Type))
+
+Instances
+instance forall (t18 :: Type) (t17 :: (t18 :: Type)).
+  Eval @Boolean (Eq @(t18 :: Type) (t17 :: (t18 :: Type)) (t17 :: (t18 :: Type))) True
+instance forall (t23 :: Type) (t21 :: (t23 :: Type)) (t22 :: (t23 :: Type)).
+  Eval @Boolean (Eq @(t23 :: Type) (t21 :: (t23 :: Type)) (t22 :: (t23 :: Type))) False
+instance forall (t29 :: Type) (t27 :: (t29 :: Type)) (t28 :: (t29 :: Type)).
+  If @(t29 :: Type) True (t27 :: (t29 :: Type)) (t28 :: (t29 :: Type)) (t27 :: (t29 :: Type))
+instance forall (t35 :: Type) (t33 :: (t35 :: Type)) (t34 :: (t35 :: Type)).
+  If @(t35 :: Type) False (t33 :: (t35 :: Type)) (t34 :: (t35 :: Type)) (t34 :: (t35 :: Type))
+instance IntOf @Type NoDoc 0
+instance IntOf @Type (Doc Stub) 1
+instance IntOf @Type (Doc Base64) 2
+instance forall (t46 :: Type) (t39 :: (t46 :: Type)) (t42 :: Int) (t40 :: (t46 :: Type)) (t43 :: Int)
+  (t44 :: Ordering) (t45 :: Boolean) (t41 :: (t46 :: Type)).
+  IntOf @(t46 :: Type) (t39 :: (t46 :: Type)) (t42 :: Int) =>
+  IntOf @(t46 :: Type) (t40 :: (t46 :: Type)) (t43 :: Int) =>
+  Compare (t42 :: Int) (t43 :: Int) (t44 :: Ordering) =>
+  Eval @Boolean (Eq @Ordering LT (t44 :: Ordering)) (t45 :: Boolean) =>
+  If @(t46 :: Type)
+    (t45 :: Boolean)
+    (t40 :: (t46 :: Type))
+    (t39 :: (t46 :: Type))
+    (t41 :: (t46 :: Type)) =>
+  PickMax @(t46 :: Type) (t39 :: (t46 :: Type)) (t40 :: (t46 :: Type)) (t41 :: (t46 :: Type))
+
+Roles
+TypeExpr = [Nominal]
+Eq = [Nominal, Nominal]
+NoDoc = []
+Doc = [Nominal]
+Stub = []
+Base64 = []

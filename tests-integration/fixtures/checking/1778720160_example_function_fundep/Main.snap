@@ -1,0 +1,53 @@
+---
+source: target/debug/build/tests-integration-35f6ccefceed9daa/out/checking_generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+evaluateExample ::
+  forall (t8 :: Type) (t7 :: Type) (@t :: Type) (@arg :: (t8 :: Type)) (@m :: (t7 :: Type)).
+    Example @(t8 :: Type) @(t7 :: Type) (t :: Type) (arg :: (t8 :: Type)) (m :: (t7 :: Type)) =>
+    (t :: Type) -> Unit
+unit :: Unit
+shouldEqual ::
+  forall (m :: Type -> Type).
+    MonadThrow @Type @(Type -> Type) Error (m :: Type -> Type) =>
+    Int -> Int -> (m :: Type -> Type) Unit
+it ::
+  forall (t :: Type) (arg :: Type) (g :: Type -> Type).
+    Example @Type @(Type -> Type) (t :: Type) (arg :: Type) (g :: Type -> Type) =>
+    String -> (t :: Type) -> Spec (g :: Type -> Type) (arg :: Type)
+spec :: forall (g :: Type -> Type) (a :: Type). Spec (g :: Type -> Type) (a :: Type)
+test :: Spec Aff Int
+
+Types
+Aff :: Type -> Type
+Spec :: (Type -> Type) -> Type -> Type
+Unit :: Type
+Error :: Type
+MonadThrow :: forall (t3 :: Type) (t2 :: Type). (t3 :: Type) -> (t2 :: Type) -> Constraint
+Example :: forall (t8 :: Type) (t7 :: Type). Type -> (t8 :: Type) -> (t7 :: Type) -> Constraint
+
+Classes
+class forall (t3 :: Type) (t2 :: Type) (e :: (t3 :: Type)) (m :: (t2 :: Type)). MonadThrow @(t3 :: Type) @(t2 :: Type) (e :: (t3 :: Type)) (m :: (t2 :: Type))
+class forall (t8 :: Type) (t7 :: Type) (t :: Type) (arg :: (t8 :: Type)) (m :: (t7 :: Type)). Example @(t8 :: Type) @(t7 :: Type) (t :: Type) (arg :: (t8 :: Type)) (m :: (t7 :: Type))
+  evaluateExample ::
+  forall (t8 :: Type) (t7 :: Type) (@t :: Type) (@arg :: (t8 :: Type)) (@m :: (t7 :: Type)).
+    Example @(t8 :: Type) @(t7 :: Type) (t :: Type) (arg :: (t8 :: Type)) (m :: (t7 :: Type)) =>
+    (t :: Type) -> Unit
+
+Instances
+instance MonadThrow @Type @(Type -> Type) Error Aff
+instance forall (t9 :: Type) (t10 :: Type -> Type).
+  Example @Type @(Type -> Type)
+    ((t9 :: Type) -> (t10 :: Type -> Type) Unit)
+    (t9 :: Type)
+    (t10 :: Type -> Type)
+instance forall (t13 :: Type -> Type).
+  Example @Type @(Type -> Type) ((t13 :: Type -> Type) Unit) Unit (t13 :: Type -> Type)
+
+Roles
+Aff = [Nominal]
+Spec = [Nominal, Nominal]
+Unit = []
+Error = []

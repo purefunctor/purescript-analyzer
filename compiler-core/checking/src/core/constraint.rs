@@ -27,10 +27,109 @@ use rustc_hash::{FxBuildHasher, FxHashMap, FxHashSet};
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::{TypeId, unification};
+use crate::core::{KindOrType, Type, TypeId, unification};
 use crate::error::ErrorKind;
 use crate::implication::{ImplicationId, Patterns};
 use crate::state::{CheckState, UnificationState};
+
+#[derive(Clone, PartialEq, Eq, Hash)]
+pub enum ProbeTypeKey {
+    Application(Box<ProbeTypeKey>, Box<ProbeTypeKey>),
+    KindApplication(Box<ProbeTypeKey>, Box<ProbeTypeKey>),
+    Forall(Box<ProbeTypeKey>, Box<ProbeTypeKey>),
+    Constrained(Box<ProbeTypeKey>, Box<ProbeTypeKey>),
+    Function(Box<ProbeTypeKey>, Box<ProbeTypeKey>),
+    Kinded(Box<ProbeTypeKey>, Box<ProbeTypeKey>),
+    Constructor(files::FileId, indexing::TypeItemId),
+    Integer(i32),
+    String(lowering::StringKind, crate::core::SmolStrId),
+    Row(Vec<(smol_str::SmolStr, ProbeTypeKey)>, Option<Box<ProbeTypeKey>>),
+    Variable,
+    Free(crate::core::SmolStrId),
+    Unknown(crate::core::SmolStrId),
+}
+
+#[derive(Clone, PartialEq, Eq, Hash)]
+pub enum ProbeArgKey {
+    Kind(ProbeTypeKey),
+    Type(ProbeTypeKey),
+}
+
+#[derive(Clone, PartialEq, Eq, Hash)]
+pub struct ProbeKey {
+    file_id: files::FileId,
+    type_id: indexing::TypeItemId,
+    arguments: Vec<ProbeArgKey>,
+}
+
+fn probe_type_key<Q>(state: &CheckState, context: &CheckContext<Q>, id: TypeId) -> ProbeTypeKey
+where
+    Q: ExternalQueries,
+{
+    match context.lookup_type(id) {
+        Type::Application(left, right) => ProbeTypeKey::Application(
+            Box::new(probe_type_key(state, context, left)),
+            Box::new(probe_type_key(state, context, right)),
+        ),
+        Type::KindApplication(left, right) => ProbeTypeKey::KindApplication(
+            Box::new(probe_type_key(state, context, left)),
+            Box::new(probe_type_key(state, context, right)),
+        ),
+        Type::Forall(binder, inner) => ProbeTypeKey::Forall(
+            Box::new(probe_type_key(state, context, context.lookup_forall_binder(binder).kind)),
+            Box::new(probe_type_key(state, context, inner)),
+        ),
+        Type::Constrained(left, right) => ProbeTypeKey::Constrained(
+            Box::new(probe_type_key(state, context, left)),
+            Box::new(probe_type_key(state, context, right)),
+        ),
+        Type::Function(left, right) => ProbeTypeKey::Function(
+            Box::new(probe_type_key(state, context, left)),
+            Box::new(probe_type_key(state, context, right)),
+        ),
+        Type::Kinded(left, right) => ProbeTypeKey::Kinded(
+            Box::new(probe_type_key(state, context, left)),
+            Box::new(probe_type_key(state, context, right)),
+        ),
+        Type::Constructor(file_id, type_id) => ProbeTypeKey::Constructor(file_id, type_id),
+        Type::Integer(value) => ProbeTypeKey::Integer(value),
+        Type::String(kind, value) => ProbeTypeKey::String(kind, value),
+        Type::Row(row_id) => {
+            let row = context.lookup_row_type(row_id);
+            let fields = row
+                .fields
+                .iter()
+                .map(|field| (field.label.clone(), probe_type_key(state, context, field.id)))
+                .collect();
+            let tail = row.tail.map(|tail| Box::new(probe_type_key(state, context, tail)));
+            ProbeTypeKey::Row(fields, tail)
+        }
+        Type::Rigid(..) | Type::Unification(_) => ProbeTypeKey::Variable,
+        Type::Free(value) => ProbeTypeKey::Free(value),
+        Type::Unknown(value) => ProbeTypeKey::Unknown(value),
+    }
+}
+
+fn probe_key<Q>(
+    state: &CheckState,
+    context: &CheckContext<Q>,
+    id: CanonicalConstraintId,
+) -> ProbeKey
+where
+    Q: ExternalQueries,
+{
+    let canonical = &state.canonicals[id];
+    let arguments = canonical
+        .arguments
+        .iter()
+        .map(|argument| match *argument {
+            KindOrType::Kind(id) => ProbeArgKey::Kind(probe_type_key(state, context, id)),
+            KindOrType::Type(id) => ProbeArgKey::Type(probe_type_key(state, context, id)),
+        })
+        .collect();
+
+    ProbeKey { file_id: canonical.file_id, type_id: canonical.type_id, arguments }
+}
 
 pub fn solve_implication<Q>(
     state: &mut CheckState,
@@ -178,6 +277,16 @@ where
             break 'work;
         };
 
+        if let Some((_, ancestors)) = state.candidate_constraint_probes.split_last()
+            && {
+                let wanted_probe = probe_key(state, context, wanted);
+                ancestors.iter().any(|probe| probe.iter().any(|active| active == &wanted_probe))
+            }
+        {
+            residuals.push(wanted);
+            continue 'work;
+        }
+
         let mut blocked = FxHashSet::default();
 
         match match_given_instance(state, context, wanted, &given)? {
@@ -237,6 +346,22 @@ where
     }
 
     Ok(residuals)
+}
+
+pub fn elaborate_given_substitution<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    given: &[TypeId],
+) -> QueryResult<crate::core::substitute::NameToType>
+where
+    Q: ExternalQueries,
+{
+    let given = given
+        .iter()
+        .filter_map(|id| canonical::canonicalise(state, context, *id).transpose())
+        .collect::<QueryResult<Vec<_>>>()?;
+
+    elaborate::elaborate_given_substitution(state, context, &given)
 }
 
 pub fn is_type_error<Q>(

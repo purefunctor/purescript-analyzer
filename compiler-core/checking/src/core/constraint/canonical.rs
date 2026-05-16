@@ -46,6 +46,10 @@ pub struct Canonicals {
     cache: FxHashMap<TypeId, CanonicalConstraintId>,
 }
 
+pub(crate) struct CanonicalsCheckpoint {
+    cache: FxHashMap<TypeId, CanonicalConstraintId>,
+}
+
 impl Canonicals {
     pub fn intern(&mut self, canonical: CanonicalConstraint) -> Id<CanonicalConstraint> {
         self.interner.intern(canonical)
@@ -80,6 +84,14 @@ impl Canonicals {
         // taken into account before checking that the cache is not overwritten.
         // debug_assert!(previous.is_none(), "critical violation: canonical cache overwrite");
         id
+    }
+
+    pub(crate) fn checkpoint(&self) -> CanonicalsCheckpoint {
+        CanonicalsCheckpoint { cache: self.cache.clone() }
+    }
+
+    pub(crate) fn restore(&mut self, checkpoint: CanonicalsCheckpoint) {
+        self.cache = checkpoint.cache;
     }
 }
 

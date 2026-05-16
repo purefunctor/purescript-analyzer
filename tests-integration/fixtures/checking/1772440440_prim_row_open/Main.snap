@@ -1,5 +1,5 @@
 ---
-source: tests-integration/tests/checking/generated.rs
+source: target/debug/build/tests-integration-35f6ccefceed9daa/out/checking_generated.rs
 assertion_line: 28
 expression: report
 ---
@@ -58,12 +58,12 @@ forceSolve ::
 Types
 
 Diagnostics
-error[AmbiguousConstraint]: Ambiguous constraint: Lacks @Type "missing" ?81
+error[AmbiguousConstraint]: Ambiguous constraint: Lacks @Type "a" ( a :: Int | ?114 )
   --> 33:1..43:4
    |
 33 | forceSolve =
    | ^~~~~~~~~~~~
-error[AmbiguousConstraint]: Ambiguous constraint: Lacks @Type "a" ( a :: Int | ?84 )
+error[AmbiguousConstraint]: Ambiguous constraint: Lacks @Type "missing" ?111
   --> 33:1..43:4
    |
 33 | forceSolve =

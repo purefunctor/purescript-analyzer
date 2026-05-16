@@ -34,7 +34,7 @@ error[CannotUnify]: Cannot unify '( b :: String )' with '( b :: Int )'
    |
 15 | forceSolve =
    | ^~~~~~~~~~~~
-error[CannotUnify]: Cannot unify '( a :: Int, b :: String )' with '( missing :: Int | ?23 )'
+error[CannotUnify]: Cannot unify '( a :: Int, b :: String )' with '( missing :: Int | ?27 )'
   --> 15:1..19:4
    |
 15 | forceSolve =

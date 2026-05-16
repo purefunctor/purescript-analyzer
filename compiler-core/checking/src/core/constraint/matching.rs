@@ -1,5 +1,6 @@
 //! Implements matching functions for constraints.
 
+use std::collections::VecDeque;
 use std::iter;
 
 use building_types::QueryResult;
@@ -12,8 +13,9 @@ use rustc_hash::{FxHashMap, FxHashSet};
 use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::constraint::instances::InstanceCandidate;
-use crate::core::constraint::{CanonicalConstraintId, canonical};
-use crate::core::fd::{Fd, compute_closure};
+use crate::core::constraint::{CanonicalConstraintId, canonical, compiler, probe_key};
+use crate::core::fd::{Fd, compute_closure, get_all_determined};
+use crate::core::fold::{FoldAction, TypeFold, fold_type};
 use crate::core::substitute::SubstituteName;
 use crate::core::unification::{CanUnify, can_unify};
 use crate::core::walk::{TypeWalker, WalkAction, walk_type};
@@ -232,19 +234,19 @@ where
             if let (KindOrType::Type(wanted_argument), KindOrType::Type(given_argument)) =
                 (wanted_argument, given_argument)
             {
-                results.push((wanted_argument, given_argument, match_result));
+                results.push((results.len(), wanted_argument, given_argument, match_result));
             }
         }
 
-        let match_results = results.iter().map(|(_, _, result)| *result).collect_vec();
+        let match_results = results.iter().map(|(_, _, _, result)| *result).collect_vec();
 
-        if !can_determine_stuck(context, wanted.file_id, wanted.type_id, &match_results)? {
+        if !can_determine_stuck(state, context, wanted.file_id, wanted.type_id, &match_results)? {
             return Ok(MatchInstance::Stuck(stuck));
         }
 
         let mut unifications = vec![];
 
-        for (wanted, given, result) in results {
+        for (_, wanted, given, result) in results {
             if matches!(result, MatchType::Stuck(_)) {
                 unifications.push((wanted, given));
             }
@@ -348,9 +350,12 @@ where
         let mut bindings = FxHashMap::default();
         let mut unifications = vec![];
 
+        let last_position = chain.iter().map(|candidate| candidate.position).max();
+
         for (&wanted_argument, &given_argument) in
             iter::zip(wanted.arguments.iter(), given.arguments.iter())
         {
+            let unification_start = unifications.len();
             let match_result =
                 if let (KindOrType::Kind(wanted_argument), KindOrType::Kind(given_argument))
                 | (KindOrType::Type(wanted_argument), KindOrType::Type(given_argument)) =
@@ -380,13 +385,20 @@ where
             if let (KindOrType::Type(wanted_argument), KindOrType::Type(given_argument)) =
                 (wanted_argument, given_argument)
             {
-                results.push((wanted_argument, given_argument, match_result));
+                let argument_unifications = unifications[unification_start..].to_vec();
+                results.push((
+                    results.len(),
+                    wanted_argument,
+                    given_argument,
+                    match_result,
+                    argument_unifications,
+                ));
             }
         }
 
-        let match_results = results.iter().map(|(_, _, result)| *result).collect_vec();
+        let match_results = results.iter().map(|(_, _, _, result, _)| *result).collect_vec();
 
-        if !can_determine_stuck(context, wanted.file_id, wanted.type_id, &match_results)? {
+        if !can_determine_stuck(state, context, wanted.file_id, wanted.type_id, &match_results)? {
             return Ok(MatchInstance::Stuck(stuck));
         }
 
@@ -400,25 +412,213 @@ where
             bindings.insert(binder.name, binder_type);
         }
 
-        for (wanted, given, result) in results {
+        for (_, wanted, given, result, _) in &results {
             if matches!(result, MatchType::Stuck(_)) {
-                let given = SubstituteName::many(state, context, &bindings, given)?;
-                unifications.push((wanted, given));
+                let given = SubstituteName::many(state, context, &bindings, *given)?;
+                unifications.push((*wanted, given));
+            }
+        }
+
+        if Some(candidate.position) != last_position {
+            let blocking = non_determined_unification_ids(
+                state,
+                context,
+                wanted.file_id,
+                wanted.type_id,
+                &results,
+            )?;
+            if !blocking.is_empty() {
+                return Ok(MatchInstance::Stuck(blocking));
             }
         }
 
         let mut constraints = vec![];
+        let unification_substitution = unification_substitution(state, context, &unifications)?;
+
         for constraint in given.constraints {
             let constraint = SubstituteName::many(state, context, &bindings, constraint)?;
+            let constraint = SubstituteUnifications::many(
+                state,
+                context,
+                &unification_substitution,
+                constraint,
+            )?;
             if let Some(constraint) = canonical::canonicalise(state, context, constraint)? {
                 constraints.push(constraint);
             };
+        }
+
+        for &constraint in &constraints {
+            if let Some(MatchInstance::Apart) =
+                compiler::match_compiler_instance(state, context, constraint, &[])?
+            {
+                continue 'chain;
+            }
+        }
+
+        if chain.len() > 1 && candidate_constraints_are_unsatisfiable(state, context, &constraints)?
+        {
+            continue 'chain;
         }
 
         return Ok(MatchInstance::Match(InstanceMatch { unifications, constraints }));
     }
 
     Ok(MatchInstance::Apart)
+}
+
+fn candidate_constraints_are_unsatisfiable<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    constraints: &[CanonicalConstraintId],
+) -> QueryResult<bool>
+where
+    Q: ExternalQueries,
+{
+    if constraints.is_empty() {
+        return Ok(false);
+    }
+
+    let probe = constraints.iter().map(|&id| probe_key(state, context, id)).collect_vec();
+    if let Some(&cached) = state.candidate_constraint_probe_cache.get(&probe) {
+        return Ok(cached);
+    }
+
+    if state.candidate_constraint_probes.iter().any(|previous| previous == &probe) {
+        return Ok(true);
+    }
+
+    if state.candidate_constraint_probes.len() >= 2 {
+        return Ok(false);
+    }
+
+    let checkpoint = state.checkpoint();
+    state.candidate_constraint_probes.push(probe.clone());
+    let result = (|| {
+        let wanted = VecDeque::from_iter(constraints.iter().copied());
+        let residuals = super::solve_constraints(state, context, wanted, &[])?;
+
+        for residual in residuals {
+            if state.canonical_errors.contains_key(&residual) {
+                return Ok(true);
+            }
+
+            if let Some(MatchInstance::Apart) =
+                compiler::match_compiler_instance(state, context, residual, &[])?
+            {
+                return Ok(true);
+            }
+        }
+
+        Ok(false)
+    })();
+    state.candidate_constraint_probes.pop();
+
+    state.restore(checkpoint);
+    if let Ok(&result) = result.as_ref() {
+        state.candidate_constraint_probe_cache.insert(probe, result);
+    }
+    result
+}
+
+fn non_determined_unification_ids<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    file_id: FileId,
+    type_id: TypeItemId,
+    results: &[(usize, TypeId, TypeId, MatchType, Vec<(TypeId, TypeId)>)],
+) -> QueryResult<Vec<u32>>
+where
+    Q: ExternalQueries,
+{
+    let determined =
+        get_all_determined(&get_functional_dependencies(state, context, file_id, type_id)?);
+    let mut ids = vec![];
+
+    for (index, wanted, _, result, unifications) in results {
+        if determined.contains(index) {
+            continue;
+        }
+
+        if result.is_unknown() {
+            ids.extend(collect_blocking(state, context, &[*wanted])?);
+        }
+
+        for &(left, right) in unifications {
+            ids.extend(collect_blocking(state, context, &[left, right])?);
+        }
+    }
+
+    ids.sort_unstable();
+    ids.dedup();
+    Ok(ids)
+}
+
+fn unification_substitution<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    unifications: &[(TypeId, TypeId)],
+) -> QueryResult<FxHashMap<u32, TypeId>>
+where
+    Q: ExternalQueries,
+{
+    let mut substitution = FxHashMap::default();
+
+    for &(left, right) in unifications {
+        let left = normalise::expand(state, context, left)?;
+        let right = normalise::expand(state, context, right)?;
+
+        if let Type::Unification(id) = context.lookup_type(left) {
+            substitution.insert(id, right);
+        } else if let Type::Unification(id) = context.lookup_type(right) {
+            substitution.insert(id, left);
+        }
+    }
+
+    Ok(substitution)
+}
+
+struct SubstituteUnifications<'a> {
+    substitution: &'a FxHashMap<u32, TypeId>,
+}
+
+impl SubstituteUnifications<'_> {
+    fn many<Q>(
+        state: &mut CheckState,
+        context: &CheckContext<Q>,
+        substitution: &FxHashMap<u32, TypeId>,
+        type_id: TypeId,
+    ) -> QueryResult<TypeId>
+    where
+        Q: ExternalQueries,
+    {
+        if substitution.is_empty() {
+            return Ok(type_id);
+        }
+
+        fold_type(state, context, type_id, &mut SubstituteUnifications { substitution })
+    }
+}
+
+impl TypeFold for SubstituteUnifications<'_> {
+    fn transform<Q>(
+        &mut self,
+        _state: &mut CheckState,
+        _context: &CheckContext<Q>,
+        _id: TypeId,
+        t: &Type,
+    ) -> QueryResult<FoldAction>
+    where
+        Q: ExternalQueries,
+    {
+        if let Type::Unification(id) = t
+            && let Some(&replacement) = self.substitution.get(id)
+        {
+            Ok(FoldAction::Replace(replacement))
+        } else {
+            Ok(FoldAction::Continue)
+        }
+    }
 }
 
 fn match_core<Q, R>(
@@ -600,6 +800,7 @@ where
 }
 
 fn can_determine_stuck<Q>(
+    state: &mut CheckState,
     context: &CheckContext<Q>,
     file_id: FileId,
     type_id: TypeItemId,
@@ -619,7 +820,7 @@ where
         return Ok(true);
     }
 
-    let functional_dependencies = get_functional_dependencies(context, file_id, type_id)?;
+    let functional_dependencies = get_functional_dependencies(state, context, file_id, type_id)?;
     let match_indices: FxHashSet<_> = results
         .iter()
         .enumerate()
@@ -631,6 +832,7 @@ where
 }
 
 fn get_functional_dependencies<Q>(
+    state: &mut CheckState,
     context: &CheckContext<Q>,
     file_id: FileId,
     type_id: TypeItemId,
@@ -638,6 +840,16 @@ fn get_functional_dependencies<Q>(
 where
     Q: ExternalQueries,
 {
+    if let Some(class) = toolkit::lookup_file_class(state, context, file_id, type_id)? {
+        let fd = class.functional_dependencies.iter().map(|functional_dependency| {
+            Fd::new(
+                functional_dependency.determiners.iter().map(|&x| x as usize),
+                functional_dependency.determined.iter().map(|&x| x as usize),
+            )
+        });
+        return Ok(fd.collect_vec());
+    }
+
     fn extract(type_item: Option<&TypeItemIr>) -> Vec<Fd> {
         let Some(TypeItemIr::ClassGroup { class: Some(class), .. }) = type_item else {
             return vec![];

@@ -187,7 +187,9 @@ where
         // `Union ( a :: A, b :: B | t ) ( c :: C ) ( | u )` solves `u ~ ( a :: A, b :: B | f )`,
         // plus the remaining `Union ( | t ) ( c :: C ) ( | f )` constraint.
         (Some(RowView::Open { fields: left_fields, tail }), Some(_), _) => {
-            let fresh = state.fresh_unification(context.queries, context.prim.row_type);
+            let row_kind = infer_row_constraint_kind(state, context, &[left, right, union])?;
+            let fresh_kind = context.intern_application(context.prim.row, row_kind);
+            let fresh = state.fresh_unification(context.queries, fresh_kind);
             let result = context.intern_row(left_fields.iter().cloned(), Some(fresh));
 
             let constraint = make_prim_row_constraint(
