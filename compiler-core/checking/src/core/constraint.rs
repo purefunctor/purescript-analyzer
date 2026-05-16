@@ -277,14 +277,12 @@ where
             break 'work;
         };
 
-        if !state.candidate_constraint_probes.is_empty() {
-            let wanted_probe = probe_key(state, context, wanted);
-            if let Some((_, ancestors)) = state.candidate_constraint_probes.split_last()
-                && ancestors.iter().any(|probe| probe.iter().any(|active| active == &wanted_probe))
-            {
-                residuals.push(wanted);
-                continue 'work;
-            }
+        let wanted_probe = probe_key(state, context, wanted);
+        if let Some((_, ancestors)) = state.candidate_constraint_probes.split_last()
+            && ancestors.iter().any(|probe| probe.iter().any(|active| active == &wanted_probe))
+        {
+            residuals.push(wanted);
+            continue 'work;
         }
 
         let mut blocked = FxHashSet::default();
