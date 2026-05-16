@@ -484,9 +484,11 @@ where
         return Ok(cached);
     }
 
-    if state.candidate_constraint_probes.iter().any(|previous| previous == &probe)
-        || state.candidate_constraint_probes.len() >= 2
-    {
+    if state.candidate_constraint_probes.iter().any(|previous| previous == &probe) {
+        return Ok(true);
+    }
+
+    if state.candidate_constraint_probes.len() >= 2 {
         return Ok(false);
     }
 
