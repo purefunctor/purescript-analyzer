@@ -534,7 +534,7 @@ where
     let mut ids = vec![];
 
     for (index, wanted, _, result, unifications) in results {
-        if determined.contains(&index) {
+        if determined.contains(index) {
             continue;
         }
 
