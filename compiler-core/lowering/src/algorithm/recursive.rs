@@ -426,10 +426,11 @@ fn lower_expression_kind(
             let apply = if needs_apply { resolve_ado_fn(AdoFn::Apply) } else { None };
             let pure = if needs_pure { resolve_ado_fn(AdoFn::Pure) } else { None };
 
+            let outer_scope = state.graph_scope;
             let statements = recover! {
                 cst.statements()?
                     .children()
-                    .map(|cst| lower_do_statement(state, context, &cst))
+                    .map(|cst| lower_ado_statement(state, context, outer_scope, &cst))
                     .collect()
             };
             let expression = cst.expression().map(|cst| lower_expression(state, context, &cst));
@@ -833,6 +834,43 @@ fn lower_do_statement(
         }
         cst::DoStatement::DoStatementDiscard(cst) => {
             let expression = cst.expression().map(|cst| lower_expression(state, context, &cst));
+            DoStatement::Discard { expression }
+        }
+    };
+    state.associate_do_statement(id, statement);
+    id
+}
+
+fn lower_ado_statement(
+    state: &mut State,
+    context: &Context,
+    outer_scope: Option<GraphNodeId>,
+    cst: &cst::DoStatement,
+) -> DoStatementId {
+    let id = context.stabilized.lookup_cst(cst).expect_id();
+    let statement = match cst {
+        cst::DoStatement::DoStatementBind(cst) => {
+            let current_scope = mem::replace(&mut state.graph_scope, outer_scope);
+            let expression = cst.expression().map(|cst| lower_expression(state, context, &cst));
+            state.graph_scope = current_scope;
+
+            state.push_binder_scope();
+            let binder = cst.binder().map(|cst| lower_binder(state, context, &cst));
+
+            DoStatement::Bind { binder, expression }
+        }
+        cst::DoStatement::DoStatementLet(cst) => {
+            let statements = recover! {
+                let statements = cst.statements()?;
+                lower_bindings(state, context, &statements)
+            };
+            DoStatement::Let { statements }
+        }
+        cst::DoStatement::DoStatementDiscard(cst) => {
+            let current_scope = mem::replace(&mut state.graph_scope, outer_scope);
+            let expression = cst.expression().map(|cst| lower_expression(state, context, &cst));
+            state.graph_scope = current_scope;
+
             DoStatement::Discard { expression }
         }
     };
