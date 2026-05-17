@@ -109,14 +109,14 @@ where
         return Ok(());
     };
 
-    let expression_type = terms::infer_expression(state, context, expression)?;
-    let expression_type = toolkit::instantiate_constrained(state, context, expression_type)?;
+    if let Some(binder) = guard.binder {
+        let expression_type = terms::infer_expression(state, context, expression)?;
+        let expression_type = toolkit::instantiate_constrained(state, context, expression_type)?;
 
-    let Some(binder) = guard.binder else {
-        return Ok(());
-    };
-
-    binder::check_binder(state, context, binder, expression_type)?;
+        binder::check_binder(state, context, binder, expression_type)?;
+    } else {
+        terms::check_expression(state, context, expression, context.prim.boolean)?;
+    }
 
     Ok(())
 }
