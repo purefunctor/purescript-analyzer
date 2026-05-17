@@ -1,0 +1,36 @@
+---
+source: target/debug/build/tests-integration-6275ac7a2b26d932/out/checking_generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Proxy :: forall (k :: Type) (@a :: (k :: Type)). Proxy @(k :: Type) (a :: (k :: Type))
+Html :: forall (@slots :: Row Type). Html (slots :: Row Type)
+_child :: Proxy @Symbol "child"
+slot ::
+  forall (query :: Type -> Type) (output :: Type) (slots :: Row Type) (label :: Symbol)
+    (key :: Type) (tail :: Row Type).
+    Cons @Type
+      (label :: Symbol)
+      (Slot (query :: Type -> Type) (output :: Type) (key :: Type))
+      (tail :: Row Type)
+      (slots :: Row Type) =>
+    Proxy @Symbol (label :: Symbol) -> (key :: Type) -> Html (slots :: Row Type)
+test :: forall (key :: Type). (key :: Type) -> Html (Slots (key :: Type))
+
+Types
+Proxy :: forall (k :: Type). (k :: Type) -> Type
+Slot :: (Type -> Type) -> Type -> Type -> Type
+Html :: Row Type -> Type
+Slots :: Type -> Row Type
+
+Synonyms
+type Slots key = ( child ::
+    forall (query :: Type -> Type) (output :: Type).
+      Slot (query :: Type -> Type) (output :: Type) (key :: Type)
+)
+
+Roles
+Proxy = [Phantom]
+Slot = [Phantom, Phantom, Phantom]
+Html = [Phantom]

@@ -1,0 +1,25 @@
+---
+source: target/debug/build/tests-integration-6275ac7a2b26d932/out/checking_generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+Z3 ::
+  forall (@r :: Type) (@mode :: Type) (@a :: Type).
+    Aff (a :: Type) -> Z3 (r :: Type) (mode :: Type) (a :: Type)
+run ::
+  forall (a :: Type).
+    (forall (r :: Type) (mode :: Type). Z3 (r :: Type) (mode :: Type) (a :: Type)) ->
+    Aff (a :: Type)
+Box :: forall (@a :: Type). (a :: Type) -> Box (a :: Type)
+unbox :: (forall (a :: Type). Box (a :: Type)) -> (forall (a :: Type). (a :: Type))
+
+Types
+Aff :: Type -> Type
+Z3 :: Type -> Type -> Type -> Type
+Box :: Type -> Type
+
+Roles
+Aff = [Nominal]
+Z3 = [Phantom, Phantom, Representational]
+Box = [Representational]

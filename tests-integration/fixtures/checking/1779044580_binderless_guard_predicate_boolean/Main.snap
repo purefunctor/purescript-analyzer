@@ -1,0 +1,16 @@
+---
+source: target/debug/build/tests-integration-6275ac7a2b26d932/out/checking_generated.rs
+assertion_line: 28
+expression: report
+---
+Terms
+test :: Int -> Int
+
+Types
+
+Diagnostics
+error[CannotUnify]: Cannot unify 'Int' with 'Boolean'
+  --> 6:7..6:8
+  |
+6 |     | n -> 0
+  |       ^

@@ -3,7 +3,7 @@ use building_types::QueryResult;
 use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::{TypeId, exhaustive, toolkit, unification};
-use crate::source::terms::{equations, form_let};
+use crate::source::terms::{form_let, guarded};
 use crate::source::{binder, terms};
 use crate::state::CheckState;
 
@@ -132,6 +132,11 @@ where
     for &binder_id in binders.iter() {
         let decomposed = toolkit::decompose_function(state, context, remaining)?;
         if let Some((argument, result)) = decomposed {
+            let argument = if binder::requires_instantiation(context, binder_id) {
+                toolkit::instantiate_unifications(state, context, argument)?
+            } else {
+                argument
+            };
             binder::check_binder(state, context, binder_id, argument)?;
             arguments.push(argument);
             remaining = result;
@@ -171,16 +176,12 @@ pub fn instantiate_trunk_types<Q>(
 where
     Q: ExternalQueries,
 {
-    for (position, trunk_type) in trunk_types.iter_mut().enumerate() {
-        let should_instantiate = branches.iter().any(|branch| {
-            let binder = branch.binders.get(position);
-            binder.is_some_and(|&binder_id| binder::requires_instantiation(context, binder_id))
-        });
-        if should_instantiate {
-            *trunk_type = toolkit::instantiate_unifications(state, context, *trunk_type)?;
-        }
-    }
-    Ok(())
+    binder::instantiate_pattern_column_types(
+        state,
+        context,
+        trunk_types,
+        branches.iter().flat_map(|branch| branch.binders.iter().copied().enumerate()),
+    )
 }
 
 pub fn infer_case_of<Q>(
@@ -239,12 +240,11 @@ where
         if let Some(guarded) = &branch.guarded_expression {
             match mode {
                 CaseOfMode::Infer => {
-                    let guarded_type =
-                        equations::infer_guarded_expression(state, context, guarded)?;
+                    let guarded_type = guarded::infer_guarded_expression(state, context, guarded)?;
                     unification::subtype(state, context, guarded_type, expected)?;
                 }
                 CaseOfMode::Check { .. } => {
-                    equations::check_guarded_expression(state, context, guarded, expected)?;
+                    guarded::check_guarded_expression(state, context, guarded, expected)?;
                 }
             }
         }

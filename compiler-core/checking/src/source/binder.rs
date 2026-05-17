@@ -86,11 +86,77 @@ where
         lowering::BinderKind::Parenthesized { parenthesized } => {
             parenthesized.is_some_and(|id| requires_instantiation(context, id))
         }
-        lowering::BinderKind::Typed { binder, .. } => {
-            binder.is_some_and(|id| requires_instantiation(context, id))
+        lowering::BinderKind::Typed { binder, type_ } => {
+            type_.is_some_and(|id| type_annotation_requires_instantiation(context, id))
+                || binder.is_some_and(|id| requires_instantiation(context, id))
         }
         _ => true,
     }
+}
+
+fn type_annotation_requires_instantiation<Q>(
+    context: &CheckContext<Q>,
+    type_id: lowering::TypeId,
+) -> bool
+where
+    Q: ExternalQueries,
+{
+    let Some(kind) = context.lowered.info.get_type_kind(type_id) else {
+        return false;
+    };
+    match kind {
+        lowering::TypeKind::Forall { .. } => false,
+        lowering::TypeKind::Kinded { type_, .. } => {
+            type_.is_some_and(|id| type_annotation_requires_instantiation(context, id))
+        }
+        lowering::TypeKind::Parenthesized { parenthesized } => {
+            parenthesized.is_some_and(|id| type_annotation_requires_instantiation(context, id))
+        }
+        _ => true,
+    }
+}
+
+/// Instantiates pattern types for binders that require instantiation.
+///
+/// For equations, the `types` are usually the types of the arguments while
+/// the `binders` are the syntactic arguments themselves. For example:
+///
+/// ```purescript
+/// unbox :: (forall a. Box a) -> forall a. a
+/// unbox (Box a) = a
+/// ```
+///
+/// The argument `forall a. Box a` will be instantiated if at least one of its
+/// syntactic arguments demands it. For case expressions, the `types` are the
+/// types of the scrutinees. For example:
+///
+/// ```purescript
+/// box :: forall a. Box a
+/// box = ...
+///
+/// case box of
+///   Box a -> a
+/// ```
+pub fn instantiate_pattern_column_types<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    types: &mut [TypeId],
+    binders: impl IntoIterator<Item = (usize, lowering::BinderId)>,
+) -> QueryResult<()>
+where
+    Q: ExternalQueries,
+{
+    let columns = binders.into_iter().filter_map(|(position, binder_id)| {
+        requires_instantiation(context, binder_id).then_some(position)
+    });
+
+    for column in columns {
+        if let Some(column_type) = types.get_mut(column) {
+            *column_type = toolkit::instantiate_unifications(state, context, *column_type)?;
+        }
+    }
+
+    Ok(())
 }
 
 fn binder_core<Q>(

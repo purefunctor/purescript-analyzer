@@ -9,8 +9,8 @@ use crate::context::CheckContext;
 use crate::core::constraint::CanonicalConstraintId;
 use crate::core::substitute::{NameToType, SubstituteName};
 use crate::core::{
-    CheckedInstance, ForallBinder, KindOrType, Type, TypeId, constraint, generalise, normalise,
-    signature, toolkit, unification, zonk,
+    CheckedInstance, ForallBinder, KindOrType, Type, TypeId, constraint, exhaustive, generalise,
+    normalise, signature, toolkit, unification, zonk,
 };
 use crate::error::{ErrorCrumb, ErrorKind};
 use crate::source::terms::equations;
@@ -306,39 +306,37 @@ where
                 }
             }
 
-            let equation_set = equations::analyse_equation_set(
+            let equation_patterns = equations::check_value_equations(
                 state,
                 context,
-                equations::EquationMode::Check {
-                    origin: equations::EquationTypeOrigin::Explicit(signature_id),
-                    expected_type: signature_member_type,
-                },
+                equations::EquationTypeOrigin::Explicit(signature_id),
+                signature_member_type,
                 &member.equations,
             )?;
-            let exhaustiveness = equations::compute_equation_exhaustiveness(
+            let exhaustiveness = exhaustive::check_equation_patterns(
                 state,
                 context,
-                &equation_set,
+                &equation_patterns,
                 &member.equations,
             )?;
+
             state.report_exhaustiveness(context, exhaustiveness);
             state.solve_constraints(context)?
         } else if let Some(expected_type) = class_member_type {
-            let equation_set = equations::analyse_equation_set(
+            let equation_patterns = equations::check_value_equations(
                 state,
                 context,
-                equations::EquationMode::Check {
-                    origin: equations::EquationTypeOrigin::Implicit,
-                    expected_type,
-                },
+                equations::EquationTypeOrigin::Implicit,
+                expected_type,
                 &member.equations,
             )?;
-            let exhaustiveness = equations::compute_equation_exhaustiveness(
+            let exhaustiveness = exhaustive::check_equation_patterns(
                 state,
                 context,
-                &equation_set,
+                &equation_patterns,
                 &member.equations,
             )?;
+
             state.report_exhaustiveness(context, exhaustiveness);
             state.solve_constraints(context)?
         } else {
@@ -673,17 +671,15 @@ fn check_value_group_core_check<Q>(
 where
     Q: ExternalQueries,
 {
-    let equation_set = equations::analyse_equation_set(
+    let equation_patterns = equations::check_value_equations(
         state,
         context,
-        equations::EquationMode::Check {
-            origin: equations::EquationTypeOrigin::Explicit(signature_id),
-            expected_type: signature_type,
-        },
+        equations::EquationTypeOrigin::Explicit(signature_id),
+        signature_type,
         equations,
     )?;
     let exhaustiveness =
-        equations::compute_equation_exhaustiveness(state, context, &equation_set, equations)?;
+        exhaustive::check_equation_patterns(state, context, &equation_patterns, equations)?;
     state.report_exhaustiveness(context, exhaustiveness);
     state.solve_constraints(context)
 }
@@ -699,14 +695,10 @@ where
 {
     let group_type = state.fresh_unification(context.queries, context.prim.t);
     state.checked.terms.insert(item_id, group_type);
-    let equation_set = equations::analyse_equation_set(
-        state,
-        context,
-        equations::EquationMode::Infer { group_type },
-        equations,
-    )?;
+    let equation_patterns =
+        equations::infer_value_equations(state, context, group_type, equations)?;
     let exhaustiveness =
-        equations::compute_equation_exhaustiveness(state, context, &equation_set, equations)?;
+        exhaustive::check_equation_patterns(state, context, &equation_patterns, equations)?;
     state.report_exhaustiveness(context, exhaustiveness);
 
     state.solve_constraints(context)

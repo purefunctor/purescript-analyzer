@@ -2,7 +2,7 @@ use building_types::QueryResult;
 
 use crate::ExternalQueries;
 use crate::context::CheckContext;
-use crate::core::constraint::matching::{InstanceMatch, MatchInstance};
+use crate::core::constraint::matching::MatchInstance;
 use crate::core::unification::{CanUnify, can_unify};
 use crate::core::{Type, TypeId, normalise};
 use crate::state::CheckState;
@@ -38,13 +38,13 @@ where
         || v == context.prim_ordering.gt
     {
         let Some(expected) = context.known_reflectable.ordering else {
-            return Ok(Some(MatchInstance::Stuck(vec![])));
+            return Ok(Some(MatchInstance::Stuck { stuck: vec![] }));
         };
         return Ok(Some(match_expected(state, context, t, expected)?));
     }
 
     if let Type::Unification(id) = context.lookup_type(v) {
-        return Ok(Some(MatchInstance::Stuck(vec![id])));
+        return Ok(Some(MatchInstance::Stuck { stuck: vec![id] }));
     }
 
     Ok(Some(MatchInstance::Apart))
@@ -62,7 +62,7 @@ where
     Ok(match can_unify(state, context, actual, expected)? {
         CanUnify::Apart => MatchInstance::Apart,
         CanUnify::Equal | CanUnify::Unify => {
-            MatchInstance::Match(InstanceMatch::from_unifications(vec![(actual, expected)]))
+            MatchInstance::from_unifications(vec![(actual, expected)])
         }
     })
 }

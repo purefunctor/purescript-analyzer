@@ -5,6 +5,7 @@ pub mod form_ado;
 pub mod form_do;
 pub mod form_let;
 pub mod forms;
+pub mod guarded;
 
 use building_types::QueryResult;
 use itertools::Itertools;

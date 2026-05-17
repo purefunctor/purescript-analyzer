@@ -1,5 +1,5 @@
 ---
-source: tests-integration/tests/lowering/generated.rs
+source: target/debug/build/tests-integration-6275ac7a2b26d932/out/lowering_generated.rs
 assertion_line: 12
 expression: report
 ---
@@ -14,7 +14,7 @@ pure@10:6
 { x, y }@11:4
   -> binder@9:14
 x@10:11
-  -> binder@8:10
+  -> nothing
 pure@9:6
   -> top-level
 

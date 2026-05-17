@@ -349,14 +349,14 @@ where
             let text = state.checked.lookup_name(binder.name);
             let skolem = state.fresh_rigid_named(context.queries, binder.kind, text);
             let inner = SubstituteName::one(state, context, binder.name, skolem, inner)?;
-            state.with_depth(|state| unify(state, context, inner, t2))?
+            unify(state, context, inner, t2)?
         }
         (_, Type::Forall(binder_id, inner)) => {
             let binder = context.lookup_forall_binder(binder_id);
             let text = state.checked.lookup_name(binder.name);
             let skolem = state.fresh_rigid_named(context.queries, binder.kind, text);
             let inner = SubstituteName::one(state, context, binder.name, skolem, inner)?;
-            state.with_depth(|state| unify(state, context, t1, inner))?
+            unify(state, context, t1, inner)?
         }
 
         (

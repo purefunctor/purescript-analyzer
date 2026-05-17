@@ -332,21 +332,21 @@ fn instantiate_kind_applications<Q>(
 where
     Q: ExternalQueries,
 {
-    let expected_kind = normalise::normalise(state, context, expected_kind)?;
+    let expected_kind = normalise::expand(state, context, expected_kind)?;
 
     if matches!(context.lookup_type(expected_kind), Type::Forall(_, _)) {
         return Ok((t, k));
     }
 
     safe_loop! {
-        k = normalise::normalise(state, context, k)?;
+        k = normalise::expand(state, context, k)?;
 
         let Type::Forall(binder_id, inner_kind) = context.lookup_type(k) else {
             break;
         };
 
         let binder = context.lookup_forall_binder(binder_id);
-        let binder_kind = normalise::normalise(state, context, binder.kind)?;
+        let binder_kind = normalise::expand(state, context, binder.kind)?;
 
         let argument_type = state.fresh_unification(context.queries, binder_kind);
         t = context.intern_kind_application(t, argument_type);
@@ -457,12 +457,12 @@ where
     Q: ExternalQueries,
 {
     let unknown = context.unknown("invalid kind");
-    let id = normalise::normalise(state, context, id)?;
+    let id = normalise::expand(state, context, id)?;
 
     let kind = match context.lookup_type(id) {
         Type::Application(function, _) => {
             let function_kind = elaborate_kind(state, context, function)?;
-            let function_kind = normalise::normalise(state, context, function_kind)?;
+            let function_kind = normalise::expand(state, context, function_kind)?;
 
             match context.lookup_type(function_kind) {
                 Type::Function(_, result_kind) => result_kind,
@@ -488,7 +488,7 @@ where
 
         Type::KindApplication(function, argument) => {
             let function_kind = elaborate_kind(state, context, function)?;
-            let function_kind = normalise::normalise(state, context, function_kind)?;
+            let function_kind = normalise::expand(state, context, function_kind)?;
 
             match context.lookup_type(function_kind) {
                 Type::Forall(binder_id, inner_kind) => {

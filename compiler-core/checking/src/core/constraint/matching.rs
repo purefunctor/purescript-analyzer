@@ -1,5 +1,3 @@
-//! Implements matching functions for constraints.
-
 use std::iter;
 
 use building_types::QueryResult;
@@ -13,72 +11,477 @@ use crate::ExternalQueries;
 use crate::context::CheckContext;
 use crate::core::constraint::instances::InstanceCandidate;
 use crate::core::constraint::{CanonicalConstraintId, canonical};
-use crate::core::fd::{Fd, compute_closure};
+use crate::core::fd::{Fd, compute_closure, get_all_determined};
 use crate::core::substitute::SubstituteName;
-use crate::core::unification::{CanUnify, can_unify};
 use crate::core::walk::{TypeWalker, WalkAction, walk_type};
-use crate::core::{KindOrType, Name, RowField, RowType, Type, TypeId, normalise, toolkit};
+use crate::core::{KindOrType, Name, RowField, RowTypeId, Type, TypeId, normalise, toolkit};
 use crate::state::CheckState;
 
-/// The result of matching a wanted type against a given type.
-#[derive(Clone, Copy)]
+#[derive(PartialEq, Eq)]
 pub enum MatchType {
-    /// The types match.
-    Match,
-    /// The match has a wanted-side unification variable.
-    Stuck(u32),
-    /// The match has a wanted-side skolem variable.
-    ///
-    /// Skolem variables represent types chosen by the caller and they usually
-    /// appear inside of a universal quantifier like `forall`. Since the caller
-    /// decides how the skolem variable is instantiated, we cannot prove that
-    /// it is [`MatchType::Apart`] from any given type.
-    ///
-    /// For example, when attempting to match `Solve ~a`, `a` can be instantiated
-    /// into `Int`, so perhaps rejecting `Solve Int` is unsound. In practice, we
-    /// simply report that no matching instance was found for `Solve ~a`.
-    Skolem,
-    /// The types do not match.
+    Match { bindings: Vec<(Name, TypeId)> },
     Apart,
+    Stuck { stuck: Vec<u32> },
+    Skolem,
 }
 
 impl MatchType {
-    fn and_then(self, f: impl FnOnce() -> QueryResult<MatchType>) -> QueryResult<MatchType> {
-        if matches!(self, MatchType::Match) { f() } else { Ok(self) }
+    pub fn combine(self, other: MatchType) -> MatchType {
+        match (self, other) {
+            (MatchType::Match { bindings: left }, MatchType::Match { bindings: right }) => {
+                MatchType::Match { bindings: iter::chain(left, right).collect() }
+            }
+
+            (MatchType::Apart, _) | (_, MatchType::Apart) => MatchType::Apart,
+
+            (MatchType::Stuck { stuck: left }, MatchType::Stuck { stuck: right }) => {
+                MatchType::Stuck { stuck: iter::chain(left, right).collect() }
+            }
+
+            (MatchType::Stuck { stuck }, _) | (_, MatchType::Stuck { stuck }) => {
+                MatchType::Stuck { stuck }
+            }
+
+            (MatchType::Skolem, _) | (_, MatchType::Skolem) => MatchType::Skolem,
+        }
+    }
+
+    pub fn is_match(&self) -> bool {
+        matches!(self, MatchType::Match { .. })
+    }
+
+    pub fn is_apart(&self) -> bool {
+        matches!(self, MatchType::Apart)
     }
 
     pub fn is_unknown(&self) -> bool {
-        matches!(self, MatchType::Stuck(_) | MatchType::Skolem)
+        matches!(self, MatchType::Stuck { .. } | MatchType::Skolem)
     }
 }
 
-pub struct InstanceMatch {
-    pub unifications: Vec<(TypeId, TypeId)>,
-    pub constraints: Vec<CanonicalConstraintId>,
+pub fn types_match<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    pattern: &FxHashSet<Name>,
+    left: TypeId,
+    right: TypeId,
+) -> QueryResult<MatchType>
+where
+    Q: ExternalQueries,
+{
+    let left = normalise::expand(state, context, left)?;
+    let right = normalise::expand(state, context, right)?;
+
+    let left_core = context.lookup_type(left);
+    let right_core = context.lookup_type(right);
+
+    match (left_core, right_core) {
+        (Type::Kinded(left, _), _) => types_match(state, context, pattern, left, right),
+        (_, Type::Kinded(right, _)) => types_match(state, context, pattern, left, right),
+
+        (Type::Unification(left), Type::Unification(right)) => {
+            if left == right {
+                Ok(MatchType::Match { bindings: vec![] })
+            } else {
+                Ok(MatchType::Stuck { stuck: vec![left, right] })
+            }
+        }
+
+        (Type::Rigid(left, _, _), Type::Rigid(right, _, _))
+            if !pattern.contains(&left) && !pattern.contains(&right) && left == right =>
+        {
+            Ok(MatchType::Match { bindings: vec![] })
+        }
+
+        (_, Type::Rigid(right, _, _)) if pattern.contains(&right) => {
+            Ok(MatchType::Match { bindings: vec![(right, left)] })
+        }
+
+        (Type::Unification(unification), _) | (_, Type::Unification(unification)) => {
+            Ok(MatchType::Stuck { stuck: vec![unification] })
+        }
+
+        (Type::Rigid(name, _, _), _) | (_, Type::Rigid(name, _, _)) if !pattern.contains(&name) => {
+            Ok(MatchType::Skolem)
+        }
+
+        (Type::Constructor(left_file, left_item), Type::Constructor(right_file, right_item))
+            if (left_file, left_item) == (right_file, right_item) =>
+        {
+            Ok(MatchType::Match { bindings: vec![] })
+        }
+
+        (Type::String(_, left), Type::String(_, right)) if left == right => {
+            Ok(MatchType::Match { bindings: vec![] })
+        }
+
+        (Type::Integer(left), Type::Integer(right)) if left == right => {
+            Ok(MatchType::Match { bindings: vec![] })
+        }
+
+        (
+            Type::Application(left_function, left_argument),
+            Type::Application(right_function, right_argument),
+        ) => {
+            let function = types_match(state, context, pattern, left_function, right_function)?;
+            let argument = types_match(state, context, pattern, left_argument, right_argument)?;
+            Ok(function.combine(argument))
+        }
+
+        (Type::Application(_, _), Type::Function(right_argument, right_result)) => {
+            let right = context.intern_function_application(right_argument, right_result);
+            types_match(state, context, pattern, left, right)
+        }
+
+        (Type::Function(left_argument, left_result), Type::Application(_, _)) => {
+            let left = context.intern_function_application(left_argument, left_result);
+            types_match(state, context, pattern, left, right)
+        }
+
+        (
+            Type::KindApplication(left_function, left_argument),
+            Type::KindApplication(right_function, right_argument),
+        ) => {
+            let function = types_match(state, context, pattern, left_function, right_function)?;
+            let argument = types_match(state, context, pattern, left_argument, right_argument)?;
+            Ok(function.combine(argument))
+        }
+
+        (
+            Type::Function(left_argument, left_result),
+            Type::Function(right_argument, right_result),
+        ) => {
+            let argument = types_match(state, context, pattern, left_argument, right_argument)?;
+            let result = types_match(state, context, pattern, left_result, right_result)?;
+            Ok(argument.combine(result))
+        }
+
+        (Type::Row(left), Type::Row(right)) => compare_row_types_with(
+            state,
+            context,
+            left,
+            right,
+            &mut |state, context, left, right| types_match(state, context, pattern, left, right),
+        ),
+
+        (_, _) => Ok(MatchType::Apart),
+    }
 }
 
-impl InstanceMatch {
-    pub fn empty() -> InstanceMatch {
-        InstanceMatch { unifications: vec![], constraints: vec![] }
+fn compare_row_types_with<Q, Compare>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    left: RowTypeId,
+    right: RowTypeId,
+    compare: &mut Compare,
+) -> QueryResult<MatchType>
+where
+    Q: ExternalQueries,
+    Compare: FnMut(&mut CheckState, &CheckContext<Q>, TypeId, TypeId) -> QueryResult<MatchType>,
+{
+    let left = context.lookup_row_type(left);
+    let right = context.lookup_row_type(right);
+
+    let mut row_result = MatchType::Match { bindings: vec![] };
+    let mut left_fields = vec![];
+    let mut right_fields = vec![];
+
+    for field in itertools::merge_join_by(left.fields.iter(), right.fields.iter(), |left, right| {
+        left.label.cmp(&right.label)
+    }) {
+        match field {
+            itertools::EitherOrBoth::Left(left) => {
+                left_fields.push(left.clone());
+            }
+            itertools::EitherOrBoth::Both(left, right) => {
+                let field_result = compare(state, context, left.id, right.id)?;
+                row_result = row_result.combine(field_result);
+            }
+            itertools::EitherOrBoth::Right(right) => {
+                right_fields.push(right.clone());
+            }
+        }
     }
 
-    pub fn from_unifications(unifications: Vec<(TypeId, TypeId)>) -> InstanceMatch {
-        InstanceMatch { unifications, constraints: vec![] }
-    }
+    let tail_result = compare_row_tails_with(
+        state,
+        context,
+        left_fields,
+        left.tail,
+        right_fields,
+        right.tail,
+        compare,
+    )?;
 
-    pub fn from_constraints(constraints: Vec<CanonicalConstraintId>) -> InstanceMatch {
-        InstanceMatch { unifications: vec![], constraints }
+    Ok(row_result.combine(tail_result))
+}
+
+fn compare_row_tails_with<Q, Compare>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    left_fields: Vec<RowField>,
+    left_tail: Option<TypeId>,
+    right_fields: Vec<RowField>,
+    right_tail: Option<TypeId>,
+    compare: &mut Compare,
+) -> QueryResult<MatchType>
+where
+    Q: ExternalQueries,
+    Compare: FnMut(&mut CheckState, &CheckContext<Q>, TypeId, TypeId) -> QueryResult<MatchType>,
+{
+    let left_tail = context.intern_row(left_fields, left_tail);
+    let right_tail = context.intern_row(right_fields, right_tail);
+
+    if let (Type::Row(left_row), Type::Row(right_row)) =
+        (context.lookup_type(left_tail), context.lookup_type(right_tail))
+    {
+        let left_row = context.lookup_row_type(left_row);
+        let right_row = context.lookup_row_type(right_row);
+
+        if left_row.fields.is_empty()
+            && left_row.tail.is_none()
+            && right_row.fields.is_empty()
+            && right_row.tail.is_none()
+        {
+            Ok(MatchType::Match { bindings: vec![] })
+        } else {
+            Ok(MatchType::Apart)
+        }
+    } else {
+        compare(state, context, left_tail, right_tail)
     }
 }
 
-/// The result of matching a wanted constraint against a given constraint.
+pub fn types_equal<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    left: TypeId,
+    right: TypeId,
+) -> QueryResult<MatchType>
+where
+    Q: ExternalQueries,
+{
+    let left = normalise::expand(state, context, left)?;
+    let right = normalise::expand(state, context, right)?;
+
+    let left_core = context.lookup_type(left);
+    let right_core = context.lookup_type(right);
+
+    match (left_core, right_core) {
+        (Type::Kinded(left, _), _) => types_equal(state, context, left, right),
+        (_, Type::Kinded(right, _)) => types_equal(state, context, left, right),
+
+        (Type::Unification(left), Type::Unification(right)) => {
+            if left == right {
+                Ok(MatchType::Match { bindings: vec![] })
+            } else {
+                Ok(MatchType::Stuck { stuck: vec![left, right] })
+            }
+        }
+
+        (Type::Rigid(left, _, _), Type::Rigid(right, _, _)) => {
+            if left == right {
+                Ok(MatchType::Match { bindings: vec![] })
+            } else {
+                Ok(MatchType::Skolem)
+            }
+        }
+
+        (Type::Unification(left), _) => {
+            if toolkit::contains_unification(state, context, right, left)? {
+                Ok(MatchType::Apart)
+            } else {
+                Ok(MatchType::Stuck { stuck: vec![left] })
+            }
+        }
+
+        (_, Type::Unification(right)) => {
+            if toolkit::contains_unification(state, context, left, right)? {
+                Ok(MatchType::Apart)
+            } else {
+                Ok(MatchType::Stuck { stuck: vec![right] })
+            }
+        }
+
+        (Type::Rigid(left, _, _), _) => {
+            if toolkit::contains_rigid(state, context, right, left)? {
+                Ok(MatchType::Apart)
+            } else {
+                Ok(MatchType::Skolem)
+            }
+        }
+
+        (_, Type::Rigid(right, _, _)) => {
+            if toolkit::contains_rigid(state, context, left, right)? {
+                Ok(MatchType::Apart)
+            } else {
+                Ok(MatchType::Skolem)
+            }
+        }
+
+        (Type::Constructor(left_file, left_item), Type::Constructor(right_file, right_item))
+            if (left_file, left_item) == (right_file, right_item) =>
+        {
+            Ok(MatchType::Match { bindings: vec![] })
+        }
+
+        (Type::String(_, left), Type::String(_, right)) if left == right => {
+            Ok(MatchType::Match { bindings: vec![] })
+        }
+
+        (Type::Integer(left), Type::Integer(right)) if left == right => {
+            Ok(MatchType::Match { bindings: vec![] })
+        }
+
+        (
+            Type::Application(left_function, left_argument),
+            Type::Application(right_function, right_argument),
+        ) => {
+            let function = types_equal(state, context, left_function, right_function)?;
+            let argument = types_equal(state, context, left_argument, right_argument)?;
+            Ok(function.combine(argument))
+        }
+
+        (Type::Application(_, _), Type::Function(right_argument, right_result)) => {
+            let right = context.intern_function_application(right_argument, right_result);
+            types_equal(state, context, left, right)
+        }
+
+        (Type::Function(left_argument, left_result), Type::Application(_, _)) => {
+            let left = context.intern_function_application(left_argument, left_result);
+            types_equal(state, context, left, right)
+        }
+
+        (
+            Type::KindApplication(left_function, left_argument),
+            Type::KindApplication(right_function, right_argument),
+        ) => {
+            let function = types_equal(state, context, left_function, right_function)?;
+            let argument = types_equal(state, context, left_argument, right_argument)?;
+            Ok(function.combine(argument))
+        }
+
+        (
+            Type::Function(left_argument, left_result),
+            Type::Function(right_argument, right_result),
+        ) => {
+            let argument = types_equal(state, context, left_argument, right_argument)?;
+            let result = types_equal(state, context, left_result, right_result)?;
+            Ok(argument.combine(result))
+        }
+
+        (Type::Row(left), Type::Row(right)) => compare_row_types_with(
+            state,
+            context,
+            left,
+            right,
+            &mut |state, context, left, right| types_equal(state, context, left, right),
+        ),
+
+        (_, _) => Ok(MatchType::Apart),
+    }
+}
+
+pub fn verify_substitution<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    bindings: Vec<(Name, TypeId)>,
+) -> QueryResult<MatchType>
+where
+    Q: ExternalQueries,
+{
+    let mut map: FxHashMap<_, Vec<_>> = FxHashMap::default();
+    for &(name, substitution) in &bindings {
+        map.entry(name).or_default().push(substitution);
+    }
+
+    let mut outcome = MatchType::Match { bindings };
+    for substitution in map.values() {
+        for (&left, &right) in substitution.iter().tuple_combinations() {
+            outcome = outcome.combine(types_equal(state, context, left, right)?);
+        }
+    }
+
+    Ok(outcome)
+}
+
+pub fn match_instance<Q>(
+    state: &mut CheckState,
+    context: &CheckContext<Q>,
+    patterns: &FxHashSet<Name>,
+    functional_dependencies: &[Fd],
+    wanted_arguments: &[TypeId],
+    given_arguments: &[TypeId],
+) -> QueryResult<MatchType>
+where
+    Q: ExternalQueries,
+{
+    let mut arguments = vec![];
+
+    for (&wanted, &given) in iter::zip(wanted_arguments, given_arguments) {
+        arguments.push(types_match(state, context, patterns, wanted, given)?);
+    }
+
+    if !covers(functional_dependencies, &arguments)? {
+        return Ok(combine_arguments(arguments));
+    }
+
+    let determined = get_all_determined(functional_dependencies);
+    let arguments = arguments.into_iter().enumerate().filter_map(|(index, argument)| {
+        let non_determined = !determined.contains(&index);
+        non_determined.then_some(argument)
+    });
+
+    let outcome = combine_arguments(arguments);
+    if let MatchType::Match { bindings } = outcome {
+        return verify_substitution(state, context, bindings);
+    }
+
+    Ok(outcome)
+}
+
+fn combine_arguments(arguments: impl IntoIterator<Item = MatchType>) -> MatchType {
+    let seed = MatchType::Match { bindings: vec![] };
+    arguments.into_iter().fold(seed, MatchType::combine)
+}
+
+fn covers(fd: &[Fd], types: &[MatchType]) -> QueryResult<bool> {
+    let match_indices: FxHashSet<_> = types
+        .iter()
+        .enumerate()
+        .filter_map(|(index, argument)| argument.is_match().then_some(index))
+        .collect();
+
+    let determined = compute_closure(fd, &match_indices);
+    Ok(types.iter().enumerate().all(|(index, _)| determined.contains(&index)))
+}
+
 pub enum MatchInstance {
-    /// The instance matches.
-    Match(InstanceMatch),
-    /// The match depends on unification variables.
-    Stuck(Vec<u32>),
-    /// The types do not match.
+    Match { unifications: Vec<(TypeId, TypeId)>, constraints: Vec<CanonicalConstraintId> },
     Apart,
+    Stuck { stuck: Vec<u32> },
+    Skolem,
+}
+
+impl MatchInstance {
+    pub fn empty() -> MatchInstance {
+        MatchInstance::Match { unifications: vec![], constraints: vec![] }
+    }
+
+    pub fn from_unifications(unifications: Vec<(TypeId, TypeId)>) -> MatchInstance {
+        MatchInstance::Match { unifications, constraints: vec![] }
+    }
+
+    pub fn from_constraints(constraints: Vec<CanonicalConstraintId>) -> MatchInstance {
+        MatchInstance::Match { unifications: vec![], constraints }
+    }
+
+    pub fn from_parts(
+        unifications: Vec<(TypeId, TypeId)>,
+        constraints: Vec<CanonicalConstraintId>,
+    ) -> MatchInstance {
+        MatchInstance::Match { unifications, constraints }
+    }
 }
 
 struct CollectBlocking {
@@ -117,22 +520,6 @@ where
     Ok(walker.blocking)
 }
 
-pub fn blocking_type<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    id: TypeId,
-) -> QueryResult<MatchType>
-where
-    Q: ExternalQueries,
-{
-    let stuck = collect_blocking(state, context, &[id])?;
-    if let Some(&stuck) = stuck.first() {
-        Ok(MatchType::Stuck(stuck))
-    } else {
-        Ok(MatchType::Apart)
-    }
-}
-
 pub fn blocking_constraint<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
@@ -142,492 +529,148 @@ where
     Q: ExternalQueries,
 {
     let stuck = collect_blocking(state, context, id)?;
-    if !stuck.is_empty() { Ok(MatchInstance::Stuck(stuck)) } else { Ok(MatchInstance::Apart) }
+    if !stuck.is_empty() { Ok(MatchInstance::Stuck { stuck }) } else { Ok(MatchInstance::Apart) }
 }
 
-/// Matches a wanted type against a given type.
-pub fn match_given_type<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    wanted: TypeId,
-    given: TypeId,
-) -> QueryResult<MatchType>
-where
-    Q: ExternalQueries,
-{
-    let wanted = normalise::expand(state, context, wanted)?;
-    let given = normalise::expand(state, context, given)?;
-
-    if wanted == given {
-        return Ok(MatchType::Match);
-    }
-
-    let wanted_core = context.lookup_type(wanted);
-    let given_core = context.lookup_type(given);
-
-    if let (&Type::Rigid(wanted_name, _, wanted_kind), &Type::Rigid(given_name, _, given_kind)) =
-        (&wanted_core, &given_core)
-    {
-        if wanted_name == given_name {
-            match_given_type(state, context, wanted_kind, given_kind)
-        } else {
-            Ok(MatchType::Apart)
-        }
-    } else {
-        let mut recurse =
-            |state: &mut CheckState, context: &CheckContext<Q>, wanted: TypeId, given: TypeId| {
-                match_given_type(state, context, wanted, given)
-            };
-        match_core(state, context, &mut recurse, wanted, given, wanted_core, given_core)
-    }
-}
-
-/// Matches a wanted constraint against a given constraint.
-pub fn match_given_instance<Q>(
+pub fn match_provided<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     wanted: CanonicalConstraintId,
-    given: &[CanonicalConstraintId],
+    provided: CanonicalConstraintId,
 ) -> QueryResult<MatchInstance>
 where
     Q: ExternalQueries,
 {
-    let wanted = state.canonicals[wanted].clone();
+    let wanted = &state.canonicals[wanted];
+    let provided = &state.canonicals[provided];
 
-    'given: for &given in given {
-        let given = state.canonicals[given].clone();
-
-        if (wanted.file_id, wanted.type_id) != (given.file_id, given.type_id) {
-            continue;
-        }
-
-        if wanted.arguments.len() != given.arguments.len() {
-            continue;
-        }
-
-        let mut results = vec![];
-        let mut stuck = vec![];
-
-        for (&wanted_argument, &given_argument) in
-            iter::zip(wanted.arguments.iter(), given.arguments.iter())
-        {
-            let match_result =
-                if let (KindOrType::Kind(wanted_argument), KindOrType::Kind(given_argument))
-                | (KindOrType::Type(wanted_argument), KindOrType::Type(given_argument)) =
-                    (wanted_argument, given_argument)
-                {
-                    match_given_type(state, context, wanted_argument, given_argument)?
-                } else {
-                    continue 'given;
-                };
-
-            if matches!(match_result, MatchType::Apart) {
-                continue 'given;
-            }
-
-            if let MatchType::Stuck(id) = match_result {
-                stuck.push(id);
-            }
-
-            if let (KindOrType::Type(wanted_argument), KindOrType::Type(given_argument)) =
-                (wanted_argument, given_argument)
-            {
-                results.push((wanted_argument, given_argument, match_result));
-            }
-        }
-
-        let match_results = results.iter().map(|(_, _, result)| *result).collect_vec();
-
-        if !can_determine_stuck(context, wanted.file_id, wanted.type_id, &match_results)? {
-            return Ok(MatchInstance::Stuck(stuck));
-        }
-
-        let mut unifications = vec![];
-
-        for (wanted, given, result) in results {
-            if matches!(result, MatchType::Stuck(_)) {
-                unifications.push((wanted, given));
-            }
-        }
-
-        return Ok(MatchInstance::Match(InstanceMatch::from_unifications(unifications)));
-    }
-
-    Ok(MatchInstance::Apart)
-}
-
-pub type InstanceBindings = FxHashMap<Name, TypeId>;
-
-/// Matches a wanted type against an instance type.
-///
-/// This function also collects [`InstanceBindings`] and unifications
-/// during matching. The bindings will be used to substitute variables
-/// appearing in the subgoals of the instance declaration.
-pub fn match_instance_type<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    patterns: &FxHashSet<Name>,
-    bindings: &mut InstanceBindings,
-    unifications: &mut Vec<(TypeId, TypeId)>,
-    wanted: TypeId,
-    given: TypeId,
-) -> QueryResult<MatchType>
-where
-    Q: ExternalQueries,
-{
-    let wanted = normalise::expand(state, context, wanted)?;
-    let given = normalise::expand(state, context, given)?;
-
-    if wanted == given {
-        return Ok(MatchType::Match);
-    }
-
-    let wanted_core = context.lookup_type(wanted);
-    let given_core = context.lookup_type(given);
-
-    if let Type::Rigid(name, _, _) = given_core
-        && patterns.contains(&name)
+    if (wanted.file_id, wanted.type_id) != (provided.file_id, provided.type_id)
+        || wanted.arguments.len() != provided.arguments.len()
     {
-        return if let Some(&bound) = bindings.get(&name) {
-            match can_unify(state, context, wanted, bound)? {
-                CanUnify::Equal => Ok(MatchType::Match),
-                CanUnify::Apart => Ok(MatchType::Apart),
-                CanUnify::Unify => {
-                    unifications.push((wanted, bound));
-                    Ok(MatchType::Match)
-                }
-            }
-        } else {
-            bindings.insert(name, wanted);
-            Ok(MatchType::Match)
-        };
+        return Ok(MatchInstance::Apart);
     }
 
-    // See documentation for [`MatchType::Skolem`].
-    if matches!(wanted_core, Type::Rigid(_, _, _)) {
-        return Ok(MatchType::Skolem);
+    let wanted = wanted.clone();
+    let provided = provided.clone();
+
+    let pattern_variables = FxHashSet::default();
+
+    let functional_dependencies =
+        get_functional_dependencies(context, wanted.file_id, wanted.type_id)?;
+
+    let wanted_arguments = wanted
+        .arguments
+        .iter()
+        .filter_map(|argument| if let KindOrType::Type(id) = argument { Some(*id) } else { None })
+        .collect_vec();
+
+    let provided_arguments = provided
+        .arguments
+        .iter()
+        .filter_map(|argument| if let KindOrType::Type(id) = argument { Some(*id) } else { None })
+        .collect_vec();
+
+    match match_instance(
+        state,
+        context,
+        &pattern_variables,
+        &functional_dependencies,
+        &wanted_arguments,
+        &provided_arguments,
+    )? {
+        MatchType::Match { .. } => {
+            let unifications = iter::zip(wanted_arguments, provided_arguments).collect_vec();
+            Ok(MatchInstance::Match { unifications, constraints: vec![] })
+        }
+        MatchType::Apart => Ok(MatchInstance::Apart),
+        MatchType::Stuck { stuck } => Ok(MatchInstance::Stuck { stuck }),
+        MatchType::Skolem => Ok(MatchInstance::Skolem),
     }
-
-    let mut recurse =
-        |state: &mut CheckState, context: &CheckContext<Q>, wanted: TypeId, given: TypeId| {
-            match_instance_type(state, context, patterns, bindings, unifications, wanted, given)
-        };
-
-    match_core(state, context, &mut recurse, wanted, given, wanted_core, given_core)
 }
 
-/// Matches a wanted constraint against an instance chain.
-pub fn match_instance_chain<Q>(
+pub fn match_declared<Q>(
     state: &mut CheckState,
     context: &CheckContext<Q>,
     wanted: CanonicalConstraintId,
-    chain: &[InstanceCandidate],
+    candidate: InstanceCandidate,
 ) -> QueryResult<MatchInstance>
 where
     Q: ExternalQueries,
 {
+    let Some(declared) = toolkit::instance_info(
+        state,
+        context,
+        candidate.instance.matchable,
+        candidate.instance.resolution,
+    )?
+    else {
+        return Ok(MatchInstance::Apart);
+    };
+
     let wanted = state.canonicals[wanted].clone();
 
-    'chain: for candidate in chain {
-        let Some(given) = toolkit::instance_info(
-            state,
-            context,
-            candidate.instance.matchable,
-            candidate.instance.resolution,
-        )?
-        else {
-            continue 'chain;
-        };
+    let pattern_variables: FxHashSet<Name> =
+        declared.binders.iter().map(|binder| binder.name).collect();
 
-        let pattern_variables: FxHashSet<Name> =
-            given.binders.iter().map(|binder| binder.name).collect();
+    let functional_dependencies =
+        get_functional_dependencies(context, wanted.file_id, wanted.type_id)?;
 
-        let mut results = vec![];
-        let mut stuck = vec![];
+    let wanted_arguments = wanted
+        .arguments
+        .iter()
+        .filter_map(|argument| if let KindOrType::Type(id) = argument { Some(*id) } else { None })
+        .collect_vec();
 
-        let mut bindings = FxHashMap::default();
-        let mut unifications = vec![];
+    let declared_arguments = declared
+        .arguments
+        .iter()
+        .filter_map(|argument| if let KindOrType::Type(id) = argument { Some(*id) } else { None })
+        .collect_vec();
 
-        for (&wanted_argument, &given_argument) in
-            iter::zip(wanted.arguments.iter(), given.arguments.iter())
-        {
-            let match_result =
-                if let (KindOrType::Kind(wanted_argument), KindOrType::Kind(given_argument))
-                | (KindOrType::Type(wanted_argument), KindOrType::Type(given_argument)) =
-                    (wanted_argument, given_argument)
-                {
-                    match_instance_type(
-                        state,
-                        context,
-                        &pattern_variables,
-                        &mut bindings,
-                        &mut unifications,
-                        wanted_argument,
-                        given_argument,
-                    )?
-                } else {
-                    continue 'chain;
-                };
-
-            if matches!(match_result, MatchType::Apart) {
-                continue 'chain;
+    match match_instance(
+        state,
+        context,
+        &pattern_variables,
+        &functional_dependencies,
+        &wanted_arguments,
+        &declared_arguments,
+    )? {
+        MatchType::Match { bindings } => {
+            let mut substitution = FxHashMap::default();
+            for &(name, bound) in &bindings {
+                substitution.entry(name).or_insert(bound);
             }
 
-            if let MatchType::Stuck(id) = match_result {
-                stuck.push(id);
+            for binder in &declared.binders {
+                if substitution.contains_key(&binder.name) {
+                    continue;
+                }
+                let binder_kind = SubstituteName::many(state, context, &substitution, binder.kind)?;
+                let binder_type = state.fresh_unification(context.queries, binder_kind);
+                substitution.insert(binder.name, binder_type);
             }
 
-            if let (KindOrType::Type(wanted_argument), KindOrType::Type(given_argument)) =
-                (wanted_argument, given_argument)
-            {
-                results.push((wanted_argument, given_argument, match_result));
-            }
-        }
-
-        let match_results = results.iter().map(|(_, _, result)| *result).collect_vec();
-
-        if !can_determine_stuck(context, wanted.file_id, wanted.type_id, &match_results)? {
-            return Ok(MatchInstance::Stuck(stuck));
-        }
-
-        for binder in given.binders {
-            if bindings.contains_key(&binder.name) {
-                continue;
+            let mut unifications = vec![];
+            for (wanted, declared) in iter::zip(wanted_arguments, declared_arguments) {
+                let wanted = SubstituteName::many(state, context, &substitution, wanted)?;
+                let declared = SubstituteName::many(state, context, &substitution, declared)?;
+                unifications.push((wanted, declared));
             }
 
-            let binder_kind = SubstituteName::many(state, context, &bindings, binder.kind)?;
-            let binder_type = state.fresh_unification(context.queries, binder_kind);
-            bindings.insert(binder.name, binder_type);
-        }
-
-        for (wanted, given, result) in results {
-            if matches!(result, MatchType::Stuck(_)) {
-                let given = SubstituteName::many(state, context, &bindings, given)?;
-                unifications.push((wanted, given));
-            }
-        }
-
-        let mut constraints = vec![];
-        for constraint in given.constraints {
-            let constraint = SubstituteName::many(state, context, &bindings, constraint)?;
-            if let Some(constraint) = canonical::canonicalise(state, context, constraint)? {
-                constraints.push(constraint);
-            };
-        }
-
-        return Ok(MatchInstance::Match(InstanceMatch { unifications, constraints }));
-    }
-
-    Ok(MatchInstance::Apart)
-}
-
-fn match_core<Q, R>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    recurse: &mut R,
-    wanted: TypeId,
-    given: TypeId,
-    wanted_core: Type,
-    given_core: Type,
-) -> QueryResult<MatchType>
-where
-    Q: ExternalQueries,
-    R: for<'s, 'c> FnMut(
-        &'s mut CheckState,
-        &'c CheckContext<Q>,
-        TypeId,
-        TypeId,
-    ) -> QueryResult<MatchType>,
-{
-    match (wanted_core, given_core) {
-        (Type::Unification(id), _) => Ok(MatchType::Stuck(id)),
-
-        (Type::Row(wanted_row_id), Type::Row(given_row_id)) => {
-            let wanted_row = context.lookup_row_type(wanted_row_id);
-            let given_row = context.lookup_row_type(given_row_id);
-            match_row_type(state, context, recurse, wanted_row, given_row)
-        }
-
-        (
-            Type::Application(wanted_function, wanted_argument),
-            Type::Application(given_function, given_argument),
-        ) => recurse(state, context, wanted_function, given_function)?
-            .and_then(|| recurse(state, context, wanted_argument, given_argument)),
-
-        (
-            Type::Function(wanted_argument, wanted_result),
-            Type::Function(given_argument, given_result),
-        ) => recurse(state, context, wanted_argument, given_argument)?
-            .and_then(|| recurse(state, context, wanted_result, given_result)),
-
-        (Type::Function(wanted_argument, wanted_result), Type::Application(given_function, _)) => {
-            if is_nested_application(state, context, given_function)? {
-                let wanted = context.intern_function_application(wanted_argument, wanted_result);
-                recurse(state, context, wanted, given)
-            } else {
-                Ok(MatchType::Apart)
-            }
-        }
-
-        (Type::Application(wanted_function, _), Type::Function(given_argument, given_result)) => {
-            if is_nested_application(state, context, wanted_function)? {
-                let given = context.intern_function_application(given_argument, given_result);
-                recurse(state, context, wanted, given)
-            } else {
-                Ok(MatchType::Apart)
-            }
-        }
-
-        (
-            Type::KindApplication(wanted_function, wanted_argument),
-            Type::KindApplication(given_function, given_argument),
-        ) => recurse(state, context, wanted_function, given_function)?
-            .and_then(|| recurse(state, context, wanted_argument, given_argument)),
-
-        (Type::Kinded(wanted_inner, wanted_kind), Type::Kinded(given_inner, given_kind)) => {
-            recurse(state, context, wanted_inner, given_inner)?
-                .and_then(|| recurse(state, context, wanted_kind, given_kind))
-        }
-
-        _ => Ok(MatchType::Apart),
-    }
-}
-
-fn match_row_type<Q, R>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    recurse: &mut R,
-    wanted_row: RowType,
-    given_row: RowType,
-) -> QueryResult<MatchType>
-where
-    Q: ExternalQueries,
-    R: for<'s, 'c> FnMut(
-        &'s mut CheckState,
-        &'c CheckContext<Q>,
-        TypeId,
-        TypeId,
-    ) -> QueryResult<MatchType>,
-{
-    let mut wanted_only = vec![];
-    let mut given_only = vec![];
-    let mut result = MatchType::Match;
-
-    for field in itertools::merge_join_by(
-        wanted_row.fields.iter(),
-        given_row.fields.iter(),
-        |wanted, given| wanted.label.cmp(&given.label),
-    ) {
-        match field {
-            itertools::EitherOrBoth::Both(wanted, given) => {
-                result = result.and_then(|| recurse(state, context, wanted.id, given.id))?;
-                // Given an open wanted row, additional fields from the
-                // given row can be absorbed into the wanted row's tail.
-                if matches!(result, MatchType::Apart) && wanted_row.tail.is_none() {
-                    return Ok(MatchType::Apart);
+            let mut constraints = vec![];
+            for constraint in declared.constraints {
+                let constraint = SubstituteName::many(state, context, &substitution, constraint)?;
+                if let Some(constraint) = canonical::canonicalise(state, context, constraint)? {
+                    constraints.push(constraint);
                 }
             }
-            itertools::EitherOrBoth::Left(wanted) => wanted_only.push(wanted),
-            itertools::EitherOrBoth::Right(given) => given_only.push(given),
+
+            Ok(MatchInstance::Match { unifications, constraints })
         }
+        MatchType::Apart => Ok(MatchInstance::Apart),
+        MatchType::Stuck { stuck } => Ok(MatchInstance::Stuck { stuck }),
+        MatchType::Skolem => Ok(MatchInstance::Skolem),
     }
-
-    enum RowRest {
-        /// `( a :: Int )` and `( a :: Int | r )`
-        Additional,
-        /// `( | r )`
-        Open(TypeId),
-        /// `( )`
-        Closed,
-    }
-
-    impl RowRest {
-        fn new(only: &[&RowField], tail: Option<TypeId>) -> RowRest {
-            if !only.is_empty() {
-                RowRest::Additional
-            } else if let Some(tail) = tail {
-                RowRest::Open(tail)
-            } else {
-                RowRest::Closed
-            }
-        }
-    }
-
-    use RowRest::*;
-
-    let given_rest = RowRest::new(&given_only, given_row.tail);
-    let wanted_rest = RowRest::new(&wanted_only, wanted_row.tail);
-
-    match given_rest {
-        // If there are additional given fields
-        Additional => match wanted_rest {
-            // we cannot match it against a tail-less wanted,
-            // nor against the additional wanted fields.
-            Closed | Additional => Ok(MatchType::Apart),
-            // we could potentially make progress by having the
-            // wanted tail absorb the additional given fields
-            Open(wanted_tail) => result.and_then(|| blocking_type(state, context, wanted_tail)),
-        },
-        // If the given row has a tail, match it against the
-        // additional fields and tail from the wanted row
-        Open(given_tail) => {
-            let fields = wanted_only.into_iter().cloned().collect_vec();
-            let row = context.intern_row(fields, wanted_row.tail);
-            result.and_then(|| recurse(state, context, row, given_tail))
-        }
-        // If we have a closed given row
-        Closed => match wanted_rest {
-            // we cannot match it against fields in the wanted row
-            Additional => Ok(MatchType::Apart),
-            // we could make progress with an open wanted row
-            Open(wanted_tail) => result.and_then(|| blocking_type(state, context, wanted_tail)),
-            // we can match it directly with a closed wanted row
-            Closed => Ok(result),
-        },
-    }
-}
-
-fn is_nested_application<Q>(
-    state: &mut CheckState,
-    context: &CheckContext<Q>,
-    t: TypeId,
-) -> QueryResult<bool>
-where
-    Q: ExternalQueries,
-{
-    let t = normalise::expand(state, context, t)?;
-    Ok(matches!(context.lookup_type(t), Type::Application(_, _)))
-}
-
-fn can_determine_stuck<Q>(
-    context: &CheckContext<Q>,
-    file_id: FileId,
-    type_id: TypeItemId,
-    results: &[MatchType],
-) -> QueryResult<bool>
-where
-    Q: ExternalQueries,
-{
-    let stuck_indices = results
-        .iter()
-        .enumerate()
-        .filter_map(|(index, result)| result.is_unknown().then_some(index));
-
-    let stuck_indices = stuck_indices.collect_vec();
-
-    if stuck_indices.is_empty() {
-        return Ok(true);
-    }
-
-    let functional_dependencies = get_functional_dependencies(context, file_id, type_id)?;
-    let match_indices: FxHashSet<_> = results
-        .iter()
-        .enumerate()
-        .filter_map(|(index, result)| matches!(result, MatchType::Match).then_some(index))
-        .collect();
-
-    let determined = compute_closure(&functional_dependencies, &match_indices);
-    Ok(stuck_indices.iter().all(|index| determined.contains(index)))
 }
 
 fn get_functional_dependencies<Q>(
